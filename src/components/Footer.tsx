@@ -35,11 +35,15 @@ export const Footer = () => {
             </ul>
           </div>
         </div>
-        <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-          <p className="text-gray-500 text-sm">© {new Date().getFullYear()} KairoLeads. All rights reserved.</p>
-          <div className="flex space-x-6 text-sm text-gray-500">
-            <a href="#" className="hover:text-gray-900">Privacy Policy</a>
-            <a href="#" className="hover:text-gray-900">Terms of Service</a>
+        <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-end gap-4">
+          <div className="flex flex-col items-start">
+            <div className="text-xs text-gray-500 font-medium mb-2">Built Proudly By:</div>
+            <img src="/kairo-logo.png" alt="Kairo Studio" className="h-12 object-contain mb-4" />
+            <p className="text-gray-500 text-sm">© {new Date().getFullYear()} KairoLeads. All rights reserved.</p>
+          </div>
+          <div className="flex space-x-6 text-sm text-gray-500 pb-1">
+            <a href="#" className="hover:text-gray-900 transition-colors">Privacy Policy</a>
+            <a href="#" className="hover:text-gray-900 transition-colors">Terms of Service</a>
           </div>
         </div>
       </div>

@@ -134,14 +134,6 @@ export default function MapTab() {
     };
   };
 
-  if (loadError) {
-    return <div className="text-center py-12 text-red-500">Error loading Google Maps</div>;
-  }
-
-  if (!isLoaded || loading) {
-    return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
-  }
-
   const filteredClients = useMemo(() => {
     if (selectedCategory === 'all') return clients;
     const catName = categories.find(c => c.id === selectedCategory)?.name || '';
@@ -152,6 +144,11 @@ export default function MapTab() {
     if (selectedCategory === 'all') return leads;
     return leads.filter(l => l.category_id === selectedCategory);
   }, [leads, selectedCategory]);
+
+  if (loadError) {
+    return <div className="text-center py-12 text-red-500">Error loading Google Maps</div>;
+  }
+
 
   return (
     <div className="space-y-4">
@@ -193,16 +190,19 @@ export default function MapTab() {
         </div>
       </div>
 
-      <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
-        <GoogleMap
-          mapContainerStyle={containerStyle}
-          center={defaultCenter}
-          zoom={6}
-          options={{
-            streetViewControl: false,
-            mapTypeControl: false,
-          }}
-        >
+      {!isLoaded || loading ? (
+        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+      ) : (
+        <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+          <GoogleMap
+            mapContainerStyle={containerStyle}
+            center={defaultCenter}
+            zoom={6}
+            options={{
+              streetViewControl: false,
+              mapTypeControl: false,
+            }}
+          >
           {/* Render Clients (Contractors) */}
           {filteredClients.map((client) => (
             <Marker
@@ -283,6 +283,7 @@ export default function MapTab() {
           )}
         </GoogleMap>
       </div>
+      )}
     </div>
   );
 }

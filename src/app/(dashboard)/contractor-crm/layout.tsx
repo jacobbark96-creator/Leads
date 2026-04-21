@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Upload, Users, CheckCircle } from 'lucide-react';
+import { Upload, Users, CheckCircle, Map as MapIcon } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 
 export default function ContractorLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +11,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
   const tabs = [
     { name: 'Potential Contractors', path: '/contractor-crm', icon: Users },
     { name: 'Onboarded Contractors', path: '/contractor-crm/onboarded', icon: CheckCircle },
+    { name: 'Map', path: '/contractor-crm/map', icon: MapIcon },
     { name: 'Import Leads', path: '/contractor-crm/import', icon: Upload },
   ];
 

@@ -3,6 +3,7 @@ import { supabase } from '../lib/supabase';
 import { Lead } from '../types';
 import { X, Upload, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Autocomplete from 'react-google-autocomplete';
 
 interface QualifyLeadModalProps {
   isOpen: boolean;
@@ -28,6 +29,8 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
     est_ann_consumption: lead.est_ann_consumption || '',
     est_system_size: lead.est_system_size || '',
     qualification_notes: lead.qualification_notes || '',
+    latitude: lead.latitude || null as number | null,
+    longitude: lead.longitude || null as number | null,
   });
 
   if (!isOpen) return null;
@@ -97,7 +100,9 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
         est_ann_consumption: formData.est_ann_consumption ? Number(formData.est_ann_consumption) : null,
         est_system_size: formData.est_system_size,
         qualification_notes: formData.qualification_notes,
-        photos: photos
+        photos: photos,
+        latitude: formData.latitude,
+        longitude: formData.longitude
       };
 
       const { data, error } = await supabase
@@ -142,12 +147,25 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
               {/* Left Column */}
               <div className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Location</label>
-                  <input
-                    type="text"
-                    required
-                    value={formData.location}
-                    onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  <label className="block text-sm font-medium text-gray-700">Location (Full Address) *</label>
+                  <Autocomplete
+                    apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                    onPlaceSelected={(place) => {
+                      const lat = place.geometry?.location?.lat() || null;
+                      const lng = place.geometry?.location?.lng() || null;
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        location: place.formatted_address || place.name || '',
+                        latitude: lat,
+                        longitude: lng
+                      }));
+                    }}
+                    options={{
+                      types: ['address'],
+                      componentRestrictions: { country: "uk" }
+                    }}
+                    defaultValue={formData.location}
+                    placeholder="Start typing an address..."
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                 </div>

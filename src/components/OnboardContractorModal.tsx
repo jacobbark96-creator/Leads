@@ -26,7 +26,9 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
     other_contact_numbers: '',
     address: '',
     areas_covered: '',
-    internal_notes: ''
+    internal_notes: '',
+    latitude: null as number | null,
+    longitude: null as number | null
   });
 
   useEffect(() => {
@@ -108,7 +110,9 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
           address: formData.address || null,
           areas_covered: formData.areas_covered || null,
           services_offered: selectedServices.length > 0 ? selectedServices.join(', ') : null,
-          internal_notes: formData.internal_notes || null
+          internal_notes: formData.internal_notes || null,
+          latitude: formData.latitude,
+          longitude: formData.longitude
         });
 
       if (clientError) throw clientError;
@@ -194,7 +198,14 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
                   <Autocomplete
                     apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                     onPlaceSelected={(place) => {
-                      setFormData(prev => ({ ...prev, address: place.formatted_address || place.name || '' }));
+                      const lat = place.geometry?.location?.lat() || null;
+                      const lng = place.geometry?.location?.lng() || null;
+                      setFormData(prev => ({ 
+                        ...prev, 
+                        address: place.formatted_address || place.name || '',
+                        latitude: lat,
+                        longitude: lng
+                      }));
                     }}
                     options={{
                       types: ['address'],

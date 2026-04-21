@@ -20,6 +20,8 @@ export interface Client {
   areas_covered?: string | null;
   services_offered?: string | null;
   internal_notes?: string | null;
+  latitude?: number | null;
+  longitude?: number | null;
   created_at: string;
 }
 
@@ -60,6 +62,8 @@ export interface Lead {
   photos?: string[];
   is_marketed?: boolean;
   price?: number;
+  latitude?: number | null;
+  longitude?: number | null;
 }
 
 export interface Contractor {

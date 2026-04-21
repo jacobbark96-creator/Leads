@@ -298,9 +298,12 @@ function LeadDetailsContent() {
                   </button>
                 )}
                 {lead.is_marketed && (
-                  <span className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-bold bg-green-100 text-green-800 border border-green-200">
-                    Marketed
-                  </span>
+                  <button
+                    onClick={() => setIsMarketModalOpen(true)}
+                    className="inline-flex items-center px-4 py-2 border border-green-200 text-sm font-bold rounded-lg shadow-sm text-green-800 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                  >
+                    Edit Marketed Lead
+                  </button>
                 )}
               </div>
               <h2 className="text-2xl font-bold text-gray-900">{lead.name}</h2>
@@ -428,7 +431,7 @@ function LeadDetailsContent() {
           lead={lead}
           onSuccess={(updatedLead) => {
             setIsMarketModalOpen(false);
-            setLead({ ...lead, is_marketed: true });
+            setLead(updatedLead);
           }}
         />
       )}

@@ -1,6 +1,7 @@
 import React from 'react';
-import { Lead } from '../types';
+import { Lead } from '@/types';
 import { X, MapPin, Building, Calendar, FileText, ShoppingCart, Info, DollarSign, Home, Zap } from 'lucide-react';
+import { extractTown } from '@/lib/utils';
 
 interface MarketplaceLeadModalProps {
   isOpen: boolean;
@@ -54,7 +55,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <MapPin className="w-5 h-5 mr-2 text-gray-400" />
                     <span className="font-medium">Location</span>
                   </div>
-                  <span className="font-bold text-gray-900">{lead.location || 'Undisclosed'}</span>
+                  <span className="font-bold text-gray-900">{extractTown(lead.location)}</span>
                 </div>
                 
                 <div className="flex items-center justify-between pb-4 border-b border-gray-100">

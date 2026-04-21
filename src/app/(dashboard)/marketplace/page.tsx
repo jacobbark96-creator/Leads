@@ -7,6 +7,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import toast from 'react-hot-toast';
 import { Search, MapPin, Building, Calendar, FileText, CheckCircle } from 'lucide-react';
 import { MarketplaceLeadModal } from '@/components/MarketplaceLeadModal';
+import { extractTown } from '@/lib/utils';
 
 export default function Marketplace() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -103,7 +104,7 @@ export default function Marketplace() {
                   <div>
                     <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
                       <MapPin className="w-4 h-4 text-gray-400" />
-                      {lead.location || 'Location undisclosed'}
+                      {extractTown(lead.location)}
                     </h3>
                   </div>
                   <div className="text-right">

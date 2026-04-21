@@ -1,0 +1,17 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/(dashboard)/layout,_N_T_/(dashboard)/admin-crm/layout,_N_T_/(dashboard)/admin-crm/categories/layout,_N_T_/(dashboard)/admin-crm/categories/page,_N_T_/admin-crm/categories"
+  },
+  "segmentPaths": [
+    "/_tree",
+    "/_full",
+    "/!KGRhc2hib2FyZCk/admin-crm/categories/__PAGE__",
+    "/!KGRhc2hib2FyZCk/admin-crm/categories",
+    "/!KGRhc2hib2FyZCk/admin-crm",
+    "/!KGRhc2hib2FyZCk",
+    "/_index",
+    "/_head"
+  ]
+}

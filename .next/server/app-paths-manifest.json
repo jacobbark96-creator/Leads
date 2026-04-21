@@ -1,0 +1,17 @@
+{
+  "/(dashboard)/admin-crm/categories/page": "app/(dashboard)/admin-crm/categories/page.js",
+  "/(dashboard)/admin-crm/page": "app/(dashboard)/admin-crm/page.js",
+  "/(dashboard)/client-portal/page": "app/(dashboard)/client-portal/page.js",
+  "/(dashboard)/intranet/clients/page": "app/(dashboard)/intranet/clients/page.js",
+  "/(dashboard)/intranet/grants/page": "app/(dashboard)/intranet/grants/page.js",
+  "/(dashboard)/intranet/page": "app/(dashboard)/intranet/page.js",
+  "/(dashboard)/sales-crm/import/page": "app/(dashboard)/sales-crm/import/page.js",
+  "/(dashboard)/sales-crm/page": "app/(dashboard)/sales-crm/page.js",
+  "/(public)/about/page": "app/(public)/about/page.js",
+  "/(public)/morals/page": "app/(public)/morals/page.js",
+  "/(public)/page": "app/(public)/page.js",
+  "/(public)/services/page": "app/(public)/services/page.js",
+  "/_global-error/page": "app/_global-error/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
+  "/login/page": "app/login/page.js"
+}

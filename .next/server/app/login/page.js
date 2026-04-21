@@ -1,0 +1,13 @@
+var R=require("../../chunks/ssr/[turbopack]_runtime.js")("server/app/login/page.js")
+R.c("server/chunks/ssr/[root-of-the-server]__0fa3-ky._.js")
+R.c("server/chunks/ssr/0gn2_next_dist_esm_build_templates_app-page_0wuqh._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__0s0ad_z._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__0-f_phh._.js")
+R.c("server/chunks/ssr/[root-of-the-server]__0ax.n..._.js")
+R.c("server/chunks/ssr/0gn2_next_dist_client_components_0._x450._.js")
+R.c("server/chunks/ssr/0gn2_next_dist_client_components_builtin_forbidden_0uqk58i.js")
+R.c("server/chunks/ssr/0gn2_next_dist_client_components_builtin_unauthorized_0m.lq5c.js")
+R.c("server/chunks/ssr/0gn2_next_dist_client_components_builtin_global-error_0285nv..js")
+R.c("server/chunks/ssr/Desktop_Kairo_BJ Leads__next-internal_server_app_login_page_actions_0nmk38~.js")
+R.m(1762)
+module.exports=R.m(1762).exports

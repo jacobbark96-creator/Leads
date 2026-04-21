@@ -1,0 +1,135 @@
+{
+  "version": 3,
+  "pages404": true,
+  "appType": "app",
+  "caseSensitive": false,
+  "basePath": "",
+  "redirects": [
+    {
+      "source": "/:path+/",
+      "destination": "/:path+",
+      "internal": true,
+      "priority": true,
+      "statusCode": 308,
+      "regex": "^(?:/((?:[^/]+?)(?:/(?:[^/]+?))*))/$"
+    }
+  ],
+  "headers": [],
+  "onMatchHeaders": [],
+  "rewrites": {
+    "beforeFiles": [],
+    "afterFiles": [],
+    "fallback": []
+  },
+  "dynamicRoutes": [],
+  "staticRoutes": [
+    {
+      "page": "/",
+      "regex": "^/(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/(?:/)?$"
+    },
+    {
+      "page": "/_global-error",
+      "regex": "^/_global\\-error(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_global\\-error(?:/)?$"
+    },
+    {
+      "page": "/_not-found",
+      "regex": "^/_not\\-found(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/_not\\-found(?:/)?$"
+    },
+    {
+      "page": "/about",
+      "regex": "^/about(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/about(?:/)?$"
+    },
+    {
+      "page": "/admin-crm",
+      "regex": "^/admin\\-crm(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin\\-crm(?:/)?$"
+    },
+    {
+      "page": "/admin-crm/categories",
+      "regex": "^/admin\\-crm/categories(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/admin\\-crm/categories(?:/)?$"
+    },
+    {
+      "page": "/client-portal",
+      "regex": "^/client\\-portal(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/client\\-portal(?:/)?$"
+    },
+    {
+      "page": "/intranet",
+      "regex": "^/intranet(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/intranet(?:/)?$"
+    },
+    {
+      "page": "/intranet/clients",
+      "regex": "^/intranet/clients(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/intranet/clients(?:/)?$"
+    },
+    {
+      "page": "/intranet/grants",
+      "regex": "^/intranet/grants(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/intranet/grants(?:/)?$"
+    },
+    {
+      "page": "/login",
+      "regex": "^/login(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/login(?:/)?$"
+    },
+    {
+      "page": "/morals",
+      "regex": "^/morals(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/morals(?:/)?$"
+    },
+    {
+      "page": "/sales-crm",
+      "regex": "^/sales\\-crm(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sales\\-crm(?:/)?$"
+    },
+    {
+      "page": "/sales-crm/import",
+      "regex": "^/sales\\-crm/import(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/sales\\-crm/import(?:/)?$"
+    },
+    {
+      "page": "/services",
+      "regex": "^/services(?:/)?$",
+      "routeKeys": {},
+      "namedRegex": "^/services(?:/)?$"
+    }
+  ],
+  "dataRoutes": [],
+  "rsc": {
+    "header": "rsc",
+    "varyHeader": "rsc, next-router-state-tree, next-router-prefetch, next-router-segment-prefetch",
+    "prefetchHeader": "next-router-prefetch",
+    "didPostponeHeader": "x-nextjs-postponed",
+    "contentTypeHeader": "text/x-component",
+    "suffix": ".rsc",
+    "prefetchSegmentHeader": "next-router-segment-prefetch",
+    "prefetchSegmentSuffix": ".segment.rsc",
+    "prefetchSegmentDirSuffix": ".segments",
+    "clientParamParsing": false,
+    "dynamicRSCPrerender": false
+  },
+  "rewriteHeaders": {
+    "pathHeader": "x-nextjs-rewritten-path",
+    "queryHeader": "x-nextjs-rewritten-query"
+  }
+}

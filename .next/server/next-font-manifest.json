@@ -1,0 +1,49 @@
+{
+  "app": {
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(dashboard)/admin-crm/categories/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(dashboard)/admin-crm/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(dashboard)/client-portal/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(dashboard)/intranet/clients/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(dashboard)/intranet/grants/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(dashboard)/intranet/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(dashboard)/sales-crm/import/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(dashboard)/sales-crm/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(public)/about/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(public)/morals/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(public)/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/(public)/services/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/_not-found/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ],
+    "[project]/Desktop/Kairo/BJ Leads/src/app/login/page": [
+      "static/media/83afe278b6a6bb3c-s.p.0q-301v4kxxnr.woff2"
+    ]
+  },
+  "appUsingSizeAdjust": true,
+  "pages": {},
+  "pagesUsingSizeAdjust": false
+}

@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogOut, LayoutDashboard, Users, Settings, Database, BookOpen } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
+import { Footer } from './Footer';
 
 export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { profile, signOut } = useAuthStore();
@@ -87,6 +88,8 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
       <main className="flex-1 max-w-7xl w-full mx-auto py-6 sm:px-6 lg:px-8">
         {children}
       </main>
+
+      <Footer />
     </div>
   );
 };

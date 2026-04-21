@@ -90,11 +90,16 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                   {profile.name} ({profile.role})
                 </span>
                 <button
-                  onClick={() => signOut()}
-                  className="p-2 text-gray-400 hover:text-gray-500 rounded-full hover:bg-gray-100"
+                  onClick={async (e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    await signOut();
+                  }}
+                  className="p-2 text-gray-400 hover:text-gray-900 rounded-full hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                   title="Sign Out"
+                  aria-label="Sign Out"
                 >
-                  <LogOut className="w-5 h-5" />
+                  <LogOut className="w-5 h-5 pointer-events-none" />
                 </button>
               </div>
             </div>

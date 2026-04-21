@@ -78,8 +78,17 @@ export const useAuthStore = create<AuthState>()(
         });
       },
       signOut: async () => {
-        await supabase.auth.signOut();
+        // Optimistically clear the state so the UI reacts instantly
         set({ user: null, profile: null });
+        try {
+          await supabase.auth.signOut();
+        } catch (error) {
+          console.error('Error during sign out:', error);
+        }
+        // Force a hard reload to clear any residual cache or router state
+        if (typeof window !== 'undefined') {
+          window.location.href = '/login';
+        }
       },
     }),
     {

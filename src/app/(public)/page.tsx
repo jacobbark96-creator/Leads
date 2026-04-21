@@ -23,15 +23,11 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/80 to-slate-900/40"></div>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-28 pb-16">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-16 pb-16">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
             
             {/* Left Content */}
             <div className="max-w-2xl">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-blue-300 font-medium text-sm mb-6 backdrop-blur-md">
-                <span className="flex h-2 w-2 rounded-full bg-blue-400 animate-pulse"></span>
-                100% Exclusive Leads
-              </div>
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]">
                 Scale With <br/>
@@ -238,7 +234,7 @@ export default function Home() {
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6">Stop Waiting for the Phone to Ring</h2>
           <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Join the top-performing contractors across the country who rely on Kairo Leads to keep their pipelines full and revenue growing.
+            Join the top-performing contractors across the country who rely on KairoLeads to keep their pipelines full and revenue growing.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link

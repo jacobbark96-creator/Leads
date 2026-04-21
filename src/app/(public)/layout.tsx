@@ -16,7 +16,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
               <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-lg shadow-blue-600/20">
                 K
               </div>
-              <span className="font-bold text-2xl tracking-tight">Kairo Leads</span>
+              <span className="font-bold text-2xl tracking-tight">KairoLeads</span>
             </Link>
             <div className="hidden md:flex space-x-8">
               <Link href="/services" className="text-gray-600 hover:text-blue-600 font-medium transition-colors">What We Do</Link>
@@ -48,7 +48,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center text-white font-bold shadow-md">
                   K
                 </div>
-                <span className="font-bold text-xl text-gray-900">Kairo Leads</span>
+                <span className="font-bold text-xl text-gray-900">KairoLeads</span>
               </div>
               <p className="text-gray-600 max-w-sm mb-6">
                 The premier lead generation platform connecting high-intent customers with trusted service professionals.
@@ -72,7 +72,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             </div>
           </div>
           <div className="border-t border-gray-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-gray-500 text-sm">© {new Date().getFullYear()} Kairo Leads. All rights reserved.</p>
+            <p className="text-gray-500 text-sm">© {new Date().getFullYear()} KairoLeads. All rights reserved.</p>
             <div className="flex space-x-6 text-sm text-gray-500">
               <a href="#" className="hover:text-gray-900">Privacy Policy</a>
               <a href="#" className="hover:text-gray-900">Terms of Service</a>

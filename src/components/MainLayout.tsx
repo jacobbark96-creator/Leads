@@ -43,7 +43,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex justify-between h-16">
             <div className="flex">
               <Link href="/" className="flex-shrink-0 flex items-center">
-                <span className="text-xl font-bold text-blue-600">Kairo Leads</span>
+                <span className="text-xl font-bold text-blue-600">KairoLeads</span>
               </Link>
               <div className="hidden sm:-my-px sm:ml-6 sm:flex sm:space-x-8">
                 {navItems.map((item) => {

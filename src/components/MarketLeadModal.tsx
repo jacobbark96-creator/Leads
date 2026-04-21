@@ -13,6 +13,7 @@ interface MarketLeadModalProps {
 
 export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClose, lead, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [price, setPrice] = useState<string>(lead.price ? lead.price.toString() : '135');
 
   if (!isOpen) return null;
 
@@ -21,7 +22,10 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
       setLoading(true);
       const { data, error } = await supabase
         .from('leads')
-        .update({ is_marketed: true })
+        .update({ 
+          is_marketed: true,
+          price: Number(price) || 135
+        })
         .eq('id', lead.id)
         .select()
         .single();
@@ -88,6 +92,27 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
               <span className="block text-gray-500 text-xs font-medium uppercase tracking-wider mb-1">Photos</span>
               <span className="font-semibold text-gray-900">{lead.photos?.length || 0} attached</span>
             </div>
+          </div>
+
+          <div className="mt-6 border-t border-gray-200 pt-6">
+            <label className="block text-sm font-medium text-gray-700 mb-1">Marketplace Price (£)</label>
+            <div className="relative rounded-md shadow-sm">
+              <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                <span className="text-gray-500 sm:text-sm">£</span>
+              </div>
+              <input
+                type="number"
+                name="price"
+                id="price"
+                className="block w-full rounded-md border-gray-300 pl-7 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                placeholder="135.00"
+                value={price}
+                onChange={(e) => setPrice(e.target.value)}
+                min="0"
+                step="0.01"
+              />
+            </div>
+            <p className="mt-2 text-xs text-gray-500">This is the price the client will pay to purchase this lead.</p>
           </div>
         </div>
 

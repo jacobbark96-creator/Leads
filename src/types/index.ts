@@ -59,6 +59,7 @@ export interface Lead {
   est_system_size?: string;
   photos?: string[];
   is_marketed?: boolean;
+  price?: number;
 }
 
 export interface Contractor {

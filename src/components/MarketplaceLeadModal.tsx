@@ -43,6 +43,14 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
               <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
                 <div className="flex items-center justify-between pb-4 border-b border-gray-100">
                   <div className="flex items-center text-gray-600">
+                    <DollarSign className="w-5 h-5 mr-2 text-green-600" />
+                    <span className="font-bold text-gray-900">Lead Price</span>
+                  </div>
+                  <span className="font-bold text-green-600 text-xl">£{lead.price || '135.00'}</span>
+                </div>
+
+                <div className="flex items-center justify-between pb-4 border-b border-gray-100">
+                  <div className="flex items-center text-gray-600">
                     <MapPin className="w-5 h-5 mr-2 text-gray-400" />
                     <span className="font-medium">Location</span>
                   </div>

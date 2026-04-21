@@ -107,12 +107,16 @@ export default function Marketplace() {
                     </h3>
                   </div>
                   <div className="text-right">
-                    <span className="block text-sm font-medium text-gray-500">Est. Spend</span>
-                    <span className="text-lg font-bold text-green-600">£{lead.monthly_spend || 'N/A'}</span>
+                    <span className="block text-sm font-medium text-gray-500">Price</span>
+                    <span className="text-lg font-bold text-green-600">£{lead.price || '135.00'}</span>
                   </div>
                 </div>
 
                 <div className="space-y-3 flex-1">
+                  <div className="flex items-center justify-between text-sm">
+                    <span className="text-gray-500">Est. Spend:</span>
+                    <span className="font-semibold text-gray-900">£{lead.monthly_spend || 'N/A'}</span>
+                  </div>
                   <div className="flex items-center text-sm text-gray-600">
                     <Calendar className="w-4 h-4 mr-2 text-gray-400" />
                     <span className="font-medium mr-1">Timeframe:</span> {lead.timeframe || 'N/A'}

@@ -1,12 +1,13 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Upload, Users, CheckCircle, Map as MapIcon } from 'lucide-react';
-import { ProtectedRoute } from '../../../components/ProtectedRoute';
+import { Upload, Users, CheckCircle, Map as MapIcon, Menu, X } from 'lucide-react';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
 
 export default function ContractorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const tabs = [
     { name: 'Potential Contractors', path: '/contractor-crm', icon: Users },
@@ -18,11 +19,54 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
   return (
     <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin']}>
       <div className="space-y-6">
-        <div className="sm:flex sm:items-center sm:justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Sales CRM</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="text-2xl font-bold text-gray-900">Contractor CRM</h1>
+          
+          {/* Mobile menu button */}
+          <div className="sm:hidden">
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
+            >
+              <span className="sr-only">Open sub-menu</span>
+              {mobileMenuOpen ? (
+                <X className="block h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Menu className="block h-6 w-6" aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="border-b border-gray-200">
+        {/* Mobile Sub-Menu Panel */}
+        {mobileMenuOpen && (
+          <div className="sm:hidden bg-white shadow rounded-lg border border-gray-200 overflow-hidden mt-2">
+            <div className="py-2 space-y-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = pathname === tab.path;
+                return (
+                  <Link
+                    key={tab.name}
+                    href={tab.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`${
+                      isActive
+                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-transparent'
+                    } flex items-center px-4 py-3 text-base font-medium`}
+                  >
+                    <Icon className={`${isActive ? 'text-blue-600' : 'text-gray-400'} mr-3 h-5 w-5`} />
+                    {tab.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Desktop Tabs */}
+        <div className="hidden sm:block border-b border-gray-200">
           <nav className="-mb-px flex space-x-8" aria-label="Tabs">
             {tabs.map((tab) => {
               const Icon = tab.icon;

@@ -1,15 +1,16 @@
 "use client";
-import React from 'react';
+import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Upload, Users, CheckCircle, UserPlus } from 'lucide-react';
-import { ProtectedRoute } from '../../../components/ProtectedRoute';
-import { useAuthStore } from '../../../store/authStore';
+import { Upload, Users, CheckCircle, UserPlus, Menu, X } from 'lucide-react';
+import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { useAuthStore } from '@/store/authStore';
 
 export default function SalesLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { profile } = useAuthStore();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const tabs = [
     { name: 'Unqualified Leads', path: '/sales-crm', icon: Users },
@@ -20,11 +21,72 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   return (
     <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin']}>
       <div className="space-y-6">
-        <div className="sm:flex sm:items-center sm:justify-between">
+        <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Sales CRM</h1>
+          
+          {/* Mobile menu button & actions */}
+          <div className="flex items-center gap-2">
+            {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
+              <button
+                onClick={() => {
+                  const url = new URL(window.location.href);
+                  const isMyLeads = url.searchParams.get('assignedToMe') === 'true';
+                  if (isMyLeads) {
+                    url.searchParams.delete('assignedToMe');
+                  } else {
+                    url.searchParams.set('assignedToMe', 'true');
+                  }
+                  router.push(url.pathname + url.search);
+                }}
+                className="sm:hidden inline-flex items-center p-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
+                title="My Leads"
+              >
+                <UserPlus className="w-5 h-5 text-gray-500" />
+              </button>
+            )}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
+            >
+              <span className="sr-only">Open sub-menu</span>
+              {mobileMenuOpen ? (
+                <X className="block h-6 w-6" aria-hidden="true" />
+              ) : (
+                <Menu className="block h-6 w-6" aria-hidden="true" />
+              )}
+            </button>
+          </div>
         </div>
 
-        <div className="border-b border-gray-200">
+        {/* Mobile Sub-Menu Panel */}
+        {mobileMenuOpen && (
+          <div className="sm:hidden bg-white shadow rounded-lg border border-gray-200 overflow-hidden mt-2">
+            <div className="py-2 space-y-1">
+              {tabs.map((tab) => {
+                const Icon = tab.icon;
+                const isActive = pathname === tab.path;
+                return (
+                  <Link
+                    key={tab.name}
+                    href={tab.path}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`${
+                      isActive
+                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
+                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-transparent'
+                    } flex items-center px-4 py-3 text-base font-medium`}
+                  >
+                    <Icon className={`${isActive ? 'text-blue-600' : 'text-gray-400'} mr-3 h-5 w-5`} />
+                    {tab.name}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {/* Desktop Tabs */}
+        <div className="hidden sm:block border-b border-gray-200">
           <div className="flex justify-between items-center">
             <nav className="-mb-px flex space-x-8" aria-label="Tabs">
               {tabs.map((tab) => {

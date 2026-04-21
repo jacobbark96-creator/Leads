@@ -10,7 +10,7 @@ export const Footer = () => {
           {/* Brand Column */}
           <div className="col-span-1 md:col-span-2 lg:col-span-3">
             <Link href="/" className="inline-block mb-6">
-              <img src="/Openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
+              <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
             </Link>
             <p className="text-slate-600 max-w-sm mb-6 leading-relaxed">
               High-intent, pre-qualified leads delivered directly to your CRM. Grow your contracting business with predictable revenue.
@@ -33,7 +33,6 @@ export const Footer = () => {
             <h4 className="font-bold text-slate-900 mb-4 tracking-wider uppercase text-xs">Contact</h4>
             <ul className="space-y-3">
               <li className="text-slate-600 text-sm">support@openlead.com</li>
-              <li className="text-slate-600 text-sm">1-800-OPENLEAD</li>
             </ul>
           </div>
 
@@ -53,12 +52,12 @@ export const Footer = () => {
           </div>
           
           {/* Built By Kairo */}
-          <div className="flex flex-col sm:flex-row items-center gap-3">
-            <span className="text-xs text-slate-400 font-medium uppercase tracking-widest">Built Proudly By</span>
+          <div className="flex flex-col sm:flex-row items-center gap-4 mt-6 md:mt-0">
+            <span className="text-sm text-slate-500 font-bold uppercase tracking-widest">Built Proudly By</span>
             <img 
               src="/kairo-logo.png" 
               alt="Kairo Studio" 
-              className="h-8 object-contain opacity-70 hover:opacity-100 transition-opacity" 
+              className="h-10 object-contain opacity-80 hover:opacity-100 transition-opacity" 
             />
           </div>
           

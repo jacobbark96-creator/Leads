@@ -27,7 +27,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20 items-center">
             <Link href="/" className="flex-shrink-0 flex items-center gap-2 z-50">
-              <img src="/Openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
+              <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
             </Link>
 
             {/* Desktop Navigation */}

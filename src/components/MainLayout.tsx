@@ -62,7 +62,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="flex justify-between h-16">
             <div className="flex items-center">
               <Link href="/" className="flex-shrink-0 flex items-center">
-                <img src="/Openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
+                <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
               </Link>
               <div className="hidden sm:-my-px sm:ml-8 sm:flex sm:space-x-8">
                 {navItems.map((item) => {

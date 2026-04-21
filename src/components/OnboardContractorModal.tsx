@@ -202,7 +202,7 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
                       const lng = place.geometry?.location?.lng() || null;
                       setFormData(prev => ({ 
                         ...prev, 
-                        address: place.formatted_address || place.name || '',
+                        address: place?.formatted_address || place?.name || '',
                         latitude: lat,
                         longitude: lng
                       }));
@@ -211,7 +211,7 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
                       types: ['address'],
                       componentRestrictions: { country: "uk" }
                     }}
-                    defaultValue={formData.address}
+                    defaultValue={formData.address || ''}
                     placeholder="Start typing an address..."
                     className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
                   />

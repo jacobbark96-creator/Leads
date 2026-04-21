@@ -155,7 +155,7 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                       const lng = place.geometry?.location?.lng() || null;
                       setFormData(prev => ({ 
                         ...prev, 
-                        location: place.formatted_address || place.name || '',
+                        location: place?.formatted_address || place?.name || '',
                         latitude: lat,
                         longitude: lng
                       }));
@@ -164,7 +164,7 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                       types: ['address'],
                       componentRestrictions: { country: "uk" }
                     }}
-                    defaultValue={formData.location}
+                    defaultValue={formData.location || ''}
                     placeholder="Start typing an address..."
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />

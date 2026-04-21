@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { UserProfile } from '@/types';
-import { X, User, Mail, Shield, Key } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { supabase } from '../lib/supabase';
+import { UserProfile } from '../types';
+import { X, User, Mail, Shield, Key, Building, MapPin, Briefcase, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface UserDetailsModalProps {
@@ -13,15 +13,63 @@ interface UserDetailsModalProps {
 
 export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onClose, user, onUserUpdated }) => {
   const [loading, setLoading] = useState(false);
+  const [loadingClient, setLoadingClient] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
   const [updatingDirectPassword, setUpdatingDirectPassword] = useState(false);
+  const [hasClientProfile, setHasClientProfile] = useState(false);
   
   const [formData, setFormData] = useState({
     name: user.name || '',
     role: user.role || 'client',
+    company_name: '',
+    phone: '',
+    other_contacts: '',
+    other_contact_numbers: '',
+    address: '',
+    areas_covered: '',
+    services_offered: '',
+    internal_notes: ''
   });
 
   const [newDirectPassword, setNewDirectPassword] = useState('');
+
+  useEffect(() => {
+    if (isOpen && user.role === 'client') {
+      fetchClientData();
+    }
+  }, [isOpen, user.id, user.role]);
+
+  const fetchClientData = async () => {
+    try {
+      setLoadingClient(true);
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('user_id', user.id)
+        .single();
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Error fetching client data:', error);
+      }
+      
+      if (data) {
+        setHasClientProfile(true);
+        setFormData(prev => ({
+          ...prev,
+          company_name: data.company_name || '',
+          phone: data.phone || '',
+          other_contacts: data.other_contacts || '',
+          other_contact_numbers: data.other_contact_numbers || '',
+          address: data.address || '',
+          areas_covered: data.areas_covered || '',
+          services_offered: data.services_offered || '',
+          internal_notes: data.internal_notes || ''
+        }));
+      }
+    } finally {
+      setLoadingClient(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -29,7 +77,9 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     e.preventDefault();
     try {
       setLoading(true);
-      const { error } = await supabase
+      
+      // Update User profile
+      const { error: userError } = await supabase
         .from('users')
         .update({
           name: formData.name,
@@ -37,7 +87,27 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
         })
         .eq('id', user.id);
 
-      if (error) throw error;
+      if (userError) throw userError;
+
+      // Update Client profile if it exists
+      if (formData.role === 'client' && hasClientProfile) {
+        const { error: clientError } = await supabase
+          .from('clients')
+          .update({
+            company_name: formData.company_name,
+            phone: formData.phone,
+            other_contacts: formData.other_contacts,
+            other_contact_numbers: formData.other_contact_numbers,
+            address: formData.address,
+            areas_covered: formData.areas_covered,
+            services_offered: formData.services_offered,
+            internal_notes: formData.internal_notes
+          })
+          .eq('user_id', user.id);
+          
+        if (clientError) throw clientError;
+      }
+
       toast.success('User details updated successfully');
       onUserUpdated();
     } catch (error: any) {
@@ -94,7 +164,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-2xl flex flex-col">
+      <div className={`bg-white rounded-xl shadow-xl w-full ${hasClientProfile ? 'max-w-4xl' : 'max-w-2xl'} max-h-[90vh] flex flex-col`}>
         
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-gray-200">
@@ -113,60 +183,105 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
         </div>
 
         {/* Content */}
-        <div className="p-6 grid grid-cols-1 md:grid-cols-2 gap-8">
+        <div className={`p-6 grid grid-cols-1 ${hasClientProfile ? 'lg:grid-cols-3' : 'md:grid-cols-2'} gap-8 overflow-y-auto`}>
           
           {/* Left Col: Details Form */}
-          <div>
+          <div className={hasClientProfile ? 'lg:col-span-2' : ''}>
             <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
               <User className="w-4 h-4 text-gray-400" /> Account Info
             </h3>
             
-            <form id="update-user-form" onSubmit={handleUpdateDetails} className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Email Address</label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Mail className="h-4 w-4 text-gray-400" />
+            <form id="update-user-form" onSubmit={handleUpdateDetails} className="space-y-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Email Address</label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      type="email"
+                      disabled
+                      value={user.email}
+                      className="bg-gray-50 block w-full pl-10 py-2 sm:text-sm border-gray-300 rounded-md text-gray-500 cursor-not-allowed"
+                    />
                   </div>
+                  <p className="mt-1 text-xs text-gray-500">Email cannot be changed here.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Full Name</label>
                   <input
-                    type="email"
-                    disabled
-                    value={user.email}
-                    className="bg-gray-50 block w-full pl-10 sm:text-sm border-gray-300 rounded-md text-gray-500 cursor-not-allowed"
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="mt-1 block w-full py-2 px-3 sm:text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>
-                <p className="mt-1 text-xs text-gray-500">Email cannot be changed here.</p>
-              </div>
 
-              <div>
-                <label className="block text-sm font-medium text-gray-700">Full Name</label>
-                <input
-                  type="text"
-                  required
-                  value={formData.name}
-                  onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  className="mt-1 block w-full sm:text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                />
-              </div>
-
-              <div>
-                <label className="block text-sm font-medium text-gray-700">System Role</label>
-                <div className="mt-1 relative rounded-md shadow-sm">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Shield className="h-4 w-4 text-gray-400" />
+                <div className={hasClientProfile ? "md:col-span-2" : ""}>
+                  <label className="block text-sm font-medium text-gray-700">System Role</label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Shield className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <select
+                      value={formData.role}
+                      onChange={(e) => setFormData({...formData, role: e.target.value as any})}
+                      className="block w-full pl-10 py-2 sm:text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    >
+                      <option value="client">Client / Contractor</option>
+                      <option value="sales">Sales Staff</option>
+                      <option value="admin">Admin</option>
+                      <option value="super_admin">Super Admin</option>
+                    </select>
                   </div>
-                  <select
-                    value={formData.role}
-                    onChange={(e) => setFormData({...formData, role: e.target.value as any})}
-                    className="block w-full pl-10 sm:text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
-                  >
-                    <option value="client">Client</option>
-                    <option value="sales">Sales Staff</option>
-                    <option value="admin">Admin</option>
-                    <option value="super_admin">Super Admin</option>
-                  </select>
                 </div>
               </div>
+
+              {hasClientProfile && (
+                <div className="pt-6 border-t border-gray-200">
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <Building className="w-4 h-4 text-gray-400" /> Client Profile Details
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
+                      <input type="text" value={formData.company_name} onChange={e => setFormData({...formData, company_name: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
+                      <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
+                      <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Other Contacts</label>
+                      <input type="text" value={formData.other_contacts} onChange={e => setFormData({...formData, other_contacts: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Other Contact Numbers</label>
+                      <input type="text" value={formData.other_contact_numbers} onChange={e => setFormData({...formData, other_contact_numbers: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Areas Covered</label>
+                      <textarea rows={2} value={formData.areas_covered} onChange={e => setFormData({...formData, areas_covered: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Services Offered</label>
+                      <textarea rows={2} value={formData.services_offered} onChange={e => setFormData({...formData, services_offered: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Internal Notes</label>
+                      <textarea rows={2} value={formData.internal_notes} onChange={e => setFormData({...formData, internal_notes: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    </div>
+                  </div>
+                </div>
+              )}
 
               <div className="pt-4">
                 <button

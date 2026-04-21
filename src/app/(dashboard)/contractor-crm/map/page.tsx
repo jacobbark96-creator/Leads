@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { supabase } from '@/lib/supabase';
 import { Client, Lead } from '@/types';
-import { MapPin, Star, Building, Phone, Mail, Briefcase } from 'lucide-react';
+import { MapPin, Star, Building, Phone, Mail, Briefcase, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const containerStyle = {
@@ -16,16 +16,30 @@ const defaultCenter = {
   lng: -2.5
 };
 
-// Generate deterministic color based on service
+// Fixed bright colors for categories
+const BRIGHT_COLORS = [
+  '#EF4444', // Red
+  '#3B82F6', // Blue
+  '#10B981', // Green
+  '#F59E0B', // Orange
+  '#8B5CF6', // Purple
+  '#EC4899', // Pink
+  '#06B6D4', // Teal
+  '#EAB308', // Yellow
+  '#14B8A6', // Cyan
+  '#F43F5E', // Rose
+];
+
+// Generate deterministic bright color based on service name
 const getServiceColor = (serviceString: string | null | undefined) => {
-  if (!serviceString) return '#4B5563'; // Gray
+  if (!serviceString) return '#4B5563'; // Gray for unspecified
   const firstService = serviceString.split(',')[0].trim();
   let hash = 0;
   for (let i = 0; i < firstService.length; i++) {
     hash = firstService.charCodeAt(i) + ((hash << 5) - hash);
   }
-  const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-  return '#' + '00000'.substring(0, 6 - c.length) + c;
+  const index = Math.abs(hash) % BRIGHT_COLORS.length;
+  return BRIGHT_COLORS[index];
 };
 
 export default function MapTab() {
@@ -36,6 +50,8 @@ export default function MapTab() {
 
   const [clients, setClients] = useState<Client[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
@@ -48,6 +64,15 @@ export default function MapTab() {
   const fetchMapData = async () => {
     try {
       setLoading(true);
+
+      // Fetch categories for filtering and color mapping
+      const { data: catData, error: catError } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('is_active', true);
+      
+      if (catError) throw catError;
+      setCategories(catData || []);
 
       // Fetch onboarded clients (contractors) with coordinates
       const { data: clientsData, error: clientsError } = await supabase
@@ -91,6 +116,24 @@ export default function MapTab() {
     };
   };
 
+  const getLeadColor = (categoryId: string | null) => {
+    if (!categoryId) return '#4B5563'; // Gray
+    const category = categories.find(c => c.id === categoryId);
+    return getServiceColor(category?.name);
+  };
+
+  const createPinIcon = (color: string) => {
+    if (typeof window === 'undefined' || !window.google) return null;
+    return {
+      path: 'M 0,0 C -2,-20 -10,-22 -10,-30 A 10,10 0 1,1 10,-30 C 10,-22 2,-20 0,0 z',
+      fillColor: color,
+      fillOpacity: 1,
+      scale: 1,
+      strokeColor: '#FFFFFF',
+      strokeWeight: 2,
+    };
+  };
+
   if (loadError) {
     return <div className="text-center py-12 text-red-500">Error loading Google Maps</div>;
   }
@@ -99,21 +142,53 @@ export default function MapTab() {
     return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
   }
 
+  const filteredClients = useMemo(() => {
+    if (selectedCategory === 'all') return clients;
+    const catName = categories.find(c => c.id === selectedCategory)?.name || '';
+    return clients.filter(c => c.services_offered?.includes(catName));
+  }, [clients, selectedCategory, categories]);
+
+  const filteredLeads = useMemo(() => {
+    if (selectedCategory === 'all') return leads;
+    return leads.filter(l => l.category_id === selectedCategory);
+  }, [leads, selectedCategory]);
+
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
           <h2 className="text-lg font-bold text-gray-900">Contractor & Lead Map</h2>
           <p className="text-sm text-gray-500">View onboarded contractors and unpurchased leads</p>
         </div>
-        <div className="flex gap-4 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200">
-          <div className="flex items-center gap-2">
-            <Star className="w-4 h-4 fill-blue-500 text-blue-500" />
-            <span>Contractors (Stars)</span>
+        
+        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
+          <div className="relative w-full sm:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <Filter className="h-4 w-4 text-gray-400" />
+            </div>
+            <select
+              value={selectedCategory}
+              onChange={(e) => setSelectedCategory(e.target.value)}
+              className="block w-full pl-10 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg"
+            >
+              <option value="all">All Categories</option>
+              {categories.map((category) => (
+                <option key={category.id} value={category.id}>
+                  {category.name}
+                </option>
+              ))}
+            </select>
           </div>
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-red-500" />
-            <span>Marketed Leads (Pins)</span>
+
+          <div className="flex gap-4 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200 whitespace-nowrap">
+            <div className="flex items-center gap-2">
+              <Star className="w-4 h-4 fill-gray-400 text-gray-400" />
+              <span>Contractors</span>
+            </div>
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-gray-400" />
+              <span>Marketed Leads</span>
+            </div>
           </div>
         </div>
       </div>
@@ -129,11 +204,14 @@ export default function MapTab() {
           }}
         >
           {/* Render Clients (Contractors) */}
-          {clients.map((client) => (
+          {filteredClients.map((client) => (
             <Marker
               key={client.id}
               position={{ lat: Number(client.latitude), lng: Number(client.longitude) }}
-              icon={createStarIcon(getServiceColor(client.services_offered))}
+              icon={createStarIcon(selectedCategory === 'all' 
+                ? getServiceColor(client.services_offered) 
+                : getServiceColor(categories.find(c => c.id === selectedCategory)?.name)
+              )}
               onClick={() => {
                 setSelectedClient(client);
                 setSelectedLead(null);
@@ -142,10 +220,11 @@ export default function MapTab() {
           ))}
 
           {/* Render Marketed Leads */}
-          {leads.map((lead) => (
+          {filteredLeads.map((lead) => (
             <Marker
               key={lead.id}
               position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
+              icon={createPinIcon(getLeadColor(lead.category_id))}
               onClick={() => {
                 setSelectedLead(lead);
                 setSelectedClient(null);
@@ -160,7 +239,14 @@ export default function MapTab() {
               onCloseClick={() => setSelectedClient(null)}
             >
               <div className="p-2 max-w-[250px]">
-                <h3 className="font-bold text-lg text-gray-900">{selectedClient.company_name}</h3>
+                <a 
+                  href={`/contractor-crm/contractor?id=${selectedClient.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer" 
+                  className="font-bold text-lg text-blue-600 hover:text-blue-800 hover:underline block"
+                >
+                  {selectedClient.company_name}
+                </a>
                 <p className="text-sm text-gray-600 mb-2">{selectedClient.contact_name}</p>
                 <div className="space-y-1 text-xs">
                   <div className="flex items-start gap-2">

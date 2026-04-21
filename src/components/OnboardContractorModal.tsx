@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Contractor } from '@/types';
+import { Contractor, Category } from '@/types';
 import { X, UserPlus, Building, Mail, Phone, MapPin, Briefcase, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Autocomplete from 'react-google-autocomplete';
 
 interface OnboardContractorModalProps {
   isOpen: boolean;
@@ -12,6 +13,8 @@ interface OnboardContractorModalProps {
 }
 
 export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ isOpen, onClose, contractor, onSuccess }) => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedServices, setSelectedServices] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     company_name: contractor.company || '',
@@ -23,15 +26,44 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
     other_contact_numbers: '',
     address: '',
     areas_covered: '',
-    services_offered: '',
     internal_notes: ''
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories();
+    }
+  }, [isOpen]);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .is('parent_id', null)
+        .eq('is_active', true)
+        .order('name');
+        
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  };
 
   if (!isOpen) return null;
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({ ...prev, [name]: value }));
+  };
+
+  const handleServiceToggle = (categoryName: string) => {
+    setSelectedServices(prev => 
+      prev.includes(categoryName)
+        ? prev.filter(name => name !== categoryName)
+        : [...prev, categoryName]
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -75,7 +107,7 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
           other_contact_numbers: formData.other_contact_numbers || null,
           address: formData.address || null,
           areas_covered: formData.areas_covered || null,
-          services_offered: formData.services_offered || null,
+          services_offered: selectedServices.length > 0 ? selectedServices.join(', ') : null,
           internal_notes: formData.internal_notes || null
         });
 
@@ -159,7 +191,19 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
-                  <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <Autocomplete
+                    apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                    onPlaceSelected={(place) => {
+                      setFormData(prev => ({ ...prev, address: place.formatted_address || place.name || '' }));
+                    }}
+                    options={{
+                      types: ['address'],
+                      componentRestrictions: { country: "uk" }
+                    }}
+                    defaultValue={formData.address}
+                    placeholder="Start typing an address..."
+                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                  />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Other Contacts</label>
@@ -182,9 +226,27 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
                   <label className="block text-sm font-medium text-gray-700 mb-1">Areas Covered</label>
                   <textarea name="areas_covered" rows={3} value={formData.areas_covered} onChange={handleChange} placeholder="E.g., London, South East, Manchester..." className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500" />
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Services Offered</label>
-                  <textarea name="services_offered" rows={3} value={formData.services_offered} onChange={handleChange} placeholder="E.g., Solar PV, Battery Storage, Heat Pumps..." className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    {categories.length === 0 ? (
+                      <p className="text-sm text-gray-500 col-span-full">Loading categories...</p>
+                    ) : (
+                      categories.map(category => (
+                        <label key={category.id} className="flex items-center gap-2 cursor-pointer group">
+                          <input 
+                            type="checkbox" 
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                            checked={selectedServices.includes(category.name)}
+                            onChange={() => handleServiceToggle(category.name)}
+                          />
+                          <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
+                            {category.name}
+                          </span>
+                        </label>
+                      ))
+                    )}
+                  </div>
                 </div>
               </div>
             </div>

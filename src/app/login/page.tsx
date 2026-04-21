@@ -30,12 +30,10 @@ export default function Login() {
   // Redirect if already logged in
   useEffect(() => {
     if (user && profile) {
-      switch (profile.role) {
-        case 'client': router.replace('/client-portal'); break;
-        case 'sales': router.replace('/sales-crm'); break;
-        case 'admin':
-        case 'super_admin': router.replace('/admin-crm'); break;
-        default: router.replace('/intranet'); break;
+      if (profile.role === 'client') {
+        router.replace('/client-portal');
+      } else {
+        router.replace('/staff');
       }
     }
   }, [user, profile, router]);
@@ -69,15 +67,13 @@ export default function Login() {
             
           if (profileData) {
             useAuthStore.getState().setProfile(profileData);
-            switch (profileData.role) {
-              case 'client': router.replace('/client-portal'); break;
-              case 'sales': router.replace('/sales-crm'); break;
-              case 'admin':
-              case 'super_admin': router.replace('/admin-crm'); break;
-              default: router.replace('/intranet'); break;
+            if (profileData.role === 'client') {
+              router.replace('/client-portal');
+            } else {
+              router.replace('/staff');
             }
           } else {
-            router.replace('/intranet');
+            router.replace('/staff');
           }
         }
       }

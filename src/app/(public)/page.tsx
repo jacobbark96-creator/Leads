@@ -15,13 +15,8 @@ export default function Home() {
 
   const getDashboardLink = () => {
     if (!profile) return '/login';
-    switch (profile.role) {
-      case 'client': return '/client-portal';
-      case 'sales': return '/sales-crm';
-      case 'admin':
-      case 'super_admin': return '/admin-crm';
-      default: return '/intranet';
-    }
+    if (profile.role === 'client') return '/client-portal';
+    return '/staff';
   };
 
   return (
@@ -43,7 +38,7 @@ export default function Home() {
           <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/80 to-slate-900/40"></div>
         </div>
 
-        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-16 pb-16">
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-8 pb-16">
           <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
             
             {/* Left Content */}
@@ -66,7 +61,7 @@ export default function Home() {
                   href={user && mounted ? getDashboardLink() : "/login"}
                   className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-500 shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.7)] transition-all duration-300"
                 >
-                  {user && mounted ? "Dashboard" : "Login / Sign up"} <ArrowRight className="ml-2 w-5 h-5" />
+                  {user && mounted ? (profile?.role === 'client' ? "Client Portal" : "Staff Portal") : "Client Login"} <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
                 <Link
                   href="/services"
@@ -261,7 +256,7 @@ export default function Home() {
               href={user && mounted ? getDashboardLink() : "/login"}
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold rounded-xl text-blue-600 bg-white hover:bg-slate-50 shadow-xl hover:scale-105 transition-all duration-300"
             >
-              {user && mounted ? "Dashboard" : "Login / Sign up"}
+              {user && mounted ? (profile?.role === 'client' ? "Client Portal" : "Staff Portal") : "Client Login"}
             </Link>
             <Link
               href="/about"

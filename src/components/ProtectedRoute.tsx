@@ -24,12 +24,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         router.push('/login');
       } else if (allowedRoles && !allowedRoles.includes(profile.role)) {
         // Redirect based on user's role if they try to access an unauthorized page
-        switch (profile.role) {
-          case 'client': router.push('/client-portal'); break;
-          case 'sales': router.push('/sales-crm'); break;
-          case 'admin':
-          case 'super_admin': router.push('/admin-crm'); break;
-          default: router.push('/intranet'); break;
+        if (profile.role === 'client') {
+          router.push('/client-portal');
+        } else {
+          router.push('/staff');
         }
       }
     }

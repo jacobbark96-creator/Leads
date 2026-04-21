@@ -12,12 +12,10 @@ export default function DashboardRedirect() {
       if (!user || !profile) {
         router.replace('/login');
       } else {
-        switch (profile.role) {
-          case 'client': router.replace('/client-portal'); break;
-          case 'sales': router.replace('/sales-crm'); break;
-          case 'admin':
-          case 'super_admin': router.replace('/admin-crm'); break;
-          default: router.replace('/intranet'); break;
+        if (profile.role === 'client') {
+          router.replace('/client-portal');
+        } else {
+          router.replace('/staff');
         }
       }
     }

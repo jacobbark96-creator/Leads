@@ -13,13 +13,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
 
   const getDashboardLink = () => {
     if (!profile) return '/login';
-    switch (profile.role) {
-      case 'client': return '/client-portal';
-      case 'sales': return '/sales-crm';
-      case 'admin':
-      case 'super_admin': return '/admin-crm';
-      default: return '/intranet';
-    }
+    if (profile.role === 'client') return '/client-portal';
+    return '/staff';
   };
 
   return (
@@ -44,7 +39,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 href={user && mounted ? getDashboardLink() : "/login"}
                 className="inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-xl transition-all duration-200"
               >
-                {user && mounted ? "Dashboard" : "Login / Sign up"}
+                {user && mounted ? (profile?.role === 'client' ? "Client Portal" : "Staff Portal") : "Client Login"}
               </Link>
             </div>
           </div>
@@ -76,7 +71,8 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 <li><Link href="/services" className="text-gray-600 hover:text-blue-600 transition-colors">Services</Link></li>
                 <li><Link href="/about" className="text-gray-600 hover:text-blue-600 transition-colors">About Us</Link></li>
                 <li><Link href="/morals" className="text-gray-600 hover:text-blue-600 transition-colors">Our Morals</Link></li>
-                <li><Link href="/login" className="text-gray-600 hover:text-blue-600 transition-colors">Client Portal</Link></li>
+                <li><Link href="/login" className="text-gray-600 hover:text-blue-600 transition-colors">Client Login</Link></li>
+                <li><Link href="/login" className="text-gray-600 hover:text-blue-600 transition-colors font-medium">Staff Sign In</Link></li>
               </ul>
             </div>
             <div>

@@ -116,7 +116,7 @@ export default function Home() {
                     <div className="flex justify-between items-start mb-4">
                       <div>
                         <p className="font-bold text-slate-900 text-lg">Michael Anderson</p>
-                        <p className="text-sm text-slate-500">123 Oakwood Drive, Austin TX</p>
+                        <p className="text-sm text-slate-500">123 Example Street, London, N1 1AB</p>
                       </div>
                       <div className="bg-blue-100 text-blue-700 p-2.5 rounded-lg">
                         <Zap className="w-5 h-5" />

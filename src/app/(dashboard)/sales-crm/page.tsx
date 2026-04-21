@@ -1,4 +1,6 @@
 "use client";
+export const dynamic = 'force-dynamic';
+
 import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Lead } from '../../../types';

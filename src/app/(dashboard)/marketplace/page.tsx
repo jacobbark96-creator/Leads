@@ -1,18 +1,20 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Lead } from '@/types';
-import { useAuthStore } from '@/store/authStore';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { supabase } from '../../../lib/supabase';
+import { Lead } from '../../../types';
+import { useAuthStore } from '../../../store/authStore';
+import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import toast from 'react-hot-toast';
 import { Search, MapPin, Building, Calendar, FileText, CheckCircle } from 'lucide-react';
-import { MarketplaceLeadModal } from '@/components/MarketplaceLeadModal';
-import { extractTown } from '@/lib/utils';
+import { MarketplaceLeadModal } from '../../../components/MarketplaceLeadModal';
+import { OrderSummaryModal } from '../../../components/OrderSummaryModal';
+import { extractTown } from '../../../lib/utils';
 
 export default function Marketplace() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [leadToPurchase, setLeadToPurchase] = useState<Lead | null>(null);
   const { profile } = useAuthStore();
 
   const fetchMarketplaceLeads = async () => {
@@ -61,7 +63,7 @@ export default function Marketplace() {
       if (error) throw error;
 
       toast.success('Lead successfully purchased! You can now view all details in your Dashboard.');
-      setSelectedLead(null);
+      setLeadToPurchase(null);
       
       // Remove from marketplace
       setLeads(prev => prev.filter(l => l.id !== leadId));
@@ -153,7 +155,19 @@ export default function Marketplace() {
           isOpen={!!selectedLead}
           onClose={() => setSelectedLead(null)}
           lead={selectedLead}
-          onPurchase={() => handlePurchaseLead(selectedLead.id)}
+          onPurchase={() => {
+            setLeadToPurchase(selectedLead);
+            setSelectedLead(null);
+          }}
+        />
+      )}
+
+      {leadToPurchase && (
+        <OrderSummaryModal
+          isOpen={!!leadToPurchase}
+          onClose={() => setLeadToPurchase(null)}
+          lead={leadToPurchase}
+          onProceedToPay={() => handlePurchaseLead(leadToPurchase.id)}
         />
       )}
     </ProtectedRoute>

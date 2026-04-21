@@ -1,6 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
-import { Lead } from '../types';
+import { Lead, Category } from '../types';
 import { X, Upload, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Autocomplete from 'react-google-autocomplete';
@@ -16,8 +16,10 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [photos, setPhotos] = useState<string[]>(lead.photos || []);
+  const [categories, setCategories] = useState<Category[]>([]);
   
   const [formData, setFormData] = useState({
+    category_id: lead.category_id || '',
     monthly_spend: lead.monthly_spend || '',
     location: lead.location || '',
     timeframe: lead.timeframe || '',
@@ -32,6 +34,28 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
     latitude: lead.latitude || null as number | null,
     longitude: lead.longitude || null as number | null,
   });
+
+  useEffect(() => {
+    if (isOpen) {
+      fetchCategories();
+    }
+  }, [isOpen]);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .is('parent_id', null)
+        .eq('is_active', true)
+        .order('name');
+        
+      if (error) throw error;
+      setCategories(data || []);
+    } catch (error) {
+      console.error('Failed to load categories:', error);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -89,6 +113,7 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
       
       const updateData = {
         status: 'qualified',
+        category_id: formData.category_id || null,
         monthly_spend: formData.monthly_spend ? Number(formData.monthly_spend) : null,
         location: formData.location,
         timeframe: formData.timeframe,
@@ -146,6 +171,23 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left Column */}
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Lead Category *</label>
+                  <select
+                    required
+                    value={formData.category_id}
+                    onChange={(e) => setFormData({...formData, category_id: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="">Select a Category</option>
+                    {categories.map((cat) => (
+                      <option key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Location (Full Address) *</label>
                   <Autocomplete

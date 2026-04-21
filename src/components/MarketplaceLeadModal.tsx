@@ -1,7 +1,7 @@
 import React from 'react';
-import { Lead } from '@/types';
+import { Lead } from '../types';
 import { X, MapPin, Building, Calendar, FileText, ShoppingCart, Info, DollarSign, Home, Zap } from 'lucide-react';
-import { extractTown } from '@/lib/utils';
+import { extractTown } from '../lib/utils';
 
 interface MarketplaceLeadModalProps {
   isOpen: boolean;
@@ -168,7 +168,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
               className="px-6 py-2.5 border border-transparent shadow-sm text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-2"
             >
               <ShoppingCart className="w-4 h-4" />
-              Purchase Lead
+              Proceed to Order Summary
             </button>
           </div>
         </div>

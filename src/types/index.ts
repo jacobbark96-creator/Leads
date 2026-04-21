@@ -86,3 +86,19 @@ export interface StaffUser {
   email: string;
   role: UserRole;
 }
+
+export interface DiscountCode {
+  id: string;
+  code: string;
+  description: string | null;
+  discount_type: 'percentage' | 'fixed';
+  discount_value: number;
+  max_uses: number | null;
+  current_uses: number;
+  valid_from: string | null;
+  valid_until: string | null;
+  is_active: boolean;
+  allowed_client_ids: string[];
+  created_at: string;
+  created_by: string | null;
+}

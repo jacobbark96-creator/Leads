@@ -1,8 +1,8 @@
 "use client";
 import React, { useEffect, useState, useMemo } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
-import { supabase } from '@/lib/supabase';
-import { Client, Lead } from '@/types';
+import { supabase } from '../../../../lib/supabase';
+import { Client, Lead } from '../../../../types';
 import { MapPin, Star, Briefcase, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -40,6 +40,25 @@ const getServiceColor = (serviceString: string | null | undefined) => {
   }
   const index = Math.abs(hash) % BRIGHT_COLORS.length;
   return BRIGHT_COLORS[index];
+};
+
+// Helper to darken a hex color for pins
+const darkenHex = (hex: string, percent: number = 30) => {
+  if (!hex || !hex.startsWith('#')) return hex;
+  let r = parseInt(hex.substring(1, 3), 16);
+  let g = parseInt(hex.substring(3, 5), 16);
+  let b = parseInt(hex.substring(5, 7), 16);
+
+  r = Math.floor(r * (100 - percent) / 100);
+  g = Math.floor(g * (100 - percent) / 100);
+  b = Math.floor(b * (100 - percent) / 100);
+
+  const toHex = (n: number) => {
+    const hexStr = n.toString(16);
+    return hexStr.length === 1 ? '0' + hexStr : hexStr;
+  };
+
+  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
 };
 
 export default function MapTab() {
@@ -224,7 +243,7 @@ export default function MapTab() {
             <Marker
               key={lead.id}
               position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
-              icon={createPinIcon(getLeadColor(lead.category_id))}
+              icon={createPinIcon(darkenHex(getLeadColor(lead.category_id), 30))}
               onClick={() => {
                 setSelectedLead(lead);
                 setSelectedClient(null);

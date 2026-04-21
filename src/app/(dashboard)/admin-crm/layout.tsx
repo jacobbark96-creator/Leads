@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, Tags } from 'lucide-react';
+import { Users, Tags, Ticket } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -11,6 +11,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
   const tabs = [
     { name: 'User Management', path: '/admin-crm', icon: Users },
     { name: 'Categories', path: '/admin-crm/categories', icon: Tags },
+    { name: 'Discount Codes', path: '/admin-crm/discounts', icon: Ticket },
   ];
 
   return (

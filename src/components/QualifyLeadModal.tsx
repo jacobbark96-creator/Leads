@@ -50,9 +50,12 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
         const fileName = `${lead.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `${fileName}`;
 
-        const { error: uploadError, data } = await supabase.storage
+        const { error: uploadError } = await supabase.storage
           .from('lead-photos')
-          .upload(filePath, file);
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
         if (uploadError) throw uploadError;
 

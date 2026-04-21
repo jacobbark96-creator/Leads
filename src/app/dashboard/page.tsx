@@ -13,9 +13,9 @@ export default function DashboardRedirect() {
         router.replace('/login');
       } else {
         if (profile.role === 'client') {
-          router.replace('/client-portal');
+          window.location.href = '/client-portal';
         } else {
-          router.replace('/staff');
+          window.location.href = '/staff';
         }
       }
     }

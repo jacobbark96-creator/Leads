@@ -31,12 +31,12 @@ export default function Login() {
   useEffect(() => {
     if (user && profile) {
       if (profile.role === 'client') {
-        router.replace('/client-portal');
+        window.location.href = '/client-portal';
       } else {
-        router.replace('/staff');
+        window.location.href = '/staff';
       }
     }
-  }, [user, profile, router]);
+  }, [user, profile]);
 
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true);
@@ -68,12 +68,12 @@ export default function Login() {
           if (profileData) {
             useAuthStore.getState().setProfile(profileData);
             if (profileData.role === 'client') {
-              router.replace('/client-portal');
+              window.location.href = '/client-portal';
             } else {
-              router.replace('/staff');
+              window.location.href = '/staff';
             }
           } else {
-            router.replace('/staff');
+            window.location.href = '/staff';
           }
         }
       }

@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Contractor } from '@/types';
 import toast from 'react-hot-toast';
@@ -27,7 +27,7 @@ const stringToColor = (str: string) => {
   return '#' + '00000'.substring(0, 6 - c.length) + c;
 };
 
-export default function OnboardedContractors() {
+function OnboardedContractorsContent() {
   const { profile } = useAuthStore();
   const searchParams = useSearchParams();
   const assignedToMe = searchParams.get('assignedToMe') === 'true';
@@ -232,5 +232,13 @@ export default function OnboardedContractors() {
         isContractor={true}
       />
     </div>
+  );
+}
+
+export default function OnboardedContractors() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+      <OnboardedContractorsContent />
+    </Suspense>
   );
 }

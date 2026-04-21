@@ -162,7 +162,8 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                     }}
                     options={{
                       types: ['address'],
-                      componentRestrictions: { country: "uk" }
+                      componentRestrictions: { country: "uk" },
+                      fields: ['formatted_address', 'geometry', 'name']
                     }}
                     defaultValue={formData.location || ''}
                     placeholder="Start typing an address..."

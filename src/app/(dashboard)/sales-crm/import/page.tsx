@@ -7,14 +7,14 @@ import toast from 'react-hot-toast';
 
 export default function LeadImport() {
   const [isUploading, setIsUploading] = useState(false);
-  const [progress, setProgress] = useState<{ total: number; processed: number; duplicates: number; added: number } | null>(null);
+  const [progress, setProgress] = useState<{ total: number; processed: number; duplicates: number; added: number; failed: number } | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
-    setProgress({ total: 0, processed: 0, duplicates: 0, added: 0 });
+    setProgress({ total: 0, processed: 0, duplicates: 0, added: 0, failed: 0 });
 
     Papa.parse(file, {
       header: true,
@@ -25,13 +25,14 @@ export default function LeadImport() {
 
         let duplicates = 0;
         let added = 0;
+        let failed = 0;
 
         for (const row of rows) {
           try {
-            const phone = row.phone || row.Phone || row.phoneNumber || row['Phone Number'] || '';
-            const email = row.email || row.Email || row.emailAddress || '';
-            const name = row.name || row.Name || row.fullName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown';
-            const company = row.company || row.Company || row.companyName || '';
+            const phone = String(row.phone || row.Phone || row.phoneNumber || row['Phone Number'] || '').substring(0, 20);
+            const email = String(row.email || row.Email || row.emailAddress || '').substring(0, 255);
+            const name = String(row.name || row.Name || row.fullName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown').substring(0, 100);
+            const company = String(row.company || row.Company || row.companyName || '').substring(0, 200);
 
             if (!phone && !email) {
               // Skip empty crucial data
@@ -40,11 +41,11 @@ export default function LeadImport() {
             }
 
             // Duplicate check by phone or email
-            const query = supabase.from('leads').select('id').limit(1);
+            let query = supabase.from('leads').select('id').limit(1);
             if (phone) {
-              query.eq('phone', phone);
+              query = query.eq('phone', phone);
             } else if (email) {
-              query.eq('email', email);
+              query = query.eq('email', email);
             }
 
             const { data: existingLeads, error: searchError } = await query;
@@ -69,13 +70,18 @@ export default function LeadImport() {
             }
           } catch (err) {
             console.error('Error processing row', row, err);
+            failed++;
           }
           
-          setProgress(prev => prev ? { ...prev, processed: prev.processed + 1, duplicates, added } : null);
+          setProgress(prev => prev ? { ...prev, processed: prev.processed + 1, duplicates, added, failed } : null);
         }
 
         setIsUploading(false);
-        toast.success(`Import complete: ${added} added, ${duplicates} duplicates skipped.`);
+        if (failed > 0) {
+          toast.error(`Import complete with errors: ${added} added, ${duplicates} duplicates, ${failed} failed.`);
+        } else {
+          toast.success(`Import complete: ${added} added, ${duplicates} duplicates skipped.`);
+        }
       },
       error: (error) => {
         toast.error(`Error parsing CSV: ${error.message}`);
@@ -140,7 +146,7 @@ export default function LeadImport() {
             </div>
           </div>
 
-          <dl className="grid grid-cols-1 gap-5 sm:grid-cols-2">
+          <dl className="grid grid-cols-1 gap-5 sm:grid-cols-3">
             <div className="px-4 py-5 bg-white shadow rounded-lg overflow-hidden sm:p-6 border border-green-100">
               <dt className="text-sm font-medium text-gray-500 truncate">Added Successfully</dt>
               <dd className="mt-1 text-3xl font-semibold text-green-600">{progress.added}</dd>
@@ -148,6 +154,10 @@ export default function LeadImport() {
             <div className="px-4 py-5 bg-white shadow rounded-lg overflow-hidden sm:p-6 border border-yellow-100">
               <dt className="text-sm font-medium text-gray-500 truncate">Duplicates Skipped</dt>
               <dd className="mt-1 text-3xl font-semibold text-yellow-600">{progress.duplicates}</dd>
+            </div>
+            <div className="px-4 py-5 bg-white shadow rounded-lg overflow-hidden sm:p-6 border border-red-100">
+              <dt className="text-sm font-medium text-gray-500 truncate">Failed to Add</dt>
+              <dd className="mt-1 text-3xl font-semibold text-red-600">{progress.failed}</dd>
             </div>
           </dl>
         </div>

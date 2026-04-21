@@ -1,30 +1,23 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { Lead } from '../../../types';
+import { supabase } from '../../../../lib/supabase';
+import { Lead } from '../../../../types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Users, Calendar, MapPin } from 'lucide-react';
+import { Phone, Mail, Building, User, Users } from 'lucide-react';
 import Link from 'next/link';
 
-export default function LeadProcessing() {
+export default function QualifiedLeads() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      let query = supabase
+      const { data, error } = await supabase
         .from('leads')
         .select('*')
-        .neq('status', 'qualified')
+        .eq('status', 'qualified')
         .order('created_at', { ascending: false });
-
-      if (statusFilter !== 'all') {
-        query = query.eq('status', statusFilter);
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
       setLeads(data || []);
@@ -37,7 +30,7 @@ export default function LeadProcessing() {
 
   useEffect(() => {
     fetchLeads();
-  }, [statusFilter]);
+  }, []);
 
   const updateLeadStatus = async (id: string, newStatus: string) => {
     try {
@@ -62,23 +55,8 @@ export default function LeadProcessing() {
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Unqualified Leads</h1>
-          <p className="text-sm text-gray-500 mt-1">Process and qualify incoming leads.</p>
-        </div>
-        
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600 font-medium">Filter Status:</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
-          >
-            <option value="all">All Unqualified</option>
-            <option value="fresh">Fresh</option>
-            <option value="no pitch">No Pitch</option>
-            <option value="dnc">DNC</option>
-            <option value="call back">Call Back</option>
-          </select>
+          <h1 className="text-2xl font-bold text-gray-900">Qualified Leads</h1>
+          <p className="text-sm text-gray-500 mt-1">Manage leads that have been successfully pitched and qualified.</p>
         </div>
       </div>
 
@@ -87,13 +65,7 @@ export default function LeadProcessing() {
           <div key={lead.id} className="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
             <div className="p-5 border-b border-gray-200">
               <div className="flex items-center justify-between mb-4">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                  ${lead.status === 'fresh' ? 'bg-green-100 text-green-800' : 
-                    lead.status === 'no pitch' ? 'bg-yellow-100 text-yellow-800' : 
-                    lead.status === 'qualified' ? 'bg-blue-100 text-blue-800' : 
-                    lead.status === 'dnc' ? 'bg-red-100 text-red-800' : 
-                    lead.status === 'call back' ? 'bg-purple-100 text-purple-800' : 
-                    'bg-gray-100 text-gray-800'}`}>
+                <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize bg-blue-100 text-blue-800">
                   {lead.status}
                 </span>
                 <select
@@ -101,11 +73,8 @@ export default function LeadProcessing() {
                   onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
                   className="text-sm border-gray-300 rounded-md py-1 pl-2 pr-8 focus:ring-blue-500 focus:border-blue-500"
                 >
-                  <option value="fresh">Fresh</option>
-                  <option value="no pitch">No Pitch</option>
-                  <option value="dnc">DNC</option>
-                  <option value="call back">Call Back</option>
                   <option value="qualified">Qualified</option>
+                  <option value="fresh">Move back to Fresh</option>
                 </select>
               </div>
               
@@ -152,7 +121,7 @@ export default function LeadProcessing() {
               <div className="text-xs text-gray-500 flex justify-between">
                 <span>Added: {new Date(lead.created_at).toLocaleDateString()}</span>
                 <Link
-                  href={`/sales-crm/lead/${lead.id}?tab=unqualified`}
+                  href={`/sales-crm/lead/${lead.id}?tab=qualified`}
                   target="_blank"
                   className="text-blue-600 hover:text-blue-800 font-medium"
                 >
@@ -167,10 +136,10 @@ export default function LeadProcessing() {
       {leads.length === 0 && (
         <div className="text-center py-12">
           <Users className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No leads</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by importing leads from a CSV file.</p>
+          <h3 className="mt-2 text-sm font-medium text-gray-900">No qualified leads</h3>
+          <p className="mt-1 text-sm text-gray-500">Change a lead's status to 'Qualified' to see them here.</p>
         </div>
       )}
     </div>
   );
-};
+}

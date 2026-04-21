@@ -7,6 +7,7 @@ import toast from 'react-hot-toast';
 
 export default function LeadImport() {
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadTarget, setUploadTarget] = useState<'fresh' | 'qualified'>('fresh');
   const [progress, setProgress] = useState<{ total: number; processed: number; duplicates: number; added: number; failed: number } | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -27,53 +28,72 @@ export default function LeadImport() {
         let added = 0;
         let failed = 0;
 
-        for (const row of rows) {
+        const CHUNK_SIZE = 100;
+        for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+          const chunk = rows.slice(i, i + CHUNK_SIZE);
+          
+          const phones = chunk.map(r => String(r.phone || r.Phone || r.phoneNumber || r['Phone Number'] || '').substring(0, 20)).filter(Boolean);
+          const emails = chunk.map(r => String(r.email || r.Email || r.emailAddress || '').substring(0, 255)).filter(Boolean);
+
+          const existingPhones = new Set<string>();
+          const existingEmails = new Set<string>();
+
           try {
+            if (phones.length > 0) {
+              const { data } = await supabase.from('leads').select('phone').in('phone', phones);
+              data?.forEach(d => { if (d.phone) existingPhones.add(d.phone); });
+            }
+            if (emails.length > 0) {
+              const { data } = await supabase.from('leads').select('email').in('email', emails);
+              data?.forEach(d => { if (d.email) existingEmails.add(d.email); });
+            }
+          } catch (err) {
+            console.error('Error fetching duplicates', err);
+          }
+
+          const toInsert = [];
+          const chunkDupPhones = new Set(existingPhones);
+          const chunkDupEmails = new Set(existingEmails);
+
+          for (const row of chunk) {
             const phone = String(row.phone || row.Phone || row.phoneNumber || row['Phone Number'] || '').substring(0, 20);
             const email = String(row.email || row.Email || row.emailAddress || '').substring(0, 255);
             const name = String(row.name || row.Name || row.fullName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown').substring(0, 100);
             const company = String(row.company || row.Company || row.companyName || '').substring(0, 200);
 
             if (!phone && !email) {
-              // Skip empty crucial data
-              setProgress(prev => prev ? { ...prev, processed: prev.processed + 1 } : null);
+              failed++;
               continue;
             }
 
-            // Duplicate check by phone or email
-            let query = supabase.from('leads').select('id').limit(1);
-            if (phone) {
-              query = query.eq('phone', phone);
-            } else if (email) {
-              query = query.eq('email', email);
-            }
-
-            const { data: existingLeads, error: searchError } = await query;
-            
-            if (searchError) throw searchError;
-
-            if (existingLeads && existingLeads.length > 0) {
+            if ((phone && chunkDupPhones.has(phone)) || (email && chunkDupEmails.has(email))) {
               duplicates++;
             } else {
-              // Insert new lead
-              const { error: insertError } = await supabase.from('leads').insert([{
+              toInsert.push({
                 name,
                 phone,
                 email,
                 company,
                 csv_data: row,
-                status: 'new'
-              }]);
-              
-              if (insertError) throw insertError;
-              added++;
+                status: uploadTarget
+              });
+              if (phone) chunkDupPhones.add(phone);
+              if (email) chunkDupEmails.add(email);
             }
-          } catch (err) {
-            console.error('Error processing row', row, err);
-            failed++;
           }
-          
-          setProgress(prev => prev ? { ...prev, processed: prev.processed + 1, duplicates, added, failed } : null);
+
+          if (toInsert.length > 0) {
+            try {
+              const { error } = await supabase.from('leads').insert(toInsert);
+              if (error) throw error;
+              added += toInsert.length;
+            } catch (err) {
+              console.error('Batch insert error', err);
+              failed += toInsert.length;
+            }
+          }
+
+          setProgress({ total: rows.length, processed: Math.min(i + CHUNK_SIZE, rows.length), duplicates, added, failed });
         }
 
         setIsUploading(false);
@@ -99,7 +119,21 @@ export default function LeadImport() {
         </div>
       </div>
 
-      <div className="mt-8 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+      <div className="mt-8 flex flex-col items-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
+        
+        <div className="mb-6 w-full max-w-xs">
+          <label className="block text-sm font-medium text-gray-700 mb-2">Upload Destination</label>
+          <select
+            value={uploadTarget}
+            onChange={(e) => setUploadTarget(e.target.value as 'fresh' | 'qualified')}
+            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+            disabled={isUploading}
+          >
+            <option value="fresh">Unqualified Leads (Fresh)</option>
+            <option value="qualified">Qualified Leads</option>
+          </select>
+        </div>
+
         <div className="space-y-1 text-center">
           <Upload className="mx-auto h-12 w-12 text-gray-400" />
           <div className="flex text-sm text-gray-600 justify-center">

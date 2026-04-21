@@ -2,14 +2,15 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Upload, Users } from 'lucide-react';
+import { Upload, Users, CheckCircle } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 
 export default function SalesLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
 
   const tabs = [
-    { name: 'Lead Processing', path: '/sales-crm', icon: Users },
+    { name: 'Unqualified Leads', path: '/sales-crm', icon: Users },
+    { name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle },
     { name: 'Import Leads', path: '/sales-crm/import', icon: Upload },
   ];
 

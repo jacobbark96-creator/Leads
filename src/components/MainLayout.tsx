@@ -10,13 +10,26 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { profile, signOut } = useAuthStore();
   const pathname = usePathname();
 
+  const isDetailsPage = pathname === '/sales-crm/lead' || pathname === '/contractor-crm/contractor';
+
   if (!profile) return <>{children}</>;
+
+  if (isDetailsPage) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex flex-col">
+        <main className="flex-1 w-full mx-auto p-4 sm:p-6 lg:p-8">
+          {children}
+        </main>
+      </div>
+    );
+  }
 
   const getNavItems = () => {
     switch (profile.role) {
       case 'client':
         return [
           { name: 'Dashboard', path: '/client-portal', icon: LayoutDashboard },
+          { name: 'Marketplace', path: '/marketplace', icon: Database },
         ];
       case 'sales':
         return [

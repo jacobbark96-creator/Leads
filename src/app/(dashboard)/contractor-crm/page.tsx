@@ -1,48 +1,99 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { Contractor } from '../../../types';
+import { supabase } from '@/lib/supabase';
+import { Contractor } from '@/types';
 import toast from 'react-hot-toast';
 import { Phone, Mail, Building, User, Users, Calendar, MapPin } from 'lucide-react';
 import Link from 'next/link';
 
+import { useSearchParams } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
+import { AddLeadModal } from '@/components/AddLeadModal';
+
+// Helper function to get initials for avatar
+const getInitials = (name: string) => {
+  if (!name) return '?';
+  return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+};
+
+// Helper to generate a deterministic color based on string
+const stringToColor = (str: string) => {
+  if (!str) return '#CBD5E1'; // gray-300 fallback
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+  }
+  const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+  return '#' + '00000'.substring(0, 6 - c.length) + c;
+};
+
 export default function ContractorProcessing() {
+  const { profile } = useAuthStore();
+  const searchParams = useSearchParams();
+  const assignedToMe = searchParams.get('assignedToMe') === 'true';
   const [contractors, setContractors] = useState<Contractor[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [phoneFilter, setPhoneFilter] = useState<string>('all');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const PAGE_SIZE = 24;
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [staffUsers, setStaffUsers] = useState<any[]>([]);
+  const PAGE_SIZE = 25;
+
+  useEffect(() => {
+    // Fetch staff users for assignment name resolution
+    const fetchStaff = async () => {
+      const { data } = await supabase.rpc('get_staff_users');
+      if (data) setStaffUsers(data);
+    };
+    fetchStaff();
+  }, []);
 
   const fetchContractors = async (pageNumber: number, isInitial: boolean) => {
     try {
       if (isInitial) setLoading(true);
       else setLoadingMore(true);
 
+      // Fetch PAGE_SIZE + 1 to know if there's a next page without a slow exact count query
       let query = supabase
         .from('contractors')
-        .select('id, name, email, phone, company, status, created_at', { count: 'exact' })
+        .select('id, name, status, phone, assigned_to')
         .neq('status', 'onboarded')
         .order('created_at', { ascending: false })
-        .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE - 1);
+        .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
+
+      if (assignedToMe && profile) {
+        query = query.eq('assigned_to', profile.id);
+      } else {
+        query = query.is('assigned_to', null);
+      }
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
 
-      const { data, count, error } = await query;
+      if (phoneFilter === 'with_phone') {
+        // Assume empty string is no phone, anything else is a phone. Our schema sets NOT NULL for phone
+        query = query.neq('phone', '');
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       
       const fetchedContractors = data as Contractor[] || [];
+      const hasNextPage = fetchedContractors.length > PAGE_SIZE;
+      const contractorsToRender = hasNextPage ? fetchedContractors.slice(0, PAGE_SIZE) : fetchedContractors;
+
       if (isInitial) {
-        setContractors(fetchedContractors);
+        setContractors(contractorsToRender);
       } else {
-        setContractors(prev => [...prev, ...fetchedContractors]);
+        setContractors(prev => [...prev, ...contractorsToRender]);
       }
       
-      setHasMore(count !== null ? (pageNumber + 1) * PAGE_SIZE < count : false);
+      setHasMore(hasNextPage);
     } catch (error: any) {
       toast.error('Failed to fetch contractors: ' + error.message);
     } finally {
@@ -54,7 +105,7 @@ export default function ContractorProcessing() {
   useEffect(() => {
     setPage(0);
     fetchContractors(0, true);
-  }, [statusFilter]);
+  }, [statusFilter, phoneFilter, assignedToMe]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -71,6 +122,7 @@ export default function ContractorProcessing() {
 
       if (error) throw error;
       toast.success('Contractor status updated');
+      // Optimistically update the UI instead of refetching the entire list
       setContractors(prev => prev.map(contractor => contractor.id === id ? { ...contractor, status: newStatus } : contractor));
     } catch (error: any) {
       toast.error('Failed to update contractor: ' + error.message);
@@ -89,104 +141,101 @@ export default function ContractorProcessing() {
           <p className="text-sm text-gray-500 mt-1">Process and qualify incoming contractors.</p>
         </div>
         
-        <div className="flex items-center gap-2">
-          <label className="text-sm text-gray-600 font-medium">Filter Status:</label>
-          <select
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-            className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
-          >
-            <option value="all">All Potential</option>
-            <option value="fresh">Fresh</option>
-            <option value="no pitch">No Pitch</option>
-            <option value="dnc">DNC</option>
-            <option value="call back">Call Back</option>
-          </select>
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Add Contractor
+            </button>
+          )}
+          
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 font-medium">Phone:</label>
+            <select
+              value={phoneFilter}
+              onChange={(e) => setPhoneFilter(e.target.value)}
+              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
+            >
+              <option value="all">All</option>
+              <option value="with_phone">Has Phone Number</option>
+            </select>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 font-medium">Status:</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
+            >
+              <option value="all">All Potential</option>
+              <option value="fresh">Fresh</option>
+              <option value="no pitch">No Pitch</option>
+              <option value="dnc">DNC</option>
+              <option value="call back">Call Back</option>
+            </select>
+          </div>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {contractors.map((contractor) => (
-          <div key={contractor.id} className="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
-            <div className="p-5 border-b border-gray-200">
-              <div className="flex items-center justify-between mb-4">
-                <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium capitalize
-                  ${contractor.status === 'fresh' ? 'bg-green-100 text-green-800' : 
-                    contractor.status === 'no pitch' ? 'bg-yellow-100 text-yellow-800' : 
-                    contractor.status === 'onboarded' ? 'bg-blue-100 text-blue-800' : 
-                    contractor.status === 'dnc' ? 'bg-red-100 text-red-800' : 
-                    contractor.status === 'call back' ? 'bg-purple-100 text-purple-800' : 
-                    'bg-gray-100 text-gray-800'}`}>
-                  {contractor.status}
-                </span>
-                <select
-                  value={contractor.status}
-                  onChange={(e) => updateContractorStatus(contractor.id, e.target.value)}
-                  className="text-sm border-gray-300 rounded-md py-1 pl-2 pr-8 focus:ring-blue-500 focus:border-blue-500"
-                >
-                  <option value="fresh">Fresh</option>
-                  <option value="no pitch">No Pitch</option>
-                  <option value="dnc">DNC</option>
-                  <option value="call back">Call Back</option>
-                  <option value="onboarded">Onboarded</option>
-                </select>
-              </div>
-              
-              <h3 className="text-lg leading-6 font-medium text-gray-900 flex items-center">
-                <User className="w-5 h-5 mr-2 text-gray-400" />
-                {contractor.name}
-              </h3>
-              
-              <dl className="mt-4 flex flex-col gap-y-3">
-                {contractor.phone && (
-                  <div className="flex items-center">
-                    <dt className="sr-only">Phone</dt>
-                    <Phone className="w-5 h-5 text-gray-400 mr-2" />
-                    <dd className="text-sm text-gray-900">
-                      <a href={`tel:${contractor.phone}`} className="text-blue-600 hover:text-blue-800 hover:underline">
-                        {contractor.phone}
-                      </a>
-                    </dd>
+      <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
+        {contractors.length > 0 ? (
+          <ul className="divide-y divide-gray-200">
+            {contractors.map((contractor) => (
+              <li key={contractor.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 relative">
+                    <User className="w-5 h-5" />
+                    {contractor.assigned_to && (
+                      <div 
+                        className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-white"
+                        style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '') }}
+                        title={`Assigned to ${staffUsers.find(u => u.id === contractor.assigned_to)?.name || 'Unknown'}`}
+                      >
+                        {getInitials(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '')}
+                      </div>
+                    )}
                   </div>
-                )}
+                  <div className="min-w-0">
+                    <p className="text-sm font-bold text-gray-900 truncate">{contractor.name}</p>
+                    {contractor.phone && <p className="text-sm text-gray-500 truncate">{contractor.phone}</p>}
+                  </div>
+                </div>
                 
-                {contractor.email && (
-                  <div className="flex items-center">
-                    <dt className="sr-only">Email</dt>
-                    <Mail className="w-5 h-5 text-gray-400 mr-2" />
-                    <dd className="text-sm text-gray-900 truncate">
-                      <a href={`mailto:${contractor.email}`} className="hover:text-blue-600">
-                        {contractor.email}
-                      </a>
-                    </dd>
-                  </div>
-                )}
-
-                {contractor.company && (
-                  <div className="flex items-center">
-                    <dt className="sr-only">Company</dt>
-                    <Building className="w-5 h-5 text-gray-400 mr-2" />
-                    <dd className="text-sm text-gray-900 truncate">{contractor.company}</dd>
-                  </div>
-                )}
-              </dl>
-            </div>
-            <div className="bg-gray-50 px-5 py-3">
-              <div className="text-xs text-gray-500 flex justify-between">
-                <span>Added: {new Date(contractor.created_at).toLocaleDateString()}</span>
-                <Link
-                  href={`/contractor-crm/contractor/${contractor.id}?tab=potential`}
-                  target="_blank"
-                  className="text-blue-600 hover:text-blue-800 font-medium"
-                >
-                  View Details
-                </Link>
-              </div>
-            </div>
-          </div>
-        ))}
-        {contractors.length === 0 && (
-          <div className="col-span-full text-center py-12 bg-white rounded-lg border border-gray-200">
+                <div className="flex items-center gap-4">
+                  <select
+                    value={contractor.status}
+                    onChange={(e) => updateContractorStatus(contractor.id, e.target.value)}
+                    className={`text-xs font-bold rounded-full px-3 py-1.5 border-0 shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500
+                      ${contractor.status === 'fresh' ? 'bg-green-100 text-green-800' : 
+                        contractor.status === 'no pitch' ? 'bg-yellow-100 text-yellow-800' : 
+                        contractor.status === 'onboarded' ? 'bg-blue-100 text-blue-800' : 
+                        contractor.status === 'dnc' ? 'bg-red-100 text-red-800' : 
+                        contractor.status === 'call back' ? 'bg-purple-100 text-purple-800' : 
+                        'bg-gray-100 text-gray-800'}`}
+                  >
+                    <option value="fresh">Fresh</option>
+                    <option value="no pitch">No Pitch</option>
+                    <option value="dnc">DNC</option>
+                    <option value="call back">Call Back</option>
+                    <option value="onboarded">Onboarded</option>
+                  </select>
+                  
+                  <Link
+                    href={`/contractor-crm/contractor?id=${contractor.id}&tab=potential`}
+                    target="_blank"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
+                  >
+                    View Details
+                  </Link>
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="text-center py-12">
             <Users className="mx-auto h-12 w-12 text-gray-400" />
             <h3 className="mt-2 text-sm font-medium text-gray-900">No contractors found</h3>
             <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or import new contractors.</p>
@@ -205,6 +254,17 @@ export default function ContractorProcessing() {
           </button>
         </div>
       )}
+
+      <AddLeadModal 
+        isOpen={isAddModalOpen} 
+        onClose={() => setIsAddModalOpen(false)} 
+        onLeadAdded={() => {
+          setIsAddModalOpen(false);
+          setPage(0);
+          fetchContractors(0, true);
+        }}
+        isContractor={true}
+      />
     </div>
   );
-};
+}

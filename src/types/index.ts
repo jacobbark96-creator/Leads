@@ -38,5 +38,40 @@ export interface Lead {
   purchase_date: string | null;
   booking_date: string | null;
   csv_data: any | null;
+  assigned_to: string | null;
   created_at: string;
+  monthly_spend?: number;
+  location?: string;
+  timeframe?: string;
+  roof_condition?: string;
+  roof_material?: string;
+  cover_skylights?: boolean;
+  ground_mount?: boolean;
+  unit_rate?: number;
+  est_ann_consumption?: number;
+  qualification_notes?: string;
+  est_system_size?: string;
+  photos?: string[];
+  is_marketed?: boolean;
+}
+
+export interface Contractor {
+  id: string;
+  category_id: string | null;
+  subcategory_id: string | null;
+  name: string;
+  phone: string;
+  email: string | null;
+  company: string | null;
+  status: string;
+  csv_data: any | null;
+  assigned_to: string | null;
+  created_at: string;
+}
+
+export interface StaffUser {
+  id: string;
+  name: string;
+  email: string;
+  role: UserRole;
 }

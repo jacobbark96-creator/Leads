@@ -1,10 +1,11 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { supabase } from '../../../lib/supabase';
-import { UserProfile } from '../../../types';
-import { useAuthStore } from '../../../store/authStore';
+import { supabase } from '@/lib/supabase';
+import { UserProfile } from '@/types';
+import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
-import { Plus } from 'lucide-react';
+import { Plus, Edit } from 'lucide-react';
+import { UserDetailsModal } from '@/components/UserDetailsModal';
 
 export default function UserManagement() {
   const [users, setUsers] = useState<UserProfile[]>([]);
@@ -12,6 +13,7 @@ export default function UserManagement() {
   const { profile } = useAuthStore();
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [newUser, setNewUser] = useState({ email: '', name: '', role: 'client', password: '' });
+  const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
   const fetchUsers = async () => {
     try {
@@ -152,6 +154,9 @@ export default function UserManagement() {
                     <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                       Joined
                     </th>
+                    <th scope="col" className="relative px-6 py-3">
+                      <span className="sr-only">Edit</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody className="bg-white divide-y divide-gray-200">
@@ -181,6 +186,14 @@ export default function UserManagement() {
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
                         {new Date(user.created_at).toLocaleDateString()}
                       </td>
+                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <button
+                          onClick={() => setSelectedUser(user)}
+                          className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
+                        >
+                          <Edit className="w-4 h-4" /> Edit User
+                        </button>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -189,6 +202,18 @@ export default function UserManagement() {
           </div>
         </div>
       </div>
+
+      {selectedUser && (
+        <UserDetailsModal
+          isOpen={!!selectedUser}
+          onClose={() => setSelectedUser(null)}
+          user={selectedUser}
+          onUserUpdated={() => {
+            setSelectedUser(null);
+            fetchUsers();
+          }}
+        />
+      )}
     </div>
   );
 };

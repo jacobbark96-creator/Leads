@@ -18,6 +18,9 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en">
+      <head>
+        <link rel="preconnect" href="https://pznqrbfgrvfmkdprifst.supabase.co" />
+      </head>
       <body className={inter.className}>
         <AuthProvider>
           {children}

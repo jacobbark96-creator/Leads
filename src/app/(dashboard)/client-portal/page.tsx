@@ -5,6 +5,7 @@ import { supabase } from '../../../lib/supabase';
 import { Lead, Category } from '../../../types';
 import { useAuthStore } from '../../../store/authStore';
 import { CalendarModal } from './components/CalendarModal';
+import { PurchasedLeadModal } from '../../../components/PurchasedLeadModal';
 import toast from 'react-hot-toast';
 
 export default function ClientDashboard() {
@@ -13,6 +14,7 @@ export default function ClientDashboard() {
   const [loading, setLoading] = useState(true);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const { profile } = useAuthStore();
 
   const fetchDashboardData = async () => {
@@ -154,9 +156,12 @@ export default function ClientDashboard() {
               </div>
               <div className="bg-gray-50 px-4 py-4 sm:px-6">
                 <div className="text-sm">
-                  <a href="#" className="font-medium text-blue-600 hover:text-blue-500">
+                  <button 
+                    onClick={() => setSelectedLead(lead)}
+                    className="font-medium text-blue-600 hover:text-blue-500"
+                  >
                     View full details <span aria-hidden="true">&rarr;</span>
-                  </a>
+                  </button>
                 </div>
               </div>
             </div>
@@ -181,6 +186,14 @@ export default function ClientDashboard() {
         onClose={() => setIsCalendarOpen(false)} 
         leads={leads}
       />
+
+      {selectedLead && (
+        <PurchasedLeadModal
+          isOpen={!!selectedLead}
+          onClose={() => setSelectedLead(null)}
+          lead={selectedLead}
+        />
+      )}
     </div>
   );
 };

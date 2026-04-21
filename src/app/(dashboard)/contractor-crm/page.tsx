@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
+import { OnboardContractorModal } from '@/components/OnboardContractorModal';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -39,6 +40,7 @@ export default function ContractorProcessing() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [selectedOnboardContractor, setSelectedOnboardContractor] = useState<Contractor | null>(null);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const PAGE_SIZE = 25;
 
@@ -114,6 +116,12 @@ export default function ContractorProcessing() {
   };
 
   const updateContractorStatus = async (id: string, newStatus: string) => {
+    if (newStatus === 'onboarded') {
+      const contractor = contractors.find(c => c.id === id);
+      if (contractor) setSelectedOnboardContractor(contractor);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('contractors')
@@ -265,6 +273,18 @@ export default function ContractorProcessing() {
         }}
         isContractor={true}
       />
+
+      {selectedOnboardContractor && (
+        <OnboardContractorModal
+          isOpen={!!selectedOnboardContractor}
+          onClose={() => setSelectedOnboardContractor(null)}
+          contractor={selectedOnboardContractor}
+          onSuccess={(updatedContractor) => {
+            setSelectedOnboardContractor(null);
+            setContractors(prev => prev.filter(c => c.id !== updatedContractor.id));
+          }}
+        />
+      )}
     </div>
   );
 }

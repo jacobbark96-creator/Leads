@@ -14,6 +14,12 @@ export interface Client {
   company_name: string;
   contact_name: string;
   phone: string;
+  other_contacts?: string | null;
+  other_contact_numbers?: string | null;
+  address?: string | null;
+  areas_covered?: string | null;
+  services_offered?: string | null;
+  internal_notes?: string | null;
   created_at: string;
 }
 

@@ -7,6 +7,7 @@ import { Contractor, StaffUser } from '@/types';
 import toast from 'react-hot-toast';
 import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
+import { OnboardContractorModal } from '@/components/OnboardContractorModal';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -46,6 +47,8 @@ function ContractorDetailsContent() {
   const [loading, setLoading] = useState(true);
   const [newNote, setNewNote] = useState('');
   const [nextContractorId, setNextContractorId] = useState<string | null>(null);
+  
+  const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
   
   const notesEndRef = useRef<HTMLDivElement>(null);
 
@@ -125,6 +128,12 @@ function ContractorDetailsContent() {
 
   const updateContractorStatus = async (newStatus: string) => {
     if (!contractor) return;
+
+    if (newStatus === 'onboarded') {
+      setIsOnboardModalOpen(true);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('contractors')
@@ -377,6 +386,21 @@ function ContractorDetailsContent() {
         </div>
 
       </div>
+
+      {isOnboardModalOpen && (
+        <OnboardContractorModal
+          isOpen={isOnboardModalOpen}
+          onClose={() => {
+            setIsOnboardModalOpen(false);
+            setContractor({ ...contractor, status: tab }); // revert select visual
+          }}
+          contractor={contractor}
+          onSuccess={(updatedContractor) => {
+            setIsOnboardModalOpen(false);
+            setContractor(updatedContractor);
+          }}
+        />
+      )}
     </div>
   );
 }

@@ -42,10 +42,19 @@ export default function Marketplace() {
   const handlePurchaseLead = async (leadId: string) => {
     if (!profile) return;
     try {
+      // First, get the client's actual record ID (profile.id is the users.id)
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', profile.id)
+        .single();
+        
+      if (clientError) throw new Error('Client profile not found. Only registered clients can purchase leads.');
+      
       // Basic update: assign client_id. (In real-world, you'd integrate Stripe here first)
       const { error } = await supabase
         .from('leads')
-        .update({ client_id: profile.id, purchase_date: new Date().toISOString() })
+        .update({ client_id: clientData.id, purchase_date: new Date().toISOString() })
         .eq('id', leadId);
 
       if (error) throw error;

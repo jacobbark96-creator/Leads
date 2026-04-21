@@ -19,6 +19,17 @@ export default function ClientDashboard() {
     try {
       setLoading(true);
       
+      if (!profile) return;
+
+      // Get the client's actual record ID
+      const { data: clientData, error: clientError } = await supabase
+        .from('clients')
+        .select('id')
+        .eq('user_id', profile.id)
+        .single();
+        
+      if (clientError) throw new Error('Client profile not found');
+
       // Fetch Categories
       const { data: catData, error: catError } = await supabase
         .from('categories')
@@ -28,25 +39,28 @@ export default function ClientDashboard() {
       if (catError) throw catError;
       setCategories(catData || []);
 
-      // Fetch Client Leads
+      // Fetch Client's Purchased Leads
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
         .select('*')
+        .eq('client_id', clientData.id)
         .order('created_at', { ascending: false });
 
       if (leadsError) throw leadsError;
       setLeads(leadsData || []);
 
     } catch (error: any) {
-      toast.error('Failed to fetch dashboard data: ' + error.message);
+      toast.error('Failed to load dashboard: ' + error.message);
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    fetchDashboardData();
-  }, []);
+    if (profile) {
+      fetchDashboardData();
+    }
+  }, [profile]);
 
   const filteredLeads = selectedCategory === 'all' 
     ? leads 

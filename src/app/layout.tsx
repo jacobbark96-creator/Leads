@@ -7,8 +7,8 @@ import { AuthProvider } from '../components/AuthProvider';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'KairoLeads - High-Converting Leads for Contractors',
-  description: 'Exclusive, pre-qualified leads for Solar, Roofing, Asbestos, and more.',
+  title: 'Openlead - High-Converting Leads for Contractors',
+  description: 'Exclusive, pre-qualified leads for Solar, Roofing, and Asbestos directly to your CRM.',
 };
 
 export default function RootLayout({

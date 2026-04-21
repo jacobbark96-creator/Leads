@@ -22,8 +22,8 @@ export default function About() {
           <div className="lg:w-1/2">
             <h2 className="text-sm font-bold tracking-wide text-blue-600 uppercase mb-3">About Us</h2>
             <h3 className="text-3xl md:text-4xl font-bold text-gray-900 mb-6">Bridging the gap between great services and ready customers.</h3>
-            <p className="text-lg text-gray-600 mb-6 leading-relaxed">
-              At KairoLeads, we understand that your time is best spent closing deals and serving customers—not hunting for prospects. Founded by industry veterans, our platform was built to solve the biggest bottleneck in contracting businesses: predictable revenue.
+            <p className="text-xl text-slate-600 leading-relaxed">
+              At Openlead, we understand that your time is best spent closing deals and serving customers—not hunting for prospects. Founded by industry veterans, our platform was built to solve the biggest bottleneck in contracting businesses: predictable revenue.
             </p>
             <p className="text-lg text-gray-600 mb-8 leading-relaxed">
               We leverage data-driven marketing, rigorous vetting processes, and a proprietary CRM system to deliver a seamless pipeline of opportunities directly to your team.

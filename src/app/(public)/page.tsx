@@ -105,7 +105,7 @@ export default function Home() {
                     <div className="w-3 h-3 rounded-full bg-amber-400"></div>
                     <div className="w-3 h-3 rounded-full bg-green-400"></div>
                   </div>
-                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Kairo CRM</span>
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Openlead CRM</span>
                 </div>
                 <div className="p-6 space-y-4">
                   <div className="flex items-center justify-between mb-2">
@@ -199,7 +199,7 @@ export default function Home() {
       <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-blue-600 font-bold tracking-wider text-sm uppercase mb-3">The Kairo Advantage</h2>
+            <h2 className="text-blue-600 font-bold tracking-wider text-sm uppercase mb-3">The Openlead Advantage</h2>
             <h3 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">Built for Contractors Who Want to Grow</h3>
             <p className="text-lg text-slate-600 leading-relaxed">
               We handle the marketing, vetting, and data collection so your sales team can focus entirely on what they do best: closing deals.
@@ -218,7 +218,7 @@ export default function Home() {
               {
                 title: "Absolute Exclusivity",
                 icon: ShieldCheck,
-                desc: "When you buy a lead from Kairo, it's yours. We never sell the same prospect to multiple contractors.",
+                desc: "When you buy a lead from Openlead, it's yours. We never sell the same prospect to multiple contractors.",
                 color: "text-emerald-600",
                 bg: "bg-emerald-100"
               },
@@ -249,7 +249,7 @@ export default function Home() {
         <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6">Stop Waiting for the Phone to Ring</h2>
           <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto leading-relaxed">
-            Join the top-performing contractors across the country who rely on KairoLeads to keep their pipelines full and revenue growing.
+            Join the top-performing contractors across the country who rely on Openlead to keep their pipelines full and revenue growing.
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link

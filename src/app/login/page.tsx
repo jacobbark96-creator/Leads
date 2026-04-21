@@ -126,8 +126,11 @@ export default function Login() {
             ? 'Reset your password' 
             : isSignUp 
               ? 'Create an account' 
-              : 'Sign in to your account'}
+              : 'Sign in to Openlead'}
         </h2>
+        <p className="mt-2 text-center text-sm text-gray-600">
+          Access your exclusive leads and grow your business
+        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">

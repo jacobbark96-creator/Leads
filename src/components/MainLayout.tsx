@@ -2,7 +2,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, LayoutDashboard, Users, Settings, Database, BookOpen } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, Settings, Database, BookOpen, Briefcase, Home } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
 
@@ -20,14 +20,18 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         ];
       case 'sales':
         return [
+          { name: 'Staff Hub', path: '/staff', icon: Home },
           { name: 'Sales CRM', path: '/sales-crm', icon: Database },
+          { name: 'Contractor CRM', path: '/contractor-crm', icon: Briefcase },
           { name: 'Intranet', path: '/intranet', icon: BookOpen },
         ];
       case 'admin':
       case 'super_admin':
         return [
+          { name: 'Staff Hub', path: '/staff', icon: Home },
           { name: 'Admin CRM', path: '/admin-crm', icon: Settings },
           { name: 'Sales CRM', path: '/sales-crm', icon: Database },
+          { name: 'Contractor CRM', path: '/contractor-crm', icon: Briefcase },
           { name: 'Intranet', path: '/intranet', icon: BookOpen },
         ];
       default:

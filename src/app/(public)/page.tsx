@@ -1,9 +1,29 @@
-import React from 'react';
+"use client";
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ArrowRight, Star, TrendingUp, ShieldCheck, Target, Zap, PhoneCall, Calendar } from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';
 
 export default function Home() {
+  const { user, profile } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const getDashboardLink = () => {
+    if (!profile) return '/login';
+    switch (profile.role) {
+      case 'client': return '/client-portal';
+      case 'sales': return '/sales-crm';
+      case 'admin':
+      case 'super_admin': return '/admin-crm';
+      default: return '/intranet';
+    }
+  };
+
   return (
     <div className="flex flex-col min-h-screen">
       {/* Hero Section */}
@@ -43,10 +63,10 @@ export default function Home() {
               
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
-                  href="/login"
+                  href={user && mounted ? getDashboardLink() : "/login"}
                   className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-500 shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.7)] transition-all duration-300"
                 >
-                  Access Portal <ArrowRight className="ml-2 w-5 h-5" />
+                  {user && mounted ? "Dashboard" : "Login / Sign up"} <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
                 <Link
                   href="/services"
@@ -238,10 +258,10 @@ export default function Home() {
           </p>
           <div className="flex flex-col sm:flex-row justify-center gap-4">
             <Link
-              href="/login"
+              href={user && mounted ? getDashboardLink() : "/login"}
               className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold rounded-xl text-blue-600 bg-white hover:bg-slate-50 shadow-xl hover:scale-105 transition-all duration-300"
             >
-              Access Client Portal
+              {user && mounted ? "Dashboard" : "Login / Sign up"}
             </Link>
             <Link
               href="/about"

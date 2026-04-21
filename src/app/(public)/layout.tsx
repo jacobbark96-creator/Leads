@@ -1,10 +1,26 @@
 "use client";
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useAuthStore } from '../../store/authStore';
 
 export default function PublicLayout({ children }: { children: React.ReactNode }) {
-  const { user } = useAuthStore();
+  const { user, profile } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const getDashboardLink = () => {
+    if (!profile) return '/login';
+    switch (profile.role) {
+      case 'client': return '/client-portal';
+      case 'sales': return '/sales-crm';
+      case 'admin':
+      case 'super_admin': return '/admin-crm';
+      default: return '/intranet';
+    }
+  };
 
   return (
     <div className="min-h-screen bg-white font-sans text-gray-900 flex flex-col">
@@ -25,10 +41,10 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             </div>
             <div className="flex items-center space-x-4">
               <Link
-                href={user ? "/dashboard" : "/login"}
+                href={user && mounted ? getDashboardLink() : "/login"}
                 className="inline-flex items-center justify-center px-6 py-2.5 border border-transparent text-sm font-semibold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-md hover:shadow-xl transition-all duration-200"
               >
-                {user ? "Dashboard" : "Sign In"}
+                {user && mounted ? "Dashboard" : "Login / Sign up"}
               </Link>
             </div>
           </div>

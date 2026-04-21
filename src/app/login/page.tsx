@@ -52,12 +52,34 @@ export default function Login() {
         toast.success('Registration successful! You can now log in.');
         setIsSignUp(false);
       } else {
-        const { error } = await supabase.auth.signInWithPassword({
+        const { data: authData, error } = await supabase.auth.signInWithPassword({
           email: data.email,
           password: data.password,
         });
         if (error) throw error;
         toast.success('Logged in successfully');
+        
+        // Fetch profile to redirect immediately
+        if (authData.user) {
+          const { data: profileData } = await supabase
+            .from('users')
+            .select('*')
+            .eq('id', authData.user.id)
+            .single();
+            
+          if (profileData) {
+            useAuthStore.getState().setProfile(profileData);
+            switch (profileData.role) {
+              case 'client': router.replace('/client-portal'); break;
+              case 'sales': router.replace('/sales-crm'); break;
+              case 'admin':
+              case 'super_admin': router.replace('/admin-crm'); break;
+              default: router.replace('/intranet'); break;
+            }
+          } else {
+            router.replace('/intranet');
+          }
+        }
       }
     } catch (error: any) {
       toast.error(error.message || 'Authentication failed');

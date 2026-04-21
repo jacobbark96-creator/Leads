@@ -6,31 +6,54 @@ import toast from 'react-hot-toast';
 import { Phone, Mail, Building, User, Users } from 'lucide-react';
 import Link from 'next/link';
 
-export default function OnboardedLeads() {
+export default function OnboardedContractors() {
   const [contractors, setContractors] = useState<Contractor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 24;
 
-  const fetchContractors = async () => {
+  const fetchContractors = async (pageNumber: number, isInitial: boolean) => {
     try {
-      setLoading(true);
-      const { data, error } = await supabase
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
+
+      const { data, count, error } = await supabase
         .from('contractors')
-        .select('*')
+        .select('id, name, email, phone, company, status, created_at', { count: 'exact' })
         .eq('status', 'onboarded')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE - 1);
 
       if (error) throw error;
-      setContractors(data || []);
+      
+      const fetchedContractors = data as Contractor[] || [];
+      if (isInitial) {
+        setContractors(fetchedContractors);
+      } else {
+        setContractors(prev => [...prev, ...fetchedContractors]);
+      }
+      
+      setHasMore(count !== null ? (pageNumber + 1) * PAGE_SIZE < count : false);
     } catch (error: any) {
       toast.error('Failed to fetch contractors: ' + error.message);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchContractors();
+    setPage(0);
+    fetchContractors(0, true);
   }, []);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchContractors(nextPage, false);
+  };
 
   const updateContractorStatus = async (id: string, newStatus: string) => {
     try {
@@ -41,7 +64,7 @@ export default function OnboardedLeads() {
 
       if (error) throw error;
       toast.success('Contractor status updated');
-      fetchContractors();
+      setContractors(prev => prev.filter(contractor => contractor.id !== id));
     } catch (error: any) {
       toast.error('Failed to update contractor: ' + error.message);
     }
@@ -131,13 +154,24 @@ export default function OnboardedLeads() {
             </div>
           </div>
         ))}
+        {contractors.length === 0 && (
+          <div className="col-span-full text-center py-12 bg-white rounded-lg border border-gray-200">
+            <Users className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No onboarded contractors</h3>
+            <p className="mt-1 text-sm text-gray-500">Change a contractor's status to 'Onboarded' to see them here.</p>
+          </div>
+        )}
       </div>
-      
-      {contractors.length === 0 && (
-        <div className="text-center py-12">
-          <Users className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No onboarded contractors</h3>
-          <p className="mt-1 text-sm text-gray-500">Change a lead's status to 'Onboarded' to see them here.</p>
+
+      {hasMore && contractors.length > 0 && (
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loadingMore ? 'Loading...' : 'Load More Contractors'}
+          </button>
         </div>
       )}
     </div>

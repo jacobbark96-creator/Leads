@@ -9,35 +9,58 @@ import Link from 'next/link';
 export default function LeadProcessing() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 24;
 
-  const fetchLeads = async () => {
+  const fetchLeads = async (pageNumber: number, isInitial: boolean) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
+
       let query = supabase
         .from('leads')
-        .select('*')
+        .select('id, name, email, phone, company, status, created_at', { count: 'exact' })
         .neq('status', 'qualified')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE - 1);
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
 
-      const { data, error } = await query;
+      const { data, count, error } = await query;
 
       if (error) throw error;
-      setLeads(data || []);
+      
+      const fetchedLeads = data as Lead[] || [];
+      if (isInitial) {
+        setLeads(fetchedLeads);
+      } else {
+        setLeads(prev => [...prev, ...fetchedLeads]);
+      }
+      
+      setHasMore(count !== null ? (pageNumber + 1) * PAGE_SIZE < count : false);
     } catch (error: any) {
       toast.error('Failed to fetch leads: ' + error.message);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchLeads();
+    setPage(0);
+    fetchLeads(0, true);
   }, [statusFilter]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchLeads(nextPage, false);
+  };
 
   const updateLeadStatus = async (id: string, newStatus: string) => {
     try {
@@ -48,7 +71,8 @@ export default function LeadProcessing() {
 
       if (error) throw error;
       toast.success('Lead status updated');
-      fetchLeads();
+      // Optimistically update the UI instead of refetching the entire list
+      setLeads(prev => prev.map(lead => lead.id === id ? { ...lead, status: newStatus } : lead));
     } catch (error: any) {
       toast.error('Failed to update lead: ' + error.message);
     }
@@ -162,13 +186,24 @@ export default function LeadProcessing() {
             </div>
           </div>
         ))}
+        {leads.length === 0 && (
+          <div className="col-span-full text-center py-12 bg-white rounded-lg border border-gray-200">
+            <Users className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No leads found</h3>
+            <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or import new leads.</p>
+          </div>
+        )}
       </div>
-      
-      {leads.length === 0 && (
-        <div className="text-center py-12">
-          <Users className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No leads</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by importing leads from a CSV file.</p>
+
+      {hasMore && leads.length > 0 && (
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loadingMore ? 'Loading...' : 'Load More Leads'}
+          </button>
         </div>
       )}
     </div>

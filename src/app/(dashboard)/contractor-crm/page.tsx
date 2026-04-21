@@ -9,35 +9,58 @@ import Link from 'next/link';
 export default function ContractorProcessing() {
   const [contractors, setContractors] = useState<Contractor[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
+  const PAGE_SIZE = 24;
 
-  const fetchContractors = async () => {
+  const fetchContractors = async (pageNumber: number, isInitial: boolean) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
+
       let query = supabase
         .from('contractors')
-        .select('*')
+        .select('id, name, email, phone, company, status, created_at', { count: 'exact' })
         .neq('status', 'onboarded')
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE - 1);
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
       }
 
-      const { data, error } = await query;
+      const { data, count, error } = await query;
 
       if (error) throw error;
-      setContractors(data || []);
+      
+      const fetchedContractors = data as Contractor[] || [];
+      if (isInitial) {
+        setContractors(fetchedContractors);
+      } else {
+        setContractors(prev => [...prev, ...fetchedContractors]);
+      }
+      
+      setHasMore(count !== null ? (pageNumber + 1) * PAGE_SIZE < count : false);
     } catch (error: any) {
       toast.error('Failed to fetch contractors: ' + error.message);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchContractors();
+    setPage(0);
+    fetchContractors(0, true);
   }, [statusFilter]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchContractors(nextPage, false);
+  };
 
   const updateContractorStatus = async (id: string, newStatus: string) => {
     try {
@@ -48,7 +71,7 @@ export default function ContractorProcessing() {
 
       if (error) throw error;
       toast.success('Contractor status updated');
-      fetchContractors();
+      setContractors(prev => prev.map(contractor => contractor.id === id ? { ...contractor, status: newStatus } : contractor));
     } catch (error: any) {
       toast.error('Failed to update contractor: ' + error.message);
     }
@@ -162,13 +185,24 @@ export default function ContractorProcessing() {
             </div>
           </div>
         ))}
+        {contractors.length === 0 && (
+          <div className="col-span-full text-center py-12 bg-white rounded-lg border border-gray-200">
+            <Users className="mx-auto h-12 w-12 text-gray-400" />
+            <h3 className="mt-2 text-sm font-medium text-gray-900">No contractors found</h3>
+            <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or import new contractors.</p>
+          </div>
+        )}
       </div>
-      
-      {contractors.length === 0 && (
-        <div className="text-center py-12">
-          <Users className="mx-auto h-12 w-12 text-gray-400" />
-          <h3 className="mt-2 text-sm font-medium text-gray-900">No contractors</h3>
-          <p className="mt-1 text-sm text-gray-500">Get started by importing contractors from a CSV file.</p>
+
+      {hasMore && contractors.length > 0 && (
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loadingMore ? 'Loading...' : 'Load More Contractors'}
+          </button>
         </div>
       )}
     </div>

@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { supabase } from '@/lib/supabase';
 import { Client, Lead } from '@/types';
-import { MapPin, Star, Building, Phone, Mail, Briefcase, Filter } from 'lucide-react';
+import { MapPin, Star, Briefcase, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const containerStyle = {
@@ -269,10 +269,23 @@ export default function MapTab() {
               onCloseClick={() => setSelectedLead(null)}
             >
               <div className="p-2 max-w-[250px]">
-                <div className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block mb-1">
-                  MARKETED LEAD
+                <div className="flex justify-between items-start mb-2">
+                  <div className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block">
+                    MARKETED LEAD
+                  </div>
+                  <h3 className="font-bold text-lg text-gray-900">£{selectedLead.price || '135.00'}</h3>
                 </div>
-                <h3 className="font-bold text-lg text-gray-900">£{selectedLead.price || '135.00'}</h3>
+                
+                {selectedLead.photos && selectedLead.photos.length > 0 && (
+                  <div className="mb-2 rounded-md overflow-hidden border border-gray-200">
+                    <img 
+                      src={selectedLead.photos[0]} 
+                      alt="Lead" 
+                      className="w-full h-24 object-cover"
+                    />
+                  </div>
+                )}
+
                 <p className="text-sm text-gray-600 mb-2">{selectedLead.location}</p>
                 <div className="space-y-1 text-xs text-gray-500">
                   <p>Est. Spend: £{selectedLead.monthly_spend || 'N/A'}</p>

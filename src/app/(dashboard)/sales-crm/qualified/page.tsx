@@ -82,7 +82,7 @@ function QualifiedLeadsContent() {
 
       if (error) throw error;
       
-      const fetchedLeads = data as Lead[] || [];
+      const fetchedLeads = (data as unknown as Lead[]) || [];
       const hasNextPage = fetchedLeads.length > PAGE_SIZE;
       const leadsToRender = hasNextPage ? fetchedLeads.slice(0, PAGE_SIZE) : fetchedLeads;
 

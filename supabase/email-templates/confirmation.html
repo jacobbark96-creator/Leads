@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Confirm Your Openlead Account</title>
+  <style>
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background-color: #f8fafc;
+      margin: 0;
+      padding: 0;
+      -webkit-font-smoothing: antialiased;
+    }
+    .container {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 16px;
+      overflow: hidden;
+      box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+      border: 1px solid #f1f5f9;
+    }
+    .header {
+      background-color: #0f172a; /* slate-900 */
+      padding: 32px 40px;
+      text-align: center;
+      border-bottom: 4px solid #39cccc; /* openlead-blue */
+    }
+    .logo {
+      height: 40px;
+      width: auto;
+    }
+    .content {
+      padding: 40px;
+      color: #334155; /* slate-700 */
+      line-height: 1.6;
+    }
+    h1 {
+      color: #0f172a; /* slate-900 */
+      font-size: 24px;
+      font-weight: 800;
+      margin-top: 0;
+      margin-bottom: 24px;
+      letter-spacing: -0.025em;
+    }
+    p {
+      margin-bottom: 24px;
+      font-size: 16px;
+    }
+    .button-container {
+      text-align: center;
+      margin: 40px 0;
+    }
+    .button {
+      display: inline-block;
+      background-color: #39cccc; /* openlead-blue */
+      color: #ffffff !important;
+      font-weight: 700;
+      font-size: 16px;
+      text-decoration: none;
+      padding: 16px 32px;
+      border-radius: 8px;
+      box-shadow: 0 4px 14px 0 rgba(57, 204, 204, 0.39);
+    }
+    .button-fallback {
+      font-size: 14px;
+      color: #64748b; /* slate-500 */
+      word-break: break-all;
+      margin-top: 24px;
+      padding: 16px;
+      background-color: #f8fafc; /* slate-50 */
+      border-radius: 8px;
+      border: 1px solid #e2e8f0; /* slate-200 */
+    }
+    .footer {
+      background-color: #f8fafc; /* slate-50 */
+      padding: 32px 40px;
+      text-align: center;
+      border-top: 1px solid #e2e8f0; /* slate-200 */
+    }
+    .footer p {
+      color: #64748b; /* slate-500 */
+      font-size: 14px;
+      margin: 0;
+      line-height: 1.5;
+    }
+    .social-links {
+      margin-top: 16px;
+    }
+    .social-links a {
+      color: #94a3b8; /* slate-400 */
+      text-decoration: none;
+      margin: 0 8px;
+      font-size: 14px;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <!-- Make sure this URL points to your actual hosted logo -->
+      <img src="{{ .SiteURL }}/openlead-logo.png" alt="Openlead" class="logo">
+    </div>
+    
+    <div class="content">
+      <h1>Welcome to Openlead!</h1>
+      
+      <p>Hi there,</p>
+      
+      <p>Thank you for joining Openlead. We're thrilled to have you on board! Before you can access your exclusive dashboard and start receiving high-intent leads, we just need to verify your email address.</p>
+      
+      <div class="button-container">
+        <!-- The redirect_to param ensures they go to the new success page -->
+        <a href="{{ .ConfirmationURL }}&redirect_to={{ .SiteURL }}/email-confirmed" class="button">Verify My Email Address</a>
+      </div>
+      
+      <p>If you did not create an account using this address, please ignore this email or contact support.</p>
+      
+      <div class="button-fallback">
+        <p style="margin-bottom: 8px; font-size: 14px; font-weight: 600;">Button not working? Copy and paste this link into your browser:</p>
+        <a href="{{ .ConfirmationURL }}&redirect_to={{ .SiteURL }}/email-confirmed" style="color: #39cccc; text-decoration: underline;">{{ .ConfirmationURL }}&redirect_to={{ .SiteURL }}/email-confirmed</a>
+      </div>
+    </div>
+    
+    <div class="footer">
+      <p>&copy; 2024 Openlead. All rights reserved.</p>
+      <p>Built for Contractors Who Want to Grow.</p>
+      <div class="social-links">
+        <a href="#">Privacy Policy</a>
+        <a href="#">Terms of Service</a>
+        <a href="mailto:support@openlead.co.uk">Contact Support</a>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

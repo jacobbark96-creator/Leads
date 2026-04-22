@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState, useMemo } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Lead } from '@/types';
+import { supabase } from '../../../../lib/supabase';
+import { Lead } from '../../../../types';
 import toast from 'react-hot-toast';
 import { format, startOfWeek, endOfWeek, subDays, addDays } from 'date-fns';
 import { TrendingUp, Calendar, DollarSign } from 'lucide-react';
@@ -37,7 +37,7 @@ export default function SalesTracker() {
           .order('purchase_date', { ascending: false });
 
         if (error) throw error;
-        setSoldLeads(data || []);
+        setSoldLeads((data as unknown as Lead[]) || []);
       } catch (error: any) {
         toast.error('Failed to fetch sold leads: ' + error.message);
       } finally {

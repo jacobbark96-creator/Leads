@@ -66,13 +66,17 @@ export default function Login() {
     setIsLoading(true);
     try {
       if (isSignUp) {
-        const { error } = await supabase.auth.signUp({
+        const { data: signUpData, error } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
         });
         if (error) throw error;
-        toast.success('Registration successful! You can now log in.');
-        setIsSignUp(false);
+        toast.success('Registration successful!');
+        
+        // Immediately redirect to the subscription order summary page instead of staying on login
+        if (signUpData.user) {
+          router.push('/subscription');
+        }
       } else {
         const { data: authData, error } = await supabase.auth.signInWithPassword({
           email: data.email,

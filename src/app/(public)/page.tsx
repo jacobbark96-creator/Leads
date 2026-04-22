@@ -44,12 +44,12 @@ export default function Home() {
             {/* Left Content */}
             <div className="max-w-2xl">
               
-              <h1 className="font-darker-grotesque text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white mb-6 leading-[0.75]">
-                Scale With <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300 inline-block -mt-1 -mb-1">
+              <h1 className="font-darker-grotesque text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white mb-6 flex flex-col gap-0 items-start">
+                <span className="leading-[0.6]">Scale With</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300 leading-[0.6] py-1">
                   High-Intent
-                </span> <br/>
-                Leads
+                </span>
+                <span className="leading-[0.6]">Leads</span>
               </h1>
               
               <p className="text-lg md:text-xl text-slate-300 mb-10 leading-relaxed max-w-xl">

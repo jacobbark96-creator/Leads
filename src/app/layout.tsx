@@ -9,6 +9,9 @@ const inter = Inter({ subsets: ['latin'] });
 export const metadata: Metadata = {
   title: 'Openlead - High-Converting Leads for Contractors',
   description: 'Exclusive, pre-qualified leads for Solar, Roofing, and Asbestos directly to your CRM.',
+  icons: {
+    icon: '/openlead-favicon.svg',
+  },
 };
 
 export default function RootLayout({

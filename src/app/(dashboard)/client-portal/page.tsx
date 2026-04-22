@@ -115,11 +115,11 @@ export default function ClientDashboard() {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+        <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
           {filteredLeads.map((lead) => (
-            <div key={lead.id} className="bg-white overflow-hidden shadow rounded-lg border border-gray-200 flex flex-col">
+            <div key={lead.id} className="bg-white overflow-hidden shadow rounded-lg border border-gray-200 flex flex-col text-sm sm:text-base">
               {lead.photos && lead.photos.length > 0 && (
-                <div className="h-48 w-full relative overflow-hidden bg-gray-100 border-b border-gray-200">
+                <div className="h-32 sm:h-40 w-full relative overflow-hidden bg-gray-100 border-b border-gray-200">
                   <img 
                     src={lead.photos[0]} 
                     alt="Lead property" 
@@ -127,49 +127,49 @@ export default function ClientDashboard() {
                   />
                 </div>
               )}
-              <div className="px-4 py-5 sm:p-6 flex-grow">
-                <div className="flex items-center justify-between mb-4">
-                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              <div className="px-3 py-4 sm:px-4 sm:py-5 flex-grow">
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-3 gap-2">
+                  <span className="inline-flex items-center px-2 py-0.5 rounded-full text-[10px] sm:text-xs font-medium bg-blue-100 text-blue-800">
                     {getCategoryName(lead.category_id)}
                   </span>
                   {lead.booking_date && (
-                    <span className="text-xs text-gray-500 flex items-center">
+                    <span className="text-[10px] sm:text-xs text-gray-500 flex items-center">
                       <CalendarIcon className="w-3 h-3 mr-1" />
                       {new Date(lead.booking_date).toLocaleDateString()}
                     </span>
                   )}
                 </div>
                 
-                <h3 className="text-lg font-medium text-gray-900 truncate">{lead.name}</h3>
+                <h3 className="text-sm sm:text-base font-medium text-gray-900 truncate">{lead.name}</h3>
                 
-                <dl className="mt-4 space-y-3">
+                <dl className="mt-3 space-y-2">
                   {lead.phone && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Phone className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
-                      <a href={`tel:${lead.phone}`} className="hover:text-blue-600">{lead.phone}</a>
+                    <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                      <Phone className="flex-shrink-0 mr-1.5 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
+                      <a href={`tel:${lead.phone}`} className="hover:text-blue-600 truncate">{lead.phone}</a>
                     </div>
                   )}
                   {lead.email && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Mail className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                    <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                      <Mail className="flex-shrink-0 mr-1.5 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                       <a href={`mailto:${lead.email}`} className="hover:text-blue-600 truncate">{lead.email}</a>
                     </div>
                   )}
                   {lead.company && (
-                    <div className="flex items-center text-sm text-gray-500">
-                      <Building className="flex-shrink-0 mr-1.5 h-4 w-4 text-gray-400" />
+                    <div className="flex items-center text-xs sm:text-sm text-gray-500">
+                      <Building className="flex-shrink-0 mr-1.5 h-3 w-3 sm:h-4 sm:w-4 text-gray-400" />
                       <span className="truncate">{lead.company}</span>
                     </div>
                   )}
                 </dl>
               </div>
-              <div className="bg-gray-50 px-4 py-4 sm:px-6">
-                <div className="text-sm">
+              <div className="bg-gray-50 px-3 py-3 sm:px-4 sm:py-4">
+                <div className="text-xs sm:text-sm">
                   <button 
                     onClick={() => setSelectedLead(lead)}
-                    className="font-medium text-blue-600 hover:text-blue-500"
+                    className="font-medium text-blue-600 hover:text-blue-500 w-full text-center sm:text-left"
                   >
-                    View full details <span aria-hidden="true">&rarr;</span>
+                    View details <span aria-hidden="true">&rarr;</span>
                   </button>
                 </div>
               </div>

@@ -74,9 +74,9 @@ export default function Login() {
         if (error) throw error;
         toast.success('Registration successful!');
         
-        // Immediately redirect to the subscription order summary page instead of staying on login
+        // Redirect to the check-email page instead of staying on login
         if (signUpData.user) {
-          router.push('/subscription');
+          router.push('/check-email');
         }
       } else {
         const { data: authData, error } = await supabase.auth.signInWithPassword({

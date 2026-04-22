@@ -1,10 +1,11 @@
 import type { Metadata } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Darker_Grotesque } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../components/AuthProvider';
 
-const inter = Inter({ subsets: ['latin'] });
+const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
+const darkerGrotesque = Darker_Grotesque({ subsets: ['latin'], variable: '--font-darker-grotesque' });
 
 export const metadata: Metadata = {
   title: 'Openlead - High-Converting Leads for Contractors',
@@ -24,7 +25,7 @@ export default function RootLayout({
       <head>
         <link rel="preconnect" href="https://pznqrbfgrvfmkdprifst.supabase.co" />
       </head>
-      <body className={inter.className}>
+      <body className={`${inter.className} ${inter.variable} ${darkerGrotesque.variable}`}>
         <AuthProvider>
           {children}
           <Toaster position="top-right" />

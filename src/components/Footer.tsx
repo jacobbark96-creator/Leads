@@ -29,11 +29,23 @@ export const Footer = () => {
           </div>
           
           {/* Contact Info */}
-          <div className="col-span-1 lg:col-span-2">
-            <h4 className="font-bold text-openlead-blue mb-4 tracking-wider uppercase text-xs">Contact</h4>
-            <ul className="space-y-3">
-              <li className="text-slate-600 text-sm">support@openlead.com</li>
-            </ul>
+          <div className="col-span-1 lg:col-span-2 flex flex-col justify-between h-full">
+            <div>
+              <h4 className="font-bold text-openlead-blue mb-4 tracking-wider uppercase text-xs">Contact</h4>
+              <ul className="space-y-3">
+                <li className="text-slate-600 text-sm">support@openlead.co.uk</li>
+              </ul>
+            </div>
+            
+            {/* Built By Kairo */}
+            <div className="flex flex-col items-start gap-2 mt-8">
+              <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">Built Proudly By</span>
+              <img 
+                src="/kairo-logo.png" 
+                alt="Kairo Studio" 
+                className="h-8 object-contain opacity-80 hover:opacity-100 transition-opacity" 
+              />
+            </div>
           </div>
 
         </div>
@@ -42,23 +54,12 @@ export const Footer = () => {
         <div className="border-t border-slate-200 pt-8 flex flex-col md:flex-row justify-between items-center gap-6">
           
           {/* Copyright & Legal */}
-          <div className="flex flex-col md:flex-row items-center md:items-center gap-4 md:gap-6 text-sm text-slate-500">
+          <div className="flex flex-col md:flex-row items-center md:items-center gap-4 md:gap-6 text-sm text-slate-500 w-full justify-between">
             <p>© {new Date().getFullYear()} Openlead. All rights reserved.</p>
-            <div className="hidden md:block w-1 h-1 rounded-full bg-slate-300"></div>
             <div className="flex space-x-6">
               <a href="#" className="hover:text-slate-900 transition-colors">Privacy Policy</a>
               <a href="#" className="hover:text-slate-900 transition-colors">Terms of Service</a>
             </div>
-          </div>
-          
-          {/* Built By Kairo */}
-          <div className="flex flex-col sm:flex-row items-center gap-4 mt-6 md:mt-0">
-            <span className="text-sm text-slate-500 font-bold uppercase tracking-widest">Built Proudly By</span>
-            <img 
-              src="/kairo-logo.png" 
-              alt="Kairo Studio" 
-              className="h-10 object-contain opacity-80 hover:opacity-100 transition-opacity" 
-            />
           </div>
           
         </div>

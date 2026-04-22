@@ -12,6 +12,9 @@ export default {
       center: true,
     },
     extend: {
+      fontFamily: {
+        'darker-grotesque': ['var(--font-darker-grotesque)', 'sans-serif'],
+      },
       colors: {
         'openlead-blue': '#39cccc',
       },

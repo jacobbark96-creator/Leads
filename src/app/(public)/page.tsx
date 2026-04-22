@@ -44,7 +44,7 @@ export default function Home() {
             {/* Left Content */}
             <div className="max-w-2xl">
               
-              <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]">
+              <h1 className="font-darker-grotesque text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white mb-6 leading-[1]">
                 Scale With <br/>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300">
                   High-Intent
@@ -258,11 +258,6 @@ export default function Home() {
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 mb-8">
-            <div className="w-2 h-2 rounded-full bg-openlead-blue animate-pulse"></div>
-            <span className="text-xs font-semibold text-slate-300 tracking-widest uppercase">Start Scaling Today</span>
-          </div>
-          
           <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-8 tracking-tight">
             Stop Waiting for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300">Phone to Ring</span>
           </h2>

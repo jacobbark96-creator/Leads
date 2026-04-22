@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { sendWelcomeEmail, addContactToMarketingAudience } from '@/lib/resend';
 import { supabase } from '@/lib/supabase';
 
+export const runtime = 'edge';
+
 export async function POST(req: Request) {
   try {
     const { email, name } = await req.json();

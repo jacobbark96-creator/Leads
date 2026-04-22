@@ -3,6 +3,8 @@ import Stripe from 'stripe';
 import { supabase } from '@/lib/supabase';
 import { sendWelcomeEmail } from '@/lib/resend';
 
+export const runtime = 'edge';
+
 export async function POST(req: Request) {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
   const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -23,7 +25,7 @@ export async function POST(req: Request) {
 
   try {
     if (!sig || !endpointSecret) throw new Error('Missing signature or webhook secret');
-    event = stripe.webhooks.constructEvent(payload, sig, endpointSecret);
+    event = await stripe.webhooks.constructEventAsync(payload, sig, endpointSecret);
   } catch (err: any) {
     console.error(`Webhook signature verification failed: ${err.message}`);
     return NextResponse.json({ error: `Webhook Error: ${err.message}` }, { status: 400 });

@@ -34,7 +34,19 @@ export default function SubscriptionSummary() {
         body: JSON.stringify({ userId: user?.id, email: user?.email }),
       });
 
-      const { url, error } = await response.json();
+      let data;
+      try {
+        data = await response.json();
+      } catch (parseError) {
+        // If the server returns a 500 HTML page or empty response instead of JSON
+        throw new Error(`Server returned an invalid response. Status: ${response.status}`);
+      }
+
+      if (!response.ok) {
+        throw new Error(data.error || `HTTP error ${response.status}`);
+      }
+
+      const { url, error } = data;
 
       if (error) throw new Error(error);
 

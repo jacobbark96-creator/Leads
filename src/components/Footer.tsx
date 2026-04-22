@@ -5,10 +5,10 @@ export const Footer = () => {
   return (
     <footer className="bg-slate-50 border-t border-slate-200 pt-16 pb-8 mt-auto">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid grid-cols-1 md:grid-cols-4 lg:grid-cols-6 gap-12 lg:gap-8 mb-12">
+        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8 md:gap-12 lg:gap-8 mb-12">
           
           {/* Brand Column */}
-          <div className="col-span-1 md:col-span-2 lg:col-span-3">
+          <div className="col-span-2 md:col-span-2 lg:col-span-3">
             <Link href="/" className="inline-block mb-6">
               <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
             </Link>

@@ -2,12 +2,55 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Mail, ArrowRight, RefreshCw } from 'lucide-react';
+import { Mail, RefreshCw, Send } from 'lucide-react';
 import Link from 'next/link';
+import toast from 'react-hot-toast';
 
 export default function CheckEmail() {
   const router = useRouter();
   const [isChecking, setIsChecking] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
+
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (resendCooldown > 0) {
+      timer = setInterval(() => setResendCooldown(c => c - 1), 1000);
+    }
+    return () => clearInterval(timer);
+  }, [resendCooldown]);
+
+  const handleResend = async () => {
+    if (resendCooldown > 0) return;
+    
+    setIsResending(true);
+    try {
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (!session?.user?.email) {
+        toast.error("Session expired. Please try signing in again to trigger a new email.");
+        router.push('/login');
+        return;
+      }
+
+      const { error } = await supabase.auth.resend({
+        type: 'signup',
+        email: session.user.email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/email-confirmed`
+        }
+      });
+
+      if (error) throw error;
+      
+      toast.success("Confirmation email resent!");
+      setResendCooldown(60); // 60 second cooldown
+    } catch (error: any) {
+      toast.error(error.message || "Failed to resend email");
+    } finally {
+      setIsResending(false);
+    }
+  };
 
   // Poll Supabase to see if the user's email has been verified
   useEffect(() => {
@@ -73,6 +116,19 @@ export default function CheckEmail() {
             >
               <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin text-openlead-blue' : 'text-gray-400'}`} />
               {isChecking ? 'Checking status...' : 'I have confirmed my email'}
+            </button>
+
+            <button
+              onClick={handleResend}
+              disabled={isResending || resendCooldown > 0}
+              className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-200 rounded-xl shadow-sm text-sm font-bold text-gray-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-all disabled:opacity-50"
+            >
+              <Send className={`w-4 h-4 ${isResending ? 'animate-pulse text-gray-400' : 'text-gray-400'}`} />
+              {isResending 
+                ? 'Sending...' 
+                : resendCooldown > 0 
+                  ? `Resend available in ${resendCooldown}s` 
+                  : 'I didn\'t receive an email (Resend)'}
             </button>
 
             <Link

@@ -76,7 +76,7 @@ export default function Login() {
         
         // Redirect to the check-email page instead of staying on login
         if (signUpData.user) {
-          router.push('/check-email');
+          router.push(`/check-email?email=${encodeURIComponent(data.email)}`);
         }
       } else {
         const { data: authData, error } = await supabase.auth.signInWithPassword({

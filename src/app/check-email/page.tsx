@@ -12,6 +12,17 @@ export default function CheckEmail() {
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
+  const [emailFromUrl, setEmailFromUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    // Safely get email from URL if present
+    const params = new URLSearchParams(window.location.search);
+    const email = params.get('email');
+    if (email) {
+      setEmailFromUrl(email);
+    }
+  }, []);
+
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (resendCooldown > 0) {
@@ -27,7 +38,9 @@ export default function CheckEmail() {
     try {
       const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (!session?.user?.email) {
+      const targetEmail = session?.user?.email || emailFromUrl;
+
+      if (!targetEmail) {
         toast.error("Session expired. Please try signing in again to trigger a new email.");
         router.push('/login');
         return;
@@ -35,7 +48,7 @@ export default function CheckEmail() {
 
       const { error } = await supabase.auth.resend({
         type: 'signup',
-        email: session.user.email,
+        email: targetEmail,
         options: {
           emailRedirectTo: `${window.location.origin}/email-confirmed`
         }

@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { supabase } from '@/lib/supabase';
-import { sendWelcomeEmail } from '@/lib/resend';
+import { supabase } from '../../../../lib/supabase';
+import { sendWelcomeEmail } from '../../../../lib/resend';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: '2023-10-16' as any,
@@ -33,20 +33,21 @@ export async function POST(req: Request) {
       
       if (!userId || !customerEmail) break;
 
-      // In a real application, you would update your user's subscription status in Supabase here.
-      // e.g. await supabase.from('users').update({ stripe_customer_id: session.customer, is_subscribed: true }).eq('id', userId);
+      // Only send the welcome email if this checkout was for the subscription mode (initial signup)
+      // If it's a 'payment' mode, it means they are buying a lead later on.
+      if (session.mode === 'subscription') {
+        // Fetch the user's profile to get their name for the welcome email
+        const { data: profile } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', userId)
+          .single();
 
-      // Fetch the user's profile to get their name for the welcome email
-      const { data: profile } = await supabase
-        .from('users')
-        .select('name')
-        .eq('id', userId)
-        .single();
+        const name = profile?.name || 'Partner';
 
-      const name = profile?.name || 'Partner';
-
-      // Fire off the welcome email now that their subscription checkout is fully complete
-      await sendWelcomeEmail(customerEmail, name);
+        // Fire off the welcome email now that their subscription checkout is fully complete
+        await sendWelcomeEmail(customerEmail, name);
+      }
       
       break;
     }

@@ -117,8 +117,17 @@ export default function ClientDashboard() {
 
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredLeads.map((lead) => (
-            <div key={lead.id} className="bg-white overflow-hidden shadow rounded-lg border border-gray-200">
-              <div className="px-4 py-5 sm:p-6">
+            <div key={lead.id} className="bg-white overflow-hidden shadow rounded-lg border border-gray-200 flex flex-col">
+              {lead.photos && lead.photos.length > 0 && (
+                <div className="h-48 w-full relative overflow-hidden bg-gray-100 border-b border-gray-200">
+                  <img 
+                    src={lead.photos[0]} 
+                    alt="Lead property" 
+                    className="w-full h-full object-cover transition-transform hover:scale-105 duration-300"
+                  />
+                </div>
+              )}
+              <div className="px-4 py-5 sm:p-6 flex-grow">
                 <div className="flex items-center justify-between mb-4">
                   <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                     {getCategoryName(lead.category_id)}

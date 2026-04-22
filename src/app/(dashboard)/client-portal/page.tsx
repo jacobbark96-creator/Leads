@@ -97,24 +97,6 @@ export default function ClientDashboard() {
       </div>
 
       <div className="bg-white shadow rounded-lg p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-6 gap-4">
-          <div className="relative rounded-md shadow-sm max-w-xs w-full">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter className="h-5 w-5 text-gray-400" />
-            </div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="focus:ring-blue-500 focus:border-blue-500 block w-full pl-10 sm:text-sm border-gray-300 rounded-md py-2 border"
-            >
-              <option value="all">All Categories</option>
-              {categories.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-
         <div className="grid grid-cols-2 gap-4 sm:gap-6 lg:grid-cols-4">
           {filteredLeads.map((lead) => (
             <div key={lead.id} className="bg-white overflow-hidden shadow rounded-lg border border-gray-200 flex flex-col text-sm sm:text-base">

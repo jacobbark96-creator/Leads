@@ -21,6 +21,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
   const [formData, setFormData] = useState({
     name: user.name || '',
     role: user.role || 'client',
+    user_phone: user.phone || '',
     company_name: '',
     phone: '',
     other_contacts: '',
@@ -84,6 +85,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
         .update({
           name: formData.name,
           role: formData.role,
+          phone: formData.user_phone,
         })
         .eq('id', user.id);
 
@@ -216,6 +218,17 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="mt-1 block w-full py-2 px-3 sm:text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Personal Phone (WhatsApp)</label>
+                  <input
+                    type="text"
+                    value={formData.user_phone}
+                    onChange={(e) => setFormData({...formData, user_phone: e.target.value})}
+                    placeholder="+447..."
                     className="mt-1 block w-full py-2 px-3 sm:text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                   />
                 </div>

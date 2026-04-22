@@ -5,6 +5,7 @@ export interface UserProfile {
   email: string;
   role: UserRole;
   name: string;
+  phone?: string | null;
   created_at: string;
 }
 
@@ -65,6 +66,7 @@ export interface Lead {
   price?: number;
   latitude?: number | null;
   longitude?: number | null;
+  clients?: { company_name: string; contact_name: string } | null;
 }
 
 export interface Contractor {

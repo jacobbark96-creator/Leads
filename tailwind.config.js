@@ -12,6 +12,9 @@ export default {
       center: true,
     },
     extend: {
+      colors: {
+        'openlead-blue': '#39cccc',
+      },
       keyframes: {
         float: {
           '0%, 100%': { transform: 'translateY(0)' },

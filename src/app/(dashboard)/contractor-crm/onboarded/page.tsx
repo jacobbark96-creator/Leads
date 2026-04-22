@@ -66,9 +66,9 @@ function OnboardedContractorsContent() {
 
       if (assignedToMe && profile) {
         query = query.eq('assigned_to', profile.id);
-      } else {
-        query = query.is('assigned_to', null);
       }
+      // Note: intentionally removed the `else { query = query.is('assigned_to', null) }` block
+      // so the onboarded tab shows ALL onboarded contractors, assigned or not.
 
       if (phoneFilter === 'with_phone') {
         query = query.neq('phone', '');

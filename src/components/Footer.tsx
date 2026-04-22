@@ -19,18 +19,18 @@ export const Footer = () => {
           
           {/* Platform Links */}
           <div className="col-span-1 lg:col-span-1">
-            <h4 className="font-bold text-slate-900 mb-4 tracking-wider uppercase text-xs">Platform</h4>
+            <h4 className="font-bold text-openlead-blue mb-4 tracking-wider uppercase text-xs">Platform</h4>
             <ul className="space-y-3">
-              <li><Link href="/services" className="text-slate-600 hover:text-blue-600 transition-colors text-sm">Services</Link></li>
-              <li><Link href="/about" className="text-slate-600 hover:text-blue-600 transition-colors text-sm">About Us</Link></li>
-              <li><Link href="/morals" className="text-slate-600 hover:text-blue-600 transition-colors text-sm">Our Morals</Link></li>
-              <li><Link href="/login" className="text-slate-600 hover:text-blue-600 transition-colors text-sm">Partner Login</Link></li>
+              <li><Link href="/services" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Services</Link></li>
+              <li><Link href="/about" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">About Us</Link></li>
+              <li><Link href="/morals" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Our Morals</Link></li>
+              <li><Link href="/login" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Partner Login</Link></li>
             </ul>
           </div>
           
           {/* Contact Info */}
           <div className="col-span-1 lg:col-span-2">
-            <h4 className="font-bold text-slate-900 mb-4 tracking-wider uppercase text-xs">Contact</h4>
+            <h4 className="font-bold text-openlead-blue mb-4 tracking-wider uppercase text-xs">Contact</h4>
             <ul className="space-y-3">
               <li className="text-slate-600 text-sm">support@openlead.com</li>
             </ul>

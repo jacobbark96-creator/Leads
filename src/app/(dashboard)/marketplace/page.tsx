@@ -57,7 +57,11 @@ export default function Marketplace() {
       // Basic update: assign client_id. (In real-world, you'd integrate Stripe here first)
       const { error } = await supabase
         .from('leads')
-        .update({ client_id: clientData.id, purchase_date: new Date().toISOString() })
+        .update({ 
+          client_id: clientData.id, 
+          purchase_date: new Date().toISOString(),
+          status: 'sold'
+        })
         .eq('id', leadId);
 
       if (error) throw error;

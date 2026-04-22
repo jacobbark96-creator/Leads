@@ -46,7 +46,7 @@ export default function Home() {
               
               <h1 className="text-5xl md:text-6xl lg:text-7xl font-extrabold tracking-tight text-white mb-6 leading-[1.1]">
                 Scale With <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300">
                   High-Intent
                 </span> <br/>
                 Leads
@@ -59,7 +59,7 @@ export default function Home() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <Link
                   href={user && mounted ? getDashboardLink() : "/login"}
-                  className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-500 shadow-[0_0_40px_-10px_rgba(37,99,235,0.5)] hover:shadow-[0_0_60px_-15px_rgba(37,99,235,0.7)] transition-all duration-300"
+                  className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-white bg-openlead-blue hover:bg-openlead-blue/90 shadow-[0_0_40px_-10px_rgba(57,204,204,0.5)] hover:shadow-[0_0_60px_-15px_rgba(57,204,204,0.7)] transition-all duration-300"
                 >
                   {user && mounted ? "Dashboard" : "Login / Sign up"} <ArrowRight className="ml-2 w-5 h-5" />
                 </Link>
@@ -130,7 +130,7 @@ export default function Home() {
                         <PhoneCall className="w-4 h-4 text-green-500" /> (555) 123-4567
                       </div>
                     </div>
-                    <button className="mt-6 w-full bg-blue-600 text-white rounded-lg py-3 text-sm font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 shadow-md">
+                    <button className="mt-6 w-full bg-openlead-blue text-white rounded-lg py-3 text-sm font-bold hover:bg-openlead-blue/90 transition-colors flex items-center justify-center gap-2 shadow-md">
                       <PhoneCall className="w-4 h-4" /> Call Lead Now
                     </button>
                   </div>
@@ -186,7 +186,7 @@ export default function Home() {
               { label: "CRM Integration", value: "1-Click", desc: "Instant sync & dial" },
             ].map((stat, i) => (
               <div key={i} className="text-center px-4">
-                <p className="text-4xl md:text-5xl font-extrabold text-blue-600 mb-2">{stat.value}</p>
+                <p className="text-4xl md:text-5xl font-extrabold text-openlead-blue mb-2">{stat.value}</p>
                 <p className="text-slate-900 font-bold mb-1 text-lg">{stat.label}</p>
                 <p className="text-slate-500 text-sm">{stat.desc}</p>
               </div>
@@ -199,7 +199,7 @@ export default function Home() {
       <section className="py-24 bg-slate-50">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-blue-600 font-bold tracking-wider text-sm uppercase mb-3">The Openlead Advantage</h2>
+            <h2 className="text-openlead-blue font-bold tracking-wider text-sm uppercase mb-3">The Openlead Advantage</h2>
             <h3 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">Built for Contractors Who Want to Grow</h3>
             <p className="text-lg text-slate-600 leading-relaxed">
               We handle the marketing, vetting, and data collection so your sales team can focus entirely on what they do best: closing deals.
@@ -253,18 +253,18 @@ export default function Home() {
       <section className="relative py-32 overflow-hidden bg-slate-900 border-t border-slate-800">
         {/* Subtle glowing orbs for SV vibe */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-full pointer-events-none">
-          <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-3xl opacity-50 animate-pulse"></div>
+          <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-openlead-blue/20 rounded-full blur-3xl opacity-50 animate-pulse"></div>
           <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl opacity-50 animate-pulse" style={{ animationDelay: '2s' }}></div>
         </div>
 
         <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 mb-8">
-            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+            <div className="w-2 h-2 rounded-full bg-openlead-blue animate-pulse"></div>
             <span className="text-xs font-semibold text-slate-300 tracking-widest uppercase">Start Scaling Today</span>
           </div>
           
           <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-8 tracking-tight">
-            Stop Waiting for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Phone to Ring</span>
+            Stop Waiting for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300">Phone to Ring</span>
           </h2>
           
           <p className="text-xl md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed font-light">

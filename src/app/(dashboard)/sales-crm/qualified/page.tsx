@@ -12,6 +12,7 @@ import { useAuthStore } from '@/store/authStore';
 import { useSearchParams } from 'next/navigation';
 import { AddLeadModal } from '@/components/AddLeadModal';
 import { MarketLeadModal } from '@/components/MarketLeadModal';
+import { SoldLeadModal } from '@/components/SoldLeadModal';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -42,6 +43,7 @@ function QualifiedLeadsContent() {
   const [hasMore, setHasMore] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [leadToMarket, setLeadToMarket] = useState<any>(null);
+  const [soldLeadDetails, setSoldLeadDetails] = useState<Lead | null>(null);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const PAGE_SIZE = 25;
 
@@ -61,8 +63,8 @@ function QualifiedLeadsContent() {
 
       let query = supabase
         .from('leads')
-        .select('id, name, status, phone, assigned_to, is_marketed, location, monthly_spend, timeframe, est_system_size, qualification_notes, photos')
-        .eq('status', 'qualified')
+        .select('id, name, status, phone, assigned_to, is_marketed, location, monthly_spend, timeframe, est_system_size, qualification_notes, photos, price, purchase_date, booking_date, clients(company_name, contact_name)')
+        .in('status', ['qualified', 'sold'])
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
@@ -193,14 +195,23 @@ function QualifiedLeadsContent() {
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <select
-                    value={lead.status}
-                    onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                    className="text-xs font-bold rounded-full px-3 py-1.5 border-0 shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500 bg-blue-100 text-blue-800"
-                  >
-                    <option value="qualified">Qualified</option>
-                    <option value="fresh">Move back to Fresh</option>
-                  </select>
+                  {lead.status === 'sold' ? (
+                    <button
+                      onClick={() => setSoldLeadDetails(lead)}
+                      className="text-xs font-bold rounded-full px-4 py-2 border border-transparent shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      Sold
+                    </button>
+                  ) : (
+                    <select
+                      value={lead.status}
+                      onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                      className="text-xs font-bold rounded-full px-3 py-1.5 border-0 shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500 bg-blue-100 text-blue-800"
+                    >
+                      <option value="qualified">Qualified</option>
+                      <option value="fresh">Move back to Fresh</option>
+                    </select>
+                  )}
                   
                   <Link
                     href={`/sales-crm/lead?id=${lead.id}&tab=qualified`}
@@ -210,17 +221,19 @@ function QualifiedLeadsContent() {
                     View Details
                   </Link>
 
-                  {!lead.is_marketed ? (
-                    <button
-                      onClick={() => setLeadToMarket(lead)}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                    >
-                      Market
-                    </button>
-                  ) : (
-                    <span className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-green-100 text-green-800 border border-green-200">
-                      Marketed
-                    </span>
+                  {lead.status !== 'sold' && (
+                    !lead.is_marketed ? (
+                      <button
+                        onClick={() => setLeadToMarket(lead)}
+                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      >
+                        Market
+                      </button>
+                    ) : (
+                      <span className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-green-100 text-green-800 border border-green-200">
+                        Marketed
+                      </span>
+                    )
                   )}
                 </div>
               </li>
@@ -265,6 +278,14 @@ function QualifiedLeadsContent() {
             setLeadToMarket(null);
             setLeads(prev => prev.map(l => l.id === updatedLead.id ? { ...l, is_marketed: true } : l));
           }}
+        />
+      )}
+
+      {soldLeadDetails && (
+        <SoldLeadModal
+          isOpen={!!soldLeadDetails}
+          onClose={() => setSoldLeadDetails(null)}
+          lead={soldLeadDetails}
         />
       )}
     </div>

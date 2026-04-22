@@ -58,16 +58,13 @@ export default function MyOpenlead() {
       if (client.assigned_to) {
         const { data: coachData, error: coachError } = await supabase
           .from('users')
-          .select('name, email')
+          .select('name, email, phone')
           .eq('id', client.assigned_to)
           .single();
           
         if (!coachError && coachData) {
           setCoachName(coachData.name);
-          // Normally we'd fetch a phone number from a staff profile, but users table only has email/name.
-          // Let's assume the coach's phone might be hardcoded or we just provide a placeholder.
-          // For now, let's just use a placeholder WhatsApp number or we can let the user know.
-          setCoachPhone('+447123456789'); // Example phone
+          setCoachPhone(coachData.phone || '+447123456789'); // Fallback to placeholder if admin hasn't set phone
         }
       }
 

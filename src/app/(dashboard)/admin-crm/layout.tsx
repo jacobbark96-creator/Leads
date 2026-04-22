@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Users, Tags, Ticket, Menu, X } from 'lucide-react';
+import { Users, Tags, Ticket, Menu, X, TrendingUp } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
@@ -13,6 +13,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'User Management', path: '/admin-crm', icon: Users },
     { name: 'Categories', path: '/admin-crm/categories', icon: Tags },
     { name: 'Discount Codes', path: '/admin-crm/discounts', icon: Ticket },
+    { name: 'Sales Tracker', path: '/admin-crm/tracker', icon: TrendingUp },
   ];
 
   return (

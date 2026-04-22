@@ -39,11 +39,11 @@ export const Footer = () => {
             
             {/* Built By Kairo */}
             <div className="flex flex-col items-start gap-2 mt-8">
-              <span className="text-xs text-slate-500 font-bold uppercase tracking-widest">Built Proudly By</span>
+              <span className="text-[10px] text-slate-500 font-bold uppercase tracking-widest">Built Proudly By</span>
               <img 
                 src="/kairo-logo.png" 
                 alt="Kairo Studio" 
-                className="h-8 object-contain opacity-80 hover:opacity-100 transition-opacity" 
+                className="h-12 object-contain opacity-80 hover:opacity-100 transition-opacity" 
               />
             </div>
           </div>

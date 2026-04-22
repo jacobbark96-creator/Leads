@@ -44,9 +44,9 @@ export default function Home() {
             {/* Left Content */}
             <div className="max-w-2xl">
               
-              <h1 className="font-darker-grotesque text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white mb-6 leading-[1]">
+              <h1 className="font-darker-grotesque text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white mb-6 leading-[0.9]">
                 Scale With <br/>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300 inline-block mt-2 mb-1">
                   High-Intent
                 </span> <br/>
                 Leads

@@ -1,15 +1,21 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { supabase } from '../../../../lib/supabase';
-import { sendWelcomeEmail } from '../../../../lib/resend';
-
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
-  apiVersion: '2023-10-16' as any,
-});
-
-const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+import { supabase } from '@/lib/supabase';
+import { sendWelcomeEmail } from '@/lib/resend';
 
 export async function POST(req: Request) {
+  const stripeKey = process.env.STRIPE_SECRET_KEY;
+  const endpointSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+  if (!stripeKey || !endpointSecret) {
+    console.error('Stripe environment variables are missing.');
+    return NextResponse.json({ error: 'Stripe is not configured properly' }, { status: 500 });
+  }
+
+  const stripe = new Stripe(stripeKey, {
+    apiVersion: '2023-10-16' as any,
+  });
+
   const payload = await req.text();
   const sig = req.headers.get('stripe-signature');
 

@@ -4,7 +4,7 @@ export const dynamic = 'force-static';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   // Use the environment variable for production URL, fallback to localhost for dev
-  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://openlead.com';
+  const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://openlead.co.uk';
 
   // Core static public routes
   const routes = [

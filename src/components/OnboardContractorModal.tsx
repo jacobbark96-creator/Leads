@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '../lib/supabase';
-import { Contractor, Category } from '../types';
+import { supabase } from '@/lib/supabase';
+import { Contractor, Category } from '@/types';
 import { X, UserPlus, Building, Mail, Phone, MapPin, Briefcase, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Autocomplete from 'react-google-autocomplete';
@@ -127,6 +127,20 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
         .single();
 
       if (updateError) throw updateError;
+
+      // 4. Try to trigger the welcome email via our API route
+      try {
+        await fetch('/api/send-welcome', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: formData.email,
+            name: formData.contact_name,
+          })
+        });
+      } catch (emailErr) {
+        console.error('Non-blocking error sending welcome email:', emailErr);
+      }
 
       toast.success('Contractor successfully onboarded as a new Client!');
       onSuccess(updatedContractor as Contractor);

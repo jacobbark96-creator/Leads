@@ -14,7 +14,7 @@ export const metadata: Metadata = {
   authors: [{ name: 'Openlead' }],
   creator: 'Openlead',
   publisher: 'Openlead',
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://openlead.co.uk'),
+  metadataBase: new URL('https://openlead.co.uk'),
   openGraph: {
     type: 'website',
     locale: 'en_GB',

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { supabase } from '@/lib/supabase';
-import { Contractor, Category } from '@/types';
+import { supabase } from '../lib/supabase';
+import { Contractor, Category } from '../types';
 import { X, UserPlus, Building, Mail, Phone, MapPin, Briefcase, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Autocomplete from 'react-google-autocomplete';
@@ -112,7 +112,8 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
           services_offered: selectedServices.length > 0 ? selectedServices.join(', ') : null,
           internal_notes: formData.internal_notes || null,
           latitude: formData.latitude,
-          longitude: formData.longitude
+          longitude: formData.longitude,
+          assigned_to: contractor.assigned_to || null
         });
 
       if (clientError) throw clientError;

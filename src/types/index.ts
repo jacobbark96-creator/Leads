@@ -22,6 +22,7 @@ export interface Client {
   internal_notes?: string | null;
   latitude?: number | null;
   longitude?: number | null;
+  assigned_to?: string | null;
   created_at: string;
 }
 

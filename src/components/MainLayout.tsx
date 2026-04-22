@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { LogOut, LayoutDashboard, Users, Settings, Database, BookOpen, Briefcase, Home, Menu, X } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
 
@@ -31,6 +31,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         return [
           { name: 'Dashboard', path: '/client-portal', icon: LayoutDashboard },
           { name: 'Marketplace', path: '/marketplace', icon: Database },
+          { name: 'My Openlead', path: '/my-openlead', icon: User },
         ];
       case 'sales':
         return [

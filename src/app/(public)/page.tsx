@@ -206,63 +206,83 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="flex flex-col md:grid md:grid-cols-3 gap-6 md:gap-8 relative">
             {[
               {
                 title: "Pre-Qualified Intent",
                 icon: Target,
                 desc: "We don't just sell data. Every lead is a homeowner who has actively requested a quote for your specific service.",
                 color: "text-blue-600",
-                bg: "bg-blue-100"
+                bg: "bg-blue-50",
+                border: "border-blue-100"
               },
               {
                 title: "Absolute Exclusivity",
                 icon: ShieldCheck,
                 desc: "When you buy a lead from Openlead, it's yours. We never sell the same prospect to multiple contractors.",
                 color: "text-emerald-600",
-                bg: "bg-emerald-100"
+                bg: "bg-emerald-50",
+                border: "border-emerald-100"
               },
               {
                 title: "All-in-One CRM",
                 icon: Zap,
                 desc: "Manage your leads, track appointments, and dial prospects instantly using our built-in client portal and sales CRM.",
                 color: "text-amber-600",
-                bg: "bg-amber-100"
+                bg: "bg-amber-50",
+                border: "border-amber-100"
               }
             ].map((feature, i) => (
-              <div key={i} className="bg-white rounded-2xl p-8 shadow-sm border border-slate-200 hover:shadow-xl hover:-translate-y-1 transition-all duration-300">
-                <div className={`w-14 h-14 rounded-xl flex items-center justify-center mb-6 ${feature.bg} ${feature.color}`}>
-                  <feature.icon className="w-7 h-7" />
+              <div 
+                key={i} 
+                className={`bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border ${feature.border} transition-all duration-500 sticky md:static md:hover:-translate-y-2`}
+                style={{ top: `calc(120px + ${i * 24}px)` }}
+              >
+                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 ${feature.bg} ${feature.color}`}>
+                  <feature.icon className="w-8 h-8" />
                 </div>
-                <h4 className="text-xl font-bold text-slate-900 mb-3">{feature.title}</h4>
-                <p className="text-slate-600 leading-relaxed">{feature.desc}</p>
+                <h4 className="text-2xl font-bold text-slate-900 mb-4">{feature.title}</h4>
+                <p className="text-slate-600 leading-relaxed text-lg">{feature.desc}</p>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="relative py-24 overflow-hidden">
-        <div className="absolute inset-0 bg-blue-600"></div>
-        <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1600585154340-be6161a56a0c?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80')] bg-cover bg-center opacity-10 mix-blend-overlay"></div>
-        <div className="relative z-10 max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl md:text-5xl font-extrabold text-white mb-6">Stop Waiting for the Phone to Ring</h2>
-          <p className="text-xl text-blue-100 mb-10 max-w-2xl mx-auto leading-relaxed">
+      {/* CTA Section - Silicon Valley Vibe */}
+      <section className="relative py-32 overflow-hidden bg-slate-900 border-t border-slate-800">
+        {/* Subtle glowing orbs for SV vibe */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-full pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-blue-600/20 rounded-full blur-3xl opacity-50 animate-pulse"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl opacity-50 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        </div>
+
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-800 border border-slate-700 mb-8">
+            <div className="w-2 h-2 rounded-full bg-blue-400 animate-pulse"></div>
+            <span className="text-xs font-semibold text-slate-300 tracking-widest uppercase">Start Scaling Today</span>
+          </div>
+          
+          <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-8 tracking-tight">
+            Stop Waiting for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-300">Phone to Ring</span>
+          </h2>
+          
+          <p className="text-xl md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed font-light">
             Join the top-performing contractors across the country who rely on Openlead to keep their pipelines full and revenue growing.
           </p>
-          <div className="flex flex-col sm:flex-row justify-center gap-4">
+          
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
             <Link
               href={user && mounted ? getDashboardLink() : "/login"}
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold rounded-xl text-blue-600 bg-white hover:bg-slate-50 shadow-xl hover:scale-105 transition-all duration-300"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-full text-slate-900 bg-white hover:bg-slate-100 shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)] hover:-translate-y-1 transition-all duration-300"
             >
-              {user && mounted ? "Dashboard" : "Login / Sign up"}
+              {user && mounted ? "Go to Dashboard" : "Get Started Now"}
             </Link>
             <Link
               href="/about"
-              className="inline-flex items-center justify-center px-8 py-4 text-lg font-bold rounded-xl text-white bg-blue-700/50 hover:bg-blue-700/70 border border-blue-500/50 backdrop-blur-md transition-all duration-300"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-full text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 backdrop-blur-md transition-all duration-300"
             >
-              Learn More About Us
+              Learn More
             </Link>
           </div>
         </div>

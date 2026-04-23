@@ -1,6 +1,6 @@
 import React from 'react';
 import { Lead } from '../types';
-import { X, MapPin, Building, Calendar, FileText, Info, DollarSign, Home, Zap, Phone, Mail, User } from 'lucide-react';
+import { X, MapPin, Building, Calendar, FileText, Info, DollarSign, Home, Zap, Phone, Mail, User, Download, CheckCircle, Briefcase } from 'lucide-react';
 
 interface PurchasedLeadModalProps {
   isOpen: boolean;
@@ -49,6 +49,13 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                   <span className="font-medium text-gray-900">{lead.name}</span>
                 </div>
                 
+                {lead.job_title && (
+                  <div className="flex items-center pb-3 border-b border-blue-200/50">
+                    <Briefcase className="w-5 h-5 mr-3 text-blue-600" />
+                    <span className="font-medium text-gray-900">{lead.job_title}</span>
+                  </div>
+                )}
+                
                 {lead.phone && (
                   <div className="flex items-center pb-3 border-b border-blue-200/50">
                     <Phone className="w-5 h-5 mr-3 text-blue-600" />
@@ -78,6 +85,23 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
 
               {/* Primary Info */}
               <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
+                {lead.bills_url && (
+                  <div className="flex items-center justify-between pb-4 border-b border-gray-100 bg-green-50/50 -mt-2 -mx-2 px-2 pt-2 rounded-t-lg">
+                    <div className="flex items-center text-green-700">
+                      <CheckCircle className="w-5 h-5 mr-2" />
+                      <span className="font-bold text-sm">Electricity Bills Provided</span>
+                    </div>
+                    <a
+                      href={lead.bills_url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center px-3 py-1.5 bg-white border border-green-200 text-green-700 text-xs font-bold rounded-md hover:bg-green-50 transition-colors shadow-sm"
+                    >
+                      <Download className="w-4 h-4 mr-1.5" /> Download Bills
+                    </a>
+                  </div>
+                )}
+                
                 <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-2">
                   Project Scope
                 </h3>
@@ -118,6 +142,48 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                   <Home className="w-4 h-4 text-gray-400" /> Property Details
                 </h3>
                 <div className="grid grid-cols-2 gap-4">
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <span className="block text-xs text-gray-500 mb-1">Ownership</span>
+                    <span className="font-semibold text-gray-900">{lead.property_ownership || 'N/A'}</span>
+                  </div>
+                  {lead.property_ownership === 'Leased' && (
+                    <>
+                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                        <span className="block text-xs text-gray-500 mb-1">Lease Left</span>
+                        <span className="font-semibold text-gray-900">{lead.lease_duration || 'N/A'}</span>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                        <span className="block text-xs text-gray-500 mb-1">Likely to Renew?</span>
+                        <span className="font-semibold text-gray-900">{lead.likely_to_renew || 'N/A'}</span>
+                      </div>
+                      <div className="bg-gray-50 p-4 rounded-lg border border-gray-100 col-span-2">
+                        <span className="block text-xs text-gray-500 mb-1">Landlord Permission</span>
+                        <span className="font-semibold text-gray-900">{lead.landlord_permission || 'N/A'}</span>
+                      </div>
+                    </>
+                  )}
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <span className="block text-xs text-gray-500 mb-1">Payment Option</span>
+                    <span className="font-semibold text-gray-900">{lead.payment_options || 'N/A'}</span>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <span className="block text-xs text-gray-500 mb-1">Availability</span>
+                    <span className="font-semibold text-gray-900">{lead.availability || 'N/A'}</span>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <span className="block text-xs text-gray-500 mb-1">Electrical Supply</span>
+                    <span className="font-semibold text-gray-900">{lead.electrical_supply || 'N/A'}</span>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <span className="block text-xs text-gray-500 mb-1">Solar Location</span>
+                    <span className="font-semibold text-gray-900">{lead.solar_location || 'N/A'}</span>
+                  </div>
+                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                    <span className="block text-xs text-gray-500 mb-1">Roof Size</span>
+                    <span className="font-semibold text-gray-900">
+                      {lead.roof_size ? (lead.roof_size.toLowerCase().includes('sqm') || lead.roof_size.toLowerCase().includes('sq m') || lead.roof_size.toLowerCase().includes('m2') ? lead.roof_size : `${lead.roof_size} SqM`) : 'N/A'}
+                    </span>
+                  </div>
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                     <span className="block text-xs text-gray-500 mb-1">Roof Condition</span>
                     <span className="font-semibold text-gray-900">{lead.roof_condition || 'N/A'}</span>

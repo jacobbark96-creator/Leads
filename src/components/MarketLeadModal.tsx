@@ -34,6 +34,17 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
     qualification_notes: lead.qualification_notes || '',
     latitude: lead.latitude || null as number | null,
     longitude: lead.longitude || null as number | null,
+    property_ownership: lead.property_ownership || '',
+    lease_duration: lead.lease_duration || '',
+    likely_to_renew: lead.likely_to_renew || '',
+    landlord_permission: lead.landlord_permission || '',
+    payment_options: lead.payment_options || '',
+    roof_size: lead.roof_size || '',
+    electrical_supply: lead.electrical_supply || '',
+    solar_location: lead.solar_location || '',
+    availability: lead.availability || '',
+    job_title: lead.job_title || '',
+    bills_url: lead.bills_url || '',
   });
 
   useEffect(() => {
@@ -103,6 +114,38 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
     }
   };
 
+  const handleBillUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0) return;
+    const file = e.target.files[0];
+    
+    try {
+      setUploading(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `bill-${lead.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+      const filePath = `${fileName}`;
+
+      const { error: uploadError } = await supabase.storage
+        .from('lead_documents')
+        .upload(filePath, file, {
+          cacheControl: '3600',
+          upsert: false
+        });
+
+      if (uploadError) throw uploadError;
+
+      const { data: publicUrlData } = supabase.storage
+        .from('lead_documents')
+        .getPublicUrl(filePath);
+
+      setFormData(prev => ({ ...prev, bills_url: publicUrlData.publicUrl }));
+      toast.success('Bill uploaded successfully');
+    } catch (error: any) {
+      toast.error('Error uploading bill: ' + error.message);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const removePhoto = (indexToRemove: number) => {
     setPhotos(photos.filter((_, index) => index !== indexToRemove));
   };
@@ -129,7 +172,18 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
         qualification_notes: formData.qualification_notes,
         photos: photos,
         latitude: formData.latitude,
-        longitude: formData.longitude
+        longitude: formData.longitude,
+        property_ownership: formData.property_ownership,
+        lease_duration: formData.property_ownership === 'Leased' ? formData.lease_duration : null,
+        likely_to_renew: formData.property_ownership === 'Leased' ? formData.likely_to_renew : null,
+        landlord_permission: formData.property_ownership === 'Leased' ? formData.landlord_permission : null,
+        payment_options: formData.payment_options,
+        roof_size: formData.roof_size,
+        electrical_supply: formData.electrical_supply,
+        solar_location: formData.solar_location,
+        availability: formData.availability,
+        job_title: formData.job_title,
+        bills_url: formData.bills_url,
       };
 
       const { data, error } = await supabase
@@ -286,10 +340,133 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   />
                 </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Owned? *</label>
+                  <select
+                    required
+                    value={formData.property_ownership}
+                    onChange={(e) => setFormData({...formData, property_ownership: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="">Select Ownership</option>
+                    <option value="Owned">Owned</option>
+                    <option value="Leased">Leased</option>
+                  </select>
+                </div>
+
+                {formData.property_ownership === 'Leased' && (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">How long left on lease?</label>
+                      <input
+                        type="text"
+                        value={formData.lease_duration}
+                        onChange={(e) => setFormData({...formData, lease_duration: e.target.value})}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        placeholder="e.g. 5 Years"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Likely to renew?</label>
+                      <select
+                        value={formData.likely_to_renew}
+                        onChange={(e) => setFormData({...formData, likely_to_renew: e.target.value})}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      >
+                        <option value="">Select</option>
+                        <option value="Yes">Yes</option>
+                        <option value="No">No</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium text-gray-700">Permission from Landlord to install?</label>
+                      <input
+                        type="text"
+                        value={formData.landlord_permission}
+                        onChange={(e) => setFormData({...formData, landlord_permission: e.target.value})}
+                        className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        placeholder="e.g. Yes, written permission received"
+                      />
+                    </div>
+                  </>
+                )}
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Payment Options</label>
+                  <select
+                    value={formData.payment_options}
+                    onChange={(e) => setFormData({...formData, payment_options: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="">Select Payment Option</option>
+                    <option value="CAPEX">CAPEX</option>
+                    <option value="PPA">PPA</option>
+                    <option value="Self-Pay">Self-Pay</option>
+                    <option value="All options available">All options available</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Electrical Supply</label>
+                  <select
+                    value={formData.electrical_supply}
+                    onChange={(e) => setFormData({...formData, electrical_supply: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="">Select Supply</option>
+                    <option value="Single Phase">Single Phase</option>
+                    <option value="Three Phase">Three Phase</option>
+                  </select>
+                </div>
               </div>
 
               {/* Right Column */}
               <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Location of Solar</label>
+                  <select
+                    value={formData.solar_location}
+                    onChange={(e) => setFormData({...formData, solar_location: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  >
+                    <option value="">Select Location</option>
+                    <option value="Roof">Roof</option>
+                    <option value="Ground">Ground</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Roof Size</label>
+                  <input
+                    type="text"
+                    value={formData.roof_size}
+                    onChange={(e) => setFormData({...formData, roof_size: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="e.g. 50 SqM"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Availability</label>
+                  <input
+                    type="text"
+                    value={formData.availability}
+                    onChange={(e) => setFormData({...formData, availability: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="e.g. Weekdays after 3pm"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Job Title</label>
+                  <input
+                    type="text"
+                    value={formData.job_title}
+                    onChange={(e) => setFormData({...formData, job_title: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="e.g. Facilities Manager"
+                  />
+                </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Unit Rate</label>
                   <input
@@ -355,6 +532,40 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                 className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                 placeholder="Any additional details visible to the buyer..."
               />
+            </div>
+
+            {/* Bills */}
+            <div>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Electricity Bill Upload</label>
+              
+              <div className="flex gap-4 mb-4">
+                {formData.bills_url && (
+                  <div className="relative p-3 rounded-lg border border-green-200 bg-green-50 flex items-center justify-between w-full">
+                    <span className="text-sm font-medium text-green-700 truncate mr-4">Bill Document Uploaded</span>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, bills_url: ''})}
+                      className="text-red-500 hover:text-red-700 p-1 bg-white rounded-md shadow-sm border border-red-100"
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </button>
+                  </div>
+                )}
+                
+                {!formData.bills_url && (
+                  <label className="w-full h-16 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
+                    <Upload className="w-5 h-5 text-gray-400 mr-2" />
+                    <span className="text-sm text-gray-500 font-medium">Upload Bill (PDF, JPG, PNG)</span>
+                    <input 
+                      type="file" 
+                      accept=".pdf,image/*" 
+                      className="hidden" 
+                      onChange={handleBillUpload}
+                      disabled={uploading}
+                    />
+                  </label>
+                )}
+              </div>
             </div>
 
             {/* Photos */}

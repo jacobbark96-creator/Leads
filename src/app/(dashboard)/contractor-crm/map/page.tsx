@@ -78,6 +78,27 @@ export default function MapTab() {
 
   useEffect(() => {
     fetchMapData();
+
+    // Setup realtime subscription for leads
+    const leadsChannel = supabase
+      .channel('public:leads:map')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, () => {
+        fetchMapData();
+      })
+      .subscribe();
+
+    // Setup realtime subscription for contractors
+    const contractorsChannel = supabase
+      .channel('public:contractors:map')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'contractors' }, () => {
+        fetchMapData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(leadsChannel);
+      supabase.removeChannel(contractorsChannel);
+    };
   }, []);
 
   const fetchMapData = async () => {
@@ -93,15 +114,16 @@ export default function MapTab() {
       if (catError) throw catError;
       setCategories(catData || []);
 
-      // Fetch onboarded clients (contractors)
-      const { data: clientsData, error: clientsError } = await supabase
-        .from('clients')
-        .select('*');
+      // Fetch onboarded contractors directly
+      const { data: contractorsData, error: contractorsError } = await supabase
+        .from('contractors')
+        .select('*')
+        .eq('status', 'onboarded');
 
-      if (clientsError) throw clientsError;
+      if (contractorsError) throw contractorsError;
       
-      // Filter clients who have at least one valid service area
-      const validClients = (clientsData || []).filter((c: any) => 
+      // Filter contractors who have at least one valid service area
+      const validContractors = (contractorsData || []).filter((c: any) => 
         c.service_areas && 
         Array.isArray(c.service_areas) && 
         c.service_areas.length > 0 && 
@@ -109,7 +131,7 @@ export default function MapTab() {
         c.service_areas[0].lng
       );
       
-      setClients(validClients);
+      setClients(validContractors);
 
       // Fetch marketed, unpurchased leads with coordinates
       const { data: leadsData, error: leadsError } = await supabase

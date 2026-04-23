@@ -87,6 +87,21 @@ export default function Marketplace() {
   useEffect(() => {
     setPage(0);
     fetchMarketplaceLeads(0, true);
+
+    const leadsChannel = supabase
+      .channel('public:leads:marketplace')
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'leads' }, (payload) => {
+        const updatedLead = payload.new as Lead;
+        // If a lead is sold or paused, instantly remove it from the UI
+        if (updatedLead.client_id !== null || updatedLead.is_marketed === false || updatedLead.status !== 'qualified') {
+          setLeads(currentLeads => currentLeads.filter(l => l.id !== updatedLead.id));
+        }
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(leadsChannel);
+    };
   }, []);
 
   const loadMore = () => {

@@ -61,7 +61,7 @@ export default function ResetPassword() {
       if (error) throw error;
 
       toast.success('Password updated successfully! You can now log in.');
-      router.push('/login');
+      window.location.href = '/login';
     } catch (error: any) {
       toast.error('Failed to update password: ' + error.message);
     } finally {

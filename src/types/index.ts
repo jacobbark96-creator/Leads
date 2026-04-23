@@ -69,6 +69,17 @@ export interface Lead {
   price?: number;
   latitude?: number | null;
   longitude?: number | null;
+  property_ownership?: string;
+  lease_duration?: string;
+  likely_to_renew?: string;
+  landlord_permission?: string;
+  payment_options?: string;
+  roof_size?: string;
+  electrical_supply?: string;
+  solar_location?: string;
+  availability?: string;
+  job_title?: string;
+  bills_url?: string;
   clients?: { company_name: string; contact_name: string } | null;
 }
 

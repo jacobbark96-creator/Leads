@@ -13,6 +13,9 @@ export default function CheckEmail() {
   const [resendCooldown, setResendCooldown] = useState(0);
 
   const [emailFromUrl, setEmailFromUrl] = useState<string | null>(null);
+  const [isVerified, setIsVerified] = useState(false);
+  const [password, setPassword] = useState('');
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
 
   useEffect(() => {
     // Safely get email from URL if present
@@ -23,6 +26,25 @@ export default function CheckEmail() {
     }
   }, []);
 
+  // Poll to see if the user's email gets verified on another device
+  useEffect(() => {
+    if (!emailFromUrl || isVerified) return;
+
+    const checkVerification = async () => {
+      try {
+        const { data, error } = await supabase.rpc('check_email_verified', { lookup_email: emailFromUrl });
+        if (data === true) {
+          setIsVerified(true);
+        }
+      } catch (err) {
+        console.error('Error checking verification status', err);
+      }
+    };
+
+    const interval = setInterval(checkVerification, 3000);
+    return () => clearInterval(interval);
+  }, [emailFromUrl, isVerified]);
+
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (resendCooldown > 0) {
@@ -30,6 +52,30 @@ export default function CheckEmail() {
     }
     return () => clearInterval(timer);
   }, [resendCooldown]);
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!password || !emailFromUrl) return;
+
+    setIsLoggingIn(true);
+    try {
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: emailFromUrl,
+        password: password,
+      });
+
+      if (error) throw error;
+      
+      if (authData.user) {
+        toast.success('Logged in successfully!');
+        router.push('/subscription');
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Authentication failed');
+    } finally {
+      setIsLoggingIn(false);
+    }
+  };
 
   const handleResend = async () => {
     if (resendCooldown > 0) return;
@@ -80,38 +126,68 @@ export default function CheckEmail() {
             <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain mx-auto mb-8" />
             
             <div className="mx-auto w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
-              <Mail className="w-10 h-10 text-openlead-blue" />
+              {isVerified ? (
+                <CheckCircle2 className="w-10 h-10 text-green-500" />
+              ) : (
+                <Mail className="w-10 h-10 text-openlead-blue" />
+              )}
             </div>
 
             <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-              Check your inbox
+              {isVerified ? 'Email Verified!' : 'Check your inbox'}
             </h2>
             <p className="mt-4 text-base text-slate-600 leading-relaxed">
-              We've sent a verification link to <span className="font-semibold text-slate-900">{emailFromUrl || 'your email'}</span>. 
-              Please click the link in that email to activate your account.
+              {isVerified 
+                ? "Your email has been confirmed. Please enter your password to continue to your subscription."
+                : <>We've sent a verification link to <span className="font-semibold text-slate-900">{emailFromUrl || 'your email'}</span>. Please click the link in that email to activate your account.</>
+              }
             </p>
           </div>
 
           <div className="mt-8 space-y-4">
-            <Link
-              href="/login"
-              className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-[0_4px_14px_0_rgba(57,204,204,0.39)] hover:shadow-[0_6px_20px_rgba(57,204,204,0.23)] hover:-translate-y-0.5 text-sm font-bold text-white bg-openlead-blue transition-all duration-200"
-            >
-              I've verified my email - Sign In
-            </Link>
+            {isVerified ? (
+              <form onSubmit={handleLogin} className="space-y-4">
+                <div>
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="Enter your password"
+                    className="w-full px-4 py-3 rounded-xl border border-gray-300 focus:ring-2 focus:ring-openlead-blue focus:border-transparent outline-none transition-all"
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={isLoggingIn || !password}
+                  className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-[0_4px_14px_0_rgba(57,204,204,0.39)] hover:shadow-[0_6px_20px_rgba(57,204,204,0.23)] hover:-translate-y-0.5 text-sm font-bold text-white bg-openlead-blue disabled:opacity-50 transition-all duration-200"
+                >
+                  {isLoggingIn ? 'Logging in...' : "I've confirmed - continue to Subscription"}
+                </button>
+              </form>
+            ) : (
+              <>
+                <Link
+                  href="/login"
+                  className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-[0_4px_14px_0_rgba(57,204,204,0.39)] hover:shadow-[0_6px_20px_rgba(57,204,204,0.23)] hover:-translate-y-0.5 text-sm font-bold text-white bg-openlead-blue transition-all duration-200"
+                >
+                  I've verified my email - Sign In
+                </Link>
 
-            <button
-              onClick={handleResend}
-              disabled={isResending || resendCooldown > 0}
-              className="w-full flex justify-center py-3.5 px-4 border-2 border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-200 disabled:opacity-50 transition-all duration-200"
-            >
-              <Send className={`w-4 h-4 mr-2 ${isResending ? 'animate-pulse text-slate-400' : 'text-slate-500'}`} />
-              {isResending 
-                ? 'Sending link...' 
-                : resendCooldown > 0 
-                  ? `Resend available in ${resendCooldown}s` 
-                  : 'Resend verification email'}
-            </button>
+                <button
+                  onClick={handleResend}
+                  disabled={isResending || resendCooldown > 0}
+                  className="w-full flex justify-center py-3.5 px-4 border-2 border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-200 disabled:opacity-50 transition-all duration-200"
+                >
+                  <Send className={`w-4 h-4 mr-2 ${isResending ? 'animate-pulse text-slate-400' : 'text-slate-500'}`} />
+                  {isResending 
+                    ? 'Sending link...' 
+                    : resendCooldown > 0 
+                      ? `Resend available in ${resendCooldown}s` 
+                      : 'Resend verification email'}
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>

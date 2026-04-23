@@ -23,7 +23,6 @@ export default function MyOpenlead() {
     company_name: '',
     contact_name: '',
     phone: '',
-    address: '',
     services_offered: '',
     service_areas: [] as any[]
   });
@@ -54,7 +53,6 @@ export default function MyOpenlead() {
         company_name: client.company_name || '',
         contact_name: client.contact_name || '',
         phone: client.phone || '',
-        address: client.address || '',
         services_offered: client.services_offered || '',
         service_areas: client.service_areas || []
       });
@@ -97,6 +95,18 @@ export default function MyOpenlead() {
     
     try {
       setSaving(true);
+      if (formData.service_areas.length === 0) {
+        toast.error('Please add at least one service area using the Add Service Area button.');
+        setSaving(false);
+        return;
+      }
+
+      if (!formData.services_offered) {
+        toast.error('Please select your primary service offered.');
+        setSaving(false);
+        return;
+      }
+
       // Check if profile is completely filled
       const isComplete = formData.service_areas.length > 0 && !!formData.company_name && !!formData.contact_name && !!formData.phone && !!formData.services_offered;
 
@@ -106,7 +116,6 @@ export default function MyOpenlead() {
           company_name: formData.company_name,
           contact_name: formData.contact_name,
           phone: formData.phone,
-          address: formData.address,
           services_offered: formData.services_offered,
           service_areas: formData.service_areas,
           is_profile_complete: isComplete

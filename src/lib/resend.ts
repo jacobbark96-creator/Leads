@@ -4,8 +4,8 @@ const resendApiKey = process.env.RESEND_API_KEY;
 // Only initialize if the key exists to prevent crashing if it's missing in dev
 export const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
-// Replace this with your actual verified sending domain (e.g., 'hello@openlead.com' or 'onboarding@openlead.com')
-export const defaultFromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@yourdomain.com';
+// Replace this with your actual verified sending domain (e.g., 'hello@openlead.co.uk' or 'onboarding@openlead.co.uk')
+export const defaultFromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@openlead.co.uk';
 
 /**
  * Sends a welcome email to a newly onboarded client.

@@ -22,6 +22,9 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     name: user.name || '',
     role: user.role || 'client',
     user_phone: user.phone || '',
+    job_title: user.job_title || '',
+    about: user.about || '',
+    working_hours: user.working_hours || '',
     company_name: '',
     phone: '',
     other_contacts: '',
@@ -86,6 +89,9 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           name: formData.name,
           role: formData.role,
           phone: formData.user_phone,
+          job_title: formData.job_title,
+          about: formData.about,
+          working_hours: formData.working_hours,
         })
         .eq('id', user.id);
 
@@ -252,6 +258,49 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                   </div>
                 </div>
               </div>
+
+              {/* Admin/Sales Specific Fields */}
+              {['admin', 'super_admin', 'sales'].includes(formData.role) && (
+                <>
+                  <div className="pt-4 border-t border-gray-200">
+                    <h4 className="text-sm font-bold text-gray-900 mb-4">Advisor Profile Details</h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
+                        <input
+                          type="text"
+                          value={formData.job_title}
+                          onChange={e => setFormData({ ...formData, job_title: e.target.value })}
+                          className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+                          placeholder="e.g. Senior Account Manager"
+                        />
+                      </div>
+                      
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Working Hours</label>
+                        <input
+                          type="text"
+                          value={formData.working_hours}
+                          onChange={e => setFormData({ ...formData, working_hours: e.target.value })}
+                          className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
+                          placeholder="e.g. Mon-Fri, 9:00 AM - 5:00 PM"
+                        />
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">About Me</label>
+                        <textarea
+                          value={formData.about}
+                          onChange={e => setFormData({ ...formData, about: e.target.value })}
+                          rows={3}
+                          className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border resize-none"
+                          placeholder="Write a short bio for clients to read..."
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </>
+              )}
 
               {hasClientProfile && (
                 <div className="pt-6 border-t border-gray-200">

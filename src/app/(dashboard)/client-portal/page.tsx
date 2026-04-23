@@ -1,11 +1,13 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Calendar as CalendarIcon, Filter, Search, Phone, Mail, Building, MapPin } from 'lucide-react';
+import { Calendar as CalendarIcon, Filter, Search, Phone, Mail, Building, MapPin, User } from 'lucide-react';
 import { supabase } from '../../../lib/supabase';
 import { Lead, Category } from '../../../types';
 import { useAuthStore } from '../../../store/authStore';
 import { CalendarModal } from './components/CalendarModal';
 import { PurchasedLeadModal } from '../../../components/PurchasedLeadModal';
+import { WelcomeModal } from './components/WelcomeModal';
+import { AdvisorModal } from './components/AdvisorModal';
 import toast from 'react-hot-toast';
 
 export default function ClientDashboard() {
@@ -18,6 +20,10 @@ export default function ClientDashboard() {
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [clientId, setClientId] = useState<string | null>(null);
+  const [advisorDetails, setAdvisorDetails] = useState<any | null>(null);
+  const [showAdvisorModal, setShowAdvisorModal] = useState(false);
   const { profile } = useAuthStore();
   const PAGE_SIZE = 24;
 
@@ -31,7 +37,7 @@ export default function ClientDashboard() {
       // Get the client's actual record ID
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
-        .select('id')
+        .select('id, has_seen_welcome_modal, assigned_to')
         .eq('user_id', profile.id)
         .single();
         
@@ -40,6 +46,23 @@ export default function ClientDashboard() {
         toast.error('Account setup in progress. Please refresh in a few moments.');
         setLoading(false);
         return;
+      }
+
+      setClientId(clientData.id);
+
+      // Show welcome modal if not seen
+      if (isInitial && !clientData.has_seen_welcome_modal) {
+        setShowWelcomeModal(true);
+      }
+
+      // Fetch advisor details if assigned
+      if (isInitial && clientData.assigned_to) {
+        const { data: advisor } = await supabase
+          .from('users')
+          .select('name, email, phone, job_title, about, working_hours')
+          .eq('id', clientData.assigned_to)
+          .single();
+        if (advisor) setAdvisorDetails(advisor);
       }
 
       // Fetch Categories only on initial load
@@ -106,12 +129,41 @@ export default function ClientDashboard() {
     return cat ? cat.name : 'Unknown';
   };
 
+  const closeWelcomeModal = async () => {
+    setShowWelcomeModal(false);
+    if (clientId) {
+      await supabase.from('clients').update({ has_seen_welcome_modal: true }).eq('id', clientId);
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
   }
 
   return (
     <div className="space-y-6">
+      {/* Permanent Advisor Banner */}
+      <div className="bg-gradient-to-r from-blue-50 to-cyan-50 border border-blue-100 rounded-xl p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-white rounded-full flex items-center justify-center shadow-sm text-blue-600 border border-blue-100">
+            <User className="w-5 h-5" />
+          </div>
+          <div>
+            <p className="text-sm text-blue-800 font-medium">Your Personal Account Manager is:</p>
+            {advisorDetails ? (
+              <button 
+                onClick={() => setShowAdvisorModal(true)}
+                className="text-lg font-bold text-blue-600 hover:text-blue-800 transition-colors focus:outline-none flex items-center gap-1"
+              >
+                {advisorDetails.name} <span className="text-xs font-normal text-blue-400 bg-white px-2 py-0.5 rounded-full border border-blue-100 ml-2">View Profile</span>
+              </button>
+            ) : (
+              <p className="text-lg font-bold text-slate-500">Pending <span className="text-sm font-normal ml-1">(Assigning within 24h)</span></p>
+            )}
+          </div>
+        </div>
+      </div>
+
       <div className="sm:flex sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">My Purchased Leads</h1>
@@ -229,6 +281,17 @@ export default function ClientDashboard() {
           lead={selectedLead}
         />
       )}
+
+      <WelcomeModal 
+        isOpen={showWelcomeModal} 
+        onClose={closeWelcomeModal} 
+      />
+
+      <AdvisorModal
+        isOpen={showAdvisorModal}
+        onClose={() => setShowAdvisorModal(false)}
+        advisor={advisorDetails}
+      />
     </div>
   );
 };

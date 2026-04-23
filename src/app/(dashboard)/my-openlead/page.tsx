@@ -4,12 +4,14 @@ import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../store/authStore';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import { User, Phone, Mail, Building, MapPin, Briefcase, Plus, Users, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Client } from '../../../types';
 import { MultiServiceArea } from '../../../components/MultiServiceArea';
 
 export default function MyOpenlead() {
   const { profile } = useAuthStore();
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [clientData, setClientData] = useState<Client | null>(null);
   const [coachName, setCoachName] = useState<string | null>(null);
@@ -95,6 +97,9 @@ export default function MyOpenlead() {
     
     try {
       setSaving(true);
+      // Check if profile is completely filled
+      const isComplete = formData.service_areas.length > 0 && !!formData.company_name && !!formData.contact_name && !!formData.phone && !!formData.services_offered;
+
       const { error } = await supabase
         .from('clients')
         .update({
@@ -104,7 +109,7 @@ export default function MyOpenlead() {
           address: formData.address,
           services_offered: formData.services_offered,
           service_areas: formData.service_areas,
-          is_profile_complete: formData.service_areas.length > 0 && !!formData.company_name && !!formData.contact_name && !!formData.phone && !!formData.services_offered
+          is_profile_complete: isComplete
         })
         .eq('id', clientData.id);
 
@@ -121,8 +126,15 @@ export default function MyOpenlead() {
         })
         .eq('client_id', clientData.id);
 
-      // Force a hard reload so ProtectedRoute re-evaluates the isProfileComplete state from DB
-      window.location.reload();
+      toast.success('Details updated successfully!');
+      
+      if (isComplete) {
+        // Only redirect to dashboard if profile is fully complete
+        router.push('/client-portal');
+      } else {
+        // Reload if not complete so ProtectedRoute logic handles it
+        window.location.reload();
+      }
     } catch (err: any) {
       toast.error('Failed to update details: ' + err.message);
     } finally {

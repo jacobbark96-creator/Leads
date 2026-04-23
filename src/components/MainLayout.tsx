@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { LogOut, LayoutDashboard, Users, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
+import { AdminNotifications } from './AdminNotifications';
 
 export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { profile, signOut } = useAuthStore();
@@ -89,6 +90,12 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
             
             {/* Desktop User Menu */}
             <div className="hidden sm:ml-6 sm:flex sm:items-center">
+              {/* Admin Notifications Dropdown */}
+              {(profile.role === 'admin' || profile.role === 'super_admin' || profile.role === 'sales') && (
+                <div className="mr-4">
+                  <AdminNotifications />
+                </div>
+              )}
               <div className="flex items-center space-x-3 bg-white border border-gray-200 rounded-full py-1.5 pl-1.5 pr-4 shadow-sm hover:shadow transition-all">
                 <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm shadow-inner">
                   {profile.name?.charAt(0).toUpperCase() || 'U'}

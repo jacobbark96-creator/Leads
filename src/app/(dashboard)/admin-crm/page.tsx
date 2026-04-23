@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
-import { Plus, Edit } from 'lucide-react';
+import { Plus, Edit, Trash2, Ban } from 'lucide-react';
 import { UserDetailsModal } from '@/components/UserDetailsModal';
 
 export default function UserManagement() {
@@ -48,6 +48,35 @@ export default function UserManagement() {
       fetchUsers();
     } catch (error: any) {
       toast.error('Failed to update role: ' + error.message);
+    }
+  };
+
+  const handleDeleteUser = async (userId: string) => {
+    if (!window.confirm('Are you sure you want to completely delete this user? They will be able to sign up again in the future.')) return;
+    
+    try {
+      const { error } = await supabase.rpc('delete_user_completely', { target_user_id: userId });
+      if (error) throw error;
+      toast.success('User completely deleted');
+      fetchUsers();
+    } catch (error: any) {
+      toast.error('Failed to delete user: ' + error.message);
+    }
+  };
+
+  const handleBanUser = async (userId: string, email: string) => {
+    if (!window.confirm(`Are you sure you want to BAN ${email}? They will be deleted and NEVER be able to sign up again.`)) return;
+    
+    try {
+      const { error } = await supabase.rpc('ban_user_completely', { 
+        target_user_id: userId,
+        target_email: email 
+      });
+      if (error) throw error;
+      toast.success('User has been banned and deleted');
+      fetchUsers();
+    } catch (error: any) {
+      toast.error('Failed to ban user: ' + error.message);
     }
   };
 
@@ -187,12 +216,32 @@ export default function UserManagement() {
                         {new Date(user.created_at).toLocaleDateString()}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <button
-                          onClick={() => setSelectedUser(user)}
-                          className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
-                        >
-                          <Edit className="w-4 h-4" /> Edit User
-                        </button>
+                        <div className="flex items-center justify-end gap-3">
+                          <button
+                            onClick={() => setSelectedUser(user)}
+                            className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
+                          >
+                            <Edit className="w-4 h-4" /> Edit User
+                          </button>
+                          {profile?.role === 'super_admin' && user.id !== profile.id && (
+                            <>
+                              <button
+                                onClick={() => handleDeleteUser(user.id)}
+                                className="text-red-500 hover:text-red-700 inline-flex items-center gap-1"
+                                title="Delete user (can sign up again)"
+                              >
+                                <Trash2 className="w-4 h-4" /> Delete
+                              </button>
+                              <button
+                                onClick={() => handleBanUser(user.id, user.email)}
+                                className="text-slate-500 hover:text-slate-800 inline-flex items-center gap-1"
+                                title="Ban user permanently"
+                              >
+                                <Ban className="w-4 h-4" /> Ban
+                              </button>
+                            </>
+                          )}
+                        </div>
                       </td>
                     </tr>
                   ))}

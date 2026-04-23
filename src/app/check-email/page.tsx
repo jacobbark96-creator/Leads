@@ -2,9 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Mail, RefreshCw, Send } from 'lucide-react';
+import { Mail, RefreshCw, Send, ArrowLeft } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
+import Image from 'next/image';
 
 export default function CheckEmail() {
   const router = useRouter();
@@ -97,26 +98,41 @@ export default function CheckEmail() {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-white py-10 px-4 shadow-xl sm:rounded-2xl sm:px-10 text-center border border-gray-100">
+    <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      {/* Background Decorative Elements */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-openlead-blue/10 blur-3xl"></div>
+        <div className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-blue-400/10 blur-3xl"></div>
+      </div>
+
+      <div className="max-w-md w-full relative z-10">
+        <div className="text-center mb-8">
+          <img src="/openlead-logo.png" alt="Openlead" className="h-10 mx-auto object-contain" />
+        </div>
+
+        <div className="bg-white py-10 px-6 shadow-2xl sm:rounded-3xl sm:px-10 text-center border border-slate-100/50 backdrop-blur-sm">
           
-          <div className="mx-auto w-16 h-16 bg-blue-50 rounded-full flex items-center justify-center mb-6">
-            <Mail className="w-8 h-8 text-openlead-blue" />
+          <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-white">
+            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-sm">
+              <Mail className="w-7 h-7 text-openlead-blue" />
+            </div>
           </div>
           
-          <h2 className="text-3xl font-extrabold text-gray-900 mb-4 tracking-tight">
-            Check your email
+          <h2 className="text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
+            Check your inbox
           </h2>
           
-          <p className="text-base text-gray-600 mb-8 leading-relaxed">
-            We've sent a confirmation link to your email address. 
-            <br className="hidden sm:block"/> Please click the link to verify your account and continue to your dashboard.
+          <p className="text-sm text-slate-500 mb-8 leading-relaxed max-w-xs mx-auto">
+            We've sent a verification link to <span className="font-semibold text-slate-700">{emailFromUrl || 'your email'}</span>. 
+            Click the link to activate your account.
           </p>
 
-          <div className="bg-gray-50 rounded-xl p-6 mb-8 border border-gray-100">
-            <div className="flex items-center justify-center gap-3 text-sm text-gray-500 font-medium">
-              <div className="w-4 h-4 rounded-full border-2 border-openlead-blue border-t-transparent animate-spin"></div>
+          <div className="bg-slate-50/80 rounded-2xl p-5 mb-8 border border-slate-100">
+            <div className="flex items-center justify-center gap-3 text-sm text-slate-600 font-medium">
+              <div className="relative flex h-4 w-4">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-openlead-blue opacity-40"></span>
+                <span className="relative inline-flex rounded-full h-4 w-4 border-2 border-openlead-blue border-t-transparent animate-spin"></span>
+              </div>
               Waiting for confirmation...
             </div>
           </div>
@@ -125,31 +141,33 @@ export default function CheckEmail() {
             <button
               onClick={handleManualCheck}
               disabled={isChecking}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-300 rounded-xl shadow-sm text-sm font-bold text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-openlead-blue transition-all disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-[0_4px_14px_0_rgba(57,204,204,0.39)] hover:shadow-[0_6px_20px_rgba(57,204,204,0.23)] hover:-translate-y-0.5 text-sm font-bold text-white bg-openlead-blue disabled:opacity-50 transition-all duration-200"
             >
-              <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin text-openlead-blue' : 'text-gray-400'}`} />
+              <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />
               {isChecking ? 'Checking status...' : 'I have confirmed my email'}
             </button>
 
             <button
               onClick={handleResend}
               disabled={isResending || resendCooldown > 0}
-              className="w-full flex items-center justify-center gap-2 py-3 px-4 border border-gray-200 rounded-xl shadow-sm text-sm font-bold text-gray-600 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-200 transition-all disabled:opacity-50"
+              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-200 transition-all disabled:opacity-50 duration-200"
             >
-              <Send className={`w-4 h-4 ${isResending ? 'animate-pulse text-gray-400' : 'text-gray-400'}`} />
+              <Send className={`w-4 h-4 ${isResending ? 'animate-pulse text-slate-400' : 'text-slate-400'}`} />
               {isResending 
-                ? 'Sending...' 
+                ? 'Sending link...' 
                 : resendCooldown > 0 
                   ? `Resend available in ${resendCooldown}s` 
-                  : 'I didn\'t receive an email (Resend)'}
+                  : 'Resend verification email'}
             </button>
 
-            <Link
-              href="/login"
-              className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl text-sm font-bold text-openlead-blue hover:bg-blue-50 transition-colors"
-            >
-              Back to Sign in
-            </Link>
+            <div className="pt-4 mt-2 border-t border-slate-100">
+              <Link
+                href="/login"
+                className="w-full flex justify-center items-center gap-2 py-2 px-4 rounded-xl text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
+              >
+                <ArrowLeft className="w-4 h-4" /> Back to Sign in
+              </Link>
+            </div>
           </div>
 
         </div>

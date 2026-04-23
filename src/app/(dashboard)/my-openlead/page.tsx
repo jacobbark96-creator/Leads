@@ -15,6 +15,8 @@ export default function MyOpenlead() {
   const [coachName, setCoachName] = useState<string | null>(null);
   const [coachPhone, setCoachPhone] = useState<string | null>(null);
   
+  const [categories, setCategories] = useState<any[]>([]);
+  
   const [formData, setFormData] = useState({
     company_name: '',
     contact_name: '',
@@ -69,6 +71,17 @@ export default function MyOpenlead() {
         }
       }
 
+      // 3. Fetch Categories for Dropdown
+      const { data: catData, error: catError } = await supabase
+        .from('categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+        
+      if (!catError && catData) {
+        setCategories(catData);
+      }
+
     } catch (err: any) {
       toast.error('Failed to load profile: ' + err.message);
     } finally {
@@ -91,7 +104,7 @@ export default function MyOpenlead() {
           address: formData.address,
           services_offered: formData.services_offered,
           service_areas: formData.service_areas,
-          is_profile_complete: formData.service_areas.length > 0 && formData.address && formData.company_name && formData.phone
+          is_profile_complete: formData.service_areas.length > 0 && !!formData.company_name && !!formData.contact_name && !!formData.phone && !!formData.services_offered
         })
         .eq('id', clientData.id);
 
@@ -108,7 +121,8 @@ export default function MyOpenlead() {
         })
         .eq('client_id', clientData.id);
 
-      toast.success('Details updated successfully!');
+      // Force a hard reload so ProtectedRoute re-evaluates the isProfileComplete state from DB
+      window.location.reload();
     } catch (err: any) {
       toast.error('Failed to update details: ' + err.message);
     } finally {
@@ -202,16 +216,8 @@ export default function MyOpenlead() {
                   <p className="text-xs text-gray-400 mt-1">Email cannot be changed directly.</p>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Address</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
-                  </div>
-                </div>
-                <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Service Areas</label>
+                  <p className="text-xs font-semibold text-openlead-blue mb-1">Make sure your first service area is your office/home/yard address.</p>
                   <p className="text-xs text-gray-500 mb-3">Define the areas you cover. You will only see leads within these geofenced locations.</p>
                   <MultiServiceArea 
                     areas={formData.service_areas} 
@@ -219,13 +225,26 @@ export default function MyOpenlead() {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Services Offered</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Primary Service Offered</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Briefcase className="h-4 w-4 text-gray-400" />
                     </div>
-                    <input type="text" value={formData.services_offered} onChange={e => setFormData({...formData, services_offered: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="e.g. Solar PV, Battery Storage" />
+                    <select
+                      required
+                      value={formData.services_offered}
+                      onChange={e => setFormData({...formData, services_offered: e.target.value})}
+                      className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2.5 bg-white"
+                    >
+                      <option value="" disabled>Select your primary service...</option>
+                      {categories.map((cat) => (
+                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                      ))}
+                    </select>
                   </div>
+                  <p className="text-xs text-gray-500 mt-2">
+                    Don't see your service? Let us know.
+                  </p>
                 </div>
               </div>
 

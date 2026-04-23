@@ -2,14 +2,13 @@
 import React, { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { Mail, RefreshCw, Send, ArrowLeft } from 'lucide-react';
+import { Mail, Send, ArrowLeft, Quote, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 
 export default function CheckEmail() {
   const router = useRouter();
-  const [isChecking, setIsChecking] = useState(false);
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -37,7 +36,7 @@ export default function CheckEmail() {
     
     setIsResending(true);
     try {
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      const { data: { session } } = await supabase.auth.getSession();
       
       const targetEmail = session?.user?.email || emailFromUrl;
 
@@ -66,110 +65,108 @@ export default function CheckEmail() {
     }
   };
 
-  // Poll Supabase to see if the user's email has been verified
-  useEffect(() => {
-    const checkVerificationStatus = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      
-      // If there is an active session, it means they clicked the link and are verified
-      if (session?.user) {
-        router.push('/subscription');
-      }
-    };
-
-    // Check immediately, then poll every 3 seconds
-    checkVerificationStatus();
-    const interval = setInterval(checkVerificationStatus, 3000);
-
-    // Cleanup interval on unmount
-    return () => clearInterval(interval);
-  }, [router]);
-
-  const handleManualCheck = async () => {
-    setIsChecking(true);
-    const { data: { session } } = await supabase.auth.getSession();
-    
-    if (session?.user) {
-      router.push('/subscription');
-    } else {
-      // Simulate a small delay for UX so they see the button spin
-      setTimeout(() => setIsChecking(false), 800);
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
-      {/* Background Decorative Elements */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-openlead-blue/10 blur-3xl"></div>
-        <div className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-blue-400/10 blur-3xl"></div>
-      </div>
-
-      <div className="max-w-md w-full relative z-10">
-        <div className="text-center mb-8">
-          <img src="/openlead-logo.png" alt="Openlead" className="h-10 mx-auto object-contain" />
+    <div className="min-h-screen bg-white flex">
+      {/* Left Side - Content */}
+      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 relative">
+        <div className="absolute top-8 left-8">
+          <Link href="/" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
+          </Link>
         </div>
-
-        <div className="bg-white py-10 px-6 shadow-2xl sm:rounded-3xl sm:px-10 text-center border border-slate-100/50 backdrop-blur-sm">
-          
-          <div className="mx-auto w-20 h-20 bg-gradient-to-br from-blue-50 to-cyan-50 rounded-full flex items-center justify-center mb-6 shadow-inner border border-white">
-            <div className="w-14 h-14 bg-white rounded-full flex items-center justify-center shadow-sm">
-              <Mail className="w-7 h-7 text-openlead-blue" />
+        
+        <div className="mx-auto w-full max-w-sm lg:w-96 text-center">
+          <div className="mb-8">
+            <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain mx-auto mb-8" />
+            
+            <div className="mx-auto w-20 h-20 bg-blue-50 rounded-full flex items-center justify-center mb-6">
+              <Mail className="w-10 h-10 text-openlead-blue" />
             </div>
-          </div>
-          
-          <h2 className="text-3xl font-extrabold text-slate-900 mb-3 tracking-tight">
-            Check your inbox
-          </h2>
-          
-          <p className="text-sm text-slate-500 mb-8 leading-relaxed max-w-xs mx-auto">
-            We've sent a verification link to <span className="font-semibold text-slate-700">{emailFromUrl || 'your email'}</span>. 
-            Click the link to activate your account.
-          </p>
 
-          <div className="bg-slate-50/80 rounded-2xl p-5 mb-8 border border-slate-100">
-            <div className="flex items-center justify-center gap-3 text-sm text-slate-600 font-medium">
-              <div className="relative flex h-4 w-4">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-openlead-blue opacity-40"></span>
-                <span className="relative inline-flex rounded-full h-4 w-4 border-2 border-openlead-blue border-t-transparent animate-spin"></span>
-              </div>
-              Waiting for confirmation...
-            </div>
+            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+              Check your inbox
+            </h2>
+            <p className="mt-4 text-base text-slate-600 leading-relaxed">
+              We've sent a verification link to <span className="font-semibold text-slate-900">{emailFromUrl || 'your email'}</span>. 
+              Please click the link in that email to activate your account.
+            </p>
           </div>
 
-          <div className="space-y-4">
-            <button
-              onClick={handleManualCheck}
-              disabled={isChecking}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 border border-transparent rounded-xl shadow-[0_4px_14px_0_rgba(57,204,204,0.39)] hover:shadow-[0_6px_20px_rgba(57,204,204,0.23)] hover:-translate-y-0.5 text-sm font-bold text-white bg-openlead-blue disabled:opacity-50 transition-all duration-200"
+          <div className="mt-8 space-y-4">
+            <Link
+              href="/login"
+              className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-[0_4px_14px_0_rgba(57,204,204,0.39)] hover:shadow-[0_6px_20px_rgba(57,204,204,0.23)] hover:-translate-y-0.5 text-sm font-bold text-white bg-openlead-blue transition-all duration-200"
             >
-              <RefreshCw className={`w-4 h-4 ${isChecking ? 'animate-spin' : ''}`} />
-              {isChecking ? 'Checking status...' : 'I have confirmed my email'}
-            </button>
+              I've verified my email - Sign In
+            </Link>
 
             <button
               onClick={handleResend}
               disabled={isResending || resendCooldown > 0}
-              className="w-full flex items-center justify-center gap-2 py-3.5 px-4 border-2 border-slate-100 rounded-xl text-sm font-bold text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-200 transition-all disabled:opacity-50 duration-200"
+              className="w-full flex justify-center py-3.5 px-4 border-2 border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-slate-200 disabled:opacity-50 transition-all duration-200"
             >
-              <Send className={`w-4 h-4 ${isResending ? 'animate-pulse text-slate-400' : 'text-slate-400'}`} />
+              <Send className={`w-4 h-4 mr-2 ${isResending ? 'animate-pulse text-slate-400' : 'text-slate-500'}`} />
               {isResending 
                 ? 'Sending link...' 
                 : resendCooldown > 0 
                   ? `Resend available in ${resendCooldown}s` 
                   : 'Resend verification email'}
             </button>
-
-            <div className="pt-4 mt-2 border-t border-slate-100">
-              <Link
-                href="/login"
-                className="w-full flex justify-center items-center gap-2 py-2 px-4 rounded-xl text-sm font-bold text-slate-500 hover:text-slate-800 transition-colors"
-              >
-                <ArrowLeft className="w-4 h-4" /> Back to Sign in
-              </Link>
+          </div>
+        </div>
+      </div>
+      
+      {/* Right Side - Graphic/Value Prop */}
+      <div className="hidden lg:flex lg:flex-1 relative overflow-hidden bg-slate-900">
+        <Image
+          src="https://images.unsplash.com/photo-1555421689-491a97ff2040?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+          alt="Modern architecture"
+          fill
+          className="object-cover object-center opacity-40"
+          priority
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-transparent"></div>
+        
+        <div className="relative z-10 flex flex-col justify-end p-12 lg:p-16 xl:p-24 w-full h-full">
+          <div className="max-w-md">
+            <Quote className="w-10 h-10 text-openlead-blue mb-6 opacity-80" />
+            <blockquote className="text-2xl font-medium text-white mb-6 leading-snug">
+              "Switching to Openlead was the best decision for our roofing company. The exclusivity of the leads means we're actually closing deals, not just racing to the bottom on price."
+            </blockquote>
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-full bg-slate-800 border-2 border-slate-700 overflow-hidden relative">
+                <Image 
+                  src="https://i.pravatar.cc/150?img=11"
+                  alt="Avatar"
+                  fill
+                  className="object-cover"
+                />
+              </div>
+              <div>
+                <p className="text-white font-bold text-base">James Carter</p>
+                <p className="text-slate-400 text-sm">Director, Apex Roofing</p>
+              </div>
+            </div>
+            
+            <div className="mt-12 pt-8 border-t border-slate-700/50 grid grid-cols-2 gap-6">
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-openlead-blue shrink-0 mt-0.5" />
+                <span className="text-sm font-medium text-slate-300">100% Exclusive Leads</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-openlead-blue shrink-0 mt-0.5" />
+                <span className="text-sm font-medium text-slate-300">Built-in CRM</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-openlead-blue shrink-0 mt-0.5" />
+                <span className="text-sm font-medium text-slate-300">High Intent Prospects</span>
+              </div>
+              <div className="flex items-start gap-3">
+                <CheckCircle2 className="w-5 h-5 text-openlead-blue shrink-0 mt-0.5" />
+                <span className="text-sm font-medium text-slate-300">Predictable Growth</span>
+              </div>
             </div>
           </div>
-
         </div>
       </div>
     </div>

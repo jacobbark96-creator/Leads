@@ -113,7 +113,7 @@ export default function SubscriptionSummary() {
                   'Full access to the exclusive lead marketplace',
                   'Built-in CRM to manage your pipeline and ROI',
                   'Personal Openlead Coach for ongoing support',
-                  'Subsidized bulk pricing on all leads',
+                  'Subsidised bulk pricing on all leads',
                   'Add child accounts for your sales team (£2/mo)',
                 ].map((feature, index) => (
                   <li key={index} className="flex items-start">

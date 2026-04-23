@@ -35,7 +35,12 @@ export default function ClientDashboard() {
         .eq('user_id', profile.id)
         .single();
         
-      if (clientError) throw new Error('Client profile not found');
+      if (clientError || !clientData) {
+        // If they just returned from Stripe, the webhook might take a couple of seconds to create the client record
+        toast.error('Account setup in progress. Please refresh in a few moments.');
+        setLoading(false);
+        return;
+      }
 
       // Fetch Categories only on initial load
       if (isInitial) {

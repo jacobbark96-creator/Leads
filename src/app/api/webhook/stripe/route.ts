@@ -1,9 +1,15 @@
 import { NextResponse } from 'next/server';
 import Stripe from 'stripe';
-import { supabase } from '@/lib/supabase';
+import { createClient } from '@supabase/supabase-js';
 import { sendWelcomeEmail } from '@/lib/resend';
 
 export const runtime = 'edge';
+
+// Create a Supabase admin client to bypass RLS for webhook operations
+const supabaseAdmin = createClient(
+  process.env.NEXT_PUBLIC_SUPABASE_URL!,
+  process.env.SUPABASE_SERVICE_ROLE_KEY!
+);
 
 export async function POST(req: Request) {
   const stripeKey = process.env.STRIPE_SECRET_KEY;
@@ -44,16 +50,40 @@ export async function POST(req: Request) {
       // Only send the welcome email if this checkout was for the subscription mode (initial signup)
       // If it's a 'payment' mode, it means they are buying a lead later on.
       if (session.mode === 'subscription') {
-        // Fetch the user's profile to get their name for the welcome email
-        const { data: profile } = await supabase
+        // Fetch the user's profile to get their name
+        const { data: profile } = await supabaseAdmin
           .from('users')
-          .select('name')
+          .select('name, phone')
           .eq('id', userId)
           .single();
 
         const name = profile?.name || 'Partner';
+        const phone = profile?.phone || '0000000000';
 
-        // Fire off the welcome email now that their subscription checkout is fully complete
+        // 1. Update user role to 'client'
+        await supabaseAdmin
+          .from('users')
+          .update({ role: 'client' })
+          .eq('id', userId);
+
+        // 2. Check if client profile already exists
+        const { data: existingClient } = await supabaseAdmin
+          .from('clients')
+          .select('id')
+          .eq('user_id', userId)
+          .single();
+
+        // 3. Create client profile if it doesn't exist
+        if (!existingClient) {
+          await supabaseAdmin.from('clients').insert({
+            user_id: userId,
+            company_name: `${name}'s Company`,
+            contact_name: name,
+            phone: phone,
+          });
+        }
+
+        // 4. Fire off the welcome email now that their subscription checkout is fully complete
         await sendWelcomeEmail(customerEmail, name);
       }
       

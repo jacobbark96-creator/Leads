@@ -22,7 +22,9 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing userId or email' }, { status: 400 });
     }
 
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+    // Dynamically get the origin from the request headers to support both localhost and production
+    const origin = req.headers.get('origin');
+    const appUrl = origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     // Create Checkout Session
     // Since you want a free trial and specific pricing, we use subscription mode.

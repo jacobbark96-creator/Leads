@@ -12,14 +12,19 @@ export default function ClientDashboard() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const { profile } = useAuthStore();
+  const PAGE_SIZE = 24;
 
-  const fetchDashboardData = async () => {
+  const fetchDashboardData = async (pageNumber: number, isInitial: boolean) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
       
       if (!profile) return;
 
@@ -32,37 +37,59 @@ export default function ClientDashboard() {
         
       if (clientError) throw new Error('Client profile not found');
 
-      // Fetch Categories
-      const { data: catData, error: catError } = await supabase
-        .from('categories')
-        .select('*')
-        .eq('is_active', true);
-      
-      if (catError) throw catError;
-      setCategories(catData || []);
+      // Fetch Categories only on initial load
+      if (isInitial) {
+        const { data: catData, error: catError } = await supabase
+          .from('categories')
+          .select('*')
+          .eq('is_active', true);
+        
+        if (catError) throw catError;
+        setCategories(catData || []);
+      }
 
       // Fetch Client's Purchased Leads
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
         .select('*')
         .eq('client_id', clientData.id)
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
       if (leadsError) throw leadsError;
-      setLeads(leadsData || []);
+
+      const fetchedLeads = leadsData || [];
+      const hasNextPage = fetchedLeads.length > PAGE_SIZE;
+      const leadsToRender = hasNextPage ? fetchedLeads.slice(0, PAGE_SIZE) : fetchedLeads;
+
+      if (isInitial) {
+        setLeads(leadsToRender);
+      } else {
+        setLeads(prev => [...prev, ...leadsToRender]);
+      }
+      
+      setHasMore(hasNextPage);
 
     } catch (error: any) {
       toast.error('Failed to load dashboard: ' + error.message);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    if (profile) {
-      fetchDashboardData();
+    if (profile?.id) {
+      setPage(0);
+      fetchDashboardData(0, true);
     }
-  }, [profile]);
+  }, [profile?.id]);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchDashboardData(nextPage, false);
+  };
 
   const filteredLeads = selectedCategory === 'all' 
     ? leads 
@@ -171,6 +198,18 @@ export default function ClientDashboard() {
           </div>
         )}
       </div>
+
+      {hasMore && filteredLeads.length > 0 && (
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loadingMore ? 'Loading...' : 'Load More Leads'}
+          </button>
+        </div>
+      )}
 
       <CalendarModal 
         isOpen={isCalendarOpen} 

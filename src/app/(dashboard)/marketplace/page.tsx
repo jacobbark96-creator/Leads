@@ -13,13 +13,18 @@ import { extractTown } from '../../../lib/utils';
 export default function Marketplace() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
   const [leadToPurchase, setLeadToPurchase] = useState<Lead | null>(null);
+  const [page, setPage] = useState(0);
+  const [hasMore, setHasMore] = useState(true);
   const { profile } = useAuthStore();
+  const PAGE_SIZE = 24;
 
-  const fetchMarketplaceLeads = async () => {
+  const fetchMarketplaceLeads = async (pageNumber: number, isInitial: boolean) => {
     try {
-      setLoading(true);
+      if (isInitial) setLoading(true);
+      else setLoadingMore(true);
       
       const { data, error } = await supabase
         .from('leads')
@@ -27,20 +32,40 @@ export default function Marketplace() {
         .eq('status', 'qualified')
         .eq('is_marketed', true)
         .is('client_id', null) // Only show leads not yet purchased
-        .order('created_at', { ascending: false });
+        .order('created_at', { ascending: false })
+        .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
       if (error) throw error;
-      setLeads(data || []);
+      
+      const fetchedLeads = data || [];
+      const hasNextPage = fetchedLeads.length > PAGE_SIZE;
+      const leadsToRender = hasNextPage ? fetchedLeads.slice(0, PAGE_SIZE) : fetchedLeads;
+
+      if (isInitial) {
+        setLeads(leadsToRender);
+      } else {
+        setLeads(prev => [...prev, ...leadsToRender]);
+      }
+      
+      setHasMore(hasNextPage);
     } catch (error: any) {
       toast.error('Failed to fetch marketplace leads: ' + error.message);
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   };
 
   useEffect(() => {
-    fetchMarketplaceLeads();
+    setPage(0);
+    fetchMarketplaceLeads(0, true);
   }, []);
+
+  const loadMore = () => {
+    const nextPage = page + 1;
+    setPage(nextPage);
+    fetchMarketplaceLeads(nextPage, false);
+  };
 
   const handlePurchaseLead = async (leadId: string) => {
     if (!profile) return;
@@ -153,6 +178,18 @@ export default function Marketplace() {
           </div>
         )}
       </div>
+
+      {hasMore && leads.length > 0 && (
+        <div className="mt-8 flex justify-center">
+          <button
+            onClick={loadMore}
+            disabled={loadingMore}
+            className="px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
+          >
+            {loadingMore ? 'Loading...' : 'Load More Leads'}
+          </button>
+        </div>
+      )}
 
       {selectedLead && (
         <MarketplaceLeadModal

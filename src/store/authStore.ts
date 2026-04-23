@@ -27,10 +27,13 @@ export const useAuthStore = create<AuthState>()(
       setProfile: (profile) => set({ profile }),
       setLoading: (loading) => set({ loading }),
       initialize: async () => {
+        // Prevent multiple initializations
+        if (get().initialized) return;
+
         // If we already have a cached profile, stop the loading spinner instantly
         // This gives the user an incredibly fast perceived load time
         if (get().profile) {
-          set({ loading: false, initialized: true });
+          set({ loading: false });
         }
 
         try {
@@ -59,7 +62,7 @@ export const useAuthStore = create<AuthState>()(
           set({ loading: false, initialized: true });
         }
 
-        // Set up auth listener
+        // Set up auth listener only once
         supabase.auth.onAuthStateChange(async (event, session) => {
           if (session?.user) {
             set({ user: session.user });

@@ -13,10 +13,6 @@ export default function Morals() {
         
         {/* Header Section */}
         <div className="text-center max-w-3xl mx-auto mb-20">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 text-cyan-300 font-semibold text-sm mb-6 border border-white/10 backdrop-blur-md">
-            <Scale className="w-4 h-4" /> Core Principles
-          </div>
-          
           <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold mb-6 tracking-tight">
             Built on <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300">Trust & Transparency</span>
           </h1>

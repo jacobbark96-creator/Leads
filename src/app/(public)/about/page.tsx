@@ -32,10 +32,6 @@ export default function About() {
           </div>
 
           <div className="lg:w-1/2 w-full order-1 lg:order-2">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 text-slate-700 font-semibold text-sm mb-6">
-              <Users className="w-4 h-4 text-openlead-blue" /> About Us
-            </div>
-            
             <h2 className="text-4xl md:text-5xl font-extrabold text-slate-900 mb-6 leading-tight tracking-tight">
               Bridging the gap between great services and <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-500">ready customers.</span>
             </h2>

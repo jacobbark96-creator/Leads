@@ -4,22 +4,33 @@ import Image from 'next/image';
 
 export default function Services() {
   return (
-    <div className="min-h-screen bg-slate-50 pt-32 pb-24">
+    <div className="min-h-screen bg-slate-50 pb-24">
       {/* Hero Section */}
-      <section className="relative max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 mb-24">
-        <div className="text-center max-w-3xl mx-auto">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-openlead-blue/10 text-openlead-blue font-semibold text-sm mb-6">
-            <Zap className="w-4 h-4" /> The Openlead Model
+      <section className="relative pt-32 pb-24 mb-24">
+        {/* Background Image & Overlay */}
+        <div className="absolute inset-0 z-0">
+          <Image 
+            src="https://images.unsplash.com/photo-1504384308090-c894fdcc538d?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80" 
+            alt="Office workspace" 
+            fill 
+            className="object-cover"
+            priority
+          />
+          <div className="absolute inset-0 bg-slate-900/85"></div>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="text-center max-w-3xl mx-auto">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight">
+              Premium Leads, <br />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-400">
+                Without the Premium Price.
+              </span>
+            </h1>
+            <p className="text-xl text-slate-300 leading-relaxed">
+              Stop overpaying and guessing which lead generation company is the best. We do the heavy lifting, securing top-tier leads in bulk and passing the savings directly to you.
+            </p>
           </div>
-          <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight">
-            Premium Leads, <br />
-            <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-400">
-              Without the Premium Price.
-            </span>
-          </h1>
-          <p className="text-xl text-slate-600 leading-relaxed">
-            Stop overpaying and guessing which lead generation company is the best. We do the heavy lifting, securing top-tier leads in bulk and passing the savings directly to you.
-          </p>
         </div>
       </section>
 

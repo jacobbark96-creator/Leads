@@ -32,8 +32,6 @@ export default function SalesTracker() {
           .from('leads')
           .select('id, name, location, price, purchase_date, clients(company_name, contact_name)')
           .eq('status', 'sold')
-          .gte('purchase_date', startOfTrackingWeek.toISOString())
-          .lte('purchase_date', endOfTrackingWeek.toISOString())
           .order('purchase_date', { ascending: false });
 
         if (error) throw error;
@@ -61,7 +59,7 @@ export default function SalesTracker() {
           <h2 className="text-2xl font-bold text-gray-900">Sales Tracker</h2>
           <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
             <Calendar className="w-4 h-4" />
-            Current Period: {format(startOfTrackingWeek, 'MMM d')} - {format(endOfTrackingWeek, 'MMM d, yyyy')} (Tuesday to Monday)
+            All Time Sales
           </p>
         </div>
         

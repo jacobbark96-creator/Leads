@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { Upload, Users, CheckCircle, Map as MapIcon, Menu, X, UserPlus } from 'lucide-react';
+import { Upload, Users, CheckCircle, Map as MapIcon, Menu, X, UserPlus, Store } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 
@@ -16,6 +16,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
     { name: 'Potential Contractors', path: '/contractor-crm', icon: Users },
     { name: 'Onboarded Contractors', path: '/contractor-crm/onboarded', icon: CheckCircle },
     { name: 'Map', path: '/contractor-crm/map', icon: MapIcon },
+    { name: 'Marketplace', path: '/contractor-crm/marketplace', icon: Store },
     { name: 'Import Leads', path: '/contractor-crm/import', icon: Upload },
   ];
 

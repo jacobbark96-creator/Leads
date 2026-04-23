@@ -3,9 +3,10 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../store/authStore';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
-import { User, Phone, Mail, Building, MapPin, Briefcase, Plus, Users, ShieldCheck } from 'lucide-react';
+import { User, Phone, Mail, Building, MapPin, Briefcase, Plus, Users, ShieldCheck, AlertTriangle } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Client } from '../../../types';
+import { MultiServiceArea } from '../../../components/MultiServiceArea';
 
 export default function MyOpenlead() {
   const { profile } = useAuthStore();
@@ -19,8 +20,8 @@ export default function MyOpenlead() {
     contact_name: '',
     phone: '',
     address: '',
-    areas_covered: '',
-    services_offered: ''
+    services_offered: '',
+    service_areas: [] as any[]
   });
 
   const [saving, setSaving] = useState(false);
@@ -50,8 +51,8 @@ export default function MyOpenlead() {
         contact_name: client.contact_name || '',
         phone: client.phone || '',
         address: client.address || '',
-        areas_covered: client.areas_covered || '',
-        services_offered: client.services_offered || ''
+        services_offered: client.services_offered || '',
+        service_areas: client.service_areas || []
       });
 
       // 2. Fetch Coach Details
@@ -88,12 +89,25 @@ export default function MyOpenlead() {
           contact_name: formData.contact_name,
           phone: formData.phone,
           address: formData.address,
-          areas_covered: formData.areas_covered,
-          services_offered: formData.services_offered
+          services_offered: formData.services_offered,
+          service_areas: formData.service_areas,
+          is_profile_complete: formData.service_areas.length > 0 && formData.address && formData.company_name && formData.phone
         })
         .eq('id', clientData.id);
 
       if (error) throw error;
+      
+      // Sync to contractor CRM
+      await supabase
+        .from('contractors')
+        .update({
+          company_name: formData.company_name,
+          contact_name: formData.contact_name,
+          phone: formData.phone,
+          service_areas: formData.service_areas
+        })
+        .eq('client_id', clientData.id);
+
       toast.success('Details updated successfully!');
     } catch (err: any) {
       toast.error('Failed to update details: ' + err.message);
@@ -197,13 +211,12 @@ export default function MyOpenlead() {
                   </div>
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Areas Covered</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                      <MapPin className="h-4 w-4 text-gray-400" />
-                    </div>
-                    <input type="text" value={formData.areas_covered} onChange={e => setFormData({...formData, areas_covered: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="e.g. London, Manchester, Birmingham" />
-                  </div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Service Areas</label>
+                  <p className="text-xs text-gray-500 mb-3">Define the areas you cover. You will only see leads within these geofenced locations.</p>
+                  <MultiServiceArea 
+                    areas={formData.service_areas} 
+                    onChange={(areas) => setFormData({...formData, service_areas: areas})} 
+                  />
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Services Offered</label>

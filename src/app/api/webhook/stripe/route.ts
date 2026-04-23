@@ -75,12 +75,23 @@ export async function POST(req: Request) {
 
         // 3. Create client profile if it doesn't exist
         if (!existingClient) {
-          await supabaseAdmin.from('clients').insert({
+          const { data: newClient } = await supabaseAdmin.from('clients').insert({
             user_id: userId,
             company_name: `${name}'s Company`,
             contact_name: name,
             phone: phone,
-          });
+          }).select('id').single();
+
+          // Also create a corresponding record in the contractors table for the CRM
+          if (newClient) {
+            await supabaseAdmin.from('contractors').insert({
+              client_id: newClient.id,
+              company_name: `${name}'s Company`,
+              contact_name: name,
+              phone: phone,
+              status: 'onboarded'
+            });
+          }
         }
 
         // 4. Fire off the welcome email now that their subscription checkout is fully complete

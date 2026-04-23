@@ -48,7 +48,7 @@ export async function POST(req: Request) {
           userId: userId,
         },
       },
-      success_url: `${appUrl}/client-portal?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${appUrl}/my-openlead?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/subscription`,
     });
 

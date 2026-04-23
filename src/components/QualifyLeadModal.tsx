@@ -257,7 +257,7 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                       }));
                     }}
                     options={{
-                      componentRestrictions: { country: "uk" },
+                      componentRestrictions: { country: "gb" },
                       fields: ['formatted_address', 'geometry', 'name']
                     }}
                     defaultValue={formData.location || ''}

@@ -117,7 +117,11 @@ export function MultiServiceArea({ areas, onChange }: MultiServiceAreaProps) {
               <MapPin className="h-4 w-4 text-gray-400" />
             </div>
             {isLoaded ? (
-              <Autocomplete onLoad={onLoad} onPlaceChanged={onPlaceChanged}>
+              <Autocomplete 
+                onLoad={onLoad} 
+                onPlaceChanged={onPlaceChanged}
+                options={{ componentRestrictions: { country: 'gb' } }}
+              >
                 <input
                   type="text"
                   value={currentAddress}

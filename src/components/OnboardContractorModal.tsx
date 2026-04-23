@@ -223,7 +223,7 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
                       }));
                     }}
                     options={{
-                      componentRestrictions: { country: "uk" },
+                      componentRestrictions: { country: "gb" },
                       fields: ['formatted_address', 'geometry', 'name']
                     }}
                     defaultValue={formData.address || ''}

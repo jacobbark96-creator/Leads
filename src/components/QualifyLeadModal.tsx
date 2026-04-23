@@ -20,15 +20,15 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
   
   const [formData, setFormData] = useState({
     category_id: lead.category_id || '',
-    monthly_spend: lead.monthly_spend || '',
+    monthly_spend: lead.monthly_spend ? lead.monthly_spend.toString() : '',
     location: lead.location || '',
     timeframe: lead.timeframe || '',
     roof_condition: lead.roof_condition || '',
     roof_material: lead.roof_material || '',
     cover_skylights: lead.cover_skylights || false,
     ground_mount: lead.ground_mount || false,
-    unit_rate: lead.unit_rate || '',
-    est_ann_consumption: lead.est_ann_consumption || '',
+    unit_rate: lead.unit_rate ? lead.unit_rate.toString() : '',
+    est_ann_consumption: lead.est_ann_consumption ? lead.est_ann_consumption.toString() : '',
     est_system_size: lead.est_system_size || '',
     qualification_notes: lead.qualification_notes || '',
     latitude: lead.latitude || null as number | null,

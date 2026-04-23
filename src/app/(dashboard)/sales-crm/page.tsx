@@ -140,6 +140,7 @@ function LeadProcessingContent() {
       // Optimistically update the UI instead of refetching the entire list
       setLeads(prev => prev.map(lead => lead.id === id ? { ...lead, status: newStatus } : lead));
     } catch (error: any) {
+      console.error('Error updating lead:', error);
       toast.error('Failed to update lead: ' + error.message);
     }
   };

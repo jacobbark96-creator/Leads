@@ -44,6 +44,15 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
       if (error) throw error;
 
       toast.success(`${isContractor ? 'Contractor' : 'Lead'} added successfully`);
+      
+      // Reset form before closing to prevent stale state on next open
+      setFormData({
+        name: '',
+        phone: '',
+        email: '',
+        company: '',
+      });
+      
       onLeadAdded();
       onClose();
     } catch (error: any) {

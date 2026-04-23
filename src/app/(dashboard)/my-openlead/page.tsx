@@ -110,7 +110,7 @@ export default function MyOpenlead() {
       // Check if profile is completely filled
       const isComplete = formData.service_areas.length > 0 && !!formData.company_name && !!formData.contact_name && !!formData.phone && !!formData.services_offered;
 
-      const { error } = await supabase
+      const { data: updatedClient, error } = await supabase
         .from('clients')
         .update({
           company_name: formData.company_name,
@@ -120,9 +120,15 @@ export default function MyOpenlead() {
           service_areas: formData.service_areas,
           is_profile_complete: isComplete
         })
-        .eq('id', clientData.id);
+        .eq('id', clientData.id)
+        .select()
+        .single();
 
       if (error) throw error;
+      
+      if (!updatedClient) {
+        throw new Error('Update failed to apply to the database.');
+      }
       
       // Sync to contractor CRM
       await supabase

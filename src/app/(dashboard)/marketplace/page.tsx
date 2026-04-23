@@ -26,14 +26,42 @@ export default function Marketplace() {
       if (isInitial) setLoading(true);
       else setLoadingMore(true);
       
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('status', 'qualified')
-        .eq('is_marketed', true)
-        .is('client_id', null) // Only show leads not yet purchased
-        .order('created_at', { ascending: false })
-        .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
+      let data: Lead[] | null = [];
+      let error = null;
+
+      if (profile?.role === 'client') {
+        // Fetch client ID
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', profile.id)
+          .single();
+
+        if (clientError) throw new Error('Could not find client profile.');
+
+        // Use RPC to get leads within service area
+        const res = await supabase.rpc('get_local_marketplace_leads', {
+          p_client_id: clientData.id,
+          p_limit: PAGE_SIZE + 1, // Fetch one extra to determine if there are more pages
+          p_offset: pageNumber * PAGE_SIZE
+        });
+        
+        data = res.data;
+        error = res.error;
+      } else {
+        // Admin / Super Admin view all
+        const res = await supabase
+          .from('leads')
+          .select('*')
+          .eq('status', 'qualified')
+          .eq('is_marketed', true)
+          .is('client_id', null)
+          .order('created_at', { ascending: false })
+          .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
+
+        data = res.data;
+        error = res.error;
+      }
 
       if (error) throw error;
       

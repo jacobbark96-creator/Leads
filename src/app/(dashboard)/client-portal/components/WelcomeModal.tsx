@@ -19,10 +19,10 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
       />
       <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
       
-      <div className="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full border border-slate-100">
+      <div className="inline-block align-bottom bg-white rounded-3xl text-left overflow-hidden shadow-2xl transform transition-all sm:my-8 sm:align-middle sm:max-w-2xl w-full border border-slate-100 max-h-[90vh] flex flex-col">
         
         {/* Header Graphic */}
-        <div className="relative bg-slate-900 px-6 py-12 text-center overflow-hidden">
+        <div className="relative bg-slate-900 px-6 py-12 text-center overflow-hidden shrink-0">
           <div className="absolute top-0 right-0 w-64 h-64 bg-openlead-blue rounded-full blur-[80px] opacity-30 pointer-events-none -mr-20 -mt-20"></div>
           <div className="relative z-10 flex flex-col items-center">
             <div className="w-20 h-20 bg-white/10 backdrop-blur-md rounded-2xl flex items-center justify-center mb-6 border border-white/20 shadow-xl">
@@ -34,7 +34,7 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
         </div>
 
         {/* Content */}
-        <div className="px-6 py-8 sm:px-10">
+        <div className="px-6 py-8 sm:px-10 overflow-y-auto">
           <div className="space-y-6">
             <div className="flex gap-4">
               <div className="shrink-0 w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center border border-blue-100 font-bold text-openlead-blue text-sm">1</div>
@@ -63,7 +63,7 @@ export function WelcomeModal({ isOpen, onClose }: WelcomeModalProps) {
         </div>
 
         {/* Footer */}
-        <div className="bg-slate-50 px-6 py-5 sm:px-10 border-t border-slate-100 sm:flex sm:flex-row-reverse">
+        <div className="bg-slate-50 px-6 py-5 sm:px-10 border-t border-slate-100 sm:flex sm:flex-row-reverse shrink-0">
           <button
             type="button"
             onClick={onClose}

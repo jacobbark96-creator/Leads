@@ -9,6 +9,7 @@ import { TrendingUp, Calendar, DollarSign } from 'lucide-react';
 export default function SalesTracker() {
   const [soldLeads, setSoldLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
+  const [filter, setFilter] = useState<'all' | 'week'>('all');
 
   // Calculate current week's Tuesday to Monday
   const { startOfTrackingWeek, endOfTrackingWeek } = useMemo(() => {
@@ -28,11 +29,19 @@ export default function SalesTracker() {
     const fetchSoldLeads = async () => {
       try {
         setLoading(true);
-        const { data, error } = await supabase
+        let query = supabase
           .from('leads')
           .select('id, name, location, price, purchase_date, clients(company_name, contact_name)')
           .eq('status', 'sold')
           .order('purchase_date', { ascending: false });
+
+        if (filter === 'week') {
+          query = query
+            .gte('purchase_date', startOfTrackingWeek.toISOString())
+            .lte('purchase_date', endOfTrackingWeek.toISOString());
+        }
+
+        const { data, error } = await query;
 
         if (error) throw error;
         setSoldLeads((data as unknown as Lead[]) || []);
@@ -44,7 +53,7 @@ export default function SalesTracker() {
     };
 
     fetchSoldLeads();
-  }, [startOfTrackingWeek, endOfTrackingWeek]);
+  }, [startOfTrackingWeek, endOfTrackingWeek, filter]);
 
   const totalRevenue = soldLeads.reduce((sum, lead) => sum + (lead.price || 135), 0);
 
@@ -57,10 +66,17 @@ export default function SalesTracker() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Sales Tracker</h2>
-          <p className="text-sm text-gray-500 mt-1 flex items-center gap-2">
-            <Calendar className="w-4 h-4" />
-            All Time Sales
-          </p>
+          <div className="flex items-center gap-2 mt-2">
+            <Calendar className="w-4 h-4 text-gray-500" />
+            <select
+              value={filter}
+              onChange={(e) => setFilter(e.target.value as any)}
+              className="text-sm font-medium text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
+            >
+              <option value="all">All Time Sales</option>
+              <option value="week">This Week ({format(startOfTrackingWeek, 'MMM d')} - {format(endOfTrackingWeek, 'MMM d')})</option>
+            </select>
+          </div>
         </div>
         
         <div className="bg-green-50 border border-green-200 rounded-lg p-4 flex items-center gap-4">

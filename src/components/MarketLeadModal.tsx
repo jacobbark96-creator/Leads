@@ -232,7 +232,6 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                       }));
                     }}
                     options={{
-                      types: ['address'],
                       componentRestrictions: { country: "uk" },
                       fields: ['formatted_address', 'geometry', 'name']
                     }}

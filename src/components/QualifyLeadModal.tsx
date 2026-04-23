@@ -157,15 +157,15 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
       const updateData = {
         status: 'qualified',
         category_id: formData.category_id || null,
-        monthly_spend: formData.monthly_spend ? Number(formData.monthly_spend) : null,
+        monthly_spend: formData.monthly_spend ? Number(formData.monthly_spend.toString().replace(/,/g, '')) : null,
         location: formData.location,
         timeframe: formData.timeframe,
         roof_condition: formData.roof_condition,
         roof_material: formData.roof_material,
         cover_skylights: formData.cover_skylights,
         ground_mount: formData.ground_mount,
-        unit_rate: formData.unit_rate ? Number(formData.unit_rate) : null,
-        est_ann_consumption: formData.est_ann_consumption ? Number(formData.est_ann_consumption) : null,
+        unit_rate: formData.unit_rate ? Number(formData.unit_rate.toString().replace(/,/g, '')) : null,
+        est_ann_consumption: formData.est_ann_consumption ? Number(formData.est_ann_consumption.toString().replace(/,/g, '')) : null,
         est_system_size: formData.est_system_size,
         qualification_notes: formData.qualification_notes,
         photos: photos,
@@ -526,10 +526,10 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                 {!formData.bills_url && (
                   <label className="w-full h-16 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                     <Upload className="w-5 h-5 text-gray-400 mr-2" />
-                    <span className="text-sm text-gray-500 font-medium">Upload Bill (PDF, JPG, PNG)</span>
+                    <span className="text-sm text-gray-500 font-medium">Upload Bill (PDF, JPG, PNG, CSV, XLSX)</span>
                     <input 
                       type="file" 
-                      accept=".pdf,image/*" 
+                      accept=".pdf,image/jpeg,image/png,.csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" 
                       className="hidden" 
                       onChange={handleBillUpload}
                       disabled={uploading}

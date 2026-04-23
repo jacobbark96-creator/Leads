@@ -170,14 +170,18 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                     <span className="block text-xs text-gray-500 mb-1">Availability</span>
                     <span className="font-semibold text-gray-900">{lead.availability || 'N/A'}</span>
                   </div>
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                    <span className="block text-xs text-gray-500 mb-1">Electrical Supply</span>
-                    <span className="font-semibold text-gray-900">{lead.electrical_supply || 'N/A'}</span>
-                  </div>
-                  <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
-                    <span className="block text-xs text-gray-500 mb-1">Solar Location</span>
-                    <span className="font-semibold text-gray-900">{lead.solar_location || 'N/A'}</span>
-                  </div>
+                  {lead.electrical_supply && (
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      <span className="block text-xs text-gray-500 mb-1">Electrical Supply</span>
+                      <span className="font-semibold text-gray-900">{lead.electrical_supply}</span>
+                    </div>
+                  )}
+                  {lead.solar_location && (
+                    <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
+                      <span className="block text-xs text-gray-500 mb-1">Solar Location</span>
+                      <span className="font-semibold text-gray-900">{lead.solar_location}</span>
+                    </div>
+                  )}
                   <div className="bg-gray-50 p-4 rounded-lg border border-gray-100">
                     <span className="block text-xs text-gray-500 mb-1">Roof Size</span>
                     <span className="font-semibold text-gray-900">

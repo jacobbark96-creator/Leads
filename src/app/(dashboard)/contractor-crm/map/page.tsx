@@ -93,15 +93,23 @@ export default function MapTab() {
       if (catError) throw catError;
       setCategories(catData || []);
 
-      // Fetch onboarded clients (contractors) with coordinates
+      // Fetch onboarded clients (contractors)
       const { data: clientsData, error: clientsError } = await supabase
         .from('clients')
-        .select('*')
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
+        .select('*');
 
       if (clientsError) throw clientsError;
-      setClients(clientsData || []);
+      
+      // Filter clients who have at least one valid service area
+      const validClients = (clientsData || []).filter((c: any) => 
+        c.service_areas && 
+        Array.isArray(c.service_areas) && 
+        c.service_areas.length > 0 && 
+        c.service_areas[0].lat && 
+        c.service_areas[0].lng
+      );
+      
+      setClients(validClients);
 
       // Fetch marketed, unpurchased leads with coordinates
       const { data: leadsData, error: leadsError } = await supabase
@@ -223,20 +231,23 @@ export default function MapTab() {
             }}
           >
           {/* Render Clients (Contractors) */}
-          {filteredClients.map((client) => (
-            <Marker
-              key={client.id}
-              position={{ lat: Number(client.latitude), lng: Number(client.longitude) }}
-              icon={createStarIcon(selectedCategory === 'all' 
-                ? getServiceColor(client.services_offered) 
-                : getServiceColor(categories.find(c => c.id === selectedCategory)?.name)
-              )}
-              onClick={() => {
-                setSelectedClient(client);
-                setSelectedLead(null);
-              }}
-            />
-          ))}
+          {filteredClients.map((client: any) => {
+            const firstArea = client.service_areas[0];
+            return (
+              <Marker
+                key={client.id}
+                position={{ lat: Number(firstArea.lat), lng: Number(firstArea.lng) }}
+                icon={createStarIcon(selectedCategory === 'all' 
+                  ? getServiceColor(client.services_offered) 
+                  : getServiceColor(categories.find(c => c.id === selectedCategory)?.name)
+                )}
+                onClick={() => {
+                  setSelectedClient(client);
+                  setSelectedLead(null);
+                }}
+              />
+            );
+          })}
 
           {/* Render Marketed Leads */}
           {filteredLeads.map((lead) => (
@@ -252,9 +263,9 @@ export default function MapTab() {
           ))}
 
           {/* InfoWindow for Client */}
-          {selectedClient && selectedClient.latitude && selectedClient.longitude && (
+          {selectedClient && (selectedClient as any).service_areas?.[0] && (
             <InfoWindow
-              position={{ lat: Number(selectedClient.latitude), lng: Number(selectedClient.longitude) }}
+              position={{ lat: Number((selectedClient as any).service_areas[0].lat), lng: Number((selectedClient as any).service_areas[0].lng) }}
               onCloseClick={() => setSelectedClient(null)}
             >
               <div className="p-2 max-w-[250px]">
@@ -264,13 +275,13 @@ export default function MapTab() {
                   rel="noopener noreferrer" 
                   className="font-bold text-lg text-blue-600 hover:text-blue-800 hover:underline block"
                 >
-                  {selectedClient.company_name}
+                  {(selectedClient as any).company_name || 'Unknown Company'}
                 </a>
-                <p className="text-sm text-gray-600 mb-2">{selectedClient.contact_name}</p>
+                <p className="text-sm text-gray-600 mb-2">{(selectedClient as any).contact_name}</p>
                 <div className="space-y-1 text-xs">
                   <div className="flex items-start gap-2">
                     <MapPin className="w-3 h-3 text-gray-400 mt-0.5" />
-                    <span>{selectedClient.address || 'No address provided'}</span>
+                    <span>{(selectedClient as any).service_areas[0].address || 'No address provided'}</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <Briefcase className="w-3 h-3 text-gray-400 mt-0.5" />

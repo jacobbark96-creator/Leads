@@ -59,7 +59,7 @@ function OnboardedContractorsContent() {
 
       let query = supabase
         .from('contractors')
-        .select('id, name, status, phone, assigned_to')
+        .select('id, name, company_name, contact_name, status, phone, assigned_to')
         .eq('status', 'onboarded')
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
@@ -177,8 +177,9 @@ function OnboardedContractorsContent() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{contractor.name}</p>
-                    {contractor.phone && <p className="text-sm text-gray-500 truncate">{contractor.phone}</p>}
+                    <p className="text-sm font-bold text-gray-900 truncate">{contractor.company_name || contractor.name}</p>
+                    {contractor.contact_name && <p className="text-xs text-gray-600 truncate">{contractor.contact_name}</p>}
+                    {contractor.phone && <p className="text-xs text-gray-500 truncate">{contractor.phone}</p>}
                   </div>
                 </div>
                 

@@ -217,7 +217,7 @@ function ContractorDetailsContent() {
             <ChevronLeft className="w-6 h-6" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{contractor.name}</h1>
+            <h1 className="text-2xl font-bold text-gray-900">{contractor.company_name || contractor.name}</h1>
             <p className="text-sm text-gray-500 mt-1">Contractor Details & Notes</p>
           </div>
         </div>
@@ -285,8 +285,9 @@ function ContractorDetailsContent() {
               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
                 <User className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">{contractor.name}</h2>
-              {contractor.company && <p className="text-gray-500 font-medium mt-1">{contractor.company}</p>}
+              <h2 className="text-2xl font-bold text-gray-900">{contractor.company_name || contractor.name}</h2>
+              {contractor.contact_name && <p className="text-gray-500 font-medium mt-1">{contractor.contact_name}</p>}
+              {contractor.company && !contractor.company_name && <p className="text-gray-500 font-medium mt-1">{contractor.company}</p>}
             </div>
             
             <div className="p-6 space-y-6">
@@ -309,6 +310,25 @@ function ContractorDetailsContent() {
                   </a>
                 </div>
               )}
+
+              <div>
+                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Service Areas</label>
+                {contractor.service_areas && contractor.service_areas.length > 0 ? (
+                  <div className="flex flex-wrap gap-2">
+                    {contractor.service_areas.map((area: any) => (
+                      <div key={area.id} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-medium border border-blue-100">
+                        <span className="truncate max-w-[200px]">{area.address}</span>
+                        <span className="ml-1 bg-blue-100 px-1.5 rounded-full text-[10px]">{area.radiusMiles === 99999 ? 'National' : `${area.radiusMiles}mi`}</span>
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-3 text-gray-500">
+                    <div className="p-2 bg-gray-50 rounded-lg"><MapPin className="w-5 h-5 text-gray-400" /></div>
+                    <span className="text-sm">Not provided</span>
+                  </div>
+                )}
+              </div>
 
               {contractor.csv_data && Object.keys(contractor.csv_data).length > 0 && (
                 <div>

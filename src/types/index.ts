@@ -74,16 +74,20 @@ export interface Lead {
 
 export interface Contractor {
   id: string;
+  client_id?: string | null;
   category_id: string | null;
   subcategory_id: string | null;
-  name: string;
-  phone: string;
+  name?: string | null;
+  company_name?: string | null;
+  contact_name?: string | null;
+  phone?: string | null;
   email: string | null;
   company: string | null;
   status: string;
   csv_data: any | null;
   assigned_to: string | null;
   created_at: string;
+  service_areas?: any[] | null;
 }
 
 export interface StaffUser {

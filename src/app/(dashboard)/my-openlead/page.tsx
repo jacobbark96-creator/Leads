@@ -131,7 +131,7 @@ export default function MyOpenlead() {
       }
       
       // Sync to contractor CRM
-      await supabase
+      const { error: contractorError } = await supabase
         .from('contractors')
         .update({
           company_name: formData.company_name,
@@ -140,6 +140,10 @@ export default function MyOpenlead() {
           service_areas: formData.service_areas
         })
         .eq('client_id', clientData.id);
+        
+      if (contractorError) {
+         console.error("Failed to update contractor table:", contractorError);
+      }
 
       toast.success('Details updated successfully!');
       

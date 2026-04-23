@@ -257,6 +257,7 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                       }));
                     }}
                     options={{
+                      types: [],
                       componentRestrictions: { country: "gb" },
                       fields: ['formatted_address', 'geometry', 'name']
                     }}

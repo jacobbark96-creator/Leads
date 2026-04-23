@@ -120,7 +120,10 @@ export function MultiServiceArea({ areas, onChange }: MultiServiceAreaProps) {
               <Autocomplete 
                 onLoad={onLoad} 
                 onPlaceChanged={onPlaceChanged}
-                options={{ componentRestrictions: { country: 'gb' } }}
+                options={{ 
+                  types: [],
+                  componentRestrictions: { country: 'gb' } 
+                }}
               >
                 <input
                   type="text"

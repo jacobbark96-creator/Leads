@@ -223,6 +223,7 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
                       }));
                     }}
                     options={{
+                      types: [],
                       componentRestrictions: { country: "gb" },
                       fields: ['formatted_address', 'geometry', 'name']
                     }}

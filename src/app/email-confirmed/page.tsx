@@ -56,7 +56,7 @@ export default function EmailConfirmed() {
 
           <div className="bg-slate-50/80 rounded-2xl p-6 mb-8 border border-slate-100">
             <div className="flex flex-col items-center justify-center gap-1">
-              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Redirecting to dashboard in</span>
+              <span className="text-xs font-bold uppercase tracking-wider text-slate-400">Redirecting to subscription in</span>
               <div className="flex items-baseline gap-1 mt-1">
                 <span className="text-4xl font-extrabold text-openlead-blue tabular-nums">{countdown}</span>
                 <span className="text-sm font-medium text-slate-400">s</span>
@@ -69,7 +69,7 @@ export default function EmailConfirmed() {
               onClick={() => router.push('/subscription')}
               className="w-full flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl shadow-[0_4px_14px_0_rgba(57,204,204,0.39)] hover:shadow-[0_6px_20px_rgba(57,204,204,0.23)] hover:-translate-y-0.5 text-sm font-bold text-white bg-openlead-blue transition-all duration-200"
             >
-              Continue to Dashboard Now <ArrowRight className="ml-1.5 w-4 h-4" />
+              Continue to Subscription Now <ArrowRight className="ml-1.5 w-4 h-4" />
             </button>
           </div>
 

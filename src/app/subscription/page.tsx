@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, ShieldCheck, CreditCard, ChevronRight } from 'lucide-react';
+import { Check, ShieldCheck, CreditCard, ChevronRight, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
 
@@ -38,7 +38,6 @@ export default function SubscriptionSummary() {
       try {
         data = await response.json();
       } catch (parseError) {
-        // If the server returns a 500 HTML page or empty response instead of JSON
         throw new Error(`Server returned an invalid response. Status: ${response.status}`);
       }
 
@@ -63,111 +62,131 @@ export default function SubscriptionSummary() {
   if (!user) return null;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-3xl w-full space-y-8">
+    <div className="min-h-screen bg-slate-50 flex flex-col items-center py-12 px-4 sm:px-6 lg:px-8 relative overflow-hidden">
+      
+      {/* Decorative Background */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute -top-40 -right-40 w-96 h-96 rounded-full bg-openlead-blue/10 blur-3xl"></div>
+        <div className="absolute top-1/2 -left-40 w-96 h-96 rounded-full bg-cyan-400/10 blur-3xl"></div>
+      </div>
+
+      <div className="max-w-4xl w-full space-y-8 relative z-10">
         
         {/* Header */}
         <div className="text-center">
           <img src="/openlead-logo.png" alt="Openlead" className="h-10 mx-auto mb-6" />
-          <h2 className="text-3xl font-extrabold text-gray-900">Complete Your Registration</h2>
-          <p className="mt-2 text-lg text-gray-600">Start your free trial to access exclusive leads.</p>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Complete Your Registration</h2>
+          <p className="mt-3 text-lg text-slate-500 max-w-xl mx-auto">Start your 30-day free trial today and get immediate access to our exclusive lead marketplace.</p>
         </div>
 
-        {/* Pricing Card */}
-        <div className="bg-white rounded-2xl shadow-xl overflow-hidden border border-gray-200">
-          <div className="bg-blue-600 px-6 py-8 sm:p-10 sm:pb-6">
-            <div className="flex justify-center items-center">
-              <span className="inline-flex px-4 py-1 rounded-full text-sm font-semibold tracking-wide uppercase bg-blue-100 text-blue-800">
-                Premium Membership
-              </span>
-            </div>
-            <div className="mt-4 flex justify-center text-6xl font-extrabold text-white items-baseline">
-              <span className="text-3xl line-through text-blue-300 mr-3">£30</span>
-              <span className="text-3xl line-through text-blue-300 mr-3">£15</span>
-              £0
-              <span className="ml-1 text-xl font-medium text-blue-200">/mo</span>
-            </div>
-            <p className="mt-5 text-lg text-center text-blue-100">
-              Your first month is absolutely free. After 30 days, it's just £15/mo for 6 months. Then standard £30/mo.
-            </p>
-          </div>
-
-          <div className="px-6 pt-6 pb-8 bg-gray-50 sm:p-10 sm:pt-6">
-            <ul className="space-y-4">
-              {[
-                'Full access to exclusive, pre-qualified leads',
-                'Built-in CRM to manage your pipeline',
-                'Personal Openlead Coach for support',
-                'Add child accounts for your sales team (£2/mo)',
-              ].map((feature, index) => (
-                <li key={index} className="flex items-start">
-                  <div className="flex-shrink-0">
-                    <Check className="h-6 w-6 text-green-500" />
-                  </div>
-                  <p className="ml-3 text-base text-gray-700">{feature}</p>
-                </li>
-              ))}
-            </ul>
-          </div>
-        </div>
-
-        {/* Terms and Checkout */}
-        <div className="bg-white p-6 sm:p-8 rounded-2xl shadow-sm border border-gray-200">
-          <h3 className="text-lg font-bold text-gray-900 mb-4">Terms & Conditions</h3>
+        <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
           
-          <div className="bg-gray-50 p-4 rounded-lg text-sm text-gray-600 mb-6 h-32 overflow-y-auto border border-gray-200">
-            <p className="mb-2"><strong>1. Subscription Terms</strong></p>
-            <p className="mb-4">By starting your free trial, you agree to a 30-day free period. After 30 days, you will be automatically billed £15 per month for the next 6 months. From month 8 onwards, the standard rate of £30 per month applies. You may cancel at any time before the trial ends to avoid being charged.</p>
-            <p className="mb-2"><strong>2. Lead Purchases</strong></p>
-            <p className="mb-4">Leads purchased on the marketplace are billed separately via Pay-As-You-Go. Lead exclusivity is guaranteed per the Openlead standard operating procedure.</p>
-            <p className="mb-2"><strong>3. Fair Use</strong></p>
-            <p>Access to the platform is intended for the registered business. Sharing credentials outside your organization is prohibited.</p>
+          {/* Pricing Card - Left Side (Spans 3 cols on desktop) */}
+          <div className="md:col-span-3 bg-white rounded-3xl shadow-xl shadow-slate-200/50 overflow-hidden border border-slate-100 flex flex-col">
+            <div className="bg-slate-900 px-6 py-10 sm:p-10 relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-64 h-64 bg-openlead-blue rounded-full blur-[80px] opacity-20 pointer-events-none -mr-20 -mt-20"></div>
+              
+              <div className="relative z-10">
+                <div className="flex items-center gap-3 mb-6">
+                  <span className="inline-flex px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-openlead-blue/20 text-cyan-300 border border-openlead-blue/30">
+                    Premium Access
+                  </span>
+                  <span className="inline-flex px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-white/10 text-white border border-white/20">
+                    30 Days Free
+                  </span>
+                </div>
+                
+                <div className="flex items-baseline text-white">
+                  <span className="text-5xl md:text-6xl font-extrabold tracking-tight">£0</span>
+                  <span className="ml-2 text-xl font-medium text-slate-400">for 30 days</span>
+                </div>
+                <p className="mt-4 text-base text-slate-300 leading-relaxed">
+                  Then just £15/mo for your first 6 months. Standard £30/mo applies thereafter. Cancel anytime.
+                </p>
+              </div>
+            </div>
+
+            <div className="p-6 sm:p-10 flex-1 bg-white">
+              <h3 className="text-sm font-bold tracking-widest text-slate-400 uppercase mb-6">What's included</h3>
+              <ul className="space-y-5">
+                {[
+                  'Full access to the exclusive lead marketplace',
+                  'Built-in CRM to manage your pipeline and ROI',
+                  'Personal Openlead Coach for ongoing support',
+                  'Subsidized bulk pricing on all leads',
+                  'Add child accounts for your sales team (£2/mo)',
+                ].map((feature, index) => (
+                  <li key={index} className="flex items-start">
+                    <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-green-50 flex items-center justify-center border border-green-100">
+                      <Check className="h-3.5 w-3.5 text-green-500" />
+                    </div>
+                    <p className="ml-3 text-base text-slate-700 font-medium">{feature}</p>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
 
-          <div className="flex items-start mb-8">
-            <div className="flex items-center h-5">
-              <input
-                id="terms"
-                name="terms"
-                type="checkbox"
-                checked={acceptedTerms}
-                onChange={(e) => setAcceptedTerms(e.target.checked)}
-                className="focus:ring-blue-500 h-5 w-5 text-blue-600 border-gray-300 rounded cursor-pointer"
-              />
+          {/* Terms and Checkout - Right Side (Spans 2 cols on desktop) */}
+          <div className="md:col-span-2 space-y-6">
+            <div className="bg-white p-6 rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100">
+              <div className="flex items-center gap-2 mb-4">
+                <ShieldCheck className="w-5 h-5 text-openlead-blue" />
+                <h3 className="text-lg font-bold text-slate-900">Terms & Conditions</h3>
+              </div>
+              
+              <div className="bg-slate-50 p-4 rounded-xl text-xs text-slate-600 mb-6 h-48 overflow-y-auto border border-slate-200 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
+                <p className="mb-1 font-bold text-slate-800">1. Subscription Terms</p>
+                <p className="mb-4">By starting your free trial, you agree to a 30-day free period. After 30 days, you will be automatically billed £15 per month for the next 6 months. From month 8 onwards, the standard rate of £30 per month applies. You may cancel at any time before the trial ends to avoid being charged.</p>
+                
+                <p className="mb-1 font-bold text-slate-800">2. Lead Purchases</p>
+                <p className="mb-4">Leads purchased on the marketplace are billed separately via Pay-As-You-Go. Lead exclusivity is guaranteed per the Openlead standard operating procedure.</p>
+                
+                <p className="mb-1 font-bold text-slate-800">3. Fair Use</p>
+                <p>Access to the platform is intended for the registered business. Sharing credentials outside your organization is prohibited.</p>
+              </div>
+
+              <div className="flex items-start mb-6 group cursor-pointer" onClick={() => setAcceptedTerms(!acceptedTerms)}>
+                <div className="flex items-center h-5 mt-0.5">
+                  <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${acceptedTerms ? 'bg-openlead-blue border-openlead-blue' : 'bg-white border-slate-300 group-hover:border-openlead-blue'}`}>
+                    {acceptedTerms && <Check className="w-3.5 h-3.5 text-white" />}
+                  </div>
+                </div>
+                <div className="ml-3 text-sm">
+                  <p className="font-bold text-slate-700">
+                    I accept the Terms & Conditions
+                  </p>
+                  <p className="text-slate-500 text-xs mt-1">I understand my card will be vaulted securely today to begin the free trial.</p>
+                </div>
+              </div>
+
+              <button
+                onClick={handleCheckout}
+                disabled={!acceptedTerms || isLoading}
+                className={`w-full flex items-center justify-center px-6 py-4 border border-transparent text-base font-bold rounded-xl text-white transition-all duration-200 ${
+                  !acceptedTerms || isLoading
+                    ? 'bg-slate-300 cursor-not-allowed'
+                    : 'bg-openlead-blue hover:bg-openlead-blue/90 shadow-[0_4px_14px_0_rgba(57,204,204,0.39)] hover:shadow-[0_6px_20px_rgba(57,204,204,0.23)] hover:-translate-y-0.5'
+                }`}
+              >
+                {isLoading ? (
+                  'Processing...'
+                ) : (
+                  <>
+                    <CreditCard className="w-5 h-5 mr-2" />
+                    Start Free Trial
+                  </>
+                )}
+              </button>
             </div>
-            <div className="ml-3 text-sm">
-              <label htmlFor="terms" className="font-medium text-gray-700 cursor-pointer">
-                I have read and accept the Terms & Conditions
-              </label>
-              <p className="text-gray-500">I understand my card will be vaulted today to begin the free trial.</p>
+
+            <div className="flex items-center justify-center gap-2 text-xs font-medium text-slate-400 bg-white/50 py-3 rounded-xl border border-slate-200">
+              <Lock className="w-3.5 h-3.5" />
+              Secure Checkout powered by Stripe
             </div>
           </div>
 
-          <button
-            onClick={handleCheckout}
-            disabled={!acceptedTerms || isLoading}
-            className={`w-full flex items-center justify-center px-8 py-4 border border-transparent text-lg font-bold rounded-xl text-white shadow-sm transition-all ${
-              !acceptedTerms || isLoading
-                ? 'bg-gray-400 cursor-not-allowed'
-                : 'bg-blue-600 hover:bg-blue-700 hover:shadow-lg hover:-translate-y-0.5'
-            }`}
-          >
-            {isLoading ? (
-              'Processing...'
-            ) : (
-              <>
-                <CreditCard className="w-5 h-5 mr-2" />
-                Start 30-Day Free Trial
-                <ChevronRight className="w-5 h-5 ml-1" />
-              </>
-            )}
-          </button>
-          <div className="mt-4 flex items-center justify-center text-sm text-gray-500">
-            <ShieldCheck className="w-4 h-4 mr-1.5 text-green-500" />
-            Secure Checkout powered by Stripe
-          </div>
         </div>
-
       </div>
     </div>
   );

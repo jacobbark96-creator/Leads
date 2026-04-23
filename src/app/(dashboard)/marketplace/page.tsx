@@ -130,38 +130,40 @@ export default function Marketplace() {
                 </div>
               </div>
               
-              <div className="p-5 flex-1 flex flex-col">
-                <div className="flex justify-between items-start mb-4">
-                  <div>
-                    <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-                      <MapPin className="w-4 h-4 text-gray-400" />
-                      {extractTown(lead.location)}
+              <div className="p-4 flex-1 flex flex-col">
+                <div className="flex justify-between items-start mb-3 gap-2">
+                  <div className="min-w-0 flex-1">
+                    <h3 className="text-sm font-bold text-gray-900 flex items-center gap-1.5 truncate">
+                      <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
+                      <span className="truncate">{extractTown(lead.location)}</span>
                     </h3>
                   </div>
-                  <div className="text-right">
-                    <span className="block text-sm font-medium text-gray-500">Price</span>
-                    <span className="text-lg font-bold text-green-600">£{lead.price || '135.00'}</span>
+                  <div className="text-right shrink-0">
+                    <span className="block text-[10px] uppercase tracking-wider font-semibold text-gray-500">Price</span>
+                    <span className="text-base font-bold text-green-600 leading-none">£{lead.price || '135.00'}</span>
                   </div>
                 </div>
 
-                <div className="space-y-3 flex-1">
-                  <div className="flex items-center justify-between text-sm">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500">Est. Spend:</span>
-                    <span className="font-semibold text-gray-900">£{lead.monthly_spend || 'N/A'}</span>
+                    <span className="font-semibold text-gray-900 truncate pl-2">£{lead.monthly_spend || 'N/A'}</span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <Calendar className="w-4 h-4 mr-2 text-gray-400" />
-                    <span className="font-medium mr-1">Timeframe:</span> {lead.timeframe || 'N/A'}
+                  <div className="flex items-center text-xs text-gray-600">
+                    <Calendar className="w-3.5 h-3.5 mr-1.5 text-gray-400 shrink-0" />
+                    <span className="font-medium mr-1 shrink-0">Timeframe:</span> 
+                    <span className="truncate">{lead.timeframe || 'N/A'}</span>
                   </div>
-                  <div className="flex items-center text-sm text-gray-600">
-                    <FileText className="w-4 h-4 mr-2 text-gray-400" />
-                    <span className="font-medium mr-1">System Size:</span> {lead.est_system_size || 'N/A'}
+                  <div className="flex items-center text-xs text-gray-600">
+                    <FileText className="w-3.5 h-3.5 mr-1.5 text-gray-400 shrink-0" />
+                    <span className="font-medium mr-1 shrink-0">System:</span> 
+                    <span className="truncate">{lead.est_system_size || 'N/A'}</span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => setSelectedLead(lead)}
-                  className="mt-6 w-full flex items-center justify-center px-4 py-2 border border-transparent text-sm font-medium rounded-lg text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors"
+                  className="mt-4 w-full flex items-center justify-center px-3 py-2 border border-transparent text-xs font-bold rounded-md text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors"
                 >
                   View Details
                 </button>

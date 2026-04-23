@@ -10,6 +10,7 @@ import Link from 'next/link';
 
 import { QualifyLeadModal } from '@/components/QualifyLeadModal';
 import { MarketLeadModal } from '@/components/MarketLeadModal';
+import { AddLeadModal } from '@/components/AddLeadModal';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -52,6 +53,7 @@ function LeadDetailsContent() {
   
   const [isQualifyModalOpen, setIsQualifyModalOpen] = useState(false);
   const [isMarketModalOpen, setIsMarketModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   const notesEndRef = useRef<HTMLDivElement>(null);
 
@@ -220,7 +222,15 @@ function LeadDetailsContent() {
             <ChevronLeft className="w-6 h-6" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{lead.name}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900">{lead.name}</h1>
+              <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+              >
+                Edit
+              </button>
+            </div>
             <p className="text-sm text-gray-500 mt-1">Lead Details & Notes</p>
           </div>
         </div>
@@ -435,6 +445,19 @@ function LeadDetailsContent() {
           }}
         />
       )}
+
+      <AddLeadModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        onLeadAdded={fetchLeadAndNotes}
+        editData={{
+          id: lead.id,
+          name: lead.name,
+          phone: lead.phone || '',
+          email: lead.email,
+          company: lead.company
+        }}
+      />
     </div>
   );
 }

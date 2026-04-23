@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft } from 'lucide-react';
 import Link from 'next/link';
 import { OnboardContractorModal } from '@/components/OnboardContractorModal';
+import { AddLeadModal } from '@/components/AddLeadModal';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -49,6 +50,7 @@ function ContractorDetailsContent() {
   const [nextContractorId, setNextContractorId] = useState<string | null>(null);
   
   const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   
   const notesEndRef = useRef<HTMLDivElement>(null);
 
@@ -217,7 +219,15 @@ function ContractorDetailsContent() {
             <ChevronLeft className="w-6 h-6" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">{contractor.company_name || contractor.name}</h1>
+            <div className="flex items-center gap-3">
+              <h1 className="text-2xl font-bold text-gray-900">{contractor.company_name || contractor.name}</h1>
+              <button 
+                onClick={() => setIsEditModalOpen(true)}
+                className="text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+              >
+                Edit
+              </button>
+            </div>
             <p className="text-sm text-gray-500 mt-1">Contractor Details & Notes</p>
           </div>
         </div>
@@ -421,6 +431,20 @@ function ContractorDetailsContent() {
           }}
         />
       )}
+
+      <AddLeadModal 
+        isOpen={isEditModalOpen} 
+        onClose={() => setIsEditModalOpen(false)} 
+        onLeadAdded={fetchContractorAndNotes}
+        isContractor={true}
+        editData={{
+          id: contractor.id,
+          name: contractor.name || '',
+          phone: contractor.phone || '',
+          email: contractor.email,
+          company: contractor.company_name || contractor.company
+        }}
+      />
     </div>
   );
 }

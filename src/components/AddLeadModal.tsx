@@ -8,9 +8,16 @@ interface AddLeadModalProps {
   onClose: () => void;
   onLeadAdded: () => void;
   isContractor?: boolean;
+  editData?: {
+    id: string;
+    name: string;
+    phone: string;
+    email: string | null;
+    company: string | null;
+  } | null;
 }
 
-export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onLeadAdded, isContractor = false }) => {
+export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onLeadAdded, isContractor = false, editData = null }) => {
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     name: '',
@@ -18,6 +25,24 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
     email: '',
     company: '',
   });
+
+  React.useEffect(() => {
+    if (isOpen && editData) {
+      setFormData({
+        name: editData.name || '',
+        phone: editData.phone || '',
+        email: editData.email || '',
+        company: editData.company || '',
+      });
+    } else if (isOpen) {
+      setFormData({
+        name: '',
+        phone: '',
+        email: '',
+        company: '',
+      });
+    }
+  }, [isOpen, editData]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -29,21 +54,49 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
     try {
       setLoading(true);
       const table = isContractor ? 'contractors' : 'leads';
-      const status = isContractor ? 'fresh' : 'fresh'; // both default to fresh
       
-      const { error } = await supabase
-        .from(table)
-        .insert([{
+      if (editData) {
+        const updatePayload: any = {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email || null,
+          company: formData.company || null,
+        };
+        
+        if (isContractor) {
+          updatePayload.contact_name = formData.name;
+          updatePayload.company_name = formData.company || null;
+        }
+
+        const { error } = await supabase
+          .from(table)
+          .update(updatePayload)
+          .eq('id', editData.id);
+
+        if (error) throw error;
+        toast.success(`${isContractor ? 'Contractor' : 'Lead'} updated successfully`);
+      } else {
+        const status = isContractor ? 'fresh' : 'fresh';
+        const insertPayload: any = {
           name: formData.name,
           phone: formData.phone,
           email: formData.email || null,
           company: formData.company || null,
           status: status
-        }]);
+        };
 
-      if (error) throw error;
+        if (isContractor) {
+          insertPayload.contact_name = formData.name;
+          insertPayload.company_name = formData.company || null;
+        }
 
-      toast.success(`${isContractor ? 'Contractor' : 'Lead'} added successfully`);
+        const { error } = await supabase
+          .from(table)
+          .insert([insertPayload]);
+
+        if (error) throw error;
+        toast.success(`${isContractor ? 'Contractor' : 'Lead'} added successfully`);
+      }
       
       // Reset form before closing to prevent stale state on next open
       setFormData({
@@ -74,15 +127,15 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex justify-between items-center mb-5">
-              <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-                Add New {isContractor ? 'Contractor' : 'Lead'}
-              </h3>
-              <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
-                <X className="w-6 h-6" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="space-y-4">
+            <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+              {editData ? `Edit ${isContractor ? 'Contractor' : 'Lead'}` : `Add New ${isContractor ? 'Contractor' : 'Lead'}`}
+            </h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          
+          <form onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name *</label>
                 <input
@@ -110,7 +163,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
                 <input
-                  type="email"
+                  type="text"
                   name="email"
                   id="email"
                   value={formData.email}
@@ -133,12 +186,12 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
 
               <div className="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse">
                 <button
-                  type="submit"
-                  disabled={loading}
-                  className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
-                >
-                  {loading ? 'Saving...' : 'Save'}
-                </button>
+                type="submit"
+                disabled={loading}
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : editData ? 'Save Changes' : `Add ${isContractor ? 'Contractor' : 'Lead'}`}
+              </button>
                 <button
                   type="button"
                   onClick={onClose}

@@ -9,9 +9,10 @@ import { Phone, Mail, Building, User, Users, Calendar, MapPin } from 'lucide-rea
 import Link from 'next/link';
 
 import { useSearchParams } from 'next/navigation';
-import { AddLeadModal } from '@/components/AddLeadModal';
-import { QualifyLeadModal } from '@/components/QualifyLeadModal';
-import { useAuthStore } from '@/store/authStore';
+  import { AddLeadModal } from '@/components/AddLeadModal';
+  import { QualifyLeadModal } from '@/components/QualifyLeadModal';
+  import { useAuthStore } from '@/store/authStore';
+  import { Trash2 } from 'lucide-react';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -44,6 +45,8 @@ function LeadProcessingContent() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const [leadToQualify, setLeadToQualify] = useState<Lead | null>(null);
+  const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
+  const [isDeleting, setIsDeleting] = useState(false);
   const PAGE_SIZE = 25;
 
   useEffect(() => {
@@ -141,6 +144,52 @@ function LeadProcessingContent() {
     }
   };
 
+  const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedLeads(new Set(leads.map(l => l.id)));
+    } else {
+      setSelectedLeads(new Set());
+    }
+  };
+
+  const handleSelectLead = (id: string, checked: boolean) => {
+    const newSelected = new Set(selectedLeads);
+    if (checked) {
+      newSelected.add(id);
+    } else {
+      newSelected.delete(id);
+    }
+    setSelectedLeads(newSelected);
+  };
+
+  const handleDeleteSelected = async () => {
+    if (!profile || profile.role !== 'super_admin') return;
+    if (selectedLeads.size === 0) return;
+
+    if (!window.confirm(`Are you sure you want to delete ${selectedLeads.size} selected lead(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setIsDeleting(true);
+      
+      const { error } = await supabase
+        .from('leads')
+        .delete()
+        .in('id', Array.from(selectedLeads));
+
+      if (error) throw error;
+
+      toast.success(`Successfully deleted ${selectedLeads.size} lead(s)`);
+      setLeads(prev => prev.filter(l => !selectedLeads.has(l.id)));
+      setSelectedLeads(new Set());
+    } catch (error: any) {
+      toast.error('Failed to delete leads: ' + error.message);
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
   }
@@ -193,11 +242,45 @@ function LeadProcessingContent() {
       </div>
 
       <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
+        {profile?.role === 'super_admin' && leads.length > 0 && (
+          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <input
+                type="checkbox"
+                checked={selectedLeads.size === leads.length && leads.length > 0}
+                onChange={handleSelectAll}
+                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+              />
+              <span className="text-sm text-gray-700 font-medium">
+                {selectedLeads.size > 0 ? `${selectedLeads.size} selected` : 'Select All'}
+              </span>
+            </div>
+            {selectedLeads.size > 0 && (
+              <button
+                onClick={handleDeleteSelected}
+                disabled={isDeleting}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+              >
+                <Trash2 className="w-4 h-4 mr-1.5" />
+                {isDeleting ? 'Deleting...' : 'Delete Selected'}
+              </button>
+            )}
+          </div>
+        )}
+
         {leads.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {leads.map((lead) => (
-              <li key={lead.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+              <li key={lead.id} className={`flex items-center justify-between p-4 transition-colors ${selectedLeads.has(lead.id) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}>
                 <div className="flex items-center gap-4 flex-1 min-w-0">
+                  {profile?.role === 'super_admin' && (
+                    <input
+                      type="checkbox"
+                      checked={selectedLeads.has(lead.id)}
+                      onChange={(e) => handleSelectLead(lead.id, e.target.checked)}
+                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                    />
+                  )}
                   <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 relative">
                     <User className="w-5 h-5" />
                     {lead.assigned_to && (

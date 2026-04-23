@@ -33,6 +33,10 @@ export default function CheckEmail() {
     const checkVerification = async () => {
       try {
         const { data, error } = await supabase.rpc('check_email_verified', { lookup_email: emailFromUrl });
+        
+        // Add console log to debug production behavior
+        console.log('Checking verification for', emailFromUrl, 'Result:', data, 'Error:', error);
+
         if (data === true) {
           setIsVerified(true);
         }
@@ -44,6 +48,17 @@ export default function CheckEmail() {
     const interval = setInterval(checkVerification, 3000);
     return () => clearInterval(interval);
   }, [emailFromUrl, isVerified]);
+
+  // Fallback: Also check if they are already logged in on this device
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session?.user?.email_confirmed_at) {
+        setIsVerified(true);
+      }
+    };
+    checkSession();
+  }, []);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;

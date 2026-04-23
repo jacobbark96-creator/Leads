@@ -152,6 +152,24 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!price || Number(price) <= 0) {
+      toast.error('Please enter a valid Lead Price');
+      return;
+    }
+    if (!formData.category_id) {
+      toast.error('Please select a Lead Category');
+      return;
+    }
+    if (!formData.location) {
+      toast.error('Please enter the Location');
+      return;
+    }
+    if (!formData.property_ownership) {
+      toast.error('Please select Property Ownership (Owned/Leased)');
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -235,11 +253,10 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                 <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
                   <span className="text-gray-500 sm:text-sm">£</span>
                 </div>
-                <input
+                  <input
                   type="number"
                   name="price"
                   id="price"
-                  required
                   className="block w-full rounded-md border-gray-300 pl-7 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                   placeholder="135.00"
                   value={price}
@@ -257,7 +274,6 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Lead Category *</label>
                   <select
-                    required
                     value={formData.category_id}
                     onChange={(e) => setFormData({...formData, category_id: e.target.value})}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -344,7 +360,6 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Owned? *</label>
                   <select
-                    required
                     value={formData.property_ownership}
                     onChange={(e) => setFormData({...formData, property_ownership: e.target.value})}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"

@@ -151,6 +151,20 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    if (!formData.category_id) {
+      toast.error('Please select a Lead Category');
+      return;
+    }
+    if (!formData.location) {
+      toast.error('Please enter the Location');
+      return;
+    }
+    if (!formData.property_ownership) {
+      toast.error('Please select Property Ownership (Owned/Leased)');
+      return;
+    }
+
     try {
       setLoading(true);
       
@@ -228,7 +242,6 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Lead Category *</label>
                   <select
-                    required
                     value={formData.category_id}
                     onChange={(e) => setFormData({...formData, category_id: e.target.value})}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
@@ -315,7 +328,6 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Owned? *</label>
                   <select
-                    required
                     value={formData.property_ownership}
                     onChange={(e) => setFormData({...formData, property_ownership: e.target.value})}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"

@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { ArrowRight, CheckCircle2, Star, Zap, Shield, BarChart3, Users, Clock, Mail, Globe, MapPin, Building, Target, PhoneCall, TrendingUp, Calendar, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Star, Zap, Shield, BarChart3, Users, Clock, Mail, Globe, MapPin, Building, Target, PhoneCall, TrendingUp, Calendar, ShieldCheck, Sparkles } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 export default function Home() {
@@ -194,56 +194,103 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Choose Us */}
-      <section className="py-24 bg-slate-50">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center max-w-3xl mx-auto mb-16">
-            <h2 className="text-openlead-blue font-bold tracking-wider text-sm uppercase mb-3">The Openlead Advantage</h2>
-            <h3 className="text-3xl md:text-4xl lg:text-5xl font-extrabold text-slate-900 mb-6 leading-tight">Built for Contractors Who Want to Grow</h3>
-            <p className="text-lg text-slate-600 leading-relaxed">
+      {/* Why Choose Us - Silicon Valley Bento Grid */}
+      <section className="py-32 bg-slate-950 relative overflow-hidden">
+        {/* Ambient Background Glows */}
+        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-openlead-blue/50 to-transparent"></div>
+        <div className="absolute -top-40 -right-40 w-96 h-96 bg-openlead-blue/20 rounded-full blur-[100px] pointer-events-none"></div>
+        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-cyan-500/20 rounded-full blur-[100px] pointer-events-none"></div>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-20">
+            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-openlead-blue/10 border border-openlead-blue/20 text-openlead-blue text-sm font-semibold tracking-wide uppercase mb-6">
+              <Sparkles className="w-4 h-4" />
+              <span>The Openlead Advantage</span>
+            </div>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight">
+              Engineered for <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300">Unfair Growth</span>
+            </h2>
+            <p className="text-xl text-slate-400 leading-relaxed font-light">
               We handle the marketing, vetting, and data collection so your sales team can focus entirely on what they do best: closing deals.
             </p>
           </div>
 
-          <div className="flex flex-col md:grid md:grid-cols-3 gap-6 md:gap-8 relative">
-            {[
-              {
-                title: "Pre-Qualified Intent",
-                icon: Target,
-                desc: "We don't just sell data. Every lead is a homeowner who has actively requested a quote for your specific service.",
-                color: "text-blue-600",
-                bg: "bg-blue-50",
-                border: "border-blue-100"
-              },
-              {
-                title: "Absolute Exclusivity",
-                icon: ShieldCheck,
-                desc: "When you buy a lead from Openlead, it's yours. We never sell the same prospect to multiple contractors.",
-                color: "text-emerald-600",
-                bg: "bg-emerald-50",
-                border: "border-emerald-100"
-              },
-              {
-                title: "All-in-One CRM",
-                icon: Zap,
-                desc: "Manage your leads, track appointments, and dial prospects instantly using our built-in client portal and sales CRM.",
-                color: "text-amber-600",
-                bg: "bg-amber-50",
-                border: "border-amber-100"
-              }
-            ].map((feature, i) => (
-              <div 
-                key={i} 
-                className={`bg-white rounded-3xl p-8 shadow-xl shadow-slate-200/50 border ${feature.border} transition-all duration-500 sticky md:static md:hover:-translate-y-2`}
-                style={{ top: `calc(120px + ${i * 24}px)` }}
-              >
-                <div className={`w-16 h-16 rounded-2xl flex items-center justify-center mb-8 ${feature.bg} ${feature.color}`}>
-                  <feature.icon className="w-8 h-8" />
+          {/* Bento Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
+            {/* Card 1: All-in-One CRM (Spans full width on tablet+) */}
+            <div className="md:col-span-2 group relative rounded-3xl bg-slate-900 border border-slate-800 p-8 md:p-12 overflow-hidden hover:border-slate-700 transition-colors">
+              <div className="absolute inset-0 bg-gradient-to-br from-openlead-blue/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
+                <div className="flex-1">
+                  <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-8 border border-amber-500/20">
+                    <Zap className="w-8 h-8 text-amber-400" />
+                  </div>
+                  <h3 className="text-3xl font-bold text-white mb-4">All-in-One Command Center</h3>
+                  <p className="text-lg text-slate-400 leading-relaxed">
+                    Manage your leads, track appointments, and dial prospects instantly using our built-in client portal and sales CRM. Everything you need to scale, in one tab.
+                  </p>
                 </div>
-                <h4 className="text-2xl font-bold text-slate-900 mb-4">{feature.title}</h4>
-                <p className="text-slate-600 leading-relaxed text-lg">{feature.desc}</p>
+                {/* Decorative UI element for CRM */}
+                <div className="flex-1 w-full relative">
+                  <div className="aspect-[4/3] rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl p-4 flex flex-col gap-4 overflow-hidden transform group-hover:-translate-y-2 transition-transform duration-500">
+                    <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+                      <div className="flex gap-2">
+                        <div className="w-3 h-3 rounded-full bg-slate-800"></div>
+                        <div className="w-3 h-3 rounded-full bg-slate-800"></div>
+                        <div className="w-3 h-3 rounded-full bg-slate-800"></div>
+                      </div>
+                      <div className="h-4 w-24 bg-slate-800 rounded-full"></div>
+                    </div>
+                    <div className="flex gap-4 h-full">
+                      <div className="w-1/3 space-y-3">
+                        <div className="h-12 bg-slate-800/50 rounded-xl"></div>
+                        <div className="h-12 bg-slate-800/50 rounded-xl"></div>
+                        <div className="h-12 bg-openlead-blue/20 border border-openlead-blue/30 rounded-xl"></div>
+                      </div>
+                      <div className="w-2/3 bg-slate-800/30 rounded-xl border border-slate-800 p-4 space-y-4">
+                        <div className="flex justify-between items-center">
+                          <div className="h-6 w-32 bg-slate-700 rounded-md"></div>
+                          <div className="h-8 w-20 bg-openlead-blue rounded-full"></div>
+                        </div>
+                        <div className="space-y-2">
+                          <div className="h-4 w-full bg-slate-800 rounded-md"></div>
+                          <div className="h-4 w-4/5 bg-slate-800 rounded-md"></div>
+                          <div className="h-4 w-5/6 bg-slate-800 rounded-md"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
-            ))}
+            </div>
+
+            {/* Card 2: Pre-Qualified Intent */}
+            <div className="group relative rounded-3xl bg-slate-900 border border-slate-800 p-8 md:p-10 overflow-hidden hover:border-slate-700 transition-colors">
+              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-8 border border-blue-500/20">
+                  <Target className="w-7 h-7 text-blue-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">Pre-Qualified Intent</h3>
+                <p className="text-slate-400 leading-relaxed">
+                  We don't just sell data. Every lead is a homeowner who has actively requested a quote for your specific service. High intent means higher close rates.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 3: Absolute Exclusivity */}
+            <div className="group relative rounded-3xl bg-slate-900 border border-slate-800 p-8 md:p-10 overflow-hidden hover:border-slate-700 transition-colors">
+              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
+              <div className="relative z-10">
+                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-8 border border-emerald-500/20">
+                  <ShieldCheck className="w-7 h-7 text-emerald-400" />
+                </div>
+                <h3 className="text-2xl font-bold text-white mb-4">Absolute Exclusivity</h3>
+                <p className="text-slate-400 leading-relaxed">
+                  When you buy a lead from Openlead, it's yours. We never sell the same prospect to multiple contractors. No racing to the bottom on price.
+                </p>
+              </div>
+            </div>
           </div>
         </div>
       </section>

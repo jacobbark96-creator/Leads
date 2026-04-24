@@ -194,103 +194,134 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Why Choose Us - Silicon Valley Bento Grid */}
-      <section className="py-32 bg-slate-950 relative overflow-hidden">
-        {/* Ambient Background Glows */}
-        <div className="absolute top-0 inset-x-0 h-px bg-gradient-to-r from-transparent via-openlead-blue/50 to-transparent"></div>
-        <div className="absolute -top-40 -right-40 w-96 h-96 bg-openlead-blue/20 rounded-full blur-[100px] pointer-events-none"></div>
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-cyan-500/20 rounded-full blur-[100px] pointer-events-none"></div>
-
+      {/* Why Choose Us - Data-Driven Approach */}
+      <section className="py-32 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-20">
             <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-openlead-blue/10 border border-openlead-blue/20 text-openlead-blue text-sm font-semibold tracking-wide uppercase mb-6">
               <Sparkles className="w-4 h-4" />
               <span>The Openlead Advantage</span>
             </div>
-            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-white mb-6 tracking-tight">
-              Engineered for <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300">Unfair Growth</span>
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight">
+              Backed by <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-500">Hard Data</span>
             </h2>
-            <p className="text-xl text-slate-400 leading-relaxed font-light">
-              We handle the marketing, vetting, and data collection so your sales team can focus entirely on what they do best: closing deals.
+            <p className="text-xl text-slate-600 leading-relaxed font-light">
+              We don't just promise better leads. We engineer them. Our platform is built to maximize your ROI through rigorous qualification and absolute exclusivity.
             </p>
           </div>
 
-          {/* Bento Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 lg:gap-8">
-            {/* Card 1: All-in-One CRM (Spans full width on tablet+) */}
-            <div className="md:col-span-2 group relative rounded-3xl bg-slate-900 border border-slate-800 p-8 md:p-12 overflow-hidden hover:border-slate-700 transition-colors">
-              <div className="absolute inset-0 bg-gradient-to-br from-openlead-blue/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative z-10 flex flex-col md:flex-row items-center gap-8 md:gap-12">
-                <div className="flex-1">
-                  <div className="w-16 h-16 rounded-2xl bg-amber-500/10 flex items-center justify-center mb-8 border border-amber-500/20">
-                    <Zap className="w-8 h-8 text-amber-400" />
-                  </div>
-                  <h3 className="text-3xl font-bold text-white mb-4">All-in-One Command Center</h3>
-                  <p className="text-lg text-slate-400 leading-relaxed">
-                    Manage your leads, track appointments, and dial prospects instantly using our built-in client portal and sales CRM. Everything you need to scale, in one tab.
-                  </p>
-                </div>
-                {/* Decorative UI element for CRM */}
-                <div className="flex-1 w-full relative">
-                  <div className="aspect-[4/3] rounded-2xl bg-slate-950 border border-slate-800 shadow-2xl p-4 flex flex-col gap-4 overflow-hidden transform group-hover:-translate-y-2 transition-transform duration-500">
-                    <div className="flex items-center justify-between border-b border-slate-800 pb-4">
-                      <div className="flex gap-2">
-                        <div className="w-3 h-3 rounded-full bg-slate-800"></div>
-                        <div className="w-3 h-3 rounded-full bg-slate-800"></div>
-                        <div className="w-3 h-3 rounded-full bg-slate-800"></div>
-                      </div>
-                      <div className="h-4 w-24 bg-slate-800 rounded-full"></div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* Card 1: Intent */}
+            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-openlead-blue/10 transition-all duration-300 group">
+              {/* Data Vis Area */}
+              <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                 {/* Abstract Grid Background */}
+                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                 {/* UI Element */}
+                 <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] flex items-center gap-5 transform group-hover:-translate-y-1 transition-transform duration-500">
+                    <div className="w-16 h-16 rounded-full border-4 border-slate-50 flex items-center justify-center relative shadow-inner">
+                       <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
+                         <path className="text-slate-100" strokeWidth="4" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                         <path className="text-openlead-blue transition-all duration-1000 ease-out" strokeDasharray="98, 100" strokeWidth="4" strokeLinecap="round" fill="none" stroke="currentColor" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                       </svg>
+                       <span className="font-bold text-slate-900 text-sm">98%</span>
                     </div>
-                    <div className="flex gap-4 h-full">
-                      <div className="w-1/3 space-y-3">
-                        <div className="h-12 bg-slate-800/50 rounded-xl"></div>
-                        <div className="h-12 bg-slate-800/50 rounded-xl"></div>
-                        <div className="h-12 bg-openlead-blue/20 border border-openlead-blue/30 rounded-xl"></div>
-                      </div>
-                      <div className="w-2/3 bg-slate-800/30 rounded-xl border border-slate-800 p-4 space-y-4">
-                        <div className="flex justify-between items-center">
-                          <div className="h-6 w-32 bg-slate-700 rounded-md"></div>
-                          <div className="h-8 w-20 bg-openlead-blue rounded-full"></div>
-                        </div>
-                        <div className="space-y-2">
-                          <div className="h-4 w-full bg-slate-800 rounded-md"></div>
-                          <div className="h-4 w-4/5 bg-slate-800 rounded-md"></div>
-                          <div className="h-4 w-5/6 bg-slate-800 rounded-md"></div>
-                        </div>
+                    <div>
+                      <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Intent Score</p>
+                      <p className="text-sm font-bold text-slate-900">Highly Qualified</p>
+                      <div className="flex gap-1 mt-2">
+                        <div className="h-1.5 w-4 bg-openlead-blue rounded-full"></div>
+                        <div className="h-1.5 w-4 bg-openlead-blue rounded-full"></div>
+                        <div className="h-1.5 w-4 bg-openlead-blue rounded-full"></div>
+                        <div className="h-1.5 w-4 bg-slate-200 rounded-full"></div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                 </div>
               </div>
-            </div>
-
-            {/* Card 2: Pre-Qualified Intent */}
-            <div className="group relative rounded-3xl bg-slate-900 border border-slate-800 p-8 md:p-10 overflow-hidden hover:border-slate-700 transition-colors">
-              <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative z-10">
-                <div className="w-14 h-14 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-8 border border-blue-500/20">
-                  <Target className="w-7 h-7 text-blue-400" />
+              <div className="p-8">
+                <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-6">
+                  <Target className="w-6 h-6 text-blue-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Pre-Qualified Intent</h3>
-                <p className="text-slate-400 leading-relaxed">
+                <h3 className="text-2xl font-bold text-slate-900 mb-3">Pre-Qualified Intent</h3>
+                <p className="text-slate-600 leading-relaxed">
                   We don't just sell data. Every lead is a homeowner who has actively requested a quote for your specific service. High intent means higher close rates.
                 </p>
               </div>
             </div>
 
-            {/* Card 3: Absolute Exclusivity */}
-            <div className="group relative rounded-3xl bg-slate-900 border border-slate-800 p-8 md:p-10 overflow-hidden hover:border-slate-700 transition-colors">
-              <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500"></div>
-              <div className="relative z-10">
-                <div className="w-14 h-14 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-8 border border-emerald-500/20">
-                  <ShieldCheck className="w-7 h-7 text-emerald-400" />
+            {/* Card 2: Exclusivity */}
+            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 group">
+              {/* Data Vis Area */}
+              <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                 {/* Abstract Grid Background */}
+                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                 {/* UI Element */}
+                 <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Distribution Limit</span>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                        Live
+                      </span>
+                    </div>
+                    <div className="flex items-end gap-3 border-b border-slate-100 pb-4 mb-3">
+                      <span className="text-5xl font-black text-slate-900 leading-none">1</span>
+                      <span className="text-2xl font-bold text-slate-300 leading-none mb-1">/ 1</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                      <p className="text-xs text-slate-500 font-semibold">Sold exclusively to you.</p>
+                    </div>
+                 </div>
+              </div>
+              <div className="p-8">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-6">
+                  <ShieldCheck className="w-6 h-6 text-emerald-600" />
                 </div>
-                <h3 className="text-2xl font-bold text-white mb-4">Absolute Exclusivity</h3>
-                <p className="text-slate-400 leading-relaxed">
+                <h3 className="text-2xl font-bold text-slate-900 mb-3">Absolute Exclusivity</h3>
+                <p className="text-slate-600 leading-relaxed">
                   When you buy a lead from Openlead, it's yours. We never sell the same prospect to multiple contractors. No racing to the bottom on price.
                 </p>
               </div>
             </div>
+
+            {/* Card 3: CRM */}
+            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 group">
+              {/* Data Vis Area */}
+              <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                 {/* Abstract Grid Background */}
+                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                 {/* UI Element */}
+                 <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                    <div className="flex justify-between items-center mb-5">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Speed to Lead</span>
+                      <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">Instant</span>
+                    </div>
+                    <div className="flex gap-2 items-end h-12 mt-2">
+                      <div className="w-1/5 bg-slate-100 rounded-t-md h-4 transition-all duration-500 group-hover:h-6"></div>
+                      <div className="w-1/5 bg-slate-100 rounded-t-md h-6 transition-all duration-500 group-hover:h-8"></div>
+                      <div className="w-1/5 bg-slate-100 rounded-t-md h-5 transition-all duration-500 group-hover:h-7"></div>
+                      <div className="w-1/5 bg-openlead-blue rounded-t-md h-12 relative shadow-[0_0_15px_rgba(57,204,204,0.3)]">
+                         <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full border-[3px] border-openlead-blue"></div>
+                      </div>
+                      <div className="w-1/5 bg-slate-100 rounded-t-md h-8 transition-all duration-500 group-hover:h-10"></div>
+                    </div>
+                    <div className="mt-3 flex justify-between text-[10px] text-slate-400 font-bold border-t border-slate-50 pt-2">
+                      <span>M</span><span>T</span><span>W</span><span className="text-openlead-blue">T</span><span>F</span>
+                    </div>
+                 </div>
+              </div>
+              <div className="p-8">
+                <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center mb-6">
+                  <Zap className="w-6 h-6 text-amber-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-3">All-in-One CRM</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  Manage your leads, track appointments, and dial prospects instantly using our built-in client portal and sales CRM.
+                </p>
+              </div>
+            </div>
+
           </div>
         </div>
       </section>

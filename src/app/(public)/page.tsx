@@ -207,9 +207,9 @@ export default function Home() {
           </div>
 
           {/* Mobile: Swipeable Card Carousel */}
-          <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory hide-scrollbar relative w-[100vw] left-1/2 -translate-x-1/2 pb-12 px-6 gap-6">
+          <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory hide-scrollbar relative w-[100vw] left-1/2 -translate-x-1/2 pb-12 px-[7.5vw] gap-4" style={{ scrollPaddingLeft: '7.5vw' }}>
             {/* Set 1 */}
-            <div className="snap-center w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 transition-all duration-300 group">
+            <div className="snap-start w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
@@ -244,7 +244,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 group">
+              <div className="snap-start w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
@@ -277,7 +277,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 group">
+              <div className="snap-start w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
@@ -311,7 +311,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group">
+              <div className="snap-start w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>

@@ -115,7 +115,10 @@ export const useAuthStore = create<AuthState>()(
       },
       signOut: async () => {
         // Optimistically clear the state so the UI reacts instantly
-        set({ user: null, profile: null });
+        set({ user: null, profile: null, initialized: false });
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('auth-storage');
+        }
         try {
           await supabase.auth.signOut();
         } catch (error) {

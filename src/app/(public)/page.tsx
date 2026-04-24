@@ -16,7 +16,7 @@ export default function Home() {
   useEffect(() => {
     const interval = setInterval(() => {
       setActiveStatIndex((prev) => (prev + 1) % 4);
-    }, 2000);
+    }, 4000); // Increased interval to 4 seconds to allow smooth 1s fade
     return () => clearInterval(interval);
   }, []);
 
@@ -184,10 +184,10 @@ export default function Home() {
 
       {/* Features/Stats Strip */}
       <section className="border-b border-slate-200 bg-white relative z-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-12">
           
           {/* Mobile: Fading Stats Carousel */}
-          <div className="md:hidden relative w-full h-32 flex items-center justify-center overflow-hidden">
+          <div className="md:hidden relative w-full h-24 flex items-center justify-center overflow-hidden">
             {[
               { label: "Exclusive Leads", value: "100%", desc: "Never shared or resold" },
               { label: "Lead Categories", value: "4+", desc: "Solar, Roofing & more" },
@@ -196,7 +196,7 @@ export default function Home() {
             ].map((stat, i) => (
               <div 
                 key={i} 
-                className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ease-in-out ${
+                className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 ease-in-out ${
                   i === activeStatIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
                 }`}
               >
@@ -240,7 +240,7 @@ export default function Home() {
           {/* Mobile: Swipeable Card Carousel */}
           <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory relative w-[100vw] left-1/2 -translate-x-1/2 pb-12 px-[7.5vw] gap-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {/* Set 1 */}
-            <div className="snap-center w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 transition-all duration-300 group">
+            <div className="snap-center w-[85vw] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
@@ -275,7 +275,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="snap-center w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 group">
+              <div className="snap-center w-[85vw] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
@@ -308,7 +308,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="snap-center w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 group">
+              <div className="snap-center w-[85vw] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
@@ -342,7 +342,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="snap-center w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group">
+              <div className="snap-center w-[85vw] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>

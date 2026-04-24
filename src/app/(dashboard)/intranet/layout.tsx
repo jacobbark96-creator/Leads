@@ -1,6 +1,5 @@
 "use client";
 import React from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { DollarSign, Search, Award } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
@@ -27,18 +26,18 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
               const Icon = tab.icon;
               const isActive = pathname === tab.path;
               return (
-                <Link
+                <a
                   key={tab.name}
                   href={tab.path}
                   className={`${
                     isActive
-                      ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                  } whitespace-nowrap flex py-4 px-1 border-b-2 font-medium text-sm`}
+                      ? 'bg-emerald-50 text-emerald-700 border-l-4 border-emerald-500'
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-transparent'
+                  } flex items-center px-4 py-3 text-base font-medium transition-colors`}
                 >
-                  <Icon className={`${isActive ? 'text-blue-500' : 'text-gray-400'} mr-2 h-5 w-5`} />
+                  <Icon className={`${isActive ? 'text-emerald-600' : 'text-gray-400'} mr-3 h-5 w-5`} />
                   {tab.name}
-                </Link>
+                </a>
               );
             })}
           </nav>

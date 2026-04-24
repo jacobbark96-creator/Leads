@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '../../lib/supabase';
 import toast from 'react-hot-toast';
 
@@ -9,7 +8,6 @@ export default function ResetPassword() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [sessionError, setSessionError] = useState<string | null>(null);
-  const router = useRouter();
 
   useEffect(() => {
     // Check if we actually have a session from the recovery link
@@ -86,7 +84,7 @@ export default function ResetPassword() {
             <div className="text-center">
               <p className="text-sm text-red-600 mb-4">{sessionError}</p>
               <button
-                onClick={() => router.push('/login')}
+                onClick={() => window.location.href = '/login'}
                 className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
               >
                 Return to Login

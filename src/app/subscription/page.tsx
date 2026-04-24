@@ -1,13 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { Check, ShieldCheck, CreditCard, ChevronRight, Lock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
 
 export default function SubscriptionSummary() {
-  const router = useRouter();
   const { user } = useAuthStore();
   const [acceptedTerms, setAcceptedTerms] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -15,9 +13,9 @@ export default function SubscriptionSummary() {
   // Redirect to login if they landed here without a user session
   useEffect(() => {
     if (!user) {
-      router.push('/login');
+      window.location.href = '/login';
     }
-  }, [user, router]);
+  }, [user]);
 
   const handleCheckout = async () => {
     if (!acceptedTerms) {

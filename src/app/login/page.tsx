@@ -1,6 +1,5 @@
 "use client";
 import React, { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,7 +7,6 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
 import { ArrowLeft, CheckCircle2, Quote } from 'lucide-react';
-import Link from 'next/link';
 import Image from 'next/image';
 
 const loginSchema = z.object({
@@ -23,7 +21,6 @@ export default function Login() {
   const [isSignUp, setIsSignUp] = useState(false);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState('');
-  const router = useRouter();
   const { user, profile } = useAuthStore();
 
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
@@ -76,7 +73,7 @@ export default function Login() {
         
         // Redirect to the check-email page instead of staying on login
         if (signUpData.user) {
-          router.push(`/check-email?email=${encodeURIComponent(data.email)}`);
+          window.location.href = `/check-email?email=${encodeURIComponent(data.email)}`;
         }
       } else {
         const { data: authData, error } = await supabase.auth.signInWithPassword({
@@ -84,9 +81,10 @@ export default function Login() {
           password: data.password,
         });
         if (error) throw error;
-        toast.success('Logged in successfully');
+        // Successful login
+        toast.success('Successfully logged in!');
         
-        // Fetch profile to redirect immediately
+        // Force a full page reload to the dashboard to clear all state
         if (authData.user) {
           const { data: profileData } = await supabase
             .from('users')
@@ -118,9 +116,9 @@ export default function Login() {
       {/* Left Side - Form */}
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 relative">
         <div className="absolute top-8 left-8">
-          <Link href="/" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+          <a href="/" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
-          </Link>
+          </a>
         </div>
         
         <div className="mx-auto w-full max-w-sm lg:w-96">

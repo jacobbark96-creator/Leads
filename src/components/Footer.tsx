@@ -1,5 +1,4 @@
 import React from 'react';
-import Link from 'next/link';
 
 export const Footer = () => {
   return (
@@ -9,9 +8,9 @@ export const Footer = () => {
           
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-2 lg:col-span-3">
-            <Link href="/" className="inline-block mb-6">
+            <a href="/" className="inline-block mb-6">
               <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
-            </Link>
+            </a>
             <p className="text-slate-600 max-w-sm mb-6 leading-relaxed">
               High-intent, pre-qualified leads delivered directly to your CRM. Grow your contracting business with predictable revenue.
             </p>
@@ -21,10 +20,10 @@ export const Footer = () => {
           <div className="col-span-1 lg:col-span-1">
             <h4 className="font-bold text-openlead-blue mb-4 tracking-wider uppercase text-xs">Platform</h4>
             <ul className="space-y-3">
-              <li><Link href="/services" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Services</Link></li>
-              <li><Link href="/about" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">About Us</Link></li>
-              <li><Link href="/morals" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Our Morals</Link></li>
-              <li><Link href="/login" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Partner Login</Link></li>
+              <li><a href="/services" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Services</a></li>
+              <li><a href="/about" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">About Us</a></li>
+              <li><a href="/morals" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Our Morals</a></li>
+              <li><a href="/login" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Partner Login</a></li>
             </ul>
           </div>
           

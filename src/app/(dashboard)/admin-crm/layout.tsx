@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Users, Tags, Ticket, Menu, X, TrendingUp } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
@@ -46,7 +45,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 const Icon = tab.icon;
                 const isActive = pathname === tab.path;
                 return (
-                  <Link
+                  <a
                     key={tab.name}
                     href={tab.path}
                     onClick={() => setMobileMenuOpen(false)}
@@ -58,7 +57,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                   >
                     <Icon className={`${isActive ? 'text-blue-600' : 'text-gray-400'} mr-3 h-5 w-5`} />
                     {tab.name}
-                  </Link>
+                  </a>
                 );
               })}
             </div>
@@ -72,7 +71,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
               const Icon = tab.icon;
               const isActive = pathname === tab.path;
               return (
-                <Link
+                <a
                   key={tab.name}
                   href={tab.path}
                   className={`${
@@ -83,7 +82,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
                 >
                   <Icon className={`${isActive ? 'text-blue-500' : 'text-gray-400'} mr-2 h-5 w-5`} />
                   {tab.name}
-                </Link>
+                </a>
               );
             })}
           </nav>

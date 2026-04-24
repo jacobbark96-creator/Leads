@@ -1,14 +1,11 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { Mail, Send, ArrowLeft, Quote, CheckCircle2 } from 'lucide-react';
-import Link from 'next/link';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 
 export default function CheckEmail() {
-  const router = useRouter();
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -83,7 +80,7 @@ export default function CheckEmail() {
       
       if (authData.user) {
         toast.success('Logged in successfully!');
-        router.push('/subscription');
+        window.location.href = '/subscription';
       }
     } catch (error: any) {
       toast.error(error.message || 'Authentication failed');
@@ -103,7 +100,7 @@ export default function CheckEmail() {
 
       if (!targetEmail) {
         toast.error("Session expired. Please try signing in again to trigger a new email.");
-        router.push('/login');
+        window.location.href = '/login';
         return;
       }
 
@@ -131,9 +128,9 @@ export default function CheckEmail() {
       {/* Left Side - Content */}
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 relative">
         <div className="absolute top-8 left-8">
-          <Link href="/" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+          <a href="/" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
-          </Link>
+          </a>
         </div>
         
         <div className="mx-auto w-full max-w-sm lg:w-96 text-center">
@@ -182,12 +179,12 @@ export default function CheckEmail() {
               </form>
             ) : (
               <>
-                <Link
+                <a
                   href="/login"
                   className="w-full flex justify-center py-3.5 px-4 border border-transparent rounded-xl shadow-[0_4px_14px_0_rgba(57,204,204,0.39)] hover:shadow-[0_6px_20px_rgba(57,204,204,0.23)] hover:-translate-y-0.5 text-sm font-bold text-white bg-openlead-blue transition-all duration-200"
                 >
                   I've verified my email - Sign In
-                </Link>
+                </a>
 
                 <button
                   onClick={handleResend}

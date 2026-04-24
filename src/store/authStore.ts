@@ -9,6 +9,7 @@ interface AuthState {
   profile: UserProfile | null;
   loading: boolean;
   initialized: boolean;
+  isInitializing: boolean;
   setUser: (user: User | null) => void;
   setProfile: (profile: UserProfile | null) => void;
   setLoading: (loading: boolean) => void;
@@ -23,32 +24,57 @@ export const useAuthStore = create<AuthState>()(
       profile: null,
       loading: true,
       initialized: false,
+      isInitializing: false,
       setUser: (user) => set({ user }),
       setProfile: (profile) => set({ profile }),
       setLoading: (loading) => set({ loading }),
       initialize: async () => {
-        // Prevent multiple initializations
-        if (get().initialized) return;
+        // Prevent multiple simultaneous initializations
+        if (get().isInitializing || get().initialized) return;
+        
+        set({ isInitializing: true });
 
-        // If we already have a cached profile, stop the loading spinner instantly
-        // This gives the user an incredibly fast perceived load time
+        // If we already have a cached profile, we can consider ourselves "initialized" 
+        // enough to show the UI while we refresh data in the background.
         if (get().profile) {
-          set({ loading: false });
+          set({ loading: false, initialized: true });
         }
 
         try {
-          const { data: { session } } = await supabase.auth.getSession();
+          // Get current session
+          const { data: { session }, error: sessionError } = await supabase.auth.getSession();
           
+          if (sessionError) {
+            console.error('Session error during init:', sessionError);
+            // If it's a refresh token error, clear everything and force a clean state
+            if (sessionError.message.includes('Refresh Token Not Found') || 
+                sessionError.message.includes('invalid_grant') ||
+                sessionError.message.includes('refresh_token_not_found')) {
+              set({ user: null, profile: null, loading: false, initialized: true, isInitializing: false });
+              // Clear local storage manually to be sure
+              if (typeof window !== 'undefined') {
+                localStorage.removeItem('auth-storage');
+                supabase.auth.signOut();
+              }
+              return;
+            }
+          }
+
           if (session?.user) {
             set({ user: session.user });
             
             // Fetch user profile to ensure it's up to date
-            const { data: profile } = await supabase
+            const { data: profile, error: profileError } = await supabase
               .from('users')
               .select('*')
               .eq('id', session.user.id)
               .single();
               
+            if (profileError) {
+              console.error('Error fetching profile:', profileError);
+              // If profile not found, maybe it's a new user or auth/db mismatch
+            }
+
             if (profile) {
               set({ profile });
             }
@@ -56,14 +82,21 @@ export const useAuthStore = create<AuthState>()(
             // Clear cached profile if session is actually invalid
             set({ user: null, profile: null });
           }
-        } catch (error) {
+        } catch (error: any) {
           console.error('Error initializing auth:', error);
+          if (error.message?.includes('Refresh Token Not Found')) {
+            set({ user: null, profile: null });
+          }
         } finally {
-          set({ loading: false, initialized: true });
+          set({ loading: false, initialized: true, isInitializing: false });
         }
 
         // Set up auth listener only once
         supabase.auth.onAuthStateChange(async (event, session) => {
+          if (event === 'SIGNED_OUT' || event === 'USER_UPDATED') {
+            // Handle specific events if needed
+          }
+
           if (session?.user) {
             set({ user: session.user });
             const { data: profile } = await supabase

@@ -5,11 +5,9 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '../../../../lib/supabase';
 import { Lead } from '../../../../types';
 import toast from 'react-hot-toast';
-  import { Phone, Mail, Building, User, Users, Trash2 } from 'lucide-react';
-  import Link from 'next/link';
-
-import { useAuthStore } from '@/store/authStore';
+import { Phone, Mail, Building, User, Users, Trash2, Search } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
 import { MarketLeadModal } from '@/components/MarketLeadModal';
 import { SoldLeadModal } from '@/components/SoldLeadModal';
@@ -39,6 +37,8 @@ function QualifiedLeadsContent() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [phoneFilter, setPhoneFilter] = useState<string>('all');
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'commercial' | 'residential'>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -65,19 +65,28 @@ function QualifiedLeadsContent() {
 
       let query = supabase
         .from('leads')
-        .select('id, name, status, phone, assigned_to, is_marketed, location, monthly_spend, timeframe, est_system_size, qualification_notes, photos, price, purchase_date, booking_date, clients(company_name, contact_name)')
+        .select('id, name, status, phone, assigned_to, is_marketed, location, monthly_spend, timeframe, est_system_size, qualification_notes, photos, price, purchase_date, booking_date, company, clients(company_name, contact_name)')
         .in('status', ['qualified', 'sold'])
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
+      if (searchQuery.trim()) {
+        const search = `%${searchQuery.trim()}%`;
+        query = query.or(`name.ilike.${search},company.ilike.${search}`);
+      }
+
       if (assignedToMe && profile) {
         query = query.eq('assigned_to', profile.id);
       }
-      // Note: intentionally removed the `else { query = query.is('assigned_to', null) }` block
-      // so the qualified tab shows ALL qualified leads, assigned or not.
 
       if (phoneFilter === 'with_phone') {
         query = query.neq('phone', '');
+      }
+
+      if (propertyTypeFilter === 'commercial') {
+        query = query.neq('company', '').not('company', 'is', null);
+      } else if (propertyTypeFilter === 'residential') {
+        query = query.or('company.eq.,company.is.null');
       }
 
       const { data, error } = await query;
@@ -106,7 +115,7 @@ function QualifiedLeadsContent() {
   useEffect(() => {
     setPage(0);
     fetchLeads(0, true);
-  }, [phoneFilter, assignedToMe]);
+  }, [phoneFilter, propertyTypeFilter, searchQuery, assignedToMe]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -188,6 +197,38 @@ function QualifiedLeadsContent() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="relative flex-1 w-full sm:min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search leads..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          <div className="flex items-center p-1 bg-gray-100 rounded-lg border border-gray-200">
+            <button
+              onClick={() => setPropertyTypeFilter('all')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              All
+            </button>
+            <button
+              onClick={() => setPropertyTypeFilter('commercial')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'commercial' ? 'bg-purple-100 text-purple-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Commercial
+            </button>
+            <button
+              onClick={() => setPropertyTypeFilter('residential')}
+              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'residential' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+            >
+              Residential
+            </button>
+          </div>
+
           {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
             <button
               onClick={() => setIsAddModalOpen(true)}
@@ -264,8 +305,18 @@ function QualifiedLeadsContent() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{lead.name}</p>
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-bold text-gray-900 truncate">
+                        {lead.company || lead.name}
+                      </p>
+                      {lead.company && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-tight">
+                          Commercial
+                        </span>
+                      )}
+                    </div>
                     <div className="flex items-center gap-2 mt-0.5">
+                      {lead.company && <p className="text-xs text-gray-500 truncate italic">Contact: {lead.name}</p>}
                       {lead.phone && <p className="text-sm text-gray-500 truncate">{lead.phone}</p>}
                       {lead.assigned_to && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800">
@@ -295,13 +346,12 @@ function QualifiedLeadsContent() {
                     </select>
                   )}
                   
-                  <Link
+                  <a
                     href={`/sales-crm/lead?id=${lead.id}&tab=qualified`}
-                    target="_blank"
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
                   >
                     View Details
-                  </Link>
+                  </a>
 
                   {lead.status !== 'sold' && (
                     !lead.is_marketed ? (

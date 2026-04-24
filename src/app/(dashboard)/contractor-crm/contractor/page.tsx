@@ -1,12 +1,11 @@
 "use client";
 import React, { useEffect, useState, useRef, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { Contractor, StaffUser } from '@/types';
 import toast from 'react-hot-toast';
 import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
 import { OnboardContractorModal } from '@/components/OnboardContractorModal';
 import { AddLeadModal } from '@/components/AddLeadModal';
 
@@ -36,7 +35,6 @@ interface ContractorNote {
 
 function ContractorDetailsContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { profile } = useAuthStore();
   
   const id = searchParams.get('id');
@@ -195,8 +193,8 @@ function ContractorDetailsContent() {
 
   const goToNextContractor = () => {
     if (nextContractorId) {
-      router.push(`/contractor-crm/contractor?id=${nextContractorId}&tab=${tab}`);
-    }
+        window.location.href = `/contractor-crm/contractor?id=${nextContractorId}&tab=${tab}`;
+      }
   };
 
   if (loading) {
@@ -212,12 +210,12 @@ function ContractorDetailsContent() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-4">
-          <Link 
+          <a 
             href={tab === 'onboarded' ? '/contractor-crm/onboarded' : '/contractor-crm'} 
             className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
-          </Link>
+          </a>
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">{contractor.company_name || contractor.name}</h1>

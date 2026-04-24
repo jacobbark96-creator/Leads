@@ -9,7 +9,7 @@ import { TrendingUp, Calendar, DollarSign } from 'lucide-react';
 export default function SalesTracker() {
   const [soldLeads, setSoldLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState<'all' | 'week'>('all');
+  const [filter, setFilter] = useState<'week' | 'all'>('all');
 
   // Calculate current week's Tuesday to Monday
   const { startOfTrackingWeek, endOfTrackingWeek } = useMemo(() => {
@@ -30,10 +30,10 @@ export default function SalesTracker() {
       try {
         setLoading(true);
         let query = supabase
-          .from('leads')
-          .select('id, name, location, price, purchase_date, clients(company_name, contact_name)')
-          .eq('status', 'sold')
-          .order('purchase_date', { ascending: false });
+        .from('leads')
+        .select('id, name, location, price, purchase_date, is_marketed, status, client_id, clients(company_name, contact_name)')
+        .eq('status', 'sold')
+        .order('purchase_date', { ascending: false });
 
         if (filter === 'week') {
           query = query
@@ -120,8 +120,7 @@ export default function SalesTracker() {
                       #{lead.id.split('-')[0]}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {/* Left blank for now as requested, but structured for future */}
-                      <span className="text-gray-400 italic">Pending...</span>
+                      {(lead as any).clients?.company_name || (lead as any).clients?.contact_name || <span className="text-gray-400 italic">Unknown Client</span>}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-green-600">
                       £{lead.price ? lead.price.toFixed(2) : '135.00'}

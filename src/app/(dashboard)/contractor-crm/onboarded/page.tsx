@@ -6,8 +6,6 @@ import { supabase } from '@/lib/supabase';
 import { Contractor } from '@/types';
 import toast from 'react-hot-toast';
 import { Phone, Mail, Building, User, Users } from 'lucide-react';
-import Link from 'next/link';
-
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
@@ -193,13 +191,12 @@ function OnboardedContractorsContent() {
                     <option value="fresh">Move back to Fresh</option>
                   </select>
                   
-                  <Link
-                    href={`/contractor-crm/contractor?id=${contractor.id}&tab=onboarded`}
-                    target="_blank"
+                  <a
+                    href={`/contractor-crm/contractor?id=${contractor.id}`}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
                   >
                     View Details
-                  </Link>
+                  </a>
                 </div>
               </li>
             ))}

@@ -32,7 +32,11 @@ export default function ClientDashboard() {
       if (isInitial) setLoading(true);
       else setLoadingMore(true);
       
-      if (!profile) return;
+      if (!profile) {
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
 
       // Get the client's actual record ID
       const { data: clientData, error: clientError } = await supabase

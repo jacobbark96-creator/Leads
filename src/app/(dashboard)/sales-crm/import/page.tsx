@@ -8,14 +8,31 @@ import toast from 'react-hot-toast';
 export default function LeadImport() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadTarget, setUploadTarget] = useState<'fresh' | 'qualified'>('fresh');
-  const [progress, setProgress] = useState<{ total: number; processed: number; duplicates: number; added: number; failed: number } | null>(null);
+  const [progress, setProgress] = useState<{ 
+    total: number; 
+    processed: number; 
+    duplicates: number; 
+    added: number; 
+    failed: number;
+    failedList: any[];
+    duplicateList: any[];
+  } | null>(null);
+  const [showDetailModal, setShowDetailModal] = useState<'failed' | 'duplicates' | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
     setIsUploading(true);
-    setProgress({ total: 0, processed: 0, duplicates: 0, added: 0, failed: 0 });
+    setProgress({ 
+      total: 0, 
+      processed: 0, 
+      duplicates: 0, 
+      added: 0, 
+      failed: 0,
+      failedList: [],
+      duplicateList: []
+    });
 
     Papa.parse(file, {
       header: true,
@@ -27,13 +44,15 @@ export default function LeadImport() {
         let duplicates = 0;
         let added = 0;
         let failed = 0;
+        let failedList: any[] = [];
+        let duplicateList: any[] = [];
 
         const CHUNK_SIZE = 100;
         for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
           const chunk = rows.slice(i, i + CHUNK_SIZE);
           
-          const phones = chunk.map(r => String(r.phone || r.Phone || r.phoneNumber || r['Phone Number'] || '').substring(0, 20)).filter(Boolean);
-          const emails = chunk.map(r => String(r.email || r.Email || r.emailAddress || '').substring(0, 255)).filter(Boolean);
+          const phones = chunk.map(r => String(r.phone || r.Phone || r.phoneNumber || r['Phone Number'] || '').replace(/\s+/g, '').substring(0, 20)).filter(Boolean);
+          const emails = chunk.map(r => String(r.email || r.Email || r.emailAddress || '').trim().substring(0, 255)).filter(Boolean);
 
           const existingPhones = new Set<string>();
           const existingEmails = new Set<string>();
@@ -41,11 +60,11 @@ export default function LeadImport() {
           try {
             if (phones.length > 0) {
               const { data } = await supabase.from('leads').select('phone').in('phone', phones);
-              data?.forEach(d => { if (d.phone) existingPhones.add(d.phone); });
+              data?.forEach(d => { if (d.phone) existingPhones.add(d.phone.replace(/\s+/g, '')); });
             }
             if (emails.length > 0) {
               const { data } = await supabase.from('leads').select('email').in('email', emails);
-              data?.forEach(d => { if (d.email) existingEmails.add(d.email); });
+              data?.forEach(d => { if (d.email) existingEmails.add(d.email.trim()); });
             }
           } catch (err) {
             console.error('Error fetching duplicates', err);
@@ -56,28 +75,45 @@ export default function LeadImport() {
           const chunkDupEmails = new Set(existingEmails);
 
           for (const row of chunk) {
-            const phone = String(row.phone || row.Phone || row.phoneNumber || row['Phone Number'] || '').substring(0, 20);
-            const email = String(row.email || row.Email || row.emailAddress || '').substring(0, 255);
-            const name = String(row.name || row.Name || row.fullName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown').substring(0, 100);
-            const company = String(row.company || row.Company || row.companyName || '').substring(0, 200);
+            const rawPhone = String(row.phone || row.Phone || row.phoneNumber || row['Phone Number'] || '');
+            const phone = rawPhone.replace(/\s+/g, '').substring(0, 20);
+            const email = String(row.email || row.Email || row.emailAddress || '').trim().substring(0, 255);
+            
+            const rawName = String(row.name || row.Name || row.fullName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || '');
+            const name = rawName.substring(0, 100);
+            const company = String(row.company || row.Company || row.companyName || '').trim().substring(0, 200);
 
-            if (!phone && !email) {
+            // RULE: Must have a phone number
+            if (!phone) {
               failed++;
+              failedList.push({ ...row, reason: 'No phone number provided' });
               continue;
             }
 
-            if ((phone && chunkDupPhones.has(phone)) || (email && chunkDupEmails.has(email))) {
+            // RULE: If no name but has company, mark as Enrich Needed - No Name
+            let finalName = name;
+            let finalStatus = uploadTarget;
+            if (!name && company) {
+              failed++;
+              failedList.push({ ...row, reason: 'Enrich Needed - No Name' });
+              continue;
+            } else if (!name) {
+              finalName = 'Unknown';
+            }
+
+            if (chunkDupPhones.has(phone) || (email && chunkDupEmails.has(email))) {
               duplicates++;
+              duplicateList.push({ ...row, reason: 'Duplicate phone or email' });
             } else {
               toInsert.push({
-                name,
+                name: finalName,
                 phone,
                 email,
                 company,
                 csv_data: row,
-                status: uploadTarget
+                status: finalStatus
               });
-              if (phone) chunkDupPhones.add(phone);
+              chunkDupPhones.add(phone);
               if (email) chunkDupEmails.add(email);
             }
           }
@@ -87,13 +123,26 @@ export default function LeadImport() {
               const { error } = await supabase.from('leads').insert(toInsert);
               if (error) throw error;
               added += toInsert.length;
-            } catch (err) {
+            } catch (err: any) {
               console.error('Batch insert error', err);
               failed += toInsert.length;
+              toInsert.forEach(item => failedList.push({ ...item.csv_data, reason: err.message || 'Database error' }));
             }
           }
 
-          setProgress({ total: rows.length, processed: Math.min(i + CHUNK_SIZE, rows.length), duplicates, added, failed });
+          setProgress(prev => ({ 
+            total: rows.length, 
+            processed: Math.min(i + CHUNK_SIZE, rows.length), 
+            duplicates, 
+            added, 
+            failed,
+            failedList: [...(prev?.failedList || []), ...failedList],
+            duplicateList: [...(prev?.duplicateList || []), ...duplicateList]
+          }));
+          
+          // Clear chunk lists for next iteration
+          failedList = [];
+          duplicateList = [];
         }
 
         setIsUploading(false);
@@ -185,15 +234,81 @@ export default function LeadImport() {
               <dt className="text-sm font-medium text-gray-500 truncate">Added Successfully</dt>
               <dd className="mt-1 text-3xl font-semibold text-green-600">{progress.added}</dd>
             </div>
-            <div className="px-4 py-5 bg-white shadow rounded-lg overflow-hidden sm:p-6 border border-yellow-100">
+            <button 
+              onClick={() => progress.duplicates > 0 && setShowDetailModal('duplicates')}
+              className={`px-4 py-5 bg-white shadow rounded-lg overflow-hidden sm:p-6 border border-yellow-100 text-left transition-all ${progress.duplicates > 0 ? 'hover:shadow-md hover:border-yellow-300 cursor-pointer' : 'cursor-default'}`}
+            >
               <dt className="text-sm font-medium text-gray-500 truncate">Duplicates Skipped</dt>
               <dd className="mt-1 text-3xl font-semibold text-yellow-600">{progress.duplicates}</dd>
-            </div>
-            <div className="px-4 py-5 bg-white shadow rounded-lg overflow-hidden sm:p-6 border border-red-100">
+              {progress.duplicates > 0 && <p className="mt-2 text-xs text-yellow-500 font-medium">Click to view details →</p>}
+            </button>
+            <button 
+              onClick={() => progress.failed > 0 && setShowDetailModal('failed')}
+              className={`px-4 py-5 bg-white shadow rounded-lg overflow-hidden sm:p-6 border border-red-100 text-left transition-all ${progress.failed > 0 ? 'hover:shadow-md hover:border-red-300 cursor-pointer' : 'cursor-default'}`}
+            >
               <dt className="text-sm font-medium text-gray-500 truncate">Failed to Add</dt>
               <dd className="mt-1 text-3xl font-semibold text-red-600">{progress.failed}</dd>
-            </div>
+              {progress.failed > 0 && <p className="mt-2 text-xs text-red-500 font-medium">Click to view details →</p>}
+            </button>
           </dl>
+        </div>
+      )}
+
+      {/* Detail Modal */}
+      {showDetailModal && progress && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-4xl max-h-[80vh] flex flex-col overflow-hidden">
+            <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-slate-50">
+              <h3 className="text-xl font-bold text-slate-900">
+                {showDetailModal === 'failed' ? 'Failed Imports' : 'Skipped Duplicates'} 
+                <span className="ml-2 text-sm font-medium text-slate-500">
+                  ({showDetailModal === 'failed' ? progress.failedList.length : progress.duplicateList.length} items)
+                </span>
+              </h3>
+              <button 
+                onClick={() => setShowDetailModal(null)}
+                className="p-2 hover:bg-slate-200 rounded-full transition-colors"
+              >
+                <svg className="w-6 h-6 text-slate-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+            
+            <div className="flex-1 overflow-auto p-6">
+              <div className="inline-block min-w-full align-middle">
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead>
+                    <tr>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Name</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Phone</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider">Company</th>
+                      <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider text-red-600">Reason</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {(showDetailModal === 'failed' ? progress.failedList : progress.duplicateList).map((item, idx) => (
+                      <tr key={idx} className="hover:bg-slate-50 transition-colors">
+                        <td className="px-4 py-3 text-sm text-slate-900">{item.name || item.Name || item.fullName || 'N/A'}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600 font-mono">{item.phone || item.Phone || item['Phone Number'] || 'N/A'}</td>
+                        <td className="px-4 py-3 text-sm text-slate-600">{item.company || item.Company || item.companyName || 'N/A'}</td>
+                        <td className="px-4 py-3 text-sm font-medium text-red-600">{item.reason || 'Unknown error'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+            
+            <div className="p-6 border-t border-slate-200 bg-slate-50 flex justify-end">
+              <button 
+                onClick={() => setShowDetailModal(null)}
+                className="px-6 py-2 bg-slate-900 text-white rounded-xl font-bold hover:bg-slate-800 transition-all"
+              >
+                Close
+              </button>
+            </div>
+          </div>
         </div>
       )}
     </div>

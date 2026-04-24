@@ -3,7 +3,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { supabase } from '../../../../lib/supabase';
 import { Client, Lead } from '../../../../types';
-import { MapPin, Star, Briefcase, Filter } from 'lucide-react';
+import { MapPin, Star, Briefcase, Filter, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const containerStyle = {
@@ -69,12 +69,49 @@ export default function MapTab() {
 
   const [clients, setClients] = useState<Client[]>([]);
   const [leads, setLeads] = useState<Lead[]>([]);
+  const [missingCoordsCount, setMissingCoordsCount] = useState(0);
   const [categories, setCategories] = useState<{id: string, name: string}[]>([]);
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [loading, setLoading] = useState(true);
 
   const [selectedClient, setSelectedClient] = useState<Client | null>(null);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+
+  const onLoad = React.useCallback(function callback(m: google.maps.Map) {
+    setMap(m);
+  }, []);
+
+  const onUnmount = React.useCallback(function callback(m: google.maps.Map) {
+    setMap(null);
+  }, []);
+
+  useEffect(() => {
+    if (map && (clients.length > 0 || leads.length > 0)) {
+      const bounds = new window.google.maps.LatLngBounds();
+      let hasPoints = false;
+
+      clients.forEach((client: any) => {
+        if (client.service_areas?.[0]?.lat && client.service_areas?.[0]?.lng) {
+          bounds.extend({ lat: Number(client.service_areas[0].lat), lng: Number(client.service_areas[0].lng) });
+          hasPoints = true;
+        }
+      });
+
+      leads.forEach((lead) => {
+        if (lead.latitude && lead.longitude) {
+          bounds.extend({ lat: Number(lead.latitude), lng: Number(lead.longitude) });
+          hasPoints = true;
+        }
+      });
+
+      if (hasPoints) {
+        map.fitBounds(bounds);
+        // Don't zoom in too far if there's only one point
+        if (map.getZoom()! > 12) map.setZoom(12);
+      }
+    }
+  }, [map, clients, leads]);
 
   useEffect(() => {
     fetchMapData();
@@ -133,17 +170,19 @@ export default function MapTab() {
       
       setClients(validContractors);
 
-      // Fetch marketed, unpurchased leads with coordinates
+      // Fetch marketed, unpurchased leads
       const { data: leadsData, error: leadsError } = await supabase
         .from('leads')
         .select('*')
         .eq('is_marketed', true)
-        .is('client_id', null)
-        .not('latitude', 'is', null)
-        .not('longitude', 'is', null);
+        .is('client_id', null);
 
       if (leadsError) throw leadsError;
-      setLeads(leadsData || []);
+      
+      const allLeads = (leadsData as Lead[]) || [];
+      const validLeads = allLeads.filter(l => l.latitude && l.longitude);
+      setLeads(validLeads);
+      setMissingCoordsCount(allLeads.length - validLeads.length);
 
     } catch (error: any) {
       toast.error('Failed to load map data: ' + error.message);
@@ -203,7 +242,15 @@ export default function MapTab() {
     <div className="space-y-4">
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg font-bold text-gray-900">Contractor & Lead Map</h2>
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-bold text-gray-900">Contractor & Lead Map</h2>
+            {missingCoordsCount > 0 && (
+              <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-50 border border-amber-200 rounded-full text-amber-700 text-[10px] font-medium">
+                <Info className="w-3.5 h-3.5" />
+                <span>{missingCoordsCount} leads missing coordinates</span>
+              </div>
+            )}
+          </div>
           <p className="text-sm text-gray-500">View onboarded contractors and unpurchased leads</p>
         </div>
         
@@ -247,6 +294,8 @@ export default function MapTab() {
             mapContainerStyle={containerStyle}
             center={defaultCenter}
             zoom={6}
+            onLoad={onLoad}
+            onUnmount={onUnmount}
             options={{
               streetViewControl: false,
               mapTypeControl: false,

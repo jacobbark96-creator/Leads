@@ -1,6 +1,5 @@
 "use client";
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { LogOut, LayoutDashboard, Users, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
@@ -63,15 +62,15 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-20">
             <div className="flex items-center">
-              <Link href="/" className="flex-shrink-0 flex items-center mr-8">
+              <a href="/" className="flex-shrink-0 flex items-center mr-8">
                 <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
-              </Link>
+              </a>
               <div className="hidden sm:flex sm:space-x-2">
                 {navItems.map((item) => {
                   const Icon = item.icon;
                   const isActive = pathname.startsWith(item.path);
                   return (
-                    <Link
+                    <a
                       key={item.name}
                       href={item.path}
                       className={`${
@@ -82,7 +81,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                     >
                       <Icon className={`w-4 h-4 mr-2 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                       {item.name}
-                    </Link>
+                    </a>
                   );
                 })}
               </div>
@@ -150,7 +149,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                 const Icon = item.icon;
                 const isActive = pathname.startsWith(item.path);
                 return (
-                  <Link
+                  <a
                     key={item.name}
                     href={item.path}
                     onClick={() => setMobileMenuOpen(false)}
@@ -162,7 +161,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                   >
                     <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                     {item.name}
-                  </Link>
+                  </a>
                 );
               })}
             </div>

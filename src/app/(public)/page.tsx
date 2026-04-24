@@ -1,8 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import Link from 'next/link';
 import Image from 'next/image';
-import { ArrowRight, Star, TrendingUp, ShieldCheck, Target, Zap, PhoneCall, Calendar } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Star, Zap, Shield, BarChart3, Users, Clock, Mail, Globe, MapPin, Building, Target, PhoneCall, TrendingUp, Calendar, ShieldCheck } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 export default function Home() {
@@ -57,18 +56,18 @@ export default function Home() {
               </p>
               
               <div className="flex flex-col sm:flex-row gap-4">
-                <Link
+                <a
                   href={user && mounted ? getDashboardLink() : "/login"}
                   className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-white bg-openlead-blue hover:bg-openlead-blue/90 shadow-[0_0_40px_-10px_rgba(57,204,204,0.5)] hover:shadow-[0_0_60px_-15px_rgba(57,204,204,0.7)] transition-all duration-300"
                 >
                   {user && mounted ? "Dashboard" : "Login / Sign up"} <ArrowRight className="ml-2 w-5 h-5" />
-                </Link>
-                <Link
+                </a>
+                <a
                   href="/services"
                   className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-white bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md transition-all duration-300"
                 >
                   View Services
-                </Link>
+                </a>
               </div>
 
               <div className="mt-12 flex items-center gap-6">
@@ -267,18 +266,18 @@ export default function Home() {
           </p>
           
           <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
-            <Link
+            <a
               href={user && mounted ? getDashboardLink() : "/login"}
               className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-full text-slate-900 bg-white hover:bg-slate-100 shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)] hover:-translate-y-1 transition-all duration-300"
             >
               {user && mounted ? "Go to Dashboard" : "Get Started Now"}
-            </Link>
-            <Link
+            </a>
+            <a
               href="/about"
               className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-full text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 backdrop-blur-md transition-all duration-300"
             >
               Learn More
-            </Link>
+            </a>
           </div>
         </div>
       </section>

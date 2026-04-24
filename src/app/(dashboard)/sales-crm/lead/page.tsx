@@ -1,12 +1,11 @@
 "use client";
 import React, { useEffect, useState, useRef, Suspense } from 'react';
-import { useSearchParams, useRouter } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { Lead, StaffUser } from '@/types';
 import toast from 'react-hot-toast';
 import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft } from 'lucide-react';
-import Link from 'next/link';
 
 import { QualifyLeadModal } from '@/components/QualifyLeadModal';
 import { MarketLeadModal } from '@/components/MarketLeadModal';
@@ -38,7 +37,6 @@ interface LeadNote {
 
 function LeadDetailsContent() {
   const searchParams = useSearchParams();
-  const router = useRouter();
   const { profile } = useAuthStore();
   
   const id = searchParams.get('id');
@@ -198,8 +196,8 @@ function LeadDetailsContent() {
 
   const goToNextLead = () => {
     if (nextLeadId) {
-      router.push(`/sales-crm/lead?id=${nextLeadId}&tab=${tab}`);
-    }
+        window.location.href = `/sales-crm/lead?id=${nextLeadId}&tab=${tab}`;
+      }
   };
 
   if (loading) {
@@ -215,12 +213,12 @@ function LeadDetailsContent() {
       {/* Header */}
       <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 shrink-0">
         <div className="flex items-center gap-4">
-          <Link 
+          <a 
             href={tab === 'qualified' ? '/sales-crm/qualified' : '/sales-crm'} 
             className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
           >
             <ChevronLeft className="w-6 h-6" />
-          </Link>
+          </a>
           <div>
             <div className="flex items-center gap-3">
               <h1 className="text-2xl font-bold text-gray-900">{lead.name}</h1>
@@ -338,6 +336,84 @@ function LeadDetailsContent() {
                     <div className="p-2 bg-gray-50 rounded-lg"><Mail className="w-5 h-5 text-gray-400" /></div>
                     <span className="truncate">{lead.email}</span>
                   </a>
+                </div>
+              )}
+
+              {/* Qualification Details */}
+              {(lead.status === 'qualified' || lead.status === 'sold' || lead.is_marketed) && (
+                <div className="pt-6 border-t border-gray-100 space-y-4">
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Qualification Details</label>
+                  
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      <span className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Monthly Spend</span>
+                      <span className="font-semibold text-gray-900">£{lead.monthly_spend || 'N/A'}</span>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      <span className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Timeframe</span>
+                      <span className="font-semibold text-gray-900">{lead.timeframe || 'N/A'}</span>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      <span className="block text-[10px] text-gray-500 uppercase font-bold mb-1">System Size</span>
+                      <span className="font-semibold text-gray-900">{lead.est_system_size || 'N/A'}</span>
+                    </div>
+                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                      <span className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Unit Rate</span>
+                      <span className="font-semibold text-gray-900">{lead.unit_rate ? `£${lead.unit_rate}` : 'N/A'}</span>
+                    </div>
+                  </div>
+
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <span className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Location</span>
+                    <span className="font-semibold text-gray-900 flex items-center gap-1.5">
+                      <MapPin className="w-3 h-3 text-gray-400" />
+                      {lead.location || 'N/A'}
+                    </span>
+                  </div>
+
+                  {lead.qualification_notes && (
+                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                      <span className="block text-[10px] text-blue-600 uppercase font-bold mb-1">Qualification Notes</span>
+                      <p className="text-sm text-blue-900 whitespace-pre-wrap">{lead.qualification_notes}</p>
+                    </div>
+                  )}
+
+                  {/* Property Details Section */}
+                  <div className="space-y-3">
+                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block pt-2">Property Info</label>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="text-sm">
+                        <span className="text-gray-500 block text-xs">Ownership</span>
+                        <span className="font-medium">{lead.property_ownership || 'N/A'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-500 block text-xs">Roof Size</span>
+                        <span className="font-medium">{lead.roof_size || 'N/A'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-500 block text-xs">Roof Material</span>
+                        <span className="font-medium">{lead.roof_material || 'N/A'}</span>
+                      </div>
+                      <div className="text-sm">
+                        <span className="text-gray-500 block text-xs">Condition</span>
+                        <span className="font-medium">{lead.roof_condition || 'N/A'}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Marketplace Details */}
+                  {lead.is_marketed && (
+                    <div className="pt-4 border-t border-gray-100">
+                      <div className="flex justify-between items-center mb-2">
+                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Marketplace Info</label>
+                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold rounded uppercase">Marketed</span>
+                      </div>
+                      <div className="bg-green-50/50 p-3 rounded-lg border border-green-100">
+                        <span className="block text-[10px] text-green-700 uppercase font-bold mb-1">Listing Price</span>
+                        <span className="text-lg font-bold text-green-700">£{lead.price || '135.00'}</span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               )}
 

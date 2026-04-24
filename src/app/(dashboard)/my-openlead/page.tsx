@@ -4,14 +4,12 @@ import { supabase } from '../../../lib/supabase';
 import { useAuthStore } from '../../../store/authStore';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import { User, Phone, Mail, Building, MapPin, Briefcase, Plus, Users, ShieldCheck, AlertTriangle } from 'lucide-react';
-import { useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { Client } from '../../../types';
 import { MultiServiceArea } from '../../../components/MultiServiceArea';
 
 export default function MyOpenlead() {
   const { profile } = useAuthStore();
-  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [clientData, setClientData] = useState<Client | null>(null);
   const [coachName, setCoachName] = useState<string | null>(null);
@@ -149,7 +147,7 @@ export default function MyOpenlead() {
       
       if (isComplete) {
         // Only redirect to dashboard if profile is fully complete
-        router.push('/client-portal');
+        window.location.href = '/client-portal';
       } else {
         // Reload if not complete so ProtectedRoute logic handles it
         window.location.reload();

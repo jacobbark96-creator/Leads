@@ -3,9 +3,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Contractor } from '@/types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Users, Calendar, MapPin } from 'lucide-react';
-import Link from 'next/link';
-
+import { Phone, Mail, Building, User, Users, Calendar, MapPin, Search } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
@@ -37,6 +35,7 @@ function ContractorProcessingContent() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [phoneFilter, setPhoneFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
@@ -65,6 +64,11 @@ function ContractorProcessingContent() {
         .neq('status', 'onboarded')
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
+
+      if (searchQuery.trim()) {
+        const search = `%${searchQuery.trim()}%`;
+        query = query.or(`name.ilike.${search},company_name.ilike.${search},contact_name.ilike.${search}`);
+      }
 
       if (assignedToMe && profile) {
         query = query.eq('assigned_to', profile.id);
@@ -107,7 +111,7 @@ function ContractorProcessingContent() {
   useEffect(() => {
     setPage(0);
     fetchContractors(0, true);
-  }, [statusFilter, phoneFilter, assignedToMe]);
+  }, [statusFilter, phoneFilter, searchQuery, assignedToMe]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -150,6 +154,17 @@ function ContractorProcessingContent() {
         </div>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="relative flex-1 w-full sm:min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search contractors..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
           {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
             <button
               onClick={() => setIsAddModalOpen(true)}
@@ -207,9 +222,15 @@ function ContractorProcessingContent() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{contractor.company_name || contractor.name}</p>
-                    {contractor.contact_name && <p className="text-xs text-gray-600 truncate">{contractor.contact_name}</p>}
-                    {contractor.phone && <p className="text-xs text-gray-500 truncate">{contractor.phone}</p>}
+                    <p className="text-sm font-bold text-gray-900 truncate">
+                      {contractor.company_name || contractor.name}
+                    </p>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {contractor.company_name && contractor.contact_name && (
+                        <p className="text-xs text-gray-500 truncate italic">Contact: {contractor.contact_name}</p>
+                      )}
+                      {contractor.phone && <p className="text-sm text-gray-500 truncate">{contractor.phone}</p>}
+                    </div>
                   </div>
                 </div>
                 
@@ -232,13 +253,12 @@ function ContractorProcessingContent() {
                     <option value="onboarded">Onboarded</option>
                   </select>
                   
-                  <Link
-                    href={`/contractor-crm/contractor?id=${contractor.id}&tab=potential`}
-                    target="_blank"
+                  <a
+                    href={`/contractor-crm/contractor?id=${contractor.id}`}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
                   >
                     View Details
-                  </Link>
+                  </a>
                 </div>
               </li>
             ))}

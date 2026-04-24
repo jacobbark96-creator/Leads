@@ -26,6 +26,12 @@ export default function Marketplace() {
       if (isInitial) setLoading(true);
       else setLoadingMore(true);
       
+      if (!profile) {
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
+
       let data: Lead[] | null = [];
       let error = null;
 
@@ -113,20 +119,35 @@ export default function Marketplace() {
   const handlePurchaseLead = async (leadId: string) => {
     if (!profile) return;
     try {
-      // First, get the client's actual record ID (profile.id is the users.id)
-      const { data: clientData, error: clientError } = await supabase
-        .from('clients')
-        .select('id')
-        .eq('user_id', profile.id)
-        .single();
+      let clientId = null;
+      
+      // If client, get their ID
+      if (profile.role === 'client') {
+        const { data: clientData, error: clientError } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', profile.id)
+          .single();
+          
+        if (clientError) throw new Error('Client profile not found. Only registered clients can purchase leads.');
+        clientId = clientData.id;
+      } else {
+        // For Admin testing, we'll allow purchase but it won't be assigned to a real client
+        // or we could assign it to a "System Test Client" if one exists.
+        // For now, let's just use a dummy ID or null if we want it to show in tracker
+        // Actually, let's look for any client to assign it to, or just allow null client_id but status sold?
+        // No, tracker needs client_id for the join.
         
-      if (clientError) throw new Error('Client profile not found. Only registered clients can purchase leads.');
+        // Let's find the first available client for testing purposes if admin
+        const { data: anyClient } = await supabase.from('clients').select('id').limit(1).single();
+        clientId = anyClient?.id || null;
+      }
       
       // Basic update: assign client_id. (In real-world, you'd integrate Stripe here first)
       const { error } = await supabase
         .from('leads')
         .update({ 
-          client_id: clientData.id, 
+          client_id: clientId, 
           purchase_date: new Date().toISOString(),
           status: 'sold'
         })

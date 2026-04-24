@@ -1,6 +1,5 @@
 import React from 'react';
 import { X, CheckCircle2, ArrowRight } from 'lucide-react';
-import Link from 'next/link';
 
 interface WelcomeModalProps {
   isOpen: boolean;

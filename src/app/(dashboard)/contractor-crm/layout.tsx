@@ -1,14 +1,12 @@
 "use client";
 import React, { useState } from 'react';
-import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { Upload, Users, CheckCircle, Map as MapIcon, Menu, X, UserPlus, Store } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 
 export default function ContractorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
-  const router = useRouter();
   const { profile } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -38,7 +36,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                   } else {
                     url.searchParams.set('assignedToMe', 'true');
                   }
-                  router.push(url.pathname + url.search);
+                  window.location.href = url.pathname + url.search;
                 }}
                 className="sm:hidden inline-flex items-center p-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
                 title="My Leads"
@@ -68,7 +66,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                 const Icon = tab.icon;
                 const isActive = pathname === tab.path;
                 return (
-                  <Link
+                  <a
                     key={tab.name}
                     href={tab.path}
                     onClick={() => setMobileMenuOpen(false)}
@@ -80,7 +78,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                   >
                     <Icon className={`${isActive ? 'text-blue-600' : 'text-gray-400'} mr-3 h-5 w-5`} />
                     {tab.name}
-                  </Link>
+                  </a>
                 );
               })}
             </div>
@@ -95,7 +93,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                 const Icon = tab.icon;
                 const isActive = pathname === tab.path;
                 return (
-                  <Link
+                  <a
                     key={tab.name}
                     href={tab.path}
                     className={`${
@@ -106,7 +104,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                   >
                     <Icon className={`${isActive ? 'text-blue-500' : 'text-gray-400'} mr-2 h-5 w-5`} />
                     {tab.name}
-                  </Link>
+                  </a>
                 );
               })}
             </nav>
@@ -120,7 +118,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                   } else {
                     url.searchParams.set('assignedToMe', 'true');
                   }
-                  router.push(url.pathname + url.search);
+                  window.location.href = url.pathname + url.search;
                 }}
                 className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >

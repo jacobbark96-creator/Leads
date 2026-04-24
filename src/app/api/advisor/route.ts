@@ -44,7 +44,7 @@ export async function GET(req: Request) {
 
   const { data: advisor, error: advisorError } = await svc
     .from('users')
-    .select('id, name, email, phone, job_title, about, working_hours, role')
+    .select('id, name, email, phone, job_title, about, working_hours, role, avatar_url')
     .eq('id', client.assigned_to)
     .single();
 
@@ -54,4 +54,3 @@ export async function GET(req: Request) {
 
   return NextResponse.json({ advisor }, { status: 200 });
 }
-

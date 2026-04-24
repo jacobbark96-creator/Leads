@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
-import { X, User, Mail, Shield, Key, Building, MapPin, Briefcase, FileText } from 'lucide-react';
+import { X, User, Mail, Shield, Key, Building, Upload, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 type CategoryOption = { id: string; name: string };
@@ -24,6 +24,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
   const [selectedAdvisorId, setSelectedAdvisorId] = useState<string>('');
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
   const [selectedServiceCategoryIds, setSelectedServiceCategoryIds] = useState<string[]>([]);
+  const [avatarUrl, setAvatarUrl] = useState<string>(user.avatar_url || '');
+  const [avatarUploading, setAvatarUploading] = useState(false);
   
   const [formData, setFormData] = useState({
     name: user.name || '',
@@ -48,11 +50,74 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     if (isOpen) {
       fetchAdvisorOptions();
       fetchCategoryOptions();
+      setAvatarUrl(user.avatar_url || '');
     }
     if (isOpen && user.role === 'client') {
       fetchClientData();
     }
   }, [isOpen, user.id, user.role]);
+
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = '';
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please upload an image file');
+      return;
+    }
+
+    try {
+      setAvatarUploading(true);
+      const ext = file.name.split('.').pop() || 'png';
+      const path = `avatars/${user.id}/profile.${ext}`;
+
+      const { error: uploadError } = await supabase
+        .storage
+        .from('profile_photos')
+        .upload(path, file, { upsert: true, cacheControl: '3600' });
+
+      if (uploadError) throw uploadError;
+
+      const { data } = supabase.storage.from('profile_photos').getPublicUrl(path);
+      const publicUrl = data.publicUrl;
+
+      const { error: updateError } = await supabase
+        .from('users')
+        .update({ avatar_url: publicUrl })
+        .eq('id', user.id);
+
+      if (updateError) throw updateError;
+
+      setAvatarUrl(publicUrl);
+      toast.success('Profile photo updated');
+      onUserUpdated();
+    } catch (error: any) {
+      toast.error('Failed to upload photo: ' + error.message);
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
+  const handleAvatarRemove = async () => {
+    try {
+      setAvatarUploading(true);
+      const { error } = await supabase
+        .from('users')
+        .update({ avatar_url: null })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setAvatarUrl('');
+      toast.success('Profile photo removed');
+      onUserUpdated();
+    } catch (error: any) {
+      toast.error('Failed to remove photo: ' + error.message);
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
 
   useEffect(() => {
     if (!isOpen) return;
@@ -348,6 +413,49 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                 <>
                   <div className="pt-4 border-t border-gray-200">
                     <h4 className="text-sm font-bold text-gray-900 mb-4">Advisor Profile Details</h4>
+
+                    {formData.role === 'super_admin' && (
+                      <div className="mb-6">
+                        <label className="block text-sm font-medium text-gray-700 mb-2">Profile Photo (Client Visible)</label>
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 h-16 rounded-2xl overflow-hidden border border-gray-200 bg-gray-50 flex items-center justify-center">
+                            {avatarUrl ? (
+                              <img src={avatarUrl} alt="Profile" className="w-full h-full object-cover" />
+                            ) : (
+                              <User className="w-7 h-7 text-gray-400" />
+                            )}
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <label className={`inline-flex items-center gap-2 px-4 py-2 rounded-xl border text-sm font-bold transition-colors ${avatarUploading ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:bg-gray-50'} border-gray-200 bg-white text-gray-800`}>
+                              <Upload className="w-4 h-4" />
+                              Upload
+                              <input
+                                type="file"
+                                accept="image/*"
+                                className="hidden"
+                                onChange={handleAvatarUpload}
+                                disabled={avatarUploading}
+                              />
+                            </label>
+
+                            {avatarUrl && (
+                              <button
+                                type="button"
+                                onClick={handleAvatarRemove}
+                                disabled={avatarUploading}
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-red-200 bg-red-50 text-red-700 text-sm font-bold hover:bg-red-100 transition-colors disabled:opacity-50"
+                              >
+                                <Trash2 className="w-4 h-4" />
+                                Remove
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                        <p className="text-xs text-gray-500 mt-2">Recommended: square image, at least 300×300.</p>
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                       <div className="sm:col-span-2">
                         <label className="block text-sm font-medium text-gray-700 mb-1">Job Title</label>
@@ -391,6 +499,10 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <Building className="w-4 h-4 text-gray-400" /> Client Profile Details
                   </h3>
+
+                  {loadingClient && (
+                    <div className="mb-4 text-sm text-gray-500 font-medium">Loading client profile...</div>
+                  )}
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>

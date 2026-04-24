@@ -177,7 +177,32 @@ export default function Home() {
       {/* Features/Stats Strip */}
       <section className="border-b border-slate-200 bg-white relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 divide-x divide-slate-100">
+          
+          {/* Mobile: Auto-swiping infinite marquee for stats */}
+          <div className="md:hidden flex overflow-hidden relative w-[100vw] left-1/2 -translate-x-1/2">
+            <div className="flex w-max animate-marquee gap-8 px-4 hover:[animation-play-state:paused] active:[animation-play-state:paused]">
+              {[
+                { label: "Exclusive Leads", value: "100%", desc: "Never shared or resold" },
+                { label: "Lead Categories", value: "4+", desc: "Solar, Roofing & more" },
+                { label: "Delivered Leads", value: "10k+", desc: "To growing contractors" },
+                { label: "CRM Integration", value: "1-Click", desc: "Instant sync & dial" },
+                // Duplicate for infinite loop
+                { label: "Exclusive Leads", value: "100%", desc: "Never shared or resold" },
+                { label: "Lead Categories", value: "4+", desc: "Solar, Roofing & more" },
+                { label: "Delivered Leads", value: "10k+", desc: "To growing contractors" },
+                { label: "CRM Integration", value: "1-Click", desc: "Instant sync & dial" },
+              ].map((stat, i) => (
+                <div key={i} className="text-center shrink-0 w-48">
+                  <p className="text-4xl font-extrabold text-openlead-blue mb-2">{stat.value}</p>
+                  <p className="text-slate-900 font-bold mb-1 text-lg">{stat.label}</p>
+                  <p className="text-slate-500 text-sm">{stat.desc}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Desktop: Standard Grid */}
+          <div className="hidden md:grid md:grid-cols-4 gap-8 divide-x divide-slate-100">
             {[
               { label: "Exclusive Leads", value: "100%", desc: "Never shared or resold" },
               { label: "Lead Categories", value: "4+", desc: "Solar, Roofing & more" },

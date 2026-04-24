@@ -184,6 +184,27 @@ function QualifiedLeadsContent() {
     }
   };
 
+  const handleReverseTransaction = async (leadId: string) => {
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({
+          status: 'qualified',
+          client_id: null,
+          purchase_date: null
+        })
+        .eq('id', leadId);
+
+      if (error) throw error;
+
+      toast.success('Transaction successfully reversed. Lead returned to marketplace.');
+      setSoldLeadDetails(null);
+      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status: 'qualified', client_id: undefined, purchase_date: undefined } : l));
+    } catch (error: any) {
+      toast.error('Failed to reverse transaction: ' + error.message);
+    }
+  };
+
   if (loading) {
     return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
   }
@@ -418,6 +439,7 @@ function QualifiedLeadsContent() {
           isOpen={!!soldLeadDetails}
           onClose={() => setSoldLeadDetails(null)}
           lead={soldLeadDetails}
+          onReverse={handleReverseTransaction}
         />
       )}
     </div>

@@ -7,10 +7,26 @@ interface SoldLeadModalProps {
   isOpen: boolean;
   onClose: () => void;
   lead: Lead;
+  onReverse?: (leadId: string) => Promise<void>;
 }
 
-export const SoldLeadModal: React.FC<SoldLeadModalProps> = ({ isOpen, onClose, lead }) => {
+export const SoldLeadModal: React.FC<SoldLeadModalProps> = ({ isOpen, onClose, lead, onReverse }) => {
+  const [isReversing, setIsReversing] = React.useState(false);
+
   if (!isOpen) return null;
+
+  const handleReverse = async () => {
+    if (!onReverse) return;
+    const confirmed = window.confirm("Are you sure you want to reverse this transaction? This will remove the lead from the client's dashboard and return it to the marketplace.");
+    if (!confirmed) return;
+    
+    setIsReversing(true);
+    try {
+      await onReverse(lead.id);
+    } finally {
+      setIsReversing(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
@@ -110,7 +126,18 @@ export const SoldLeadModal: React.FC<SoldLeadModalProps> = ({ isOpen, onClose, l
           </div>
         </div>
 
-        <div className="p-6 border-t border-gray-200 bg-slate-50 flex justify-end">
+        <div className="p-6 border-t border-gray-200 bg-slate-50 flex justify-between items-center">
+          {onReverse ? (
+            <button
+              onClick={handleReverse}
+              disabled={isReversing}
+              className="px-4 py-2 bg-red-100 text-red-700 rounded-xl font-bold hover:bg-red-200 transition-all shadow-sm disabled:opacity-50"
+            >
+              {isReversing ? 'Reversing...' : 'Reverse Transaction'}
+            </button>
+          ) : (
+            <div></div>
+          )}
           <button
             onClick={onClose}
             className="px-6 py-2 bg-gray-900 text-white rounded-xl font-bold hover:bg-gray-800 transition-all shadow-sm"

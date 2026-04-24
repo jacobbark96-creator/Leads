@@ -29,6 +29,18 @@ export default function MyOpenlead() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    // Check URL for purchase success parameter
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('purchase_success')) {
+        toast.success('Lead successfully purchased! You can now view all details in your Dashboard.');
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     if (profile) {
       fetchMyData();
     }

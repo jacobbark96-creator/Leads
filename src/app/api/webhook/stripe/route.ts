@@ -96,6 +96,29 @@ export async function POST(req: Request) {
 
         // 4. Fire off the welcome email now that their subscription checkout is fully complete
         await sendWelcomeEmail(customerEmail, name);
+      } else if (session.mode === 'payment') {
+        // This handles individual lead purchases
+        const leadId = session.metadata?.leadId;
+        const clientId = session.metadata?.clientId;
+
+        if (leadId && clientId) {
+          const { error } = await supabaseAdmin
+            .from('leads')
+            .update({ 
+              client_id: clientId, 
+              purchase_date: new Date().toISOString(),
+              status: 'sold'
+            })
+            .eq('id', leadId);
+            
+          if (error) {
+            console.error('Error assigning purchased lead:', error);
+          } else {
+            console.log(`Successfully assigned lead ${leadId} to client ${clientId}`);
+          }
+        } else {
+          console.error('Missing leadId or clientId in session metadata for payment');
+        }
       }
       
       break;

@@ -26,6 +26,18 @@ export default function Marketplace() {
   const allowedCategoryIdsRef = useRef<string[] | null>(null);
 
   useEffect(() => {
+    // Check URL for cancellation parameter
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('purchase_canceled')) {
+        toast.error('Purchase was canceled.');
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
+  useEffect(() => {
     allowedCategoryIdsRef.current = allowedCategoryIds;
   }, [allowedCategoryIds]);
 
@@ -206,36 +218,49 @@ export default function Marketplace() {
         if (clientError) throw new Error('Client profile not found. Only registered clients can purchase leads.');
         clientId = clientData.id;
       } else {
-        // For Admin testing, we'll allow purchase but it won't be assigned to a real client
-        // or we could assign it to a "System Test Client" if one exists.
-        // For now, let's just use a dummy ID or null if we want it to show in tracker
-        // Actually, let's look for any client to assign it to, or just allow null client_id but status sold?
-        // No, tracker needs client_id for the join.
-        
-        // Let's find the first available client for testing purposes if admin
+        // For Admin testing
         const { data: anyClient } = await supabase.from('clients').select('id').limit(1).single();
         clientId = anyClient?.id || null;
       }
-      
-      // Basic update: assign client_id. (In real-world, you'd integrate Stripe here first)
-      const { error } = await supabase
-        .from('leads')
-        .update({ 
-          client_id: clientId, 
-          purchase_date: new Date().toISOString(),
-          status: 'sold'
-        })
-        .eq('id', leadId);
 
-      if (error) throw error;
+      if (!clientId) {
+        throw new Error('No valid client ID found to assign this lead to.');
+      }
 
-      toast.success('Lead successfully purchased! You can now view all details in your Dashboard.');
-      setLeadToPurchase(null);
+      // Find the lead details to pass to Stripe
+      const lead = leads.find(l => l.id === leadId);
+      if (!lead) throw new Error('Lead details not found');
+
+      // Create checkout session via our API
+      const res = await fetch('/api/create-lead-checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: profile.id,
+          email: profile.email || 'user@example.com',
+          leadId: leadId,
+          clientId: clientId,
+          leadLocation: lead.location,
+          leadCategory: lead.category_id,
+          leadPrice: lead.price || '135.00'
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to create checkout session');
+      }
+
+      if (data.url) {
+        // Redirect to Stripe checkout
+        window.location.href = data.url;
+      } else {
+        throw new Error('No checkout URL returned from Stripe');
+      }
       
-      // Remove from marketplace
-      setLeads(prev => prev.filter(l => l.id !== leadId));
     } catch (error: any) {
-      toast.error('Failed to purchase lead: ' + error.message);
+      toast.error('Failed to initiate purchase: ' + error.message);
     }
   };
 

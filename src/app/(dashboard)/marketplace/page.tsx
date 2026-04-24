@@ -1,5 +1,5 @@
 "use client";
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Lead } from '../../../types';
 import { useAuthStore } from '../../../store/authStore';
@@ -18,8 +18,37 @@ export default function Marketplace() {
   const [leadToPurchase, setLeadToPurchase] = useState<Lead | null>(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; name: string }>>([]);
+  const [allowedCategoryIds, setAllowedCategoryIds] = useState<string[] | null>(null);
   const { profile } = useAuthStore();
   const PAGE_SIZE = 24;
+  const lastFetchKey = useRef<string>('');
+  const allowedCategoryIdsRef = useRef<string[] | null>(null);
+
+  useEffect(() => {
+    allowedCategoryIdsRef.current = allowedCategoryIds;
+  }, [allowedCategoryIds]);
+
+  const parseServicesOfferedToIds = (raw: string) => {
+    const tokens = (raw || '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const byName = new Map(categoryOptions.map((c) => [c.name.toLowerCase(), c.id]));
+
+    const ids: string[] = [];
+    for (const token of tokens) {
+      if (uuidRegex.test(token)) {
+        ids.push(token);
+        continue;
+      }
+      const mapped = byName.get(token.toLowerCase());
+      if (mapped) ids.push(mapped);
+    }
+    return Array.from(new Set(ids));
+  };
 
   const fetchMarketplaceLeads = async (pageNumber: number, isInitial: boolean) => {
     try {
@@ -39,7 +68,7 @@ export default function Marketplace() {
         // Fetch client ID
         const { data: clientData, error: clientError } = await supabase
           .from('clients')
-          .select('id')
+          .select('id, services_offered')
           .eq('user_id', profile.id)
           .single();
 
@@ -52,9 +81,15 @@ export default function Marketplace() {
           p_offset: pageNumber * PAGE_SIZE
         });
         
-        data = res.data;
+        const allowed = parseServicesOfferedToIds(clientData.services_offered || '');
+        setAllowedCategoryIds(allowed);
+        const rawLeads = (res.data as Lead[]) || [];
+        data = allowed.length > 0
+          ? rawLeads.filter((l) => l.category_id && allowed.includes(String(l.category_id)))
+          : [];
         error = res.error;
       } else {
+        setAllowedCategoryIds(null);
         // Admin / Super Admin view all
         const res = await supabase
           .from('leads')
@@ -91,8 +126,22 @@ export default function Marketplace() {
   };
 
   useEffect(() => {
-    setPage(0);
-    fetchMarketplaceLeads(0, true);
+    const loadCategories = async () => {
+      try {
+        const { data, error } = await supabase
+          .from('categories')
+          .select('id, name')
+          .eq('is_active', true)
+          .order('name');
+
+        if (error) throw error;
+        setCategoryOptions((data || []).map((c: any) => ({ id: c.id, name: c.name })));
+      } catch (e) {
+        console.error('Failed to load categories for marketplace filter', e);
+      }
+    };
+
+    loadCategories();
 
     const leadsChannel = supabase
       .channel('public:leads:marketplace')
@@ -101,7 +150,22 @@ export default function Marketplace() {
         // If a lead is sold or paused, instantly remove it from the UI
         if (updatedLead.client_id !== null || updatedLead.is_marketed === false || updatedLead.status !== 'qualified') {
           setLeads(currentLeads => currentLeads.filter(l => l.id !== updatedLead.id));
+          return;
         }
+
+        const allowed = allowedCategoryIdsRef.current;
+        if (allowed && (!updatedLead.category_id || !allowed.includes(String(updatedLead.category_id)))) {
+          setLeads((currentLeads) => currentLeads.filter((l) => l.id !== updatedLead.id));
+          return;
+        }
+
+        setLeads((current) => {
+          const idx = current.findIndex((l) => l.id === updatedLead.id);
+          if (idx === -1) return current;
+          const next = [...current];
+          next[idx] = { ...next[idx], ...updatedLead };
+          return next;
+        });
       })
       .subscribe();
 
@@ -109,6 +173,16 @@ export default function Marketplace() {
       supabase.removeChannel(leadsChannel);
     };
   }, []);
+
+  useEffect(() => {
+    if (!profile) return;
+    const key = `${profile.id}:${profile.role}:${categoryOptions.length}`;
+    if (lastFetchKey.current === key) return;
+    lastFetchKey.current = key;
+
+    setPage(0);
+    fetchMarketplaceLeads(0, true);
+  }, [profile?.id, profile?.role, categoryOptions.length]);
 
   const loadMore = () => {
     const nextPage = page + 1;

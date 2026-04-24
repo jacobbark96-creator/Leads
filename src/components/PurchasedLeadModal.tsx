@@ -11,6 +11,13 @@ interface PurchasedLeadModalProps {
 export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, onClose, lead }) => {
   if (!isOpen) return null;
 
+  const billUrls = (() => {
+    const raw = (lead.bills_url || '').trim();
+    if (!raw) return [];
+    if (raw.includes(',')) return raw.split(',').map((u) => u.trim()).filter(Boolean);
+    return [raw];
+  })();
+
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
       <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[90vh] flex flex-col overflow-hidden">
@@ -85,20 +92,25 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
 
               {/* Primary Info */}
               <div className="bg-white p-5 rounded-xl border border-gray-200 shadow-sm space-y-4">
-                {lead.bills_url && (
+                {billUrls.length > 0 && (
                   <div className="flex items-center justify-between pb-4 border-b border-gray-100 bg-green-50/50 -mt-2 -mx-2 px-2 pt-2 rounded-t-lg">
                     <div className="flex items-center text-green-700">
                       <CheckCircle className="w-5 h-5 mr-2" />
                       <span className="font-bold text-sm">Electricity Bills Provided</span>
                     </div>
-                    <a
-                      href={lead.bills_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="inline-flex items-center px-3 py-1.5 bg-white border border-green-200 text-green-700 text-xs font-bold rounded-md hover:bg-green-50 transition-colors shadow-sm"
-                    >
-                      <Download className="w-4 h-4 mr-1.5" /> Download Bills
-                    </a>
+                    <div className="flex gap-2 flex-wrap justify-end">
+                      {billUrls.map((url, idx) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-3 py-1.5 bg-white border border-green-200 text-green-700 text-xs font-bold rounded-md hover:bg-green-50 transition-colors shadow-sm"
+                        >
+                          <Download className="w-4 h-4 mr-1.5" /> Bill {idx + 1}
+                        </a>
+                      ))}
+                    </div>
                   </div>
                 )}
                 

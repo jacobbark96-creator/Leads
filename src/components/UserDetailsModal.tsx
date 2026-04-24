@@ -4,6 +4,9 @@ import { UserProfile } from '../types';
 import { X, User, Mail, Shield, Key, Building, MapPin, Briefcase, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+type CategoryOption = { id: string; name: string };
+type AdvisorOption = { id: string; name: string };
+
 interface UserDetailsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -17,6 +20,10 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
   const [resettingPassword, setResettingPassword] = useState(false);
   const [updatingDirectPassword, setUpdatingDirectPassword] = useState(false);
   const [hasClientProfile, setHasClientProfile] = useState(false);
+  const [advisorOptions, setAdvisorOptions] = useState<AdvisorOption[]>([]);
+  const [selectedAdvisorId, setSelectedAdvisorId] = useState<string>('');
+  const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
+  const [selectedServiceCategoryIds, setSelectedServiceCategoryIds] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
     name: user.name || '',
@@ -38,10 +45,77 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
   const [newDirectPassword, setNewDirectPassword] = useState('');
 
   useEffect(() => {
+    if (isOpen) {
+      fetchAdvisorOptions();
+      fetchCategoryOptions();
+    }
     if (isOpen && user.role === 'client') {
       fetchClientData();
     }
   }, [isOpen, user.id, user.role]);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    if (!hasClientProfile) return;
+    if (!formData.services_offered) return;
+    if (categoryOptions.length === 0) return;
+
+    setSelectedServiceCategoryIds((current) => {
+      if (current.length > 0) return current;
+      return parseServicesOfferedToIds(formData.services_offered, categoryOptions);
+    });
+  }, [isOpen, hasClientProfile, formData.services_offered, categoryOptions.length]);
+
+  const fetchAdvisorOptions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('id, name')
+        .eq('role', 'super_admin')
+        .order('name');
+
+      if (error) throw error;
+      setAdvisorOptions((data || []).map((u: any) => ({ id: u.id, name: u.name })));
+    } catch (error: any) {
+      console.error('Failed to load advisors:', error);
+    }
+  };
+
+  const fetchCategoryOptions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('id, name')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) throw error;
+      setCategoryOptions((data || []).map((c: any) => ({ id: c.id, name: c.name })));
+    } catch (error: any) {
+      console.error('Failed to load categories:', error);
+    }
+  };
+
+  const parseServicesOfferedToIds = (raw: string, categories: CategoryOption[]) => {
+    const tokens = (raw || '')
+      .split(',')
+      .map((t) => t.trim())
+      .filter(Boolean);
+
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+    const byName = new Map(categories.map((c) => [c.name.toLowerCase(), c.id]));
+
+    const ids: string[] = [];
+    for (const token of tokens) {
+      if (uuidRegex.test(token)) {
+        ids.push(token);
+        continue;
+      }
+      const mapped = byName.get(token.toLowerCase());
+      if (mapped) ids.push(mapped);
+    }
+    return Array.from(new Set(ids));
+  };
 
   const fetchClientData = async () => {
     try {
@@ -58,6 +132,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
       
       if (data) {
         setHasClientProfile(true);
+        setSelectedAdvisorId(data.assigned_to || '');
         setFormData(prev => ({
           ...prev,
           company_name: data.company_name || '',
@@ -69,6 +144,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           services_offered: data.services_offered || '',
           internal_notes: data.internal_notes || ''
         }));
+
+        setSelectedServiceCategoryIds(parseServicesOfferedToIds(data.services_offered || '', categoryOptions));
       }
     } finally {
       setLoadingClient(false);
@@ -108,7 +185,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
             other_contact_numbers: formData.other_contact_numbers,
             address: formData.address,
             areas_covered: formData.areas_covered,
-            services_offered: formData.services_offered,
+            services_offered: selectedServiceCategoryIds.join(', '),
+            assigned_to: selectedAdvisorId || null,
             internal_notes: formData.internal_notes
           })
           .eq('user_id', user.id);
@@ -123,6 +201,12 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     } finally {
       setLoading(false);
     }
+  };
+
+  const toggleServiceCategory = (categoryId: string) => {
+    setSelectedServiceCategoryIds((current) =>
+      current.includes(categoryId) ? current.filter((id) => id !== categoryId) : [...current, categoryId]
+    );
   };
 
   const handleDirectPasswordChange = async (e: React.FormEvent) => {
@@ -334,8 +418,38 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                       <textarea rows={2} value={formData.areas_covered} onChange={e => setFormData({...formData, areas_covered: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Services Offered</label>
-                      <textarea rows={2} value={formData.services_offered} onChange={e => setFormData({...formData, services_offered: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Personal Advisor (Super Admin)</label>
+                      <select
+                        value={selectedAdvisorId}
+                        onChange={(e) => setSelectedAdvisorId(e.target.value)}
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500 bg-white"
+                      >
+                        <option value="">No advisor assigned</option>
+                        {advisorOptions.map((a) => (
+                          <option key={a.id} value={a.id}>{a.name}</option>
+                        ))}
+                      </select>
+                      <p className="text-xs text-gray-500 mt-1">Only Super Admins can be selected as personal advisors.</p>
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">Services Offered (Categories)</label>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        {categoryOptions.length === 0 ? (
+                          <p className="text-sm text-gray-500">Loading categories...</p>
+                        ) : (
+                          categoryOptions.map((cat) => (
+                            <label key={cat.id} className="flex items-center gap-2 cursor-pointer">
+                              <input
+                                type="checkbox"
+                                checked={selectedServiceCategoryIds.includes(cat.id)}
+                                onChange={() => toggleServiceCategory(cat.id)}
+                                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                              />
+                              <span className="text-sm text-gray-700">{cat.name}</span>
+                            </label>
+                          ))
+                        )}
+                      </div>
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Internal Notes</label>

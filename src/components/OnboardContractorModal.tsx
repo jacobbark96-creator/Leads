@@ -60,11 +60,11 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
     setFormData(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleServiceToggle = (categoryName: string) => {
-    setSelectedServices(prev => 
-      prev.includes(categoryName)
-        ? prev.filter(name => name !== categoryName)
-        : [...prev, categoryName]
+  const handleServiceToggle = (categoryId: string) => {
+    setSelectedServices(prev =>
+      prev.includes(categoryId)
+        ? prev.filter(id => id !== categoryId)
+        : [...prev, categoryId]
     );
   };
 
@@ -264,8 +264,8 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
                           <input 
                             type="checkbox" 
                             className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
-                            checked={selectedServices.includes(category.name)}
-                            onChange={() => handleServiceToggle(category.name)}
+                          checked={selectedServices.includes(category.id)}
+                          onChange={() => handleServiceToggle(category.id)}
                           />
                           <span className="text-sm text-gray-700 group-hover:text-gray-900 transition-colors">
                             {category.name}

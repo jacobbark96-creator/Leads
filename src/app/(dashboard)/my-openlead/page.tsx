@@ -16,6 +16,7 @@ export default function MyOpenlead() {
   const [coachPhone, setCoachPhone] = useState<string | null>(null);
   
   const [categories, setCategories] = useState<any[]>([]);
+  const [selectedCategoryIds, setSelectedCategoryIds] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
     company_name: '',
@@ -55,6 +56,11 @@ export default function MyOpenlead() {
         service_areas: client.service_areas || []
       });
 
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const tokens = (client.services_offered || '').split(',').map((t: string) => t.trim()).filter(Boolean);
+      const initialIds = tokens.filter((t: string) => uuidRegex.test(t));
+      setSelectedCategoryIds(initialIds);
+
       // 2. Fetch Coach Details
       if (client.assigned_to) {
         const { data: coachData, error: coachError } = await supabase
@@ -78,6 +84,14 @@ export default function MyOpenlead() {
         
       if (!catError && catData) {
         setCategories(catData);
+
+        if (initialIds.length === 0 && tokens.length > 0) {
+          const byName = new Map(catData.map((c: any) => [String(c.name || '').toLowerCase(), c.id]));
+          const mappedIds = tokens
+            .map((t: string) => byName.get(t.toLowerCase()))
+            .filter(Boolean) as string[];
+          setSelectedCategoryIds(Array.from(new Set(mappedIds)));
+        }
       }
 
     } catch (err: any) {
@@ -99,14 +113,14 @@ export default function MyOpenlead() {
         return;
       }
 
-      if (!formData.services_offered) {
-        toast.error('Please select your primary service offered.');
+      if (selectedCategoryIds.length === 0) {
+        toast.error('Please select at least one service offered.');
         setSaving(false);
         return;
       }
 
       // Check if profile is completely filled
-      const isComplete = formData.service_areas.length > 0 && !!formData.company_name && !!formData.contact_name && !!formData.phone && !!formData.services_offered;
+      const isComplete = formData.service_areas.length > 0 && !!formData.company_name && !!formData.contact_name && !!formData.phone && selectedCategoryIds.length > 0;
 
       const { data: updatedClient, error } = await supabase
         .from('clients')
@@ -114,7 +128,7 @@ export default function MyOpenlead() {
           company_name: formData.company_name,
           contact_name: formData.contact_name,
           phone: formData.phone,
-          services_offered: formData.services_offered,
+          services_offered: selectedCategoryIds.join(', '),
           service_areas: formData.service_areas,
           is_profile_complete: isComplete
         })
@@ -254,26 +268,33 @@ export default function MyOpenlead() {
                   />
                 </div>
                 <div className="sm:col-span-2">
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Primary Service Offered</label>
-                  <div className="relative">
-                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Services Offered</label>
+                  <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
+                    <div className="flex items-center gap-2 text-xs font-semibold text-gray-600 mb-3">
                       <Briefcase className="h-4 w-4 text-gray-400" />
+                      Select all categories you want leads for
                     </div>
-                    <select
-                      required
-                      value={formData.services_offered}
-                      onChange={e => setFormData({...formData, services_offered: e.target.value})}
-                      className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2.5 bg-white"
-                    >
-                      <option value="" disabled>Select your primary service...</option>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {categories.map((cat) => (
-                        <option key={cat.id} value={cat.name}>{cat.name}</option>
+                        <label key={cat.id} className="flex items-center gap-2 cursor-pointer">
+                          <input
+                            type="checkbox"
+                            checked={selectedCategoryIds.includes(cat.id)}
+                            onChange={() => {
+                              setSelectedCategoryIds((current) =>
+                                current.includes(cat.id)
+                                  ? current.filter((id: string) => id !== cat.id)
+                                  : [...current, cat.id]
+                              );
+                            }}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                          />
+                          <span className="text-sm text-gray-700">{cat.name}</span>
+                        </label>
                       ))}
-                    </select>
+                    </div>
                   </div>
-                  <p className="text-xs text-gray-500 mt-2">
-                    Don't see your service? Let us know.
-                  </p>
+                  <p className="text-xs text-gray-500 mt-2">You can choose more than one category.</p>
                 </div>
               </div>
 

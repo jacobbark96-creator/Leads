@@ -18,6 +18,14 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
   const [photos, setPhotos] = useState<string[]>(lead.photos || []);
   const [categories, setCategories] = useState<Category[]>([]);
   const [price, setPrice] = useState<string>(lead.price ? lead.price.toString() : '135');
+  const [billUrls, setBillUrls] = useState<string[]>(() => {
+    const raw = (lead.bills_url || '').trim();
+    if (!raw) return [];
+    if (raw.includes(',')) {
+      return raw.split(',').map((u) => u.trim()).filter(Boolean);
+    }
+    return [raw];
+  });
   
   const [formData, setFormData] = useState({
     category_id: lead.category_id || '',
@@ -116,31 +124,43 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
 
   const handleBillUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!e.target.files || e.target.files.length === 0) return;
-    const file = e.target.files[0];
+    const files = Array.from(e.target.files);
+    e.target.value = '';
+
+    if (billUrls.length + files.length > 10) {
+      toast.error('You can upload a maximum of 10 bill documents');
+      return;
+    }
     
     try {
       setUploading(true);
-      const fileExt = file.name.split('.').pop();
-      const fileName = `bill-${lead.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
-      const filePath = `${fileName}`;
+      const newUrls: string[] = [];
 
-      const { error: uploadError } = await supabase.storage
-        .from('lead_documents')
-        .upload(filePath, file, {
-          cacheControl: '3600',
-          upsert: false
-        });
+      for (const file of files) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `bill-${lead.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
+        const filePath = `${fileName}`;
 
-      if (uploadError) throw uploadError;
+        const { error: uploadError } = await supabase.storage
+          .from('lead_documents')
+          .upload(filePath, file, {
+            cacheControl: '3600',
+            upsert: false
+          });
 
-      const { data: publicUrlData } = supabase.storage
-        .from('lead_documents')
-        .getPublicUrl(filePath);
+        if (uploadError) throw uploadError;
 
-      setFormData(prev => ({ ...prev, bills_url: publicUrlData.publicUrl }));
-      toast.success('Bill uploaded successfully');
+        const { data: publicUrlData } = supabase.storage
+          .from('lead_documents')
+          .getPublicUrl(filePath);
+
+        newUrls.push(publicUrlData.publicUrl);
+      }
+
+      setBillUrls((prev) => [...prev, ...newUrls]);
+      toast.success('Bill documents uploaded successfully');
     } catch (error: any) {
-      toast.error('Error uploading bill: ' + error.message);
+      toast.error('Error uploading bills: ' + error.message);
     } finally {
       setUploading(false);
     }
@@ -201,7 +221,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
         solar_location: formData.solar_location,
         availability: formData.availability,
         job_title: formData.job_title,
-        bills_url: formData.bills_url,
+        bills_url: billUrls.length > 0 ? billUrls.join(', ') : null,
       };
 
       const { data, error } = await supabase
@@ -567,25 +587,32 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
               <label className="block text-sm font-medium text-gray-700 mb-2">Electricity Bill Upload</label>
               
               <div className="flex gap-4 mb-4">
-                {formData.bills_url && (
-                  <div className="relative p-3 rounded-lg border border-green-200 bg-green-50 flex items-center justify-between w-full">
-                    <span className="text-sm font-medium text-green-700 truncate mr-4">Bill Document Uploaded</span>
-                    <button
-                      type="button"
-                      onClick={() => setFormData({...formData, bills_url: ''})}
-                      className="text-red-500 hover:text-red-700 p-1 bg-white rounded-md shadow-sm border border-red-100"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+                {billUrls.length > 0 && (
+                  <div className="w-full space-y-2">
+                    {billUrls.map((url, idx) => (
+                      <div key={url} className="relative p-3 rounded-lg border border-green-200 bg-green-50 flex items-center justify-between w-full">
+                        <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-medium text-green-700 truncate mr-4 hover:underline">
+                          Bill Document {idx + 1}
+                        </a>
+                        <button
+                          type="button"
+                          onClick={() => setBillUrls((prev) => prev.filter((_, i) => i !== idx))}
+                          className="text-red-500 hover:text-red-700 p-1 bg-white rounded-md shadow-sm border border-red-100"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </button>
+                      </div>
+                    ))}
                   </div>
                 )}
                 
-                {!formData.bills_url && (
+                {billUrls.length < 10 && (
                   <label className="w-full h-16 flex items-center justify-center border-2 border-dashed border-gray-300 rounded-lg cursor-pointer hover:bg-gray-50 transition-colors">
                     <Upload className="w-5 h-5 text-gray-400 mr-2" />
-                    <span className="text-sm text-gray-500 font-medium">Upload Bill (PDF, JPG, PNG, CSV, XLSX)</span>
+                    <span className="text-sm text-gray-500 font-medium">Upload Bills (up to 10)</span>
                     <input 
                       type="file" 
+                      multiple
                       accept=".pdf,image/jpeg,image/png,.csv,.xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,text/csv" 
                       className="hidden" 
                       onChange={handleBillUpload}

@@ -61,12 +61,23 @@ export default function ClientDashboard() {
 
       // Fetch advisor details if assigned
       if (isInitial && clientData.assigned_to) {
-        const { data: advisor } = await supabase
-          .from('users')
-          .select('name, email, phone, job_title, about, working_hours')
-          .eq('id', clientData.assigned_to)
-          .single();
-        if (advisor) setAdvisorDetails(advisor);
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData.session?.access_token;
+          if (token) {
+            const res = await fetch('/api/advisor', {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            const json = await res.json();
+            if (res.ok) {
+              setAdvisorDetails(json.advisor);
+            }
+          }
+        } catch {
+          // keep pending
+        }
       }
 
       // Fetch Categories only on initial load

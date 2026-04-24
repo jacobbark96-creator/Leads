@@ -63,15 +63,23 @@ export default function MyOpenlead() {
 
       // 2. Fetch Coach Details
       if (client.assigned_to) {
-        const { data: coachData, error: coachError } = await supabase
-          .from('users')
-          .select('name, email, phone')
-          .eq('id', client.assigned_to)
-          .single();
-          
-        if (!coachError && coachData) {
-          setCoachName(coachData.name);
-          setCoachPhone(coachData.phone || '+447123456789'); // Fallback to placeholder if admin hasn't set phone
+        try {
+          const { data: sessionData } = await supabase.auth.getSession();
+          const token = sessionData.session?.access_token;
+          if (token) {
+            const res = await fetch('/api/advisor', {
+              headers: {
+                Authorization: `Bearer ${token}`
+              }
+            });
+            const json = await res.json();
+            if (res.ok && json.advisor) {
+              setCoachName(json.advisor.name);
+              setCoachPhone(json.advisor.phone || '+447123456789');
+            }
+          }
+        } catch {
+          // keep blank
         }
       }
 

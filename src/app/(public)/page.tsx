@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import Image from 'next/image';
-import { ArrowRight, CheckCircle2, Star, Zap, Shield, BarChart3, Users, Clock, Mail, Globe, MapPin, Building, Target, PhoneCall, TrendingUp, Calendar, ShieldCheck, Sparkles } from 'lucide-react';
+import { ArrowRight, CheckCircle2, Star, Zap, Shield, BarChart3, Users, Clock, Mail, Globe, MapPin, Building, Target, PhoneCall, TrendingUp, Calendar, ShieldCheck, Sparkles, User } from 'lucide-react';
 import { useAuthStore } from '../../store/authStore';
 
 export default function Home() {
@@ -198,10 +198,6 @@ export default function Home() {
       <section className="py-32 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <div className="text-center max-w-3xl mx-auto mb-20">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-openlead-blue/10 border border-openlead-blue/20 text-openlead-blue text-sm font-semibold tracking-wide uppercase mb-6">
-              <Sparkles className="w-4 h-4" />
-              <span>The Openlead Advantage</span>
-            </div>
             <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight">
               Backed by <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-500">Hard Data</span>
             </h2>
@@ -210,7 +206,7 @@ export default function Home() {
             </p>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Card 1: Intent */}
             <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-openlead-blue/10 transition-all duration-300 group">
               {/* Data Vis Area */}
@@ -244,7 +240,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-3">Pre-Qualified Intent</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  We don't just sell data. Every lead is a homeowner who has actively requested a quote for your specific service. High intent means higher close rates.
+                  We don't just sell data. Every lead is a potential client who has actively requested a quote for your specific service. High intent means higher close rates.
                 </p>
               </div>
             </div>
@@ -280,7 +276,7 @@ export default function Home() {
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-3">Absolute Exclusivity</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  When you buy a lead from Openlead, it's yours. We never sell the same prospect to multiple contractors. No racing to the bottom on price.
+                  Unlike the majority of other lead generation companies, We never sell the same prospect to multiple contractors. No racing to the bottom on price.
                 </p>
               </div>
             </div>
@@ -317,7 +313,48 @@ export default function Home() {
                 </div>
                 <h3 className="text-2xl font-bold text-slate-900 mb-3">All-in-One CRM</h3>
                 <p className="text-slate-600 leading-relaxed">
-                  Manage your leads, track appointments, and dial prospects instantly using our built-in client portal and sales CRM.
+                  Manage your leads, track appointments, and using our built in client portal.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 4: Vetted Marketplace */}
+            <div className="bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group">
+              {/* Data Vis Area */}
+              <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                 {/* Abstract Grid Background */}
+                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                 {/* UI Element */}
+                 <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Partner Network</span>
+                      <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Vetted
+                      </span>
+                    </div>
+                    <div className="flex gap-1 mb-3">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
+                      <div className="flex -space-x-2">
+                         <div className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center overflow-hidden"><User className="w-4 h-4 text-slate-400" /></div>
+                         <div className="w-6 h-6 rounded-full bg-slate-300 border-2 border-white flex items-center justify-center overflow-hidden"><User className="w-4 h-4 text-slate-500" /></div>
+                         <div className="w-6 h-6 rounded-full bg-slate-400 border-2 border-white flex items-center justify-center overflow-hidden"><User className="w-4 h-4 text-slate-600" /></div>
+                      </div>
+                      <p className="text-xs text-slate-500 font-semibold ml-2">Top-tier providers</p>
+                    </div>
+                 </div>
+              </div>
+              <div className="p-8">
+                <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mb-6">
+                  <Users className="w-6 h-6 text-indigo-600" />
+                </div>
+                <h3 className="text-2xl font-bold text-slate-900 mb-3">Vetted Marketplace</h3>
+                <p className="text-slate-600 leading-relaxed">
+                  We work with vetted and tested lead generation companies to build our marketplace, ensuring that the leads you get are not only the best price, but the best quality also.
                 </p>
               </div>
             </div>

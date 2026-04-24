@@ -134,7 +134,7 @@ export default function Home() {
                         <Target className="w-4 h-4 text-blue-500" /> Solar Installation
                       </div>
                       <div className="flex items-center gap-3 text-sm text-slate-700 font-medium">
-                        <PhoneCall className="w-4 h-4 text-green-500" /> (555) 123-4567
+                        <PhoneCall className="w-4 h-4 text-green-500" /> +44 7123456789
                       </div>
                     </div>
                     <button className="mt-6 w-full bg-openlead-blue text-white rounded-lg py-3 text-sm font-bold hover:bg-openlead-blue/90 transition-colors flex items-center justify-center gap-2 shadow-md">

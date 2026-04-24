@@ -7,9 +7,17 @@ import { useAuthStore } from '../../store/authStore';
 export default function Home() {
   const { user, profile } = useAuthStore();
   const [mounted, setMounted] = useState(false);
+  const [activeStatIndex, setActiveStatIndex] = useState(0);
 
   useEffect(() => {
     setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStatIndex((prev) => (prev + 1) % 4);
+    }, 2000);
+    return () => clearInterval(interval);
   }, []);
 
   const getDashboardLink = () => {
@@ -178,27 +186,25 @@ export default function Home() {
       <section className="border-b border-slate-200 bg-white relative z-20">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           
-          {/* Mobile: Auto-swiping infinite marquee for stats */}
-          <div className="md:hidden flex overflow-hidden relative w-[100vw] left-1/2 -translate-x-1/2">
-            <div className="flex w-max animate-marquee gap-8 px-4 hover:[animation-play-state:paused] active:[animation-play-state:paused]">
-              {[
-                { label: "Exclusive Leads", value: "100%", desc: "Never shared or resold" },
-                { label: "Lead Categories", value: "4+", desc: "Solar, Roofing & more" },
-                { label: "Delivered Leads", value: "10k+", desc: "To growing contractors" },
-                { label: "CRM Integration", value: "1-Click", desc: "Instant sync & dial" },
-                // Duplicate for infinite loop
-                { label: "Exclusive Leads", value: "100%", desc: "Never shared or resold" },
-                { label: "Lead Categories", value: "4+", desc: "Solar, Roofing & more" },
-                { label: "Delivered Leads", value: "10k+", desc: "To growing contractors" },
-                { label: "CRM Integration", value: "1-Click", desc: "Instant sync & dial" },
-              ].map((stat, i) => (
-                <div key={i} className="text-center shrink-0 w-48">
-                  <p className="text-4xl font-extrabold text-openlead-blue mb-2">{stat.value}</p>
-                  <p className="text-slate-900 font-bold mb-1 text-lg">{stat.label}</p>
-                  <p className="text-slate-500 text-sm">{stat.desc}</p>
-                </div>
-              ))}
-            </div>
+          {/* Mobile: Fading Stats Carousel */}
+          <div className="md:hidden relative w-full h-32 flex items-center justify-center overflow-hidden">
+            {[
+              { label: "Exclusive Leads", value: "100%", desc: "Never shared or resold" },
+              { label: "Lead Categories", value: "4+", desc: "Solar, Roofing & more" },
+              { label: "Delivered Leads", value: "10k+", desc: "To growing contractors" },
+              { label: "CRM Integration", value: "1-Click", desc: "Instant sync & dial" },
+            ].map((stat, i) => (
+              <div 
+                key={i} 
+                className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-500 ease-in-out ${
+                  i === activeStatIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                }`}
+              >
+                <p className="text-4xl font-extrabold text-openlead-blue mb-2">{stat.value}</p>
+                <p className="text-slate-900 font-bold mb-1 text-lg">{stat.label}</p>
+                <p className="text-slate-500 text-sm">{stat.desc}</p>
+              </div>
+            ))}
           </div>
 
           {/* Desktop: Standard Grid */}
@@ -232,9 +238,9 @@ export default function Home() {
           </div>
 
           {/* Mobile: Swipeable Card Carousel */}
-          <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory hide-scrollbar relative w-[100vw] left-1/2 -translate-x-1/2 pb-12 px-[7.5vw] gap-4" style={{ scrollPaddingLeft: '7.5vw' }}>
+          <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory relative w-[100vw] left-1/2 -translate-x-1/2 pb-12 px-[7.5vw] gap-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
             {/* Set 1 */}
-            <div className="snap-start w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 transition-all duration-300 group">
+            <div className="snap-center w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
@@ -269,7 +275,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="snap-start w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 group">
+              <div className="snap-center w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
@@ -302,7 +308,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="snap-start w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 group">
+              <div className="snap-center w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
@@ -336,7 +342,7 @@ export default function Home() {
                 </div>
               </div>
 
-              <div className="snap-start w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group">
+              <div className="snap-center w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group">
                 {/* Data Vis Area */}
                 <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
                    <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>

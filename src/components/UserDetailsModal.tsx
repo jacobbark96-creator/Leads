@@ -22,6 +22,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
   const [hasClientProfile, setHasClientProfile] = useState(false);
   const [advisorOptions, setAdvisorOptions] = useState<AdvisorOption[]>([]);
   const [selectedAdvisorId, setSelectedAdvisorId] = useState<string>('');
+  const [originalAssignedTo, setOriginalAssignedTo] = useState<string | null>(null);
   const [categoryOptions, setCategoryOptions] = useState<CategoryOption[]>([]);
   const [selectedServiceCategoryIds, setSelectedServiceCategoryIds] = useState<string[]>([]);
   const [avatarUrl, setAvatarUrl] = useState<string>(user.avatar_url || '');
@@ -198,6 +199,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
       if (data) {
         setHasClientProfile(true);
         setSelectedAdvisorId(data.assigned_to || '');
+        setOriginalAssignedTo(data.assigned_to || null);
         setFormData(prev => ({
           ...prev,
           company_name: data.company_name || '',
@@ -257,6 +259,31 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           .eq('user_id', user.id);
           
         if (clientError) throw clientError;
+
+        // Check if advisor assignment changed
+        const newAssignedTo = selectedAdvisorId || null;
+        if (newAssignedTo && newAssignedTo !== originalAssignedTo) {
+          const isNewAssignment = !originalAssignedTo;
+          try {
+            const res = await fetch('/api/send-advisor-email', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                clientEmail: user.email,
+                clientName: formData.name || user.name || 'Client',
+                advisorId: newAssignedTo,
+                isNewAssignment
+              })
+            });
+            if (!res.ok) {
+              console.error('Failed to trigger advisor email', await res.text());
+            } else {
+              setOriginalAssignedTo(newAssignedTo);
+            }
+          } catch (err) {
+            console.error('Failed to trigger advisor email', err);
+          }
+        }
       }
 
       toast.success('User details updated successfully');

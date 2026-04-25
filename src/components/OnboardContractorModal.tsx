@@ -136,14 +136,27 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
 
       // 4. Try to trigger the welcome email via our API route
       try {
-        await fetch('/api/send-welcome', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            email: formData.email,
-            name: formData.contact_name,
-          })
-        });
+        if (contractor.assigned_to) {
+          await fetch('/api/send-advisor-email', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              clientEmail: formData.email,
+              clientName: formData.contact_name,
+              advisorId: contractor.assigned_to,
+              isNewAssignment: true
+            })
+          });
+        } else {
+          await fetch('/api/send-welcome', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              email: formData.email,
+              name: formData.contact_name,
+            })
+          });
+        }
       } catch (emailErr) {
         console.error('Non-blocking error sending welcome email:', emailErr);
       }

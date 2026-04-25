@@ -276,12 +276,16 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
               })
             });
             if (!res.ok) {
-              console.error('Failed to trigger advisor email', await res.text());
+              const errorText = await res.text();
+              console.error('Failed to trigger advisor email', errorText);
+              toast.error('Failed to send advisor email: ' + errorText);
             } else {
               setOriginalAssignedTo(newAssignedTo);
+              toast.success(isNewAssignment ? 'Welcome email sent!' : 'Advisor update email sent!');
             }
-          } catch (err) {
+          } catch (err: any) {
             console.error('Failed to trigger advisor email', err);
+            toast.error('Failed to trigger advisor email: ' + err.message);
           }
         }
       }

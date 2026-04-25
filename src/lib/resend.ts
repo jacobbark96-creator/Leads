@@ -5,7 +5,7 @@ const resendApiKey = process.env.RESEND_API_KEY;
 export const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // Replace this with your actual verified sending domain (e.g., 'hello@openlead.co.uk' or 'onboarding@openlead.co.uk')
-export const defaultFromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@resend.dev';
+export const defaultFromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@openlead.co.uk';
 
 /**
  * Sends a welcome email to a newly onboarded client.

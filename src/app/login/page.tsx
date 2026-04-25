@@ -67,6 +67,9 @@ export default function Login() {
         const { data: signUpData, error } = await supabase.auth.signUp({
           email: data.email,
           password: data.password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/email-confirmed`
+          }
         });
         if (error) throw error;
         toast.success('Registration successful!');

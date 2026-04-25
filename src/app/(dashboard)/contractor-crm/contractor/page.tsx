@@ -252,6 +252,7 @@ function ContractorDetailsContent() {
               ${contractor.status === 'fresh' ? 'bg-green-100 text-green-800' : 
                 contractor.status === 'no pitch' ? 'bg-yellow-100 text-yellow-800' : 
                 contractor.status === 'onboarded' ? 'bg-blue-100 text-blue-800' : 
+                contractor.status === 'offboarded' ? 'bg-gray-200 text-gray-800' : 
                 contractor.status === 'dnc' ? 'bg-red-100 text-red-800' : 
                 contractor.status === 'call back' ? 'bg-purple-100 text-purple-800' : 
                 'bg-gray-100 text-gray-800'}`}>
@@ -267,6 +268,7 @@ function ContractorDetailsContent() {
               <option value="dnc">DNC</option>
               <option value="call back">Call Back</option>
               <option value="onboarded">Onboarded</option>
+              <option value="offboarded">Offboarded</option>
             </select>
           </div>
 

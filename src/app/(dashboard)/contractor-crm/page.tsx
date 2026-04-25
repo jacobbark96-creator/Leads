@@ -198,6 +198,7 @@ function ContractorProcessingContent() {
               <option value="no pitch">No Pitch</option>
               <option value="dnc">DNC</option>
               <option value="call back">Call Back</option>
+              <option value="offboarded">Offboarded</option>
             </select>
           </div>
         </div>
@@ -244,6 +245,7 @@ function ContractorProcessingContent() {
                         contractor.status === 'onboarded' ? 'bg-blue-100 text-blue-800' : 
                         contractor.status === 'dnc' ? 'bg-red-100 text-red-800' : 
                         contractor.status === 'call back' ? 'bg-purple-100 text-purple-800' : 
+                        contractor.status === 'offboarded' ? 'bg-gray-100 text-gray-800' : 
                         'bg-gray-100 text-gray-800'}`}
                   >
                     <option value="fresh">Fresh</option>
@@ -251,6 +253,7 @@ function ContractorProcessingContent() {
                     <option value="dnc">DNC</option>
                     <option value="call back">Call Back</option>
                     <option value="onboarded">Onboarded</option>
+                    <option value="offboarded">Offboarded</option>
                   </select>
                   
                   <a

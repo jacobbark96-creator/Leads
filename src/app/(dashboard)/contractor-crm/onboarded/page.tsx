@@ -188,6 +188,7 @@ function OnboardedContractorsContent() {
                     className="text-xs font-bold rounded-full px-3 py-1.5 border-0 shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500 bg-blue-100 text-blue-800"
                   >
                     <option value="onboarded">Onboarded</option>
+                    <option value="offboarded">Offboarded</option>
                     <option value="fresh">Move back to Fresh</option>
                   </select>
                   

@@ -4,6 +4,7 @@ import { Contractor, Category } from '@/types';
 import { X, UserPlus, Building, Mail, Phone, MapPin, Briefcase, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Autocomplete from 'react-google-autocomplete';
+import { MultiServiceArea } from './MultiServiceArea';
 
 interface OnboardContractorModalProps {
   isOpen: boolean;
@@ -26,6 +27,7 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
     other_contact_numbers: '',
     address: '',
     areas_covered: '',
+    service_areas: [] as any[],
     internal_notes: '',
     latitude: null as number | null,
     longitude: null as number | null
@@ -109,6 +111,7 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
           other_contact_numbers: formData.other_contact_numbers || null,
           address: formData.address || null,
           areas_covered: formData.areas_covered || null,
+          service_areas: formData.service_areas,
           services_offered: selectedServices.length > 0 ? selectedServices.join(', ') : null,
           internal_notes: formData.internal_notes || null,
           latitude: formData.latitude,
@@ -121,7 +124,10 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
       // 3. Update the contractor status to onboarded
       const { data: updatedContractor, error: updateError } = await supabase
         .from('contractors')
-        .update({ status: 'onboarded' })
+        .update({ 
+          status: 'onboarded',
+          service_areas: formData.service_areas
+        })
         .eq('id', contractor.id)
         .select()
         .single();
@@ -248,12 +254,16 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
               <h3 className="text-lg font-medium text-gray-900 border-b border-gray-200 pb-2 mb-4 mt-8 flex items-center gap-2">
                 <Briefcase className="w-5 h-5 text-gray-400" /> Services & Coverage
               </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Areas Covered</label>
-                  <textarea name="areas_covered" rows={3} value={formData.areas_covered} onChange={handleChange} placeholder="E.g., London, South East, Manchester..." className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500" />
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Service Areas</label>
+                  <p className="text-xs text-gray-500 mb-3">Define the areas they cover. They will only see leads within these geofenced locations on the marketplace.</p>
+                  <MultiServiceArea 
+                    areas={formData.service_areas} 
+                    onChange={(areas) => setFormData({...formData, service_areas: areas})} 
+                  />
                 </div>
-                <div className="md:col-span-2">
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Services Offered</label>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-3 bg-gray-50 p-4 rounded-lg border border-gray-200">
                     {categories.length === 0 ? (

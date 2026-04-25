@@ -3,12 +3,18 @@ import React, { useEffect, useState } from 'react';
 import { CheckCircle2, ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
+import { supabase } from '@/lib/supabase';
 
 export default function EmailConfirmed() {
   const router = useRouter();
   const [countdown, setCountdown] = useState(5);
 
   useEffect(() => {
+    // The Supabase client automatically handles ?code= or #access_token= 
+    // on mount when it's imported, exchanging it for a session.
+    // We just ensure the client is initialized here.
+    supabase.auth.getSession().catch(console.error);
+
     // Attempt to close the window automatically after 5 seconds if allowed by the browser
     const timer = setInterval(() => {
       setCountdown((prev) => {

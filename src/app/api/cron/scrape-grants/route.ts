@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
 
+export const runtime = 'edge';
+
 export async function GET(req: Request) {
   // Simple basic auth or cron secret check to prevent unauthorized scraping
   const authHeader = req.headers.get('authorization');

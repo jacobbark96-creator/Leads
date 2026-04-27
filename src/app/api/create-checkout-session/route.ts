@@ -13,7 +13,7 @@ export async function POST(req: Request) {
     }
 
     const stripe = new Stripe(stripeKey, {
-      apiVersion: '2023-10-16' as any, // use current stable version
+      apiVersion: '2025-02-24.acacia' as any, // use current stable version
     });
 
     const { userId, email } = await req.json();

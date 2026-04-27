@@ -72,18 +72,32 @@ export default function MyOpenlead() {
             .select()
             .single();
 
-          if (insertError) throw insertError;
-          client = newClient;
+          if (insertError) {
+            if (insertError.code === '23505') {
+              // Unique constraint violation - another tab/request created it simultaneously
+              const { data: existingClient, error: refetchError } = await supabase
+                .from('clients')
+                .select('*')
+                .eq('user_id', profile!.id)
+                .single();
+              if (refetchError) throw refetchError;
+              client = existingClient;
+            } else {
+              throw insertError;
+            }
+          } else {
+            client = newClient;
 
-          // Also create the matching contractor record
-          if (newClient) {
-            await supabase.from('contractors').insert({
-              client_id: newClient.id,
-              company_name: '',
-              contact_name: profile!.name || '',
-              phone: profile!.phone || '',
-              status: 'fresh'
-            });
+            // Also create the matching contractor record
+            if (newClient) {
+              await supabase.from('contractors').insert({
+                client_id: newClient.id,
+                company_name: '',
+                contact_name: profile!.name || '',
+                phone: profile!.phone || '',
+                status: 'fresh'
+              });
+            }
           }
         } else {
           throw clientError;

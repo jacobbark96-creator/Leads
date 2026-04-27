@@ -21,6 +21,7 @@ export default function Marketplace() {
   const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [allowedCategoryIds, setAllowedCategoryIds] = useState<string[] | null>(null);
   const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [sortBy, setSortBy] = useState<string>('newest');
   const { profile } = useAuthStore();
   const PAGE_SIZE = 24;
   const lastFetchKey = useRef<string>('');
@@ -92,7 +93,8 @@ export default function Marketplace() {
         const res = await supabase.rpc('get_local_marketplace_leads', {
           p_client_id: clientData.id,
           p_limit: PAGE_SIZE + 1, // Fetch one extra to determine if there are more pages
-          p_offset: pageNumber * PAGE_SIZE
+          p_offset: pageNumber * PAGE_SIZE,
+          p_sort_by: sortBy
         });
         
         const allowed = parseServicesOfferedToIds(clientData.services_offered || '');
@@ -105,16 +107,41 @@ export default function Marketplace() {
       } else {
         setAllowedCategoryIds(null);
         // Admin / Super Admin view all
-        const res = await supabase
+        let query = supabase
           .from('leads')
           .select('*')
           .eq('status', 'qualified')
           .eq('is_marketed', true)
-          .is('client_id', null)
-          .order('created_at', { ascending: false })
-          .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
+          .is('client_id', null);
 
-        data = res.data;
+        if (sortBy === 'lowest_price') query = query.order('price', { ascending: true });
+        else if (sortBy === 'highest_price') query = query.order('price', { ascending: false });
+        else if (sortBy === 'highest_spend') query = query.order('monthly_spend', { ascending: false });
+        else if (sortBy === 'timeframe') {
+          // Fallback to client-side sorting since timeframe logic is complex for simple supabase queries.
+          // Or just order by created_at since it's admin view, but let's try to match it or just fetch then sort.
+          // Since it's admin, they probably just want it sorted roughly. We'll just fetch normally and sort below.
+          query = query.order('created_at', { ascending: false });
+        } else query = query.order('created_at', { ascending: false });
+
+        const res = await query.range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
+
+        let resultData = res.data || [];
+        if (sortBy === 'timeframe') {
+          resultData.sort((a, b) => {
+            const getVal = (tf: string) => {
+              const t = (tf || '').toLowerCase();
+              if (t.includes('asap')) return 1;
+              if (t.includes('1-3')) return 2;
+              if (t.includes('3-6')) return 3;
+              if (t.includes('6+')) return 4;
+              return 5;
+            };
+            return getVal(a.timeframe || '') - getVal(b.timeframe || '');
+          });
+        }
+        
+        data = resultData;
         error = res.error;
       }
 
@@ -190,13 +217,13 @@ export default function Marketplace() {
 
   useEffect(() => {
     if (!profile) return;
-    const key = `${profile.id}:${profile.role}:${categoryOptions.length}`;
+    const key = `${profile.id}:${profile.role}:${categoryOptions.length}:${sortBy}`;
     if (lastFetchKey.current === key) return;
     lastFetchKey.current = key;
 
     setPage(0);
     fetchMarketplaceLeads(0, true);
-  }, [profile?.id, profile?.role, categoryOptions.length]);
+  }, [profile?.id, profile?.role, categoryOptions.length, sortBy]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -280,9 +307,26 @@ export default function Marketplace() {
   return (
     <ProtectedRoute allowedRoles={['client', 'admin', 'super_admin']}>
       <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Lead Marketplace</h1>
-          <p className="mt-1 text-sm text-gray-500">Browse and purchase exclusively qualified leads.</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-gray-900">Lead Marketplace</h1>
+            <p className="mt-1 text-sm text-gray-500">Browse and purchase exclusively qualified leads.</p>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-gray-700">Sort by:</span>
+            <select
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+              className="block w-40 pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md shadow-sm bg-white"
+            >
+              <option value="newest">Newest</option>
+              <option value="lowest_price">Lowest Price</option>
+              <option value="highest_price">Highest Price</option>
+              <option value="highest_spend">Highest Spend</option>
+              <option value="timeframe">Timeframe</option>
+            </select>
+          </div>
         </div>
 
         <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-6">

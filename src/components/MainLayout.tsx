@@ -1,15 +1,34 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
 import { AdminNotifications } from './AdminNotifications';
+import { supabase } from '../lib/supabase';
 
 export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { profile, signOut } = useAuthStore();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [clientName, setClientName] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (profile?.role === 'client') {
+      const fetchClient = async () => {
+        const { data } = await supabase
+          .from('clients')
+          .select('contact_name')
+          .eq('user_id', profile.id)
+          .single();
+        
+        if (data?.contact_name) {
+          setClientName(data.contact_name);
+        }
+      };
+      fetchClient();
+    }
+  }, [profile]);
 
   const isDetailsPage = pathname === '/sales-crm/lead' || pathname === '/contractor-crm/contractor';
 
@@ -96,15 +115,17 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                 )}
                 <div className="flex items-center space-x-3 bg-white border border-gray-200 rounded-full py-1.5 pl-1.5 pr-4 shadow-sm hover:shadow transition-all">
                   <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm shadow-inner">
-                    {profile.name?.charAt(0).toUpperCase() || 'U'}
+                    {(clientName || profile.name)?.charAt(0).toUpperCase() || 'U'}
                   </div>
                   <div className="flex flex-col">
                     <span className="text-sm font-bold text-gray-900 leading-none">
-                      {profile.name}
+                      {clientName || profile.name}
                     </span>
-                    <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mt-0.5 leading-none">
-                      {profile.role.replace('_', ' ')}
-                    </span>
+                    {profile.role !== 'client' && (
+                      <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mt-0.5 leading-none">
+                        {profile.role.replace('_', ' ')}
+                      </span>
+                    )}
                   </div>
                   <div className="pl-3 ml-3 border-l border-gray-200">
                     <button
@@ -165,11 +186,13 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                       <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold shadow-inner">
-                        {profile.name?.charAt(0).toUpperCase() || 'U'}
+                        {(clientName || profile.name)?.charAt(0).toUpperCase() || 'U'}
                       </div>
                       <div>
-                        <div className="text-base font-bold text-gray-900">{profile.name}</div>
-                        <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">{profile.role.replace('_', ' ')}</div>
+                        <div className="text-base font-bold text-gray-900">{clientName || profile.name}</div>
+                        {profile.role !== 'client' && (
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">{profile.role.replace('_', ' ')}</div>
+                        )}
                       </div>
                     </div>
                     <button

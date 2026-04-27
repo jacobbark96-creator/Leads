@@ -51,13 +51,44 @@ export default function MyOpenlead() {
       setLoading(true);
       
       // 1. Fetch Client Profile
-      const { data: client, error: clientError } = await supabase
+      let { data: client, error: clientError } = await supabase
         .from('clients')
         .select('*')
         .eq('user_id', profile!.id)
         .single();
 
-      if (clientError) throw clientError;
+      if (clientError) {
+        if (clientError.code === 'PGRST116') {
+          // If no client profile exists yet (new signup), create one
+          const { data: newClient, error: insertError } = await supabase
+            .from('clients')
+            .insert({
+              user_id: profile!.id,
+              company_name: '',
+              contact_name: profile!.name || '',
+              phone: profile!.phone || '',
+              is_profile_complete: false
+            })
+            .select()
+            .single();
+
+          if (insertError) throw insertError;
+          client = newClient;
+
+          // Also create the matching contractor record
+          if (newClient) {
+            await supabase.from('contractors').insert({
+              client_id: newClient.id,
+              company_name: '',
+              contact_name: profile!.name || '',
+              phone: profile!.phone || '',
+              status: 'fresh'
+            });
+          }
+        } else {
+          throw clientError;
+        }
+      }
       
       setClientData(client);
       setFormData({

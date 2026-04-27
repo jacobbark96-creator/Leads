@@ -20,6 +20,7 @@ export default function Marketplace() {
   const [hasMore, setHasMore] = useState(true);
   const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [allowedCategoryIds, setAllowedCategoryIds] = useState<string[] | null>(null);
+  const [creditBalance, setCreditBalance] = useState<number>(0);
   const { profile } = useAuthStore();
   const PAGE_SIZE = 24;
   const lastFetchKey = useRef<string>('');
@@ -77,14 +78,15 @@ export default function Marketplace() {
       let error = null;
 
       if (profile?.role === 'client') {
-        // Fetch client ID
+        // Fetch client ID and credit
         const { data: clientData, error: clientError } = await supabase
           .from('clients')
-          .select('id, services_offered')
+          .select('id, services_offered, credit_balance')
           .eq('user_id', profile.id)
           .single();
 
         if (clientError) throw new Error('Could not find client profile.');
+        setCreditBalance(clientData.credit_balance || 0);
 
         // Use RPC to get leads within service area
         const res = await supabase.rpc('get_local_marketplace_leads', {
@@ -202,7 +204,7 @@ export default function Marketplace() {
     fetchMarketplaceLeads(nextPage, false);
   };
 
-  const handlePurchaseLead = async (leadId: string) => {
+  const handlePurchaseLead = async (leadId: string, creditToUse: number) => {
     if (!profile) return;
     try {
       let clientId = null;
@@ -242,7 +244,8 @@ export default function Marketplace() {
           clientId: clientId,
           leadLocation: lead.location,
           leadCategory: lead.category_id,
-          leadPrice: lead.price || '135.00'
+          leadPrice: lead.price || '135.00',
+          creditToUse
         }),
       });
 
@@ -252,7 +255,13 @@ export default function Marketplace() {
         throw new Error(data.error || 'Failed to create checkout session');
       }
 
-      if (data.url) {
+      if (data.skipStripe) {
+        toast.success('Lead purchased successfully using credit!');
+        setLeadToPurchase(null);
+        setLeads(prev => prev.filter(l => l.id !== leadId));
+        // Redirect to portal or refresh
+        window.location.href = data.url;
+      } else if (data.url) {
         // Redirect to Stripe checkout
         window.location.href = data.url;
       } else {
@@ -373,7 +382,8 @@ export default function Marketplace() {
           isOpen={!!leadToPurchase}
           onClose={() => setLeadToPurchase(null)}
           lead={leadToPurchase}
-          onProceedToPay={() => handlePurchaseLead(leadToPurchase.id)}
+          creditBalance={creditBalance}
+          onProceedToPay={(creditToUse) => handlePurchaseLead(leadToPurchase.id, creditToUse)}
         />
       )}
     </ProtectedRoute>

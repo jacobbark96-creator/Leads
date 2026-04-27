@@ -229,6 +229,26 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
 
       toast.success('Lead successfully qualified');
       onSuccess(data as Lead);
+      
+      // Attempt to notify nearby clients (non-blocking)
+      try {
+        const categoryName = categories.find(c => c.id === formData.category_id)?.name || 'General';
+        fetch('/api/notify-nearby-clients', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            leadId: lead.id,
+            location: formData.location,
+            lat: formData.latitude,
+            lng: formData.longitude,
+            categoryId: formData.category_id,
+            categoryName: categoryName
+          })
+        });
+      } catch (notifyErr) {
+        console.error('Failed to trigger nearby client notification', notifyErr);
+      }
+
       onClose();
     } catch (error: any) {
       toast.error('Failed to qualify lead: ' + error.message);

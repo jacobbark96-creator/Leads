@@ -9,10 +9,11 @@ interface OrderSummaryModalProps {
   isOpen: boolean;
   onClose: () => void;
   lead: Lead;
-  onProceedToPay: () => void; // Will handle Stripe logic later
+  creditBalance: number;
+  onProceedToPay: (creditToUse: number) => void; // Will handle Stripe logic later
 }
 
-export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, onClose, lead, onProceedToPay }) => {
+export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, onClose, lead, creditBalance, onProceedToPay }) => {
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<{code: string, amount: number} | null>(null);
   const [isApplying, setIsApplying] = useState(false);
@@ -20,7 +21,9 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
   if (!isOpen) return null;
 
   const basePrice = lead.price || 135;
-  const totalToPay = Math.max(0, basePrice - (appliedDiscount?.amount || 0));
+  const discountedPrice = Math.max(0, basePrice - (appliedDiscount?.amount || 0));
+  const creditToUse = Math.min(creditBalance, discountedPrice);
+  const totalToPay = Math.max(0, discountedPrice - creditToUse);
 
   const handleApplyDiscount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -193,6 +196,15 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                         <span className="font-medium">-£{appliedDiscount.amount.toFixed(2)}</span>
                       </div>
                     )}
+                    {creditToUse > 0 && (
+                      <div className="flex justify-between text-sm text-blue-600">
+                        <span className="flex items-center gap-1">
+                          <CreditCard className="w-3 h-3" />
+                          Account Credit Used
+                        </span>
+                        <span className="font-medium">-£{creditToUse.toFixed(2)}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -233,10 +245,10 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                   </div>
 
                   <button
-                    onClick={onProceedToPay}
+                    onClick={() => onProceedToPay(creditToUse)}
                     className="w-full flex items-center justify-center px-4 py-3 border border-transparent text-base font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
-                    Click to Pay
+                    {totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay'}
                   </button>
                   <p className="text-xs text-center text-gray-500 mt-3 flex items-center justify-center gap-1">
                     <ShieldCheck className="w-3 h-3" /> Secure payment via Stripe

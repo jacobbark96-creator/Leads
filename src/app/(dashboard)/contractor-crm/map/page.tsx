@@ -154,13 +154,22 @@ export default function MapTab() {
       // Fetch onboarded contractors directly
       const { data: contractorsData, error: contractorsError } = await supabase
         .from('contractors')
-        .select('*')
+        .select('*, clients(*)')
         .eq('status', 'onboarded');
 
       if (contractorsError) throw contractorsError;
       
       // Filter contractors who have at least one valid service area
-      const validContractors = (contractorsData || []).filter((c: any) => 
+      const validContractors = (contractorsData || []).map(c => {
+        // Use service_areas from clients table if not present in contractors table
+        if ((!c.service_areas || c.service_areas.length === 0) && c.clients?.service_areas) {
+          c.service_areas = c.clients.service_areas;
+        }
+        if ((!c.services_offered || c.services_offered === '') && c.clients?.services_offered) {
+          c.services_offered = c.clients.services_offered;
+        }
+        return c;
+      }).filter((c: any) => 
         c.service_areas && 
         Array.isArray(c.service_areas) && 
         c.service_areas.length > 0 && 

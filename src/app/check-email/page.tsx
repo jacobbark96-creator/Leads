@@ -80,7 +80,7 @@ export default function CheckEmail() {
       
       if (authData.user) {
         toast.success('Logged in successfully!');
-        window.location.href = '/subscription';
+        window.location.href = '/my-openlead';
       }
     } catch (error: any) {
       toast.error(error.message || 'Authentication failed');
@@ -150,7 +150,7 @@ export default function CheckEmail() {
             </h2>
             <p className="mt-4 text-base text-slate-600 leading-relaxed">
               {isVerified 
-                ? "Your email has been confirmed. Please enter your password to continue to your subscription."
+                ? "Your email has been confirmed. Please enter your password to continue to your dashboard."
                 : <>We've sent a verification link to <span className="font-semibold text-slate-900">{emailFromUrl || 'your email'}</span>. Please click the link in that email to activate your account.</>
               }
             </p>

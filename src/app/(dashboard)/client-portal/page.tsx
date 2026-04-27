@@ -8,6 +8,7 @@ import { CalendarModal } from './components/CalendarModal';
 import { PurchasedLeadModal } from '../../../components/PurchasedLeadModal';
 import { WelcomeModal } from './components/WelcomeModal';
 import { AdvisorModal } from './components/AdvisorModal';
+import { TopUpModal } from '../../../components/TopUpModal';
 import toast from 'react-hot-toast';
 
 export default function ClientDashboard() {
@@ -22,8 +23,10 @@ export default function ClientDashboard() {
   const [hasMore, setHasMore] = useState(true);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
+  const [creditBalance, setCreditBalance] = useState<number>(0);
   const [advisorDetails, setAdvisorDetails] = useState<any | null>(null);
   const [showAdvisorModal, setShowAdvisorModal] = useState(false);
+  const [showTopUpModal, setShowTopUpModal] = useState(false);
   const { profile } = useAuthStore();
   const PAGE_SIZE = 24;
 
@@ -41,7 +44,7 @@ export default function ClientDashboard() {
       // Get the client's actual record ID
       const { data: clientData, error: clientError } = await supabase
         .from('clients')
-        .select('id, has_seen_welcome_modal, assigned_to')
+        .select('id, has_seen_welcome_modal, assigned_to, credit_balance')
         .eq('user_id', profile.id)
         .single();
         
@@ -53,6 +56,7 @@ export default function ClientDashboard() {
       }
 
       setClientId(clientData.id);
+      setCreditBalance(clientData.credit_balance || 0);
 
       // Show welcome modal if not seen
       if (isInitial && !clientData.has_seen_welcome_modal) {
@@ -184,7 +188,16 @@ export default function ClientDashboard() {
           <h1 className="text-2xl font-bold text-gray-900">My Purchased Leads</h1>
           <p className="mt-1 text-sm text-gray-500">View and manage your leads. Access your bookings through the calendar.</p>
         </div>
-        <div className="mt-4 sm:mt-0 flex gap-4">
+        <div className="mt-4 sm:mt-0 flex gap-4 items-center">
+          <div className="bg-white px-4 py-2 border border-gray-300 rounded-md shadow-sm flex items-center gap-3">
+            <div className="text-sm font-medium text-gray-500">Credit: <span className="text-lg font-bold text-gray-900 ml-1">£{creditBalance.toFixed(2)}</span></div>
+            <button
+              onClick={() => setShowTopUpModal(true)}
+              className="text-sm font-bold text-blue-600 hover:text-blue-800 transition-colors"
+            >
+              Top Up
+            </button>
+          </div>
           <button
             onClick={() => setIsCalendarOpen(true)}
             className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
@@ -307,6 +320,15 @@ export default function ClientDashboard() {
         onClose={() => setShowAdvisorModal(false)}
         advisor={advisorDetails}
       />
+      {showTopUpModal && profile && clientId && (
+        <TopUpModal
+          isOpen={showTopUpModal}
+          onClose={() => setShowTopUpModal(false)}
+          clientId={clientId}
+          userId={profile.id}
+          userEmail={profile.email || ''}
+        />
+      )}
     </div>
   );
 };

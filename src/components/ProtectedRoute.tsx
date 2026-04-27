@@ -37,7 +37,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
             .eq('user_id', profile.id)
             .single();
             
-          if (error) throw error;
+          if (error) {
+            // If the row doesn't exist (PGRST116 means zero rows returned)
+            if (error.code === 'PGRST116') {
+              setIsProfileComplete(false);
+              if (pathname !== '/my-openlead') {
+                window.location.href = '/my-openlead';
+              }
+              setProfileCheckLoading(false);
+              return;
+            }
+            throw error;
+          }
 
           if (data && !data.is_profile_complete) {
             setIsProfileComplete(false);

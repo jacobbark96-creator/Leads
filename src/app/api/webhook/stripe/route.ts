@@ -50,74 +50,78 @@ export async function POST(req: Request) {
       // Only send the welcome email if this checkout was for the subscription mode (initial signup)
       // If it's a 'payment' mode, it means they are buying a lead later on.
       if (session.mode === 'subscription') {
-        // Fetch the user's profile to get their name
-        const { data: profile } = await supabaseAdmin
-          .from('users')
-          .select('name, phone')
-          .eq('id', userId)
-          .single();
-
-        const name = profile?.name || 'Partner';
-        const phone = profile?.phone || '0000000000';
-
-        // 1. Update user role to 'client'
-        await supabaseAdmin
-          .from('users')
-          .update({ role: 'client' })
-          .eq('id', userId);
-
-        // 2. Check if client profile already exists
-        const { data: existingClient } = await supabaseAdmin
-          .from('clients')
-          .select('id')
-          .eq('user_id', userId)
-          .single();
-
-        // 3. Create client profile if it doesn't exist
-        if (!existingClient) {
-          const { data: newClient } = await supabaseAdmin.from('clients').insert({
-            user_id: userId,
-            company_name: `${name}'s Company`,
-            contact_name: name,
-            phone: phone,
-          }).select('id').single();
-
-          // Also create a corresponding record in the contractors table for the CRM
-          if (newClient) {
-            await supabaseAdmin.from('contractors').insert({
-              client_id: newClient.id,
-              company_name: `${name}'s Company`,
-              contact_name: name,
-              phone: phone,
-              status: 'onboarded'
-            });
-          }
-        }
-
-        // 4. Fire off the welcome email now that their subscription checkout is fully complete
-        await sendWelcomeEmail(customerEmail, name);
+        // This is legacy subscription handling. If they somehow hit this, we log it.
+        console.log('Legacy subscription event received');
       } else if (session.mode === 'payment') {
-        // This handles individual lead purchases
-        const leadId = session.metadata?.leadId;
+        const type = session.metadata?.type;
         const clientId = session.metadata?.clientId;
 
-        if (leadId && clientId) {
-          const { error } = await supabaseAdmin
-            .from('leads')
-            .update({ 
-              client_id: clientId, 
-              purchase_date: new Date().toISOString(),
-              status: 'sold'
-            })
-            .eq('id', leadId);
+        if (type === 'topup' && clientId) {
+          const amount = parseFloat(session.metadata?.amount || '0');
+          if (amount > 0) {
+            // First get the current balance using an RPC or a read-then-update
+            // Supabase JS doesn't have an atomic increment without RPC, so we do a quick read/write
+            const { data: currentClient } = await supabaseAdmin
+              .from('clients')
+              .select('credit_balance')
+              .eq('id', clientId)
+              .single();
             
-          if (error) {
-            console.error('Error assigning purchased lead:', error);
-          } else {
-            console.log(`Successfully assigned lead ${leadId} to client ${clientId}`);
+            const currentBalance = currentClient?.credit_balance || 0;
+            const newBalance = currentBalance + amount;
+
+            const { error } = await supabaseAdmin
+              .from('clients')
+              .update({ credit_balance: newBalance })
+              .eq('id', clientId);
+              
+            if (error) {
+              console.error('Error adding topup balance:', error);
+            } else {
+              console.log(`Successfully added £${amount} to client ${clientId}`);
+            }
           }
         } else {
-          console.error('Missing leadId or clientId in session metadata for payment');
+          // This handles individual lead purchases
+          const leadId = session.metadata?.leadId;
+          const usedCredit = parseFloat(session.metadata?.usedCredit || '0');
+
+          if (leadId && clientId) {
+            // Assign lead
+            const { error } = await supabaseAdmin
+              .from('leads')
+              .update({ 
+                client_id: clientId, 
+                purchase_date: new Date().toISOString(),
+                status: 'sold'
+              })
+              .eq('id', leadId);
+              
+            if (error) {
+              console.error('Error assigning purchased lead:', error);
+            } else {
+              console.log(`Successfully assigned lead ${leadId} to client ${clientId}`);
+              
+              // Deduct credit if any was used
+              if (usedCredit > 0) {
+                const { data: currentClient } = await supabaseAdmin
+                  .from('clients')
+                  .select('credit_balance')
+                  .eq('id', clientId)
+                  .single();
+                
+                const currentBalance = currentClient?.credit_balance || 0;
+                const newBalance = Math.max(0, currentBalance - usedCredit);
+                
+                await supabaseAdmin
+                  .from('clients')
+                  .update({ credit_balance: newBalance })
+                  .eq('id', clientId);
+              }
+            }
+          } else {
+            console.error('Missing leadId or clientId in session metadata for payment');
+          }
         }
       }
       

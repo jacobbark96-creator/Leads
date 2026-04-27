@@ -63,7 +63,7 @@ function ContractorProcessingContent() {
       // Fetch PAGE_SIZE + 1 to know if there's a next page without a slow exact count query
       let query = supabase
         .from('contractors')
-        .select('id, name, company_name, contact_name, status, phone, assigned_to', { count: 'exact' })
+        .select('*', { count: 'exact' })
         .neq('status', 'onboarded')
         .order('created_at', { ascending: false });
 

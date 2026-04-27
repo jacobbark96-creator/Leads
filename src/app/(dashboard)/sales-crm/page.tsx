@@ -67,7 +67,7 @@ function LeadProcessingContent() {
       // Fetch PAGE_SIZE + 1 to know if there's a next page without a slow exact count query
       let query = supabase
         .from('leads')
-        .select('id, name, status, phone, assigned_to, company', { count: 'exact' })
+        .select('*', { count: 'exact' })
         .neq('status', 'qualified')
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);

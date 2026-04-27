@@ -16,19 +16,20 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [photos, setPhotos] = useState<string[]>(() => {
-    if (!lead.photos) return [];
-    if (Array.isArray(lead.photos)) return lead.photos;
-    if (typeof lead.photos === 'string') {
-      if (lead.photos === '{}') return [];
+    const p = lead.photos as any;
+    if (!p) return [];
+    if (Array.isArray(p)) return p;
+    if (typeof p === 'string') {
+      if (p === '{}') return [];
       try {
-        const parsed = JSON.parse(lead.photos);
+        const parsed = JSON.parse(p);
         if (Array.isArray(parsed)) return parsed;
         return [parsed];
       } catch {
-        if (lead.photos.startsWith('{') && lead.photos.endsWith('}')) {
-          return lead.photos.slice(1, -1).split(',').map(s => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean);
+        if (p.startsWith('{') && p.endsWith('}')) {
+          return p.slice(1, -1).split(',').map((s: string) => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean);
         }
-        return [lead.photos];
+        return [p];
       }
     }
     return [];
@@ -81,8 +82,69 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
   useEffect(() => {
     if (isOpen) {
       fetchCategories();
+      
+      // Reset form data when opened to ensure it has the latest lead data
+      setFormData({
+        category_id: lead.category_id || '',
+        monthly_spend: lead.monthly_spend ? lead.monthly_spend.toString() : '',
+        location: lead.location || '',
+        timeframe: lead.timeframe || '',
+        roof_condition: lead.roof_condition || '',
+        roof_material: lead.roof_material || '',
+        cover_skylights: lead.cover_skylights || false,
+        ground_mount: lead.ground_mount || false,
+        unit_rate: lead.unit_rate ? lead.unit_rate.toString() : '',
+        est_ann_consumption: lead.est_ann_consumption ? lead.est_ann_consumption.toString() : '',
+        est_system_size: lead.est_system_size || '',
+        qualification_notes: lead.qualification_notes || '',
+        latitude: lead.latitude || null as number | null,
+        longitude: lead.longitude || null as number | null,
+        property_ownership: lead.property_ownership || '',
+        lease_duration: lead.lease_duration || '',
+        likely_to_renew: lead.likely_to_renew || '',
+        landlord_permission: lead.landlord_permission || '',
+        payment_options: lead.payment_options || '',
+        roof_size: lead.roof_size || '',
+        electrical_supply: lead.electrical_supply || '',
+        solar_location: lead.solar_location || '',
+        availability: lead.availability || '',
+        job_title: lead.job_title || '',
+        bills_url: lead.bills_url || '',
+      });
+      
+      // Reset photos
+      const p = lead.photos as any;
+      if (!p) setPhotos([]);
+      else if (Array.isArray(p)) setPhotos(p);
+      else if (typeof p === 'string') {
+        if (p === '{}') setPhotos([]);
+        else {
+          try {
+            const parsed = JSON.parse(p);
+            setPhotos(Array.isArray(parsed) ? parsed : [parsed]);
+          } catch {
+            if (p.startsWith('{') && p.endsWith('}')) {
+              setPhotos(p.slice(1, -1).split(',').map((s: string) => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean));
+            } else {
+              setPhotos([p]);
+            }
+          }
+        }
+      }
+      
+      // Reset bills
+      let raw = (lead.bills_url || '').trim();
+      if (!raw) setBillUrls([]);
+      else if (raw.startsWith('{') && raw.endsWith('}')) {
+        raw = raw.substring(1, raw.length - 1);
+        setBillUrls(raw.split(',').map(s => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean));
+      } else if (raw.includes(',')) {
+        setBillUrls(raw.split(',').map((u) => u.trim()).filter(Boolean));
+      } else {
+        setBillUrls([raw]);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, lead]);
 
   const fetchCategories = async () => {
     try {

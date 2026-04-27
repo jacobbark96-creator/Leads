@@ -36,8 +36,24 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
   useEffect(() => {
     if (isOpen) {
       fetchCategories();
+      setFormData({
+        company_name: contractor.company || '',
+        contact_name: contractor.name || '',
+        phone: contractor.phone || '',
+        email: contractor.email || '',
+        password: '',
+        other_contacts: '',
+        other_contact_numbers: '',
+        address: '',
+        areas_covered: '',
+        service_areas: [],
+        internal_notes: '',
+        latitude: null,
+        longitude: null
+      });
+      setSelectedServices([]);
     }
-  }, [isOpen]);
+  }, [isOpen, contractor]);
 
   const fetchCategories = async () => {
     try {

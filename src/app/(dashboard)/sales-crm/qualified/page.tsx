@@ -69,7 +69,7 @@ function QualifiedLeadsContent() {
 
       let query = supabase
         .from('leads')
-        .select('id, name, status, phone, assigned_to, is_marketed, location, latitude, longitude, category_id, monthly_spend, timeframe, est_system_size, qualification_notes, photos, price, purchase_date, booking_date, company, clients(company_name, contact_name)', { count: 'exact' })
+        .select('*, clients(company_name, contact_name)', { count: 'exact' })
         .in('status', ['qualified', 'sold'])
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);

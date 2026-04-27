@@ -59,7 +59,7 @@ function OnboardedContractorsContent() {
 
       let query = supabase
         .from('contractors')
-        .select('id, name, company_name, contact_name, status, phone, assigned_to', { count: 'exact' })
+        .select('*', { count: 'exact' })
         .eq('status', 'onboarded')
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);

@@ -295,7 +295,7 @@ function ContractorDetailsContent() {
               <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
                 <User className="w-8 h-8" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">{contractor.company_name || contractor.name}</h2>
+              <h2 className="text-2xl font-bold text-gray-900">{contractor.company_name || contractor.name || 'Unnamed Contractor'}</h2>
               {contractor.contact_name && <p className="text-gray-500 font-medium mt-1">{contractor.contact_name}</p>}
               {contractor.company && !contractor.company_name && <p className="text-gray-500 font-medium mt-1">{contractor.company}</p>}
             </div>

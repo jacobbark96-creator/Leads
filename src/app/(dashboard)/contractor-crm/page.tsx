@@ -295,10 +295,10 @@ function ContractorProcessingContent() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900 truncate">
-                      {contractor.company_name || contractor.name}
+                      {contractor.company_name || contractor.name || 'Unnamed Contractor'}
                     </p>
                     <div className="flex items-center gap-2 mt-0.5">
-                      {contractor.company_name && contractor.contact_name && (
+                      {contractor.contact_name && (
                         <p className="text-xs text-gray-500 truncate italic">Contact: {contractor.contact_name}</p>
                       )}
                       {contractor.phone && <p className="text-sm text-gray-500 truncate">{contractor.phone}</p>}

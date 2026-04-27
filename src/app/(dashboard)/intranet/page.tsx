@@ -219,63 +219,128 @@ export default function PricingMatrix() {
         </div>
       )}
 
-      <div className="flex flex-col">
-        <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              {loading ? (
-                <div className="bg-white p-12 flex justify-center items-center">
-                  <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-                </div>
-              ) : (
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      {headers.map((header, idx) => (
-                        <th key={idx} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                          {header}
-                        </th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {rows.length > 0 ? (
-                      rows.map((row, rowIdx) => (
-                        <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-blue-50/50 transition-colors'}>
-                          {headers.map((header, colIdx) => {
-                            // Style the price and discount columns slightly differently if we can detect them
-                            const isPrice = header.toLowerCase().includes('price');
-                            const isDiscount = header.toLowerCase().includes('discount');
-                            
-                            return (
-                              <td 
-                                key={colIdx} 
-                                className={`px-6 py-4 whitespace-nowrap text-sm ${
-                                  colIdx === 0 ? 'font-medium text-gray-900' :
-                                  isPrice ? 'text-gray-900 font-semibold' :
-                                  isDiscount ? 'text-green-600 font-medium' :
-                                  'text-gray-500'
-                                }`}
-                              >
-                                {row[header] || '-'}
-                              </td>
-                            );
-                          })}
-                        </tr>
-                      ))
-                    ) : (
-                      <tr>
-                        <td colSpan={headers.length || 1} className="px-6 py-8 text-center text-sm text-gray-500">
-                          No pricing data available.
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
-              )}
-            </div>
+      <div className="flex flex-col space-y-8">
+        {loading ? (
+          <div className="bg-white p-12 flex justify-center items-center shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
-        </div>
+        ) : (
+          (() => {
+            // Find the category column (case-insensitive)
+            const categoryHeader = headers.find(h => h.toLowerCase() === 'category');
+            
+            if (!categoryHeader || rows.length === 0) {
+              // Fallback to single table if no category column exists
+              return (
+                <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                  <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            {headers.map((header, idx) => (
+                              <th key={idx} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {rows.length > 0 ? (
+                            rows.map((row, rowIdx) => (
+                              <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-blue-50/50 transition-colors'}>
+                                {headers.map((header, colIdx) => {
+                                  const isPrice = header.toLowerCase().includes('price');
+                                  const isDiscount = header.toLowerCase().includes('discount');
+                                  return (
+                                    <td 
+                                      key={colIdx} 
+                                      className={`px-6 py-4 whitespace-nowrap text-sm ${
+                                        colIdx === 0 ? 'font-medium text-gray-900' :
+                                        isPrice ? 'text-gray-900 font-semibold' :
+                                        isDiscount ? 'text-green-600 font-medium' :
+                                        'text-gray-500'
+                                      }`}
+                                    >
+                                      {row[header] || '-'}
+                                    </td>
+                                  );
+                                })}
+                              </tr>
+                            ))
+                          ) : (
+                            <tr>
+                              <td colSpan={headers.length || 1} className="px-6 py-8 text-center text-sm text-gray-500">
+                                No pricing data available.
+                              </td>
+                            </tr>
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              );
+            }
+
+            // Group by category
+            const groupedRows = rows.reduce((acc: Record<string, any[]>, row) => {
+              const cat = row[categoryHeader] || 'Other';
+              if (!acc[cat]) acc[cat] = [];
+              acc[cat].push(row);
+              return acc;
+            }, {});
+
+            // Headers excluding the category column
+            const displayHeaders = headers.filter(h => h !== categoryHeader);
+
+            return Object.entries(groupedRows).map(([category, catRows]: [string, any[]]) => (
+              <div key={category} className="mb-2">
+                <h3 className="text-lg font-bold text-gray-900 mb-3 px-1">{category}</h3>
+                <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
+                  <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
+                    <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
+                      <table className="min-w-full divide-y divide-gray-200">
+                        <thead className="bg-gray-50">
+                          <tr>
+                            {displayHeaders.map((header, idx) => (
+                              <th key={idx} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                {header}
+                              </th>
+                            ))}
+                          </tr>
+                        </thead>
+                        <tbody className="bg-white divide-y divide-gray-200">
+                          {catRows.map((row, rowIdx) => (
+                            <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-blue-50/50 transition-colors'}>
+                              {displayHeaders.map((header, colIdx) => {
+                                const isPrice = header.toLowerCase().includes('price');
+                                const isDiscount = header.toLowerCase().includes('discount');
+                                return (
+                                  <td 
+                                    key={colIdx} 
+                                    className={`px-6 py-4 whitespace-nowrap text-sm ${
+                                      colIdx === 0 ? 'font-medium text-gray-900' :
+                                      isPrice ? 'text-gray-900 font-semibold' :
+                                      isDiscount ? 'text-green-600 font-medium' :
+                                      'text-gray-500'
+                                    }`}
+                                  >
+                                    {row[header] || '-'}
+                                  </td>
+                                );
+                              })}
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ));
+          })()
+        )}
       </div>
     </div>
   );

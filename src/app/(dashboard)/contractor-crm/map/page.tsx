@@ -390,6 +390,15 @@ export default function MapTab() {
                   </div>
                   <h3 className="font-bold text-lg text-gray-900">£{selectedLead.price || '135.00'}</h3>
                 </div>
+
+                <div className="mb-3">
+                  <span className="font-bold text-lg text-gray-900 block leading-tight mb-0.5">
+                    {selectedLead.company || selectedLead.name || 'Unknown Lead'}
+                  </span>
+                  {selectedLead.company && selectedLead.name && (
+                    <span className="text-sm font-semibold text-blue-600">{selectedLead.name}</span>
+                  )}
+                </div>
                 
                 {selectedLead.photos && selectedLead.photos.length > 0 && (
                   <div className="mb-2 rounded-md overflow-hidden border border-gray-200">

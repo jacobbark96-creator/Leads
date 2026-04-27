@@ -2,11 +2,6 @@ import { NextResponse } from 'next/server';
 import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
 
-// Limit execution time to 5 minutes on Vercel
-// Note: This is only supported on paid Vercel plans or specific edge environments.
-// If you are on a free tier, Vercel restricts this to 10 seconds.
-export const maxDuration = 300; 
-
 export async function GET(req: Request) {
   // Simple basic auth or cron secret check to prevent unauthorized scraping
   const authHeader = req.headers.get('authorization');

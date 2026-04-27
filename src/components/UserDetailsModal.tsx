@@ -553,7 +553,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
               {hasClientProfile && (
                 <div className="pt-6 border-t border-gray-200">
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Building className="w-4 h-4 text-gray-400" /> Client Profile Details
+                    <Building className="w-4 h-4 text-gray-400" /> Contractor Profile Details
                   </h3>
 
                   {loadingClient && (

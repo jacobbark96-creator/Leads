@@ -151,25 +151,15 @@ export default function MapTab() {
       if (catError) throw catError;
       setCategories(catData || []);
 
-      // Fetch onboarded contractors directly
-      const { data: contractorsData, error: contractorsError } = await supabase
-        .from('contractors')
-        .select('*, clients(*)')
-        .eq('status', 'onboarded');
+      // Fetch ALL active clients (these are the true onboarded contractors)
+      const { data: clientsData, error: clientsError } = await supabase
+        .from('clients')
+        .select('*');
 
-      if (contractorsError) throw contractorsError;
+      if (clientsError) throw clientsError;
       
-      // Filter contractors who have at least one valid service area
-      const validContractors = (contractorsData || []).map(c => {
-        // Use service_areas from clients table if not present in contractors table
-        if ((!c.service_areas || c.service_areas.length === 0) && c.clients?.service_areas) {
-          c.service_areas = c.clients.service_areas;
-        }
-        if ((!c.services_offered || c.services_offered === '') && c.clients?.services_offered) {
-          c.services_offered = c.clients.services_offered;
-        }
-        return c;
-      }).filter((c: any) => 
+      // Filter clients who have at least one valid service area
+      const validClients = (clientsData || []).filter((c: any) => 
         c.service_areas && 
         Array.isArray(c.service_areas) && 
         c.service_areas.length > 0 && 
@@ -177,7 +167,7 @@ export default function MapTab() {
         c.service_areas[0].lng
       );
       
-      setClients(validContractors);
+      setClients(validClients);
 
       // Fetch marketed, unpurchased leads
       const { data: leadsData, error: leadsError } = await supabase
@@ -349,15 +339,10 @@ export default function MapTab() {
               onCloseClick={() => setSelectedClient(null)}
             >
               <div className="p-2 max-w-[250px]">
-                <a 
-                  href={`/contractor-crm/contractor?id=${selectedClient.id}`}
-                  target="_blank"
-                  rel="noopener noreferrer" 
-                  className="font-bold text-lg text-blue-600 hover:text-blue-800 hover:underline block"
-                >
+                <span className="font-bold text-lg text-gray-900 block mb-1">
                   {(selectedClient as any).company_name || 'Unknown Company'}
-                </a>
-                <p className="text-sm text-gray-600 mb-2">{(selectedClient as any).contact_name}</p>
+                </span>
+                <p className="text-sm font-semibold text-blue-600 mb-2">{(selectedClient as any).contact_name}</p>
                 <div className="space-y-1 text-xs">
                   <div className="flex items-start gap-2">
                     <MapPin className="w-3 h-3 text-gray-400 mt-0.5" />

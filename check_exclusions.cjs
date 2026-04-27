@@ -5,7 +5,7 @@ const supabase = createClient(
 );
 
 async function run() {
-  const { data } = await supabase.from('leads').select('id, name, location, property_ownership').limit(5);
-  console.log('Leads:', data);
+  const { data } = await supabase.from('grant_exclusions').select('*');
+  console.log('Exclusions:', data);
 }
 run();

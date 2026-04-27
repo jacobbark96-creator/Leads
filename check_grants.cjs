@@ -5,7 +5,7 @@ const supabase = createClient(
 );
 
 async function run() {
-  const { data } = await supabase.from('leads').select('id, name, location, property_ownership').limit(5);
-  console.log('Leads:', data);
+  const { data } = await supabase.from('government_grants').select('id, title, location, who_can_apply').limit(5);
+  console.log('Grants sample:', data);
 }
 run();

@@ -189,7 +189,9 @@ function LeadDetailsContent() {
         
         const grantsData = grantsRes.data;
         const exclusionsData = exclusionsRes.data || [];
-        const exclusionKeywords = exclusionsData.map(e => e.keyword.toLowerCase());
+        const exclusionKeywords = exclusionsData
+          .map(e => (e.keyword || '').toLowerCase().trim())
+          .filter(Boolean);
         
         if (grantsData) {
           // Do client-side matching for accuracy due to unstructured text
@@ -205,24 +207,37 @@ function LeadDetailsContent() {
             
             // Check location match (or if it's national)
             let locMatch = false;
-            if (!locText || locText.includes('national') || locText.includes('england') || locText.includes('uk')) {
+            const leadLoc = (leadData.location || '').toLowerCase();
+            
+            if (!locText || locText.includes('national') || locText.includes('uk')) {
               locMatch = true;
-            } else if (leadData.location && locText.includes(leadData.location.split(',')[0].trim().toLowerCase())) {
+            } else if (locText.includes('england') && (!leadLoc.includes('scotland') && !leadLoc.includes('wales') && !leadLoc.includes('northern ireland'))) {
+              locMatch = true;
+            } else if (locText.includes('scotland') && leadLoc.includes('scotland')) {
+              locMatch = true;
+            } else if (locText.includes('wales') && leadLoc.includes('wales')) {
+              locMatch = true;
+            } else if (leadLoc && locText.includes(leadLoc.split(',')[0].trim())) {
               locMatch = true;
             }
 
             // Check sector match
             let sectorMatch = false;
+            const propOwnership = (leadData.property_ownership || '').toLowerCase();
+            
             if (!whoText) {
               sectorMatch = true;
-            } else if ((leadData.property_ownership === 'Commercial' || leadData.property_ownership === 'Business') && 
-                      (whoText.includes('private sector') || whoText.includes('business'))) {
-              sectorMatch = true;
-            } else if ((leadData.property_ownership === 'Residential' || leadData.property_ownership === 'Homeowner') && 
-                      (whoText.includes('personal') || whoText.includes('individual'))) {
-              sectorMatch = true;
-            } else if (!leadData.property_ownership) {
-              sectorMatch = true; // Show if we don't know the sector
+            } else if (propOwnership.includes('commercial') || propOwnership.includes('business')) {
+              if (whoText.includes('private sector') || whoText.includes('business') || whoText.includes('non-profit')) {
+                sectorMatch = true;
+              }
+            } else if (propOwnership.includes('residential') || propOwnership.includes('homeowner') || propOwnership.includes('owned') || propOwnership.includes('rented')) {
+              if (whoText.includes('personal') || whoText.includes('individual') || whoText.includes('homeowner')) {
+                sectorMatch = true;
+              }
+            } else {
+              // If we don't know the exact sector, or it doesn't match above, just show it
+              sectorMatch = true; 
             }
 
             return locMatch && sectorMatch;

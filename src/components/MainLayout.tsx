@@ -12,18 +12,20 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [clientName, setClientName] = useState<string | null>(null);
+  const [clientCompanyName, setClientCompanyName] = useState<string | null>(null);
 
   useEffect(() => {
     if (profile?.role === 'client') {
       const fetchClient = async () => {
         const { data } = await supabase
           .from('clients')
-          .select('contact_name')
+          .select('contact_name, company_name')
           .eq('user_id', profile.id)
           .single();
         
-        if (data?.contact_name) {
-          setClientName(data.contact_name);
+        if (data) {
+          if (data.contact_name) setClientName(data.contact_name);
+          if (data.company_name) setClientCompanyName(data.company_name);
         }
       };
       fetchClient();
@@ -121,6 +123,11 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                     <span className="text-sm font-bold text-gray-900 leading-none">
                       {clientName || profile.name}
                     </span>
+                    {profile.role === 'client' && clientCompanyName && (
+                      <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mt-0.5 leading-none">
+                        {clientCompanyName}
+                      </span>
+                    )}
                     {profile.role !== 'client' && (
                       <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mt-0.5 leading-none">
                         {profile.role.replace('_', ' ')}
@@ -190,6 +197,9 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                       </div>
                       <div>
                         <div className="text-base font-bold text-gray-900">{clientName || profile.name}</div>
+                        {profile.role === 'client' && clientCompanyName && (
+                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">{clientCompanyName}</div>
+                        )}
                         {profile.role !== 'client' && (
                           <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">{profile.role.replace('_', ' ')}</div>
                         )}

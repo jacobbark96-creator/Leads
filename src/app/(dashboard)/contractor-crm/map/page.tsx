@@ -412,7 +412,7 @@ export default function MapTab() {
 
                 <p className="text-sm text-gray-600 mb-2">{selectedLead.location}</p>
                 <div className="space-y-1 text-xs text-gray-500">
-                  <p>Est. Spend: £{selectedLead.monthly_spend || 'N/A'}</p>
+                  <p>Est. Spend: £{selectedLead.monthly_spend ? Number(selectedLead.monthly_spend).toLocaleString() : 'N/A'}</p>
                   <p>System Size: {selectedLead.est_system_size || 'N/A'}</p>
                 </div>
               </div>

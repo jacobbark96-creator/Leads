@@ -319,7 +319,7 @@ export default function Marketplace() {
                 <div className="space-y-2 flex-1">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500">Est. Spend:</span>
-                    <span className="font-semibold text-gray-900 truncate pl-2">£{lead.monthly_spend || 'N/A'}</span>
+                    <span className="font-semibold text-gray-900 truncate pl-2">£{lead.monthly_spend ? Number(lead.monthly_spend).toLocaleString() : 'N/A'}</span>
                   </div>
                   <div className="flex items-center text-xs text-gray-600">
                     <Calendar className="w-3.5 h-3.5 mr-1.5 text-gray-400 shrink-0" />

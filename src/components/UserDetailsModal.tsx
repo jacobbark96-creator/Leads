@@ -1,8 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
-import { X, User, Mail, Shield, Key, Building, Upload, Trash2 } from 'lucide-react';
+import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
+import Autocomplete from 'react-google-autocomplete';
 
 type CategoryOption = { id: string; name: string };
 type AdvisorOption = { id: string; name: string };
@@ -546,7 +547,26 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
-                      <input type="text" value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                      <div className="relative">
+                        <Autocomplete
+                          apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
+                          onPlaceSelected={(place) => {
+                            setFormData(prev => ({ 
+                              ...prev, 
+                              address: place?.formatted_address || place?.name || ''
+                            }));
+                          }}
+                          options={{
+                            types: [],
+                            componentRestrictions: { country: "gb" },
+                            fields: ['formatted_address', 'name']
+                          }}
+                          defaultValue={formData.address}
+                          placeholder="Search address..."
+                          className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500"
+                        />
+                        <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                      </div>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Other Contacts</label>

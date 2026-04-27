@@ -100,6 +100,12 @@ export interface Contractor {
   assigned_to: string | null;
   created_at: string;
   service_areas?: any[] | null;
+  clients?: {
+    address?: string | null;
+    other_contacts?: string | null;
+    other_contact_numbers?: string | null;
+    services_offered?: string | null;
+  } | null;
 }
 
 export interface StaffUser {

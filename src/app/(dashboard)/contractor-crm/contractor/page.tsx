@@ -82,7 +82,7 @@ function ContractorDetailsContent() {
       // Fetch current lead
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
-        .select('*')
+        .select('*, clients(*)')
         .eq('id', id)
         .single();
         
@@ -318,6 +318,28 @@ function ContractorDetailsContent() {
                     <div className="p-2 bg-gray-50 rounded-lg"><Mail className="w-5 h-5 text-gray-400" /></div>
                     <span className="truncate">{contractor.email}</span>
                   </a>
+                </div>
+              )}
+
+              {contractor.clients?.address && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Business Address</label>
+                  <div className="flex items-center gap-3 text-gray-900">
+                    <div className="p-2 bg-gray-50 rounded-lg"><MapPin className="w-5 h-5 text-gray-400" /></div>
+                    <span className="truncate">{contractor.clients.address}</span>
+                  </div>
+                </div>
+              )}
+
+              {contractor.clients?.other_contacts && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Other Contacts</label>
+                  <div className="text-gray-900 font-medium">
+                    {contractor.clients.other_contacts}
+                    {contractor.clients.other_contact_numbers && (
+                      <span className="text-gray-500 font-normal ml-2">({contractor.clients.other_contact_numbers})</span>
+                    )}
+                  </div>
                 </div>
               )}
 

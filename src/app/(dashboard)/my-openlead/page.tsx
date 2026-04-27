@@ -102,7 +102,7 @@ export default function MyOpenlead() {
                 company_name: meta.company_name || '',
                 contact_name: meta.full_name || profile!.name || '',
                 phone: meta.phone || profile!.phone || '',
-                status: 'fresh'
+                status: 'onboarded'
               });
             }
           }

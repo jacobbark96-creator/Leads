@@ -209,6 +209,24 @@ export default function MapTab() {
     return getServiceColor(category?.name);
   };
 
+  const getClientColor = (servicesString: string | null | undefined) => {
+    if (!servicesString) return '#4B5563'; // Gray
+    
+    // First, check if the string contains a category name directly (legacy)
+    const firstService = servicesString.split(',')[0].trim();
+    
+    // Then check if it's a UUID. If it's a UUID, look it up in categories
+    const isUUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(firstService);
+    
+    if (isUUID) {
+      const category = categories.find(c => c.id === firstService);
+      return getServiceColor(category?.name);
+    }
+    
+    // If not a UUID, it's just a raw category name
+    return getServiceColor(firstService);
+  };
+
   const createPinIcon = (color: string) => {
     if (typeof window === 'undefined' || !window.google) return null;
     return {
@@ -308,7 +326,7 @@ export default function MapTab() {
                 key={client.id}
                 position={{ lat: Number(firstArea.lat), lng: Number(firstArea.lng) }}
                 icon={createStarIcon(selectedCategory === 'all' 
-                  ? getServiceColor(client.services_offered) 
+                  ? getClientColor(client.services_offered) 
                   : getServiceColor(categories.find(c => c.id === selectedCategory)?.name)
                 )}
                 onClick={() => {
@@ -324,7 +342,7 @@ export default function MapTab() {
             <Marker
               key={lead.id}
               position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
-              icon={createPinIcon(darkenHex(getLeadColor(lead.category_id), 30))}
+              icon={createPinIcon(getLeadColor(lead.category_id))}
               onClick={() => {
                 setSelectedLead(lead);
                 setSelectedClient(null);

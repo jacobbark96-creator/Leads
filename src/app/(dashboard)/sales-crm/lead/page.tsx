@@ -5,11 +5,19 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { Lead, StaffUser } from '@/types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft } from 'lucide-react';
+import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft, Award } from 'lucide-react';
 
 import { QualifyLeadModal } from '@/components/QualifyLeadModal';
 import { MarketLeadModal } from '@/components/MarketLeadModal';
 import { AddLeadModal } from '@/components/AddLeadModal';
+
+interface Grant {
+  id: string;
+  title: string;
+  url: string;
+  amount: string | null;
+  closing_date: string | null;
+}
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -44,6 +52,7 @@ function LeadDetailsContent() {
   
   const [lead, setLead] = useState<Lead | null>(null);
   const [notes, setNotes] = useState<LeadNote[]>([]);
+  const [eligibleGrants, setEligibleGrants] = useState<Grant[]>([]);
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
   const [newNote, setNewNote] = useState('');
@@ -121,6 +130,59 @@ function LeadDetailsContent() {
         
       if (notesError) throw notesError;
       setNotes(notesData || []);
+      
+      // Fetch matching grants
+      if (leadData.location || leadData.property_ownership) {
+        let grantsQuery = supabase.from('government_grants').select('id, title, url, amount, closing_date');
+        
+        const keywords = [];
+        if (leadData.location) keywords.push(`'${leadData.location.split(',')[0].trim()}'`);
+        
+        // Map property ownership to who_can_apply keywords
+        if (leadData.property_ownership === 'Commercial' || leadData.property_ownership === 'Business') {
+          keywords.push("'Private Sector'", "'Business'", "'Commercial'");
+        } else if (leadData.property_ownership === 'Residential' || leadData.property_ownership === 'Homeowner') {
+          keywords.push("'Personal'", "'Individual'", "'Homeowner'", "'Residential'");
+        }
+        
+        // Use text search if we have keywords, else fetch all to let UI handle (or fetch none)
+        // A simpler approach since location/who_can_apply are TEXT:
+        const { data: grantsData } = await supabase.from('government_grants').select('id, title, url, amount, closing_date');
+        
+        if (grantsData) {
+          // Do client-side matching for accuracy due to unstructured text
+          const matched = grantsData.filter(g => {
+            const locText = (g as any).location?.toLowerCase() || '';
+            const whoText = (g as any).who_can_apply?.toLowerCase() || '';
+            
+            // Check location match (or if it's national)
+            let locMatch = false;
+            if (!locText || locText.includes('national') || locText.includes('england') || locText.includes('uk')) {
+              locMatch = true;
+            } else if (leadData.location && locText.includes(leadData.location.split(',')[0].trim().toLowerCase())) {
+              locMatch = true;
+            }
+
+            // Check sector match
+            let sectorMatch = false;
+            if (!whoText) {
+              sectorMatch = true;
+            } else if ((leadData.property_ownership === 'Commercial' || leadData.property_ownership === 'Business') && 
+                      (whoText.includes('private sector') || whoText.includes('business'))) {
+              sectorMatch = true;
+            } else if ((leadData.property_ownership === 'Residential' || leadData.property_ownership === 'Homeowner') && 
+                      (whoText.includes('personal') || whoText.includes('individual'))) {
+              sectorMatch = true;
+            } else if (!leadData.property_ownership) {
+              sectorMatch = true; // Show if we don't know the sector
+            }
+
+            return locMatch && sectorMatch;
+          });
+          
+          setEligibleGrants(matched.slice(0, 3)); // Only show top 3 to avoid clutter
+        }
+      }
       
     } catch (error: any) {
       toast.error('Failed to load lead details: ' + error.message);
@@ -430,6 +492,30 @@ function LeadDetailsContent() {
                         </div>
                       );
                     })}
+                  </div>
+                </div>
+              )}
+
+              {/* Eligible Grants Widget */}
+              {eligibleGrants.length > 0 && (
+                <div className="pt-4 border-t border-gray-100">
+                  <div className="flex justify-between items-center mb-3">
+                    <label className="text-xs font-bold text-gray-500 uppercase tracking-wider flex items-center gap-1.5">
+                      <Award className="w-3 h-3 text-blue-500" /> Eligible Grants
+                    </label>
+                  </div>
+                  <div className="space-y-3">
+                    {eligibleGrants.map(grant => (
+                      <div key={grant.id} className="bg-blue-50/50 p-3 rounded-lg border border-blue-100 hover:bg-blue-50 transition-colors">
+                        <a href={grant.url} target="_blank" rel="noopener noreferrer" className="font-bold text-sm text-blue-700 hover:underline block mb-1 line-clamp-2">
+                          {grant.title}
+                        </a>
+                        <div className="flex justify-between items-center mt-2 text-xs">
+                          <span className="font-semibold text-gray-900">{grant.amount || 'Amount varies'}</span>
+                          {grant.closing_date && <span className="text-red-600 font-medium">Closes: {grant.closing_date}</span>}
+                        </div>
+                      </div>
+                    ))}
                   </div>
                 </div>
               )}

@@ -9,7 +9,7 @@ import { Client } from '../../../types';
 import { MultiServiceArea } from '../../../components/MultiServiceArea';
 
 export default function MyOpenlead() {
-  const { profile } = useAuthStore();
+  const { user, profile } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [clientData, setClientData] = useState<Client | null>(null);
   const [coachName, setCoachName] = useState<string | null>(null);
@@ -23,7 +23,10 @@ export default function MyOpenlead() {
     contact_name: '',
     phone: '',
     services_offered: '',
-    service_areas: [] as any[]
+    service_areas: [] as any[],
+    address: '',
+    other_contacts: '',
+    other_contact_numbers: ''
   });
 
   const [saving, setSaving] = useState(false);
@@ -60,13 +63,17 @@ export default function MyOpenlead() {
       if (clientError) {
         if (clientError.code === 'PGRST116') {
           // If no client profile exists yet (new signup), create one
+          const meta = user?.user_metadata || {};
           const { data: newClient, error: insertError } = await supabase
             .from('clients')
             .insert({
               user_id: profile!.id,
-              company_name: '',
-              contact_name: profile!.name || '',
-              phone: profile!.phone || '',
+              company_name: meta.company_name || '',
+              contact_name: meta.full_name || profile!.name || '',
+              phone: meta.phone || profile!.phone || '',
+              address: meta.address || '',
+              other_contacts: meta.other_contacts || '',
+              other_contact_numbers: meta.other_contact_numbers || '',
               is_profile_complete: false
             })
             .select()
@@ -92,9 +99,9 @@ export default function MyOpenlead() {
             if (newClient) {
               await supabase.from('contractors').insert({
                 client_id: newClient.id,
-                company_name: '',
-                contact_name: profile!.name || '',
-                phone: profile!.phone || '',
+                company_name: meta.company_name || '',
+                contact_name: meta.full_name || profile!.name || '',
+                phone: meta.phone || profile!.phone || '',
                 status: 'fresh'
               });
             }
@@ -106,12 +113,15 @@ export default function MyOpenlead() {
       
       setClientData(client);
       setFormData({
-        company_name: client.company_name || '',
-        contact_name: client.contact_name || '',
-        phone: client.phone || '',
-        services_offered: client.services_offered || '',
-        service_areas: client.service_areas || []
-      });
+          company_name: client.company_name || '',
+          contact_name: client.contact_name || '',
+          phone: client.phone || '',
+          services_offered: client.services_offered || '',
+          service_areas: client.service_areas || [],
+          address: client.address || '',
+          other_contacts: client.other_contacts || '',
+          other_contact_numbers: client.other_contact_numbers || ''
+        });
 
       const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
       const tokens = (client.services_offered || '').split(',').map((t: string) => t.trim()).filter(Boolean);
@@ -185,7 +195,14 @@ export default function MyOpenlead() {
       }
 
       // Check if profile is completely filled
-      const isComplete = formData.service_areas.length > 0 && !!formData.company_name && !!formData.contact_name && !!formData.phone && selectedCategoryIds.length > 0;
+      const isComplete = formData.service_areas.length > 0 && 
+                         !!formData.company_name && 
+                         !!formData.contact_name && 
+                         !!formData.phone && 
+                         !!formData.address &&
+                         !!formData.other_contacts &&
+                         !!formData.other_contact_numbers &&
+                         selectedCategoryIds.length > 0;
 
       const { data: updatedClient, error } = await supabase
         .from('clients')
@@ -193,6 +210,9 @@ export default function MyOpenlead() {
           company_name: formData.company_name,
           contact_name: formData.contact_name,
           phone: formData.phone,
+          address: formData.address,
+          other_contacts: formData.other_contacts,
+          other_contact_numbers: formData.other_contact_numbers,
           services_offered: selectedCategoryIds.join(', '),
           service_areas: formData.service_areas,
           is_profile_complete: isComplete
@@ -320,6 +340,15 @@ export default function MyOpenlead() {
                   </div>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Business Address</label>
+                  <div className="relative">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input type="text" required value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="123 Business Rd, London" />
+                  </div>
+                </div>
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -328,6 +357,27 @@ export default function MyOpenlead() {
                     <input type="email" disabled value={profile?.email || ''} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm bg-gray-50 text-gray-500 sm:text-sm" />
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Email cannot be changed directly.</p>
+                </div>
+                
+                <div className="sm:col-span-2 grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-gray-100">
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Other Contacts</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Users className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <input type="text" required value={formData.other_contacts} onChange={e => setFormData({...formData, other_contacts: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Jane Smith" />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Other Contact Numbers</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <Phone className="h-4 w-4 text-gray-400" />
+                      </div>
+                      <input type="tel" required value={formData.other_contact_numbers} onChange={e => setFormData({...formData, other_contact_numbers: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="07712345678" />
+                    </div>
+                  </div>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Service Areas</label>

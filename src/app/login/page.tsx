@@ -12,6 +12,16 @@ import Image from 'next/image';
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
+  name: z.string().optional(),
+  phone: z.string().optional(),
+  company_name: z.string().optional(),
+  address: z.string().optional(),
+  other_contacts: z.string().optional(),
+  other_contact_numbers: z.string().optional(),
+}).superRefine((data, ctx) => {
+  // We only require these fields if the user is actually trying to sign up.
+  // The logic for isSignUp is handled in the component, so we will validate these inside onSubmit manually
+  // or we can just let Zod handle the base schema and do a manual check in onSubmit.
 });
 
 type LoginForm = z.infer<typeof loginSchema>;
@@ -61,6 +71,15 @@ export default function Login() {
   };
 
   const onSubmit = async (data: LoginForm) => {
+    if (isSignUp) {
+      if (!data.name || !data.name.trim()) return toast.error('Full Name is required');
+      if (!data.company_name || !data.company_name.trim()) return toast.error('Company Name is required');
+      if (!data.phone || !data.phone.trim()) return toast.error('Phone Number is required');
+      if (!data.address || !data.address.trim()) return toast.error('Business Address is required');
+      if (!data.other_contacts || !data.other_contacts.trim()) return toast.error('Other Contacts is required');
+      if (!data.other_contact_numbers || !data.other_contact_numbers.trim()) return toast.error('Other Contact Numbers is required');
+    }
+
     setIsLoading(true);
     try {
       if (isSignUp) {
@@ -68,7 +87,15 @@ export default function Login() {
           email: data.email,
           password: data.password,
           options: {
-            emailRedirectTo: `${window.location.origin}/email-confirmed`
+            emailRedirectTo: `${window.location.origin}/email-confirmed`,
+            data: {
+              full_name: data.name || '',
+              phone: data.phone || '',
+              company_name: data.company_name || '',
+              address: data.address || '',
+              other_contacts: data.other_contacts || '',
+              other_contact_numbers: data.other_contact_numbers || '',
+            }
           }
         });
         if (error) throw error;
@@ -208,6 +235,90 @@ export default function Login() {
                       {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
                     </div>
                   </div>
+
+                  {isSignUp && (
+                    <>
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700">Full Name</label>
+                        <div className="mt-1">
+                          <input
+                            {...register('name')}
+                            type="text"
+                            placeholder="John Doe"
+                            className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                          />
+                          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700">Company Name</label>
+                        <div className="mt-1">
+                          <input
+                            {...register('company_name')}
+                            type="text"
+                            placeholder="Acme Corp"
+                            className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                          />
+                          {errors.company_name && <p className="mt-1 text-sm text-red-600">{errors.company_name.message}</p>}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700">Phone Number</label>
+                        <div className="mt-1">
+                          <input
+                            {...register('phone')}
+                            type="tel"
+                            placeholder="+44 123 456 7890"
+                            className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                          />
+                          {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
+                        </div>
+                      </div>
+
+                      <div>
+                        <label className="block text-sm font-medium text-slate-700">Business Address</label>
+                        <div className="mt-1">
+                          <input
+                            {...register('address')}
+                            type="text"
+                            placeholder="123 Business Rd, London"
+                            className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                          />
+                          {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>}
+                        </div>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700">Other Contacts</label>
+                          <div className="mt-1">
+                            <input
+                              {...register('other_contacts')}
+                              type="text"
+                              placeholder="Jane Smith"
+                              className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                            />
+                            {errors.other_contacts && <p className="mt-1 text-sm text-red-600">{errors.other_contacts.message}</p>}
+                          </div>
+                        </div>
+
+                        <div>
+                          <label className="block text-sm font-medium text-slate-700">Other Numbers</label>
+                          <div className="mt-1">
+                            <input
+                              {...register('other_contact_numbers')}
+                              type="tel"
+                              placeholder="07712345678"
+                              className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                            />
+                            {errors.other_contact_numbers && <p className="mt-1 text-sm text-red-600">{errors.other_contact_numbers.message}</p>}
+                          </div>
+                        </div>
+                      </div>
+                    </>
+                  )}
 
                   {!isSignUp && (
                     <div className="flex items-center justify-end">

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Lead } from '../types';
 import { X, MapPin, Building, Calendar, FileText, ShoppingCart, Info, DollarSign, Home, Zap, CheckCircle } from 'lucide-react';
 import { extractTown } from '../lib/utils';
@@ -11,6 +11,8 @@ interface MarketplaceLeadModalProps {
 }
 
 export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOpen, onClose, lead, onPurchase }) => {
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+
   if (!isOpen) return null;
 
   const getBillsArray = () => {
@@ -202,7 +204,11 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 {lead.photos && lead.photos.length > 0 ? (
                   <div className="grid grid-cols-2 gap-3">
                     {lead.photos.map((url, idx) => (
-                      <div key={idx} className={`rounded-xl overflow-hidden border border-gray-200 ${idx === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}>
+                      <div 
+                        key={idx} 
+                        onClick={() => setLightboxUrl(url)}
+                        className={`cursor-pointer rounded-xl overflow-hidden border border-gray-200 ${idx === 0 ? 'col-span-2 aspect-video' : 'aspect-square'}`}
+                      >
                         <img src={url} alt={`Property view ${idx + 1}`} className="w-full h-full object-cover hover:scale-105 transition-transform duration-300" />
                       </div>
                     ))}
@@ -242,6 +248,27 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
         </div>
 
       </div>
+
+      {/* Photo Lightbox */}
+      {lightboxUrl && (
+        <div 
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4" 
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button 
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/50 hover:bg-black/80 rounded-full p-2 transition-all"
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <img 
+            src={lightboxUrl} 
+            alt="Full size property view" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };

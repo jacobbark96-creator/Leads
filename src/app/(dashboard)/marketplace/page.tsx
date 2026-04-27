@@ -289,9 +289,12 @@ export default function Marketplace() {
           {leads.map((lead) => (
             <div key={lead.id} className="bg-white overflow-hidden shadow-sm rounded-xl border border-gray-200 hover:shadow-md transition-shadow flex flex-col">
               {/* Photo Area */}
-              <div className="h-48 bg-gray-100 relative">
+              <div 
+                className="h-48 bg-gray-100 relative cursor-pointer group"
+                onClick={() => setSelectedLead(lead)}
+              >
                 {lead.photos && lead.photos.length > 0 ? (
-                  <img src={lead.photos[0]} alt="Lead property" className="w-full h-full object-cover" />
+                  <img src={lead.photos[0]} alt="Lead property" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                 ) : (
                   <div className="w-full h-full flex items-center justify-center text-gray-400">
                     <Building className="w-12 h-12 opacity-20" />

@@ -325,6 +325,7 @@ export default function MapTab() {
               <Marker
                 key={client.id}
                 position={{ lat: Number(firstArea.lat), lng: Number(firstArea.lng) }}
+                title={client.company_name || client.contact_name || 'Contractor'}
                 icon={createStarIcon(selectedCategory === 'all' 
                   ? getClientColor(client.services_offered) 
                   : getServiceColor(categories.find(c => c.id === selectedCategory)?.name)
@@ -342,6 +343,7 @@ export default function MapTab() {
             <Marker
               key={lead.id}
               position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
+              title={lead.company || lead.name || 'Lead'}
               icon={createPinIcon(getLeadColor(lead.category_id))}
               onClick={() => {
                 setSelectedLead(lead);

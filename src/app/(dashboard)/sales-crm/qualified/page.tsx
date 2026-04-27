@@ -5,12 +5,13 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '../../../../lib/supabase';
 import { Lead } from '../../../../types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Users, Trash2, Search } from 'lucide-react';
+import { Phone, Mail, Building, User, Users, Trash2, Search, ShieldCheck } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
 import { MarketLeadModal } from '@/components/MarketLeadModal';
 import { SoldLeadModal } from '@/components/SoldLeadModal';
+import { MatchingContractorsModal } from '@/components/MatchingContractorsModal';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -45,6 +46,7 @@ function QualifiedLeadsContent() {
   const [searchCount, setSearchCount] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [leadToMarket, setLeadToMarket] = useState<any>(null);
+  const [leadForContractors, setLeadForContractors] = useState<Lead | null>(null);
   const [soldLeadDetails, setSoldLeadDetails] = useState<Lead | null>(null);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
@@ -67,7 +69,7 @@ function QualifiedLeadsContent() {
 
       let query = supabase
         .from('leads')
-        .select('id, name, status, phone, assigned_to, is_marketed, location, monthly_spend, timeframe, est_system_size, qualification_notes, photos, price, purchase_date, booking_date, company, clients(company_name, contact_name)', { count: 'exact' })
+        .select('id, name, status, phone, assigned_to, is_marketed, location, latitude, longitude, category_id, monthly_spend, timeframe, est_system_size, qualification_notes, photos, price, purchase_date, booking_date, company, clients(company_name, contact_name)', { count: 'exact' })
         .in('status', ['qualified', 'sold'])
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
@@ -380,14 +382,25 @@ function QualifiedLeadsContent() {
                       Sold
                     </button>
                   ) : (
-                    <select
-                      value={lead.status}
-                      onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                      className="text-xs font-bold rounded-full px-3 py-1.5 border-0 shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500 bg-blue-100 text-blue-800"
-                    >
-                      <option value="qualified">Qualified</option>
-                      <option value="fresh">Move back to Fresh</option>
-                    </select>
+                    <div className="flex items-center gap-2">
+                      {!lead.is_marketed && (
+                        <button
+                          onClick={() => setLeadForContractors(lead)}
+                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-bold rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
+                        >
+                          <ShieldCheck className="w-3 h-3 mr-1.5" />
+                          Contractors
+                        </button>
+                      )}
+                      <select
+                        value={lead.status}
+                        onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                        className="text-xs font-bold rounded-full px-3 py-1.5 border-0 shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500 bg-blue-100 text-blue-800"
+                      >
+                        <option value="qualified">Qualified</option>
+                        <option value="fresh">Move back to Fresh</option>
+                      </select>
+                    </div>
                   )}
                   
                   <a
@@ -463,6 +476,14 @@ function QualifiedLeadsContent() {
           onClose={() => setSoldLeadDetails(null)}
           lead={soldLeadDetails}
           onReverse={handleReverseTransaction}
+        />
+      )}
+
+      {leadForContractors && (
+        <MatchingContractorsModal
+          isOpen={!!leadForContractors}
+          onClose={() => setLeadForContractors(null)}
+          lead={leadForContractors}
         />
       )}
     </div>

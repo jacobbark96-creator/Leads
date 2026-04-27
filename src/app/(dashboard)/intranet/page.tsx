@@ -58,29 +58,40 @@ export default function PricingMatrix() {
     }
   };
 
-  const loadCsvData = (url: string) => {
+  const loadCsvData = async (url: string) => {
     setLoading(true);
     setFetchError(null);
     
-    Papa.parse(url, {
-      download: true,
-      header: true,
-      skipEmptyLines: true,
-      complete: (results) => {
-        if (results.data && results.data.length > 0) {
-          setHeaders(results.meta.fields || Object.keys(results.data[0]));
-          setRows(results.data);
-        } else {
-          setFetchError("No data found in the provided Google Sheet.");
-        }
-        setLoading(false);
-      },
-      error: (error) => {
-        console.error("PapaParse error:", error);
-        setFetchError("Failed to fetch Google Sheet. Make sure the link is a published CSV format (File -> Share -> Publish to web -> CSV).");
-        setLoading(false);
+    try {
+      const response = await fetch(url);
+      if (!response.ok) {
+        throw new Error(`HTTP Error: ${response.status}`);
       }
-    });
+      const text = await response.text();
+      
+      Papa.parse(text, {
+        header: true,
+        skipEmptyLines: true,
+        complete: (results) => {
+          if (results.data && results.data.length > 0) {
+            setHeaders(results.meta.fields || Object.keys(results.data[0]));
+            setRows(results.data);
+          } else {
+            setFetchError("No data found in the provided Google Sheet.");
+          }
+          setLoading(false);
+        },
+        error: (error: any) => {
+          console.error("PapaParse error:", error);
+          setFetchError("Failed to parse CSV data.");
+          setLoading(false);
+        }
+      });
+    } catch (err: any) {
+      console.error("Fetch error:", err);
+      setFetchError("Failed to fetch Google Sheet. Make sure the link is a published CSV format (File -> Share -> Publish to web -> CSV).");
+      setLoading(false);
+    }
   };
 
   const handleSaveUrl = async () => {

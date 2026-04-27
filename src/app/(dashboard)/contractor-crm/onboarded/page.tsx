@@ -5,7 +5,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Contractor } from '@/types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Users } from 'lucide-react';
+import { Phone, Mail, Building, User, Users, Search } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
@@ -35,8 +35,11 @@ function OnboardedContractorsContent() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [phoneFilter, setPhoneFilter] = useState<string>('all');
+  const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [searchCount, setSearchCount] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const PAGE_SIZE = 25;
@@ -57,10 +60,24 @@ function OnboardedContractorsContent() {
 
       let query = supabase
         .from('contractors')
-        .select('id, name, company_name, contact_name, status, phone, assigned_to')
+        .select('id, name, company_name, contact_name, status, phone, assigned_to', { count: 'exact' })
         .eq('status', 'onboarded')
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
+
+      if (isInitial) {
+        let countQuery = supabase.from('contractors').select('id', { count: 'exact', head: true }).eq('status', 'onboarded');
+        if (assignedToMe && profile) countQuery = countQuery.eq('assigned_to', profile.id);
+        if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
+
+        const { count: baseCount } = await countQuery;
+        setTotalCount(baseCount || 0);
+      }
+
+      if (searchQuery.trim()) {
+        const search = `%${searchQuery.trim()}%`;
+        query = query.or(`name.ilike.${search},company_name.ilike.${search},contact_name.ilike.${search}`);
+      }
 
       if (assignedToMe && profile) {
         query = query.eq('assigned_to', profile.id);
@@ -72,7 +89,7 @@ function OnboardedContractorsContent() {
         query = query.neq('phone', '');
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
 
       if (error) throw error;
       
@@ -82,6 +99,11 @@ function OnboardedContractorsContent() {
 
       if (isInitial) {
         setContractors(contractorsToRender);
+        if (searchQuery.trim()) {
+          setSearchCount(count || 0);
+        } else {
+          setSearchCount(null);
+        }
       } else {
         setContractors(prev => [...prev, ...contractorsToRender]);
       }
@@ -98,7 +120,7 @@ function OnboardedContractorsContent() {
   useEffect(() => {
     setPage(0);
     fetchContractors(0, true);
-  }, [phoneFilter, assignedToMe]);
+  }, [phoneFilter, searchQuery, assignedToMe]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -134,6 +156,21 @@ function OnboardedContractorsContent() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="text-sm font-medium text-gray-500 self-center whitespace-nowrap">
+            {searchQuery.trim() && searchCount !== null 
+              ? `Showing ${searchCount} of ${totalCount} contractors` 
+              : `Showing ${totalCount} contractors`}
+          </div>
+          <div className="relative flex-1 w-full sm:min-w-[200px]">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search contractors..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
           {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
             <button
               onClick={() => setIsAddModalOpen(true)}

@@ -41,6 +41,8 @@ function LeadProcessingContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [searchCount, setSearchCount] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const [leadToQualify, setLeadToQualify] = useState<Lead | null>(null);
@@ -65,10 +67,24 @@ function LeadProcessingContent() {
       // Fetch PAGE_SIZE + 1 to know if there's a next page without a slow exact count query
       let query = supabase
         .from('leads')
-        .select('id, name, status, phone, assigned_to, company')
+        .select('id, name, status, phone, assigned_to, company', { count: 'exact' })
         .neq('status', 'qualified')
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
+
+      // Base query for total count (without search)
+      if (isInitial) {
+        let countQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).neq('status', 'qualified');
+        if (assignedToMe && profile) countQuery = countQuery.eq('assigned_to', profile.id);
+        else if (!assignedToMe) countQuery = countQuery.is('assigned_to', null);
+        if (statusFilter !== 'all') countQuery = countQuery.eq('status', statusFilter);
+        if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
+        if (propertyTypeFilter === 'commercial') countQuery = countQuery.neq('company', '').not('company', 'is', null);
+        else if (propertyTypeFilter === 'residential') countQuery = countQuery.or('company.eq.,company.is.null');
+
+        const { count: baseCount } = await countQuery;
+        setTotalCount(baseCount || 0);
+      }
 
       if (searchQuery.trim()) {
         const search = `%${searchQuery.trim()}%`;
@@ -95,7 +111,7 @@ function LeadProcessingContent() {
         query = query.or('company.eq.,company.is.null');
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
 
       if (error) throw error;
       
@@ -105,6 +121,11 @@ function LeadProcessingContent() {
 
       if (isInitial) {
         setLeads(leadsToRender);
+        if (searchQuery.trim()) {
+          setSearchCount(count || 0);
+        } else {
+          setSearchCount(null);
+        }
       } else {
         setLeads(prev => [...prev, ...leadsToRender]);
       }
@@ -213,6 +234,11 @@ function LeadProcessingContent() {
         </div>
         
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="text-sm font-medium text-gray-500 self-center whitespace-nowrap">
+            {searchQuery.trim() && searchCount !== null 
+              ? `Showing ${searchCount} of ${totalCount} leads` 
+              : `Showing ${totalCount} leads`}
+          </div>
           <div className="relative flex-1 w-full sm:min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input

@@ -41,6 +41,8 @@ function QualifiedLeadsContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [totalCount, setTotalCount] = useState<number>(0);
+  const [searchCount, setSearchCount] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [leadToMarket, setLeadToMarket] = useState<any>(null);
   const [soldLeadDetails, setSoldLeadDetails] = useState<Lead | null>(null);
@@ -65,10 +67,21 @@ function QualifiedLeadsContent() {
 
       let query = supabase
         .from('leads')
-        .select('id, name, status, phone, assigned_to, is_marketed, location, monthly_spend, timeframe, est_system_size, qualification_notes, photos, price, purchase_date, booking_date, company, clients(company_name, contact_name)')
+        .select('id, name, status, phone, assigned_to, is_marketed, location, monthly_spend, timeframe, est_system_size, qualification_notes, photos, price, purchase_date, booking_date, company, clients(company_name, contact_name)', { count: 'exact' })
         .in('status', ['qualified', 'sold'])
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
+
+      if (isInitial) {
+        let countQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).in('status', ['qualified', 'sold']);
+        if (assignedToMe && profile) countQuery = countQuery.eq('assigned_to', profile.id);
+        if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
+        if (propertyTypeFilter === 'commercial') countQuery = countQuery.neq('company', '').not('company', 'is', null);
+        else if (propertyTypeFilter === 'residential') countQuery = countQuery.or('company.eq.,company.is.null');
+
+        const { count: baseCount } = await countQuery;
+        setTotalCount(baseCount || 0);
+      }
 
       if (searchQuery.trim()) {
         const search = `%${searchQuery.trim()}%`;
@@ -89,7 +102,7 @@ function QualifiedLeadsContent() {
         query = query.or('company.eq.,company.is.null');
       }
 
-      const { data, error } = await query;
+      const { data, error, count } = await query;
 
       if (error) throw error;
       
@@ -99,6 +112,11 @@ function QualifiedLeadsContent() {
 
       if (isInitial) {
         setLeads(leadsToRender);
+        if (searchQuery.trim()) {
+          setSearchCount(count || 0);
+        } else {
+          setSearchCount(null);
+        }
       } else {
         setLeads(prev => [...prev, ...leadsToRender]);
       }
@@ -218,6 +236,11 @@ function QualifiedLeadsContent() {
         </div>
 
         <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
+          <div className="text-sm font-medium text-gray-500 self-center whitespace-nowrap">
+            {searchQuery.trim() && searchCount !== null 
+              ? `Showing ${searchCount} of ${totalCount} leads` 
+              : `Showing ${totalCount} leads`}
+          </div>
           <div className="relative flex-1 w-full sm:min-w-[200px]">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
             <input

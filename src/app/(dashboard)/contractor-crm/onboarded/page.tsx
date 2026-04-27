@@ -34,7 +34,6 @@ function OnboardedContractorsContent() {
   const [contractors, setContractors] = useState<Contractor[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [phoneFilter, setPhoneFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -68,7 +67,6 @@ function OnboardedContractorsContent() {
       if (isInitial) {
         let countQuery = supabase.from('contractors').select('id', { count: 'exact', head: true }).eq('status', 'onboarded');
         if (assignedToMe && profile) countQuery = countQuery.eq('assigned_to', profile.id);
-        if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
 
         const { count: baseCount } = await countQuery;
         setTotalCount(baseCount || 0);
@@ -84,10 +82,6 @@ function OnboardedContractorsContent() {
       }
       // Note: intentionally removed the `else { query = query.is('assigned_to', null) }` block
       // so the onboarded tab shows ALL onboarded contractors, assigned or not.
-
-      if (phoneFilter === 'with_phone') {
-        query = query.neq('phone', '');
-      }
 
       const { data, error, count } = await query;
 
@@ -120,7 +114,7 @@ function OnboardedContractorsContent() {
   useEffect(() => {
     setPage(0);
     fetchContractors(0, true);
-  }, [phoneFilter, searchQuery, assignedToMe]);
+  }, [searchQuery, assignedToMe]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -142,10 +136,6 @@ function OnboardedContractorsContent() {
       toast.error('Failed to update contractor: ' + error.message);
     }
   };
-
-  if (loading) {
-    return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
-  }
 
   return (
     <div>
@@ -179,22 +169,13 @@ function OnboardedContractorsContent() {
               Add Contractor
             </button>
           )}
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 font-medium">Phone:</label>
-            <select
-              value={phoneFilter}
-              onChange={(e) => setPhoneFilter(e.target.value)}
-              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
-            >
-              <option value="all">All</option>
-              <option value="with_phone">Has Phone Number</option>
-            </select>
-          </div>
         </div>
       </div>
 
       <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
-        {contractors.length > 0 ? (
+        {loading && contractors.length === 0 ? (
+          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+        ) : contractors.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {contractors.map((contractor) => (
               <li key={contractor.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">

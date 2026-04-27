@@ -15,11 +15,35 @@ interface QualifyLeadModalProps {
 export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onClose, lead, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [photos, setPhotos] = useState<string[]>(lead.photos || []);
+  const [photos, setPhotos] = useState<string[]>(() => {
+    if (!lead.photos) return [];
+    if (Array.isArray(lead.photos)) return lead.photos;
+    if (typeof lead.photos === 'string') {
+      if (lead.photos === '{}') return [];
+      try {
+        const parsed = JSON.parse(lead.photos);
+        if (Array.isArray(parsed)) return parsed;
+        return [parsed];
+      } catch {
+        if (lead.photos.startsWith('{') && lead.photos.endsWith('}')) {
+          return lead.photos.slice(1, -1).split(',').map(s => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean);
+        }
+        return [lead.photos];
+      }
+    }
+    return [];
+  });
   const [categories, setCategories] = useState<Category[]>([]);
   const [billUrls, setBillUrls] = useState<string[]>(() => {
-    const raw = (lead.bills_url || '').trim();
+    let raw = (lead.bills_url || '').trim();
     if (!raw) return [];
+    
+    // Clean up Postgres array format if present from older records
+    if (raw.startsWith('{') && raw.endsWith('}')) {
+      raw = raw.substring(1, raw.length - 1);
+      return raw.split(',').map(s => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean);
+    }
+    
     if (raw.includes(',')) {
       return raw.split(',').map((u) => u.trim()).filter(Boolean);
     }
@@ -189,7 +213,7 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
       setLoading(true);
       
       const updateData = {
-        status: 'qualified',
+        status: lead.status === 'fresh' ? 'qualified' : lead.status,
         category_id: formData.category_id || null,
         monthly_spend: formData.monthly_spend ? Number(formData.monthly_spend.toString().replace(/,/g, '')) : null,
         location: formData.location,
@@ -665,7 +689,7 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
             disabled={loading || uploading}
             className="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
           >
-            {loading ? 'Saving...' : 'Confirm & Qualify Lead'}
+            {loading ? 'Saving...' : (lead.status === 'qualified' ? 'Save Changes' : 'Confirm & Qualify Lead')}
           </button>
         </div>
 

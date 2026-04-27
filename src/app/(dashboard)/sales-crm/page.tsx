@@ -221,10 +221,6 @@ function LeadProcessingContent() {
     }
   };
 
-  if (loading) {
-    return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
-  }
-
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -336,7 +332,9 @@ function LeadProcessingContent() {
           </div>
         )}
 
-        {leads.length > 0 ? (
+        {loading && leads.length === 0 ? (
+          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+        ) : leads.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {leads.map((lead) => (
               <li key={lead.id} className={`flex items-center justify-between p-4 transition-colors ${selectedLeads.has(lead.id) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}>

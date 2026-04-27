@@ -11,12 +11,19 @@ interface PurchasedLeadModalProps {
 export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, onClose, lead }) => {
   if (!isOpen) return null;
 
-  const billUrls = (() => {
-    const raw = (lead.bills_url || '').trim();
+  const getBillsArray = () => {
+    let raw = (lead.bills_url || '').trim();
     if (!raw) return [];
-    if (raw.includes(',')) return raw.split(',').map((u) => u.trim()).filter(Boolean);
+    if (raw.startsWith('{') && raw.endsWith('}')) {
+      raw = raw.substring(1, raw.length - 1);
+      return raw.split(',').map(s => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean);
+    }
+    if (raw.includes(',')) {
+      return raw.split(',').map((u) => u.trim()).filter(Boolean);
+    }
     return [raw];
-  })();
+  };
+  const billUrls = getBillsArray();
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">

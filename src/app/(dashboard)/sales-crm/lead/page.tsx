@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { Lead, StaffUser } from '@/types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft, Award } from 'lucide-react';
+import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft, Award, X } from 'lucide-react';
 
 import { QualifyLeadModal } from '@/components/QualifyLeadModal';
 import { MarketLeadModal } from '@/components/MarketLeadModal';
@@ -19,7 +19,41 @@ interface Grant {
   closing_date: string | null;
 }
 
-// Helper function to get initials for avatar
+// Helper function to safely parse photos
+const getPhotosArray = (photosData: any): string[] => {
+  if (!photosData) return [];
+  if (Array.isArray(photosData)) return photosData;
+  if (typeof photosData === 'string') {
+    if (photosData === '{}') return [];
+    try {
+      const parsed = JSON.parse(photosData);
+      if (Array.isArray(parsed)) return parsed;
+      return [parsed];
+    } catch {
+      // It might be a postgres array string format like "{url1,url2}" or just a plain url
+      if (photosData.startsWith('{') && photosData.endsWith('}')) {
+        return photosData.slice(1, -1).split(',').map(s => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean);
+      }
+      return [photosData];
+    }
+  }
+  return [];
+};
+
+// Helper function to safely parse bills
+const getBillsArray = (billsData: any): string[] => {
+  if (!billsData) return [];
+  let raw = typeof billsData === 'string' ? billsData.trim() : String(billsData).trim();
+  if (!raw) return [];
+  if (raw.startsWith('{') && raw.endsWith('}')) {
+    raw = raw.substring(1, raw.length - 1);
+    return raw.split(',').map(s => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean);
+  }
+  if (raw.includes(',')) {
+    return raw.split(',').map(u => u.trim()).filter(Boolean);
+  }
+  return [raw];
+};
 const getInitials = (name: string) => {
   if (!name) return '?';
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
@@ -61,6 +95,7 @@ function LeadDetailsContent() {
   const [isQualifyModalOpen, setIsQualifyModalOpen] = useState(false);
   const [isMarketModalOpen, setIsMarketModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   
   const notesEndRef = useRef<HTMLDivElement>(null);
 
@@ -359,22 +394,24 @@ function LeadDetailsContent() {
                 <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
                   <User className="w-8 h-8" />
                 </div>
-                {lead.status === 'qualified' && !lead.is_marketed && (
-                  <button
-                    onClick={() => setIsMarketModalOpen(true)}
-                    className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                  >
-                    Market
-                  </button>
-                )}
-                {lead.is_marketed && (
-                  <button
-                    onClick={() => setIsMarketModalOpen(true)}
-                    className="inline-flex items-center px-4 py-2 border border-green-200 text-sm font-bold rounded-lg shadow-sm text-green-800 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
-                  >
-                    Edit Marketed Lead
-                  </button>
-                )}
+                <div className="flex gap-2 flex-col items-end">
+                  {lead.status === 'qualified' && !lead.is_marketed && (
+                    <button
+                      onClick={() => setIsMarketModalOpen(true)}
+                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                    >
+                      Market
+                    </button>
+                  )}
+                  {lead.is_marketed && (
+                    <button
+                      onClick={() => setIsMarketModalOpen(true)}
+                      className="inline-flex items-center px-4 py-2 border border-green-200 text-sm font-bold rounded-lg shadow-sm text-green-800 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                    >
+                      Edit Marketed Lead
+                    </button>
+                  )}
+                </div>
               </div>
               <h2 className="text-2xl font-bold text-gray-900">{lead.name}</h2>
               {lead.company && <p className="text-gray-500 font-medium mt-1">{lead.company}</p>}
@@ -401,83 +438,7 @@ function LeadDetailsContent() {
                 </div>
               )}
 
-              {/* Qualification Details */}
-              {(lead.status === 'qualified' || lead.status === 'sold' || lead.is_marketed) && (
-                <div className="pt-6 border-t border-gray-100 space-y-4">
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider block">Qualification Details</label>
-                  
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                      <span className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Monthly Spend</span>
-                      <span className="font-semibold text-gray-900">£{lead.monthly_spend || 'N/A'}</span>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                      <span className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Timeframe</span>
-                      <span className="font-semibold text-gray-900">{lead.timeframe || 'N/A'}</span>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                      <span className="block text-[10px] text-gray-500 uppercase font-bold mb-1">System Size</span>
-                      <span className="font-semibold text-gray-900">{lead.est_system_size || 'N/A'}</span>
-                    </div>
-                    <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                      <span className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Unit Rate</span>
-                      <span className="font-semibold text-gray-900">{lead.unit_rate ? `£${lead.unit_rate}` : 'N/A'}</span>
-                    </div>
-                  </div>
-
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <span className="block text-[10px] text-gray-500 uppercase font-bold mb-1">Location</span>
-                    <span className="font-semibold text-gray-900 flex items-center gap-1.5">
-                      <MapPin className="w-3 h-3 text-gray-400" />
-                      {lead.location || 'N/A'}
-                    </span>
-                  </div>
-
-                  {lead.qualification_notes && (
-                    <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
-                      <span className="block text-[10px] text-blue-600 uppercase font-bold mb-1">Qualification Notes</span>
-                      <p className="text-sm text-blue-900 whitespace-pre-wrap">{lead.qualification_notes}</p>
-                    </div>
-                  )}
-
-                  {/* Property Details Section */}
-                  <div className="space-y-3">
-                    <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest block pt-2">Property Info</label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <div className="text-sm">
-                        <span className="text-gray-500 block text-xs">Ownership</span>
-                        <span className="font-medium">{lead.property_ownership || 'N/A'}</span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-gray-500 block text-xs">Roof Size</span>
-                        <span className="font-medium">{lead.roof_size || 'N/A'}</span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-gray-500 block text-xs">Roof Material</span>
-                        <span className="font-medium">{lead.roof_material || 'N/A'}</span>
-                      </div>
-                      <div className="text-sm">
-                        <span className="text-gray-500 block text-xs">Condition</span>
-                        <span className="font-medium">{lead.roof_condition || 'N/A'}</span>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Marketplace Details */}
-                  {lead.is_marketed && (
-                    <div className="pt-4 border-t border-gray-100">
-                      <div className="flex justify-between items-center mb-2">
-                        <label className="text-xs font-bold text-gray-500 uppercase tracking-wider">Marketplace Info</label>
-                        <span className="px-2 py-0.5 bg-green-100 text-green-800 text-[10px] font-bold rounded uppercase">Marketed</span>
-                      </div>
-                      <div className="bg-green-50/50 p-3 rounded-lg border border-green-100">
-                        <span className="block text-[10px] text-green-700 uppercase font-bold mb-1">Listing Price</span>
-                        <span className="text-lg font-bold text-green-700">£{lead.price || '135.00'}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
+              {/* Qualification Details removed from here */}
 
               {lead.csv_data && Object.keys(lead.csv_data).length > 0 && (
                 <div>
@@ -533,6 +494,194 @@ function LeadDetailsContent() {
           
           {/* Notes Area */}
           <div className="flex-1 p-6 overflow-y-auto bg-slate-50 space-y-6">
+            
+            {(lead.status === 'qualified' || lead.status === 'sold' || lead.is_marketed) && (
+              <div className="bg-white p-5 rounded-2xl shadow-sm border border-gray-200 mb-6">
+                <div className="flex justify-between items-center mb-4">
+                  <div className="flex items-center gap-3">
+                    <h4 className="font-bold text-gray-900 flex items-center gap-2">
+                      <Award className="w-4 h-4 text-blue-600" /> Qualification Details
+                    </h4>
+                    <button
+                      onClick={() => setIsQualifyModalOpen(true)}
+                      className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 px-2 py-1 rounded hover:bg-gray-200 transition-colors"
+                    >
+                      Edit
+                    </button>
+                  </div>
+                  {getBillsArray(lead.bills_url).length > 0 && (
+                    <div className="flex gap-2 flex-wrap justify-end">
+                      {getBillsArray(lead.bills_url).map((url, idx, arr) => (
+                        <button key={idx} onClick={() => setLightboxUrl(url)} className="text-xs font-bold bg-gray-900 text-white px-3 py-1.5 rounded-lg hover:bg-gray-800 transition-colors shadow-sm">
+                          {arr.length > 1 ? `View Bill ${idx + 1}` : 'View Bills'}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Photos */}
+                {getPhotosArray(lead.photos).length > 0 && (
+                  <div className="flex gap-3 overflow-x-auto pb-4 mb-4 border-b border-gray-100">
+                    {getPhotosArray(lead.photos).map((photo, i) => (
+                      <button key={i} onClick={() => setLightboxUrl(photo)} className="shrink-0">
+                        <img src={photo} alt={`Lead Photo ${i+1}`} className="h-20 w-28 object-cover rounded-lg border border-gray-300 hover:opacity-90 transition-opacity shadow-sm" />
+                      </button>
+                    ))}
+                  </div>
+                )}
+                {typeof lead.photos === 'string' && lead.photos !== '{}' && (
+                  <div className="flex gap-3 overflow-x-auto pb-4 mb-4 border-b border-gray-100">
+                    <button onClick={() => setLightboxUrl(lead.photos as unknown as string)} className="shrink-0">
+                      <img src={lead.photos as unknown as string} alt={`Lead Photo`} className="h-20 w-28 object-cover rounded-lg border border-gray-300 hover:opacity-90 transition-opacity shadow-sm" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                  <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                    <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Location</span>
+                    <span className="font-semibold text-gray-900 text-xs flex items-center gap-1">
+                      <MapPin className="w-3 h-3 text-gray-400 shrink-0" />
+                      <span className="truncate">{lead.location || 'N/A'}</span>
+                    </span>
+                  </div>
+                  <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                    <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Monthly Spend</span>
+                    <span className="font-semibold text-gray-900 text-xs">£{lead.monthly_spend ?? 'N/A'}</span>
+                  </div>
+                  <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                    <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Timeframe</span>
+                    <span className="font-semibold text-gray-900 text-xs truncate block">{lead.timeframe || 'N/A'}</span>
+                  </div>
+                  <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                    <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">System Size</span>
+                    <span className="font-semibold text-gray-900 text-xs truncate block">{lead.est_system_size || 'N/A'}</span>
+                  </div>
+                  <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                    <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Unit Rate</span>
+                    <span className="font-semibold text-gray-900 text-xs truncate block">{lead.unit_rate ? `£${lead.unit_rate}` : 'N/A'}</span>
+                  </div>
+                  {(lead.est_ann_consumption !== null && lead.est_ann_consumption !== undefined) && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Ann. Consumption</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.est_ann_consumption} kWh</span>
+                    </div>
+                  )}
+                  {(lead.availability !== null && lead.availability !== undefined && lead.availability !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Availability</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.availability}</span>
+                    </div>
+                  )}
+                  {(lead.job_title !== null && lead.job_title !== undefined && lead.job_title !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Job Title</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.job_title}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
+                  <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                    <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Property Ownership</span>
+                    <span className="font-semibold text-gray-900 text-xs truncate block">{lead.property_ownership || 'N/A'}</span>
+                  </div>
+                  {(lead.lease_duration !== null && lead.lease_duration !== undefined && lead.lease_duration !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Lease Duration</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.lease_duration}</span>
+                    </div>
+                  )}
+                  {(lead.likely_to_renew !== null && lead.likely_to_renew !== undefined && lead.likely_to_renew !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Likely to Renew</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.likely_to_renew}</span>
+                    </div>
+                  )}
+                  {(lead.landlord_permission !== null && lead.landlord_permission !== undefined && lead.landlord_permission !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100 col-span-2 md:col-span-3">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Landlord Permission</span>
+                      <span className="font-semibold text-gray-900 text-xs block">{lead.landlord_permission}</span>
+                    </div>
+                  )}
+                </div>
+
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-3 mt-3">
+                  {(lead.roof_size !== null && lead.roof_size !== undefined && lead.roof_size !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Roof Size</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.roof_size}</span>
+                    </div>
+                  )}
+                  {(lead.roof_material !== null && lead.roof_material !== undefined && lead.roof_material !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Roof Material</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.roof_material}</span>
+                    </div>
+                  )}
+                  {(lead.roof_condition !== null && lead.roof_condition !== undefined && lead.roof_condition !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Roof Condition</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.roof_condition}</span>
+                    </div>
+                  )}
+                  {(lead.electrical_supply !== null && lead.electrical_supply !== undefined && lead.electrical_supply !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Electrical Supply</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.electrical_supply}</span>
+                    </div>
+                  )}
+                  {(lead.solar_location !== null && lead.solar_location !== undefined && lead.solar_location !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Solar Location</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.solar_location}</span>
+                    </div>
+                  )}
+                  {(lead.payment_options !== null && lead.payment_options !== undefined && lead.payment_options !== '') && (
+                    <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                      <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Payment Option</span>
+                      <span className="font-semibold text-gray-900 text-xs truncate block">{lead.payment_options}</span>
+                    </div>
+                  )}
+                  {(lead.cover_skylights !== null && lead.cover_skylights !== undefined) && (
+                    <div className={`p-2.5 rounded-lg border ${lead.cover_skylights ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'}`}>
+                      <span className={`block text-[9px] uppercase font-bold mb-0.5 ${lead.cover_skylights ? 'text-blue-600' : 'text-gray-500'}`}>Cover Skylights</span>
+                      <span className={`font-semibold text-xs ${lead.cover_skylights ? 'text-blue-900' : 'text-gray-900'}`}>{lead.cover_skylights ? 'Yes' : 'No'}</span>
+                    </div>
+                  )}
+                  {(lead.ground_mount !== null && lead.ground_mount !== undefined) && (
+                    <div className={`p-2.5 rounded-lg border ${lead.ground_mount ? 'bg-blue-50 border-blue-100' : 'bg-gray-50 border-gray-100'}`}>
+                      <span className={`block text-[9px] uppercase font-bold mb-0.5 ${lead.ground_mount ? 'text-blue-600' : 'text-gray-500'}`}>Ground Mount</span>
+                      <span className={`font-semibold text-xs ${lead.ground_mount ? 'text-blue-900' : 'text-gray-900'}`}>{lead.ground_mount ? 'Yes' : 'No'}</span>
+                    </div>
+                  )}
+                </div>
+
+                {lead.qualification_notes && (
+                  <div className="mt-3 bg-blue-50/50 p-3 rounded-lg border border-blue-100">
+                    <span className="block text-[9px] text-blue-600 uppercase font-bold mb-1">Qualification Notes</span>
+                    <p className="text-xs text-blue-900 whitespace-pre-wrap leading-relaxed">{lead.qualification_notes}</p>
+                  </div>
+                )}
+                
+                {/* Marketplace Details */}
+                {lead.is_marketed && (
+                  <div className="mt-4 pt-4 border-t border-gray-100">
+                    <div className="bg-green-50/50 p-3 rounded-xl border border-green-100 flex justify-between items-center">
+                      <div>
+                        <span className="block text-[10px] text-green-700 uppercase font-bold mb-1">Marketplace Listing Price</span>
+                        <span className="text-lg font-bold text-green-700">£{lead.price || '135.00'}</span>
+                      </div>
+                      <span className="px-2.5 py-1 bg-green-100 text-green-800 text-[10px] font-bold rounded uppercase">Marketed</span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <h4 className="text-xs font-bold text-gray-400 uppercase tracking-wider mb-2 px-1">Timeline</h4>
+
             {notes.length === 0 ? (
               <div className="h-full flex flex-col items-center justify-center text-gray-400">
                 <Mail className="w-12 h-12 mb-3 opacity-20" />
@@ -591,7 +740,7 @@ function LeadDetailsContent() {
           lead={lead}
           onSuccess={(updatedLead) => {
             setIsQualifyModalOpen(false);
-            setLead(updatedLead);
+            setLead(prev => prev ? { ...prev, ...updatedLead } : updatedLead);
           }}
         />
       )}
@@ -603,7 +752,7 @@ function LeadDetailsContent() {
           lead={lead}
           onSuccess={(updatedLead) => {
             setIsMarketModalOpen(false);
-            setLead(updatedLead);
+            setLead(prev => prev ? { ...prev, ...updatedLead } : updatedLead);
           }}
         />
       )}
@@ -620,6 +769,37 @@ function LeadDetailsContent() {
           company: lead.company
         }}
       />
+
+      {lightboxUrl && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/90 p-4" 
+          onClick={() => setLightboxUrl(null)}
+        >
+          <div 
+            className="relative w-full max-w-5xl h-[90vh] bg-white rounded-xl overflow-hidden flex flex-col shadow-2xl" 
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex justify-between items-center p-4 border-b bg-gray-50">
+              <h3 className="font-bold text-gray-900 flex items-center gap-2">
+                Document Viewer
+              </h3>
+              <button 
+                onClick={() => setLightboxUrl(null)} 
+                className="p-2 bg-gray-200 text-gray-600 hover:bg-gray-300 hover:text-gray-900 rounded-full transition-colors"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="flex-1 overflow-auto flex items-center justify-center bg-gray-100 p-4">
+              {lightboxUrl.toLowerCase().includes('.pdf') ? (
+                <iframe src={lightboxUrl} className="w-full h-full rounded shadow-sm border border-gray-300" title="Document Viewer" />
+              ) : (
+                <img src={lightboxUrl} alt="Document" className="max-w-full max-h-full object-contain rounded shadow-sm border border-gray-300" />
+              )}
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

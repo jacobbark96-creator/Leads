@@ -34,7 +34,6 @@ function ContractorProcessingContent() {
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [phoneFilter, setPhoneFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -44,6 +43,8 @@ function ContractorProcessingContent() {
   const [selectedOnboardContractor, setSelectedOnboardContractor] = useState<Contractor | null>(null);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const PAGE_SIZE = 25;
+  const [radiusFilter, setRadiusFilter] = useState<string>('any');
+  const [isGeocoding, setIsGeocoding] = useState(false);
 
   useEffect(() => {
     // Fetch staff users for assignment name resolution
@@ -64,8 +65,58 @@ function ContractorProcessingContent() {
         .from('contractors')
         .select('id, name, company_name, contact_name, status, phone, assigned_to', { count: 'exact' })
         .neq('status', 'onboarded')
-        .order('created_at', { ascending: false })
-        .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
+        .order('created_at', { ascending: false });
+
+      // If we have a radius filter AND a search query, geocode it
+      let searchLat: number | null = null;
+      let searchLng: number | null = null;
+      let radiusModeActive = false;
+
+      if (radiusFilter !== 'any' && searchQuery.trim()) {
+        setIsGeocoding(true);
+        try {
+          const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchQuery.trim())}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`);
+          const geoData = await res.json();
+          if (geoData.status === 'OK' && geoData.results[0]) {
+            searchLat = geoData.results[0].geometry.location.lat;
+            searchLng = geoData.results[0].geometry.location.lng;
+            radiusModeActive = true;
+          } else {
+            toast.error('Could not find that location.');
+          }
+        } catch (e) {
+          console.error('Geocoding failed', e);
+        } finally {
+          setIsGeocoding(false);
+        }
+      }
+
+      if (radiusModeActive && searchLat !== null && searchLng !== null) {
+        // Fetch IDs within radius
+        const { data: radiusIds, error: radiusError } = await supabase.rpc('get_contractor_ids_in_radius', {
+          search_lat: searchLat,
+          search_lng: searchLng,
+          radius_miles: Number(radiusFilter)
+        });
+        
+        if (radiusError) {
+          console.error("Radius error", radiusError);
+        } else {
+          const ids = radiusIds?.map((r: any) => r.id) || [];
+          if (ids.length > 0) {
+            query = query.in('id', ids);
+          } else {
+            // Force 0 results if nothing in radius
+            query = query.in('id', ['00000000-0000-0000-0000-000000000000']);
+          }
+        }
+      } else if (searchQuery.trim()) {
+        // Normal text search if not doing radius
+        const search = `%${searchQuery.trim()}%`;
+        query = query.or(`name.ilike.${search},company_name.ilike.${search},contact_name.ilike.${search},csv_data->>Address.ilike.${search}`);
+      }
+
+      query = query.range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
       // Base query for total count (without search)
       if (isInitial) {
@@ -73,15 +124,9 @@ function ContractorProcessingContent() {
         if (assignedToMe && profile) countQuery = countQuery.eq('assigned_to', profile.id);
         else countQuery = countQuery.is('assigned_to', null);
         if (statusFilter !== 'all') countQuery = countQuery.eq('status', statusFilter);
-        if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
 
         const { count: baseCount } = await countQuery;
         setTotalCount(baseCount || 0);
-      }
-
-      if (searchQuery.trim()) {
-        const search = `%${searchQuery.trim()}%`;
-        query = query.or(`name.ilike.${search},company_name.ilike.${search},contact_name.ilike.${search}`);
       }
 
       if (assignedToMe && profile) {
@@ -92,11 +137,6 @@ function ContractorProcessingContent() {
 
       if (statusFilter !== 'all') {
         query = query.eq('status', statusFilter);
-      }
-
-      if (phoneFilter === 'with_phone') {
-        // Assume empty string is no phone, anything else is a phone. Our schema sets NOT NULL for phone
-        query = query.neq('phone', '');
       }
 
       const { data, error, count } = await query;
@@ -130,7 +170,7 @@ function ContractorProcessingContent() {
   useEffect(() => {
     setPage(0);
     fetchContractors(0, true);
-  }, [statusFilter, phoneFilter, searchQuery, assignedToMe]);
+  }, [statusFilter, searchQuery, radiusFilter, assignedToMe]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -160,10 +200,9 @@ function ContractorProcessingContent() {
     }
   };
 
-  if (loading) {
-    return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
-  }
-
+  // Remove the unmounting `if (loading)` entirely
+  // Instead, we will show a spinner *inside* the content area, or dim it.
+  
   return (
     <div>
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
@@ -178,15 +217,33 @@ function ContractorProcessingContent() {
               ? `Showing ${searchCount} of ${totalCount} contractors` 
               : `Showing ${totalCount} contractors`}
           </div>
-          <div className="relative flex-1 w-full sm:min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search contractors..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
-            />
+          <div className="relative flex-1 w-full sm:min-w-[200px] flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search contractors or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
+              />
+              {isGeocoding && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+            </div>
+            <select
+              value={radiusFilter}
+              onChange={(e) => setRadiusFilter(e.target.value)}
+              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
+              title="Filter by distance (requires a location search)"
+            >
+              <option value="any">Any Distance</option>
+              <option value="30">30 Miles</option>
+              <option value="50">50 Miles</option>
+              <option value="100">100 Miles</option>
+            </select>
           </div>
 
           {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
@@ -197,18 +254,6 @@ function ContractorProcessingContent() {
               Add Contractor
             </button>
           )}
-          
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 font-medium">Phone:</label>
-            <select
-              value={phoneFilter}
-              onChange={(e) => setPhoneFilter(e.target.value)}
-              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
-            >
-              <option value="all">All</option>
-              <option value="with_phone">Has Phone Number</option>
-            </select>
-          </div>
           
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600 font-medium">Status:</label>
@@ -229,7 +274,9 @@ function ContractorProcessingContent() {
       </div>
 
       <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
-        {contractors.length > 0 ? (
+        {loading && contractors.length === 0 ? (
+          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
+        ) : contractors.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {contractors.map((contractor) => (
               <li key={contractor.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">

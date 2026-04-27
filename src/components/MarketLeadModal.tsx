@@ -15,12 +15,37 @@ interface MarketLeadModalProps {
 export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClose, lead, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [uploading, setUploading] = useState(false);
-  const [photos, setPhotos] = useState<string[]>(lead.photos || []);
+  const [photos, setPhotos] = useState<string[]>(() => {
+    const p = lead.photos as any;
+    if (!p) return [];
+    if (Array.isArray(p)) return p;
+    if (typeof p === 'string') {
+      if (p === '{}') return [];
+      try {
+        const parsed = JSON.parse(p);
+        if (Array.isArray(parsed)) return parsed;
+        return [parsed];
+      } catch {
+        if (p.startsWith('{') && p.endsWith('}')) {
+          return p.slice(1, -1).split(',').map((s: string) => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean);
+        }
+        return [p];
+      }
+    }
+    return [];
+  });
   const [categories, setCategories] = useState<Category[]>([]);
   const [price, setPrice] = useState<string>(lead.price ? lead.price.toString() : '135');
   const [billUrls, setBillUrls] = useState<string[]>(() => {
-    const raw = (lead.bills_url || '').trim();
+    let raw = (lead.bills_url || '').trim();
     if (!raw) return [];
+    
+    // Clean up Postgres array format if present from older records
+    if (raw.startsWith('{') && raw.endsWith('}')) {
+      raw = raw.substring(1, raw.length - 1);
+      return raw.split(',').map(s => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean);
+    }
+    
     if (raw.includes(',')) {
       return raw.split(',').map((u) => u.trim()).filter(Boolean);
     }

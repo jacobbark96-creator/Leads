@@ -5,6 +5,8 @@ import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin } from 'lu
 import toast from 'react-hot-toast';
 import Autocomplete from 'react-google-autocomplete';
 
+import { MultiServiceArea } from './MultiServiceArea';
+
 type CategoryOption = { id: string; name: string };
 type AdvisorOption = { id: string; name: string };
 
@@ -42,6 +44,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     other_contact_numbers: '',
     address: '',
     areas_covered: '',
+    service_areas: [] as any[],
     services_offered: '',
     internal_notes: ''
   });
@@ -209,6 +212,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           other_contact_numbers: data.other_contact_numbers || '',
           address: data.address || '',
           areas_covered: data.areas_covered || '',
+          service_areas: Array.isArray(data.service_areas) ? data.service_areas : [],
           services_offered: data.services_offered || '',
           internal_notes: data.internal_notes || ''
         }));
@@ -244,7 +248,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
 
       // Update Client profile if it exists
       if (formData.role === 'client' && hasClientProfile) {
-        const { error: clientError } = await supabase
+        const { data: updatedClient, error: clientError } = await supabase
           .from('clients')
           .update({
             company_name: formData.company_name,
@@ -253,13 +257,33 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
             other_contact_numbers: formData.other_contact_numbers,
             address: formData.address,
             areas_covered: formData.areas_covered,
+            service_areas: formData.service_areas,
             services_offered: selectedServiceCategoryIds.join(', '),
             assigned_to: selectedAdvisorId || null,
             internal_notes: formData.internal_notes
           })
-          .eq('user_id', user.id);
+          .eq('user_id', user.id)
+          .select('id')
+          .single();
           
         if (clientError) throw clientError;
+
+        // Keep contractor record in sync
+        if (updatedClient) {
+          const { error: contractorError } = await supabase
+            .from('contractors')
+            .update({
+              company_name: formData.company_name,
+              contact_name: formData.name, // Keep contact name synced with user name
+              phone: formData.phone,
+              service_areas: formData.service_areas
+            })
+            .eq('client_id', updatedClient.id);
+            
+          if (contractorError) {
+             console.error("Failed to sync contractor table:", contractorError);
+          }
+        }
 
         // Check if advisor assignment changed
         const newAssignedTo = selectedAdvisorId || null;
@@ -542,6 +566,11 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                       <input type="text" value={formData.company_name} onChange={e => setFormData({...formData, company_name: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                     <div>
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Contact Name</label>
+                      <input type="text" value={formData.name} onChange={e => setFormData({...formData, name: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                      <p className="text-xs text-gray-500 mt-1">This will also update the user's Full Name.</p>
+                    </div>
+                    <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Phone Number</label>
                       <input type="text" value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
                     </div>
@@ -576,9 +605,17 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                       <label className="block text-sm font-medium text-gray-700 mb-1">Other Contact Numbers</label>
                       <input type="text" value={formData.other_contact_numbers} onChange={e => setFormData({...formData, other_contact_numbers: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">Areas Covered</label>
-                      <textarea rows={2} value={formData.areas_covered} onChange={e => setFormData({...formData, areas_covered: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Service Areas (Geofenced)</label>
+                      <p className="text-xs text-gray-500 mb-3">Define the exact areas this client covers. They will only receive leads within these locations.</p>
+                      <MultiServiceArea 
+                        areas={formData.service_areas} 
+                        onChange={(areas) => setFormData({...formData, service_areas: areas})} 
+                      />
+                    </div>
+                    <div className="md:col-span-2">
+                      <label className="block text-sm font-medium text-gray-700 mb-1">Legacy Areas Covered (Text)</label>
+                      <textarea rows={2} value={formData.areas_covered} onChange={e => setFormData({...formData, areas_covered: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" placeholder="E.g. London, South East" />
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Personal Advisor (Super Admin)</label>

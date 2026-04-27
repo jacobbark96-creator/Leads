@@ -193,6 +193,12 @@ export default function MyOpenlead() {
         throw new Error('Update failed to apply to the database.');
       }
       
+      // Sync to user profile table
+      await supabase
+        .from('users')
+        .update({ name: formData.contact_name, phone: formData.phone })
+        .eq('id', profile!.id);
+
       // Sync to contractor CRM
       const { error: contractorError } = await supabase
         .from('contractors')

@@ -182,13 +182,26 @@ function LeadDetailsContent() {
         
         // Use text search if we have keywords, else fetch all to let UI handle (or fetch none)
         // A simpler approach since location/who_can_apply are TEXT:
-        const { data: grantsData } = await supabase.from('government_grants').select('id, title, url, amount, closing_date');
+        const [grantsRes, exclusionsRes] = await Promise.all([
+          supabase.from('government_grants').select('id, title, url, amount, closing_date, location, who_can_apply'),
+          supabase.from('grant_exclusions').select('keyword')
+        ]);
+        
+        const grantsData = grantsRes.data;
+        const exclusionsData = exclusionsRes.data || [];
+        const exclusionKeywords = exclusionsData.map(e => e.keyword.toLowerCase());
         
         if (grantsData) {
           // Do client-side matching for accuracy due to unstructured text
           const matched = grantsData.filter(g => {
             const locText = (g as any).location?.toLowerCase() || '';
             const whoText = (g as any).who_can_apply?.toLowerCase() || '';
+            const titleText = (g as any).title?.toLowerCase() || '';
+            
+            // Check against exclusions
+            if (exclusionKeywords.some(kw => titleText.includes(kw) || locText.includes(kw) || whoText.includes(kw))) {
+              return false;
+            }
             
             // Check location match (or if it's national)
             let locMatch = false;

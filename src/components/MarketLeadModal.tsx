@@ -26,10 +26,10 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
         if (Array.isArray(parsed)) return parsed;
         return [parsed];
       } catch {
-        if (p.startsWith('{') && p.endsWith('}')) {
+        if (typeof p === 'string' && p.startsWith('{') && p.endsWith('}')) {
           return p.slice(1, -1).split(',').map((s: string) => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean);
         }
-        return [p];
+        return [p as string];
       }
     }
     return [];
@@ -125,10 +125,10 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
             const parsed = JSON.parse(p);
             setPhotos(Array.isArray(parsed) ? parsed : [parsed]);
           } catch {
-            if (p.startsWith('{') && p.endsWith('}')) {
+            if (typeof p === 'string' && p.startsWith('{') && p.endsWith('}')) {
               setPhotos(p.slice(1, -1).split(',').map((s: string) => s.replace(/(^"|"$)/g, '').trim()).filter(Boolean));
             } else {
-              setPhotos([p]);
+              setPhotos([p as string]);
             }
           }
         }

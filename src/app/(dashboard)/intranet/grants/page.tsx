@@ -1,8 +1,9 @@
 "use client";
 import React, { useEffect, useState, useMemo } from 'react';
-import { ExternalLink, Award, RefreshCw, MapPin, Users, Calendar, Search } from 'lucide-react';
+import { ExternalLink, Award, RefreshCw, MapPin, Users, Calendar, Search, ShieldAlert } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import { GrantExclusionsModal } from '@/components/GrantExclusionsModal';
 
 interface Grant {
   id: string;
@@ -21,6 +22,7 @@ export default function GrantsInfo() {
   const [loading, setLoading] = useState(true);
   const [syncing, setSyncing] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isExclusionsModalOpen, setIsExclusionsModalOpen] = useState(false);
 
   const fetchGrants = async () => {
     setLoading(true);
@@ -91,6 +93,13 @@ export default function GrantsInfo() {
           <div className="text-sm font-medium text-gray-500 self-center sm:hidden text-center mb-2">
             {searchQuery.trim() ? `Showing ${filteredGrants.length} of ${grants.length} grants` : `Showing ${grants.length} grants`}
           </div>
+          <button
+            onClick={() => setIsExclusionsModalOpen(true)}
+            className="flex items-center justify-center gap-2 bg-white border border-red-200 text-red-700 px-4 py-2 rounded-lg hover:bg-red-50 font-medium text-sm transition-colors"
+          >
+            <ShieldAlert className="w-4 h-4" />
+            Exclusions
+          </button>
           <button
             onClick={handleSync}
             disabled={syncing}
@@ -171,6 +180,11 @@ export default function GrantsInfo() {
           ))}
         </div>
       )}
+      
+      <GrantExclusionsModal 
+        isOpen={isExclusionsModalOpen} 
+        onClose={() => setIsExclusionsModalOpen(false)} 
+      />
     </div>
   );
 };

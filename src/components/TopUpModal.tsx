@@ -19,8 +19,8 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose, clientI
   const amounts = [285, 600, 800, 1000];
 
   const handleTopUp = async (amount: number) => {
-    if (amount < 10) {
-      toast.error('Minimum top up is £10');
+    if (amount < 1) {
+      toast.error('Minimum top up is £1');
       return;
     }
     
@@ -95,7 +95,7 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose, clientI
                 </div>
                 <input
                   type="number"
-                  min="10"
+                  min="1"
                   step="1"
                   value={customAmount}
                   onChange={e => setCustomAmount(e.target.value)}
@@ -105,7 +105,7 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose, clientI
               </div>
               <button
                 onClick={() => handleTopUp(Number(customAmount))}
-                disabled={loading || !customAmount || Number(customAmount) < 10}
+                disabled={loading || !customAmount || Number(customAmount) < 1}
                 className="inline-flex items-center px-6 py-3 border border-transparent text-base font-bold rounded-xl text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 shadow-sm disabled:opacity-50 transition-colors"
               >
                 Top Up

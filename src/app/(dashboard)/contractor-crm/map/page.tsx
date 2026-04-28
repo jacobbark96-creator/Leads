@@ -92,8 +92,8 @@ export default function MapTab() {
       let hasPoints = false;
 
       clients.forEach((client: any) => {
-        if (client.service_areas?.[0]?.lat && client.service_areas?.[0]?.lng) {
-          bounds.extend({ lat: Number(client.service_areas[0].lat), lng: Number(client.service_areas[0].lng) });
+        if (client.primary_map_area?.lat && client.primary_map_area?.lng) {
+          bounds.extend({ lat: Number(client.primary_map_area.lat), lng: Number(client.primary_map_area.lng) });
           hasPoints = true;
         }
       });
@@ -159,13 +159,15 @@ export default function MapTab() {
       if (clientsError) throw clientsError;
       
       // Filter clients who have at least one valid service area
-      const validClients = (clientsData || []).filter((c: any) => 
-        c.service_areas && 
-        Array.isArray(c.service_areas) && 
-        c.service_areas.length > 0 && 
-        c.service_areas[0].lat && 
-        c.service_areas[0].lng
-      );
+      const validClients = (clientsData || []).map((c: any) => {
+        // Find the first service area that has valid lat/lng coordinates
+        const validArea = c.service_areas?.find((area: any) => area.lat && area.lng);
+        return {
+          ...c,
+          // Store the valid area specifically for the map to use
+          primary_map_area: validArea
+        };
+      }).filter(c => c.primary_map_area);
       
       setClients(validClients);
 
@@ -320,11 +322,12 @@ export default function MapTab() {
           >
           {/* Render Clients (Contractors) */}
           {filteredClients.map((client: any) => {
-            const firstArea = client.service_areas[0];
+            const mapArea = client.primary_map_area;
+            if (!mapArea) return null;
             return (
               <Marker
                 key={client.id}
-                position={{ lat: Number(firstArea.lat), lng: Number(firstArea.lng) }}
+                position={{ lat: Number(mapArea.lat), lng: Number(mapArea.lng) }}
                 title={client.company_name || client.contact_name || 'Contractor'}
                 icon={createStarIcon(selectedCategory === 'all' 
                   ? getClientColor(client.services_offered) 
@@ -353,9 +356,9 @@ export default function MapTab() {
           ))}
 
           {/* InfoWindow for Client */}
-          {selectedClient && (selectedClient as any).service_areas?.[0] && (
+          {selectedClient && (selectedClient as any).primary_map_area && (
             <InfoWindow
-              position={{ lat: Number((selectedClient as any).service_areas[0].lat), lng: Number((selectedClient as any).service_areas[0].lng) }}
+              position={{ lat: Number((selectedClient as any).primary_map_area.lat), lng: Number((selectedClient as any).primary_map_area.lng) }}
               onCloseClick={() => setSelectedClient(null)}
             >
               <div className="p-2 max-w-[250px]">
@@ -366,7 +369,7 @@ export default function MapTab() {
                 <div className="space-y-1 text-xs">
                   <div className="flex items-start gap-2">
                     <MapPin className="w-3 h-3 text-gray-400 mt-0.5" />
-                    <span>{(selectedClient as any).service_areas[0].address || 'No address provided'}</span>
+                    <span>{(selectedClient as any).primary_map_area.address || 'No address provided'}</span>
                   </div>
                   <div className="flex items-start gap-2">
                     <Briefcase className="w-3 h-3 text-gray-400 mt-0.5" />

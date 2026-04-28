@@ -10,6 +10,7 @@ export interface UserProfile {
   job_title?: string | null;
   about?: string | null;
   working_hours?: string | null;
+  is_approved?: boolean;
   created_at: string;
 }
 

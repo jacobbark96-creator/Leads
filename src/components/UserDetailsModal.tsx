@@ -414,7 +414,14 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
               <User className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">User Details</h2>
+              <h2 className="text-xl font-bold text-gray-900 flex items-center gap-3">
+                User Details
+                {user.role === 'client' && user.is_approved === false && (
+                  <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">
+                    Pending Approval
+                  </span>
+                )}
+              </h2>
               <p className="text-sm text-gray-500">Manage account information and security</p>
             </div>
           </div>
@@ -769,6 +776,38 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                  </div>
                </dl>
             </div>
+
+            {user.role === 'client' && user.is_approved === false && (
+              <div className="mt-8 bg-amber-50 p-4 rounded-xl border border-amber-200">
+                <h4 className="text-sm font-bold text-amber-900 mb-2">Pending Approval</h4>
+                <p className="text-xs text-amber-700 mb-4">
+                  This user has signed up but cannot access the marketplace until their account is approved.
+                </p>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    try {
+                      setLoading(true);
+                      const { error } = await supabase
+                        .from('users')
+                        .update({ is_approved: true })
+                        .eq('id', user.id);
+                      if (error) throw error;
+                      toast.success('User account approved successfully');
+                      onUserUpdated();
+                    } catch (err: any) {
+                      toast.error('Failed to approve account: ' + err.message);
+                    } finally {
+                      setLoading(false);
+                    }
+                  }}
+                  disabled={loading}
+                  className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50"
+                >
+                  Approve Account
+                </button>
+              </div>
+            )}
           </div>
 
         </div>

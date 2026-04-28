@@ -78,10 +78,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     if (mounted && initialized && !loading && !profileCheckLoading) {
       if (!user || !profile) {
         window.location.href = '/login';
+      } else if (profile.role === 'client' && profile.is_approved === false) {
+        window.location.href = '/pending-approval';
       } else if (allowedRoles && !allowedRoles.includes(profile.role)) {
         // Redirect based on user's role if they try to access an unauthorized page
         if (profile.role === 'client') {
-          window.location.href = '/client-portal';
+          window.location.href = '/my-openlead';
         } else {
           window.location.href = '/staff';
         }

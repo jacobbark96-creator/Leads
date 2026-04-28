@@ -41,7 +41,11 @@ export default function Login() {
   useEffect(() => {
     if (user && profile) {
       if (profile.role === 'client') {
-        window.location.href = '/my-openlead';
+        if (profile.is_approved === false) {
+          window.location.href = '/pending-approval';
+        } else {
+          window.location.href = '/my-openlead';
+        }
       } else {
         window.location.href = '/staff';
       }
@@ -125,12 +129,16 @@ export default function Login() {
           if (profileData) {
             useAuthStore.getState().setProfile(profileData);
             if (profileData.role === 'client') {
-              window.location.href = '/my-openlead';
+              if (profileData.is_approved === false) {
+                window.location.href = '/pending-approval';
+              } else {
+                window.location.href = '/my-openlead';
+              }
             } else {
               window.location.href = '/staff';
             }
           } else {
-            window.location.href = '/my-openlead';
+            window.location.href = '/pending-approval';
           }
         }
       }

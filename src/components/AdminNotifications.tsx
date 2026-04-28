@@ -5,6 +5,7 @@ import toast from 'react-hot-toast';
 
 export function AdminNotifications() {
   const [unassignedClients, setUnassignedClients] = useState<any[]>([]);
+  const [unapprovedUsers, setUnapprovedUsers] = useState<any[]>([]);
   const [admins, setAdmins] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -15,10 +16,9 @@ export function AdminNotifications() {
 
     // Setup realtime subscription for new clients
     const channel = supabase
-      .channel('public:clients')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => {
-        fetchData();
-      })
+      .channel('public:clients_and_users')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => fetchData())
       .subscribe();
 
     return () => {
@@ -48,6 +48,17 @@ export function AdminNotifications() {
 
       if (clientsError) throw clientsError;
       setUnassignedClients(clients || []);
+
+      // Fetch unapproved users
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('id, name, email, created_at')
+        .eq('role', 'client')
+        .eq('is_approved', false)
+        .order('created_at', { ascending: false });
+
+      if (usersError) throw usersError;
+      setUnapprovedUsers(users || []);
 
       // Fetch potential advisors (sales, admin, super_admin)
       const { data: staff, error: staffError } = await supabase
@@ -99,6 +110,31 @@ export function AdminNotifications() {
     }
   };
 
+  const handleApprove = async (userId: string) => {
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('users')
+        .update({ is_approved: true })
+        .eq('id', userId);
+        
+      if (error) throw error;
+      
+      toast.success('User approved successfully!');
+      setUnapprovedUsers(prev => prev.filter(u => u.id !== userId));
+      
+      if (unassignedClients.length + unapprovedUsers.length <= 1) {
+        setIsOpen(false);
+      }
+    } catch (error: any) {
+      toast.error('Failed to approve user: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const totalPending = unassignedClients.length + unapprovedUsers.length;
+
   return (
     <div className="relative" ref={dropdownRef}>
       <button
@@ -106,7 +142,7 @@ export function AdminNotifications() {
         className="relative p-2 text-gray-400 hover:text-blue-600 focus:outline-none transition-colors"
       >
         <Bell className="w-5 h-5" />
-        {unassignedClients.length > 0 && (
+        {totalPending > 0 && (
           <span className="absolute top-1.5 right-1.5 flex h-2 w-2">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
             <span className="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
@@ -119,18 +155,44 @@ export function AdminNotifications() {
           <div className="bg-slate-50 px-4 py-3 border-b border-gray-100 flex items-center justify-between">
             <h3 className="text-sm font-bold text-gray-900">Action Required</h3>
             <span className="bg-blue-100 text-blue-800 text-xs font-bold px-2.5 py-0.5 rounded-full">
-              {unassignedClients.length} Pending
+              {totalPending} Pending
             </span>
           </div>
 
           <div className="max-h-96 overflow-y-auto">
-            {unassignedClients.length === 0 ? (
+            {totalPending === 0 ? (
               <div className="p-6 text-center text-gray-500 text-sm flex flex-col items-center">
                 <Check className="w-8 h-8 text-green-400 mb-2" />
-                All clients have been assigned an advisor!
+                All clients have been assigned and approved!
               </div>
             ) : (
               <ul className="divide-y divide-gray-100">
+                {unapprovedUsers.map((user) => (
+                  <li key={user.id} className="p-4 hover:bg-gray-50 transition-colors bg-amber-50/30">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">New Signup</span>
+                        </div>
+                        <p className="text-sm font-bold text-gray-900 truncate">
+                          {user.name}
+                        </p>
+                        <p className="text-xs text-gray-500 truncate mb-3">
+                          {user.email}
+                        </p>
+                        
+                        <button
+                          onClick={() => handleApprove(user.id)}
+                          disabled={loading}
+                          className="w-full bg-green-600 hover:bg-green-700 text-white text-xs font-bold py-2 px-3 rounded-md transition-colors disabled:opacity-50"
+                        >
+                          Approve Account
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+                
                 {unassignedClients.map((client) => (
                   <li key={client.id} className="p-4 hover:bg-gray-50 transition-colors">
                     <div className="flex items-start justify-between gap-3">

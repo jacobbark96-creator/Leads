@@ -80,7 +80,19 @@ export default function CheckEmail() {
       
       if (authData.user) {
         toast.success('Logged in successfully!');
-        window.location.href = '/my-openlead';
+        
+        // Check profile to see if approved
+        const { data: profile } = await supabase
+          .from('users')
+          .select('is_approved')
+          .eq('id', authData.user.id)
+          .single();
+
+        if (profile?.is_approved === false) {
+          window.location.href = '/pending-approval';
+        } else {
+          window.location.href = '/my-openlead';
+        }
       }
     } catch (error: any) {
       toast.error(error.message || 'Authentication failed');

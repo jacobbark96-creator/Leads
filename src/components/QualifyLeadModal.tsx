@@ -3,7 +3,9 @@ import { supabase } from '../lib/supabase';
 import { Lead, Category } from '../types';
 import { X, Upload, Trash2, MapPin, CheckCircle, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Autocomplete from 'react-google-autocomplete';
+import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+
+const libraries: "places"[] = ['places'];
 
 interface QualifyLeadModalProps {
   isOpen: boolean;
@@ -78,6 +80,31 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
     job_title: lead.job_title || '',
     bills_url: lead.bills_url || '',
   });
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
+
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+
+  const onLoadAutocomplete = (autoC: google.maps.places.Autocomplete) => setAutocomplete(autoC);
+
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
+      const place = autocomplete.getPlace();
+      if (place) {
+        const lat = place.geometry?.location?.lat() || null;
+        const lng = place.geometry?.location?.lng() || null;
+        setFormData(prev => ({ 
+          ...prev, 
+          location: place.formatted_address || place.name || '',
+          latitude: lat,
+          longitude: lng
+        }));
+      }
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -384,27 +411,35 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Location (Full Address) *</label>
                   <div className="relative mt-1">
-                    <Autocomplete
-                      apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-                      onPlaceSelected={(place) => {
-                        const lat = place.geometry?.location?.lat() || null;
-                        const lng = place.geometry?.location?.lng() || null;
-                        setFormData(prev => ({ 
-                          ...prev, 
-                          location: place?.formatted_address || place?.name || '',
-                          latitude: lat,
-                          longitude: lng
-                        }));
-                      }}
-                      options={{
-                        types: [],
-                        componentRestrictions: { country: "gb" },
-                        fields: ['formatted_address', 'geometry', 'name']
-                      }}
-                      defaultValue={formData.location || ''}
-                      placeholder="Search address..."
-                      className="block w-full pl-10 pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    />
+                    {isLoaded && !loadError ? (
+                      <Autocomplete
+                        onLoad={onLoadAutocomplete}
+                        onPlaceChanged={onPlaceChanged}
+                        options={{
+                          types: [],
+                          componentRestrictions: { country: "gb" },
+                          fields: ['formatted_address', 'geometry', 'name']
+                        }}
+                      >
+                        <input
+                          type="text"
+                          required
+                          value={formData.location}
+                          onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                          placeholder="Search address..."
+                          className="block w-full pl-10 pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                        />
+                      </Autocomplete>
+                    ) : (
+                      <input
+                        type="text"
+                        required
+                        value={formData.location}
+                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                        placeholder={loadError ? "Error loading maps" : "Loading map..."}
+                        className="block w-full pl-10 pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    )}
                     <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                     {formData.latitude && formData.longitude ? (
                       <div className="absolute right-3 top-2.5" title="Location coordinates found">

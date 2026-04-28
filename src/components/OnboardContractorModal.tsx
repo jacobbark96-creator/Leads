@@ -3,8 +3,10 @@ import { supabase } from '@/lib/supabase';
 import { Contractor, Category } from '@/types';
 import { X, UserPlus, Building, Mail, Phone, MapPin, Briefcase, FileText } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Autocomplete from 'react-google-autocomplete';
+import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 import { MultiServiceArea } from './MultiServiceArea';
+
+const libraries: "places"[] = ['places'];
 
 interface OnboardContractorModalProps {
   isOpen: boolean;
@@ -32,6 +34,31 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
     latitude: null as number | null,
     longitude: null as number | null
   });
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
+
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+
+  const onLoadAutocomplete = (autoC: google.maps.places.Autocomplete) => setAutocomplete(autoC);
+
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
+      const place = autocomplete.getPlace();
+      if (place) {
+        const lat = place.geometry?.location?.lat() || null;
+        const lng = place.geometry?.location?.lng() || null;
+        setFormData(prev => ({ 
+          ...prev, 
+          address: place.formatted_address || place.name || '',
+          latitude: lat,
+          longitude: lng
+        }));
+      }
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -245,27 +272,35 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="md:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
-                  <Autocomplete
-                    apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-                    onPlaceSelected={(place) => {
-                      const lat = place.geometry?.location?.lat() || null;
-                      const lng = place.geometry?.location?.lng() || null;
-                      setFormData(prev => ({ 
-                        ...prev, 
-                        address: place?.formatted_address || place?.name || '',
-                        latitude: lat,
-                        longitude: lng
-                      }));
-                    }}
-                    options={{
-                      types: [],
-                      componentRestrictions: { country: "gb" },
-                      fields: ['formatted_address', 'geometry', 'name']
-                    }}
-                    defaultValue={formData.address || ''}
-                    placeholder="Start typing an address..."
-                    className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
-                  />
+                  {isLoaded && !loadError ? (
+                    <Autocomplete
+                      onLoad={onLoadAutocomplete}
+                      onPlaceChanged={onPlaceChanged}
+                      options={{
+                        types: [],
+                        componentRestrictions: { country: "gb" },
+                        fields: ['formatted_address', 'geometry', 'name']
+                      }}
+                    >
+                      <input
+                        type="text"
+                        name="address"
+                        value={formData.address}
+                        onChange={handleChange}
+                        placeholder="Start typing an address..."
+                        className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                      />
+                    </Autocomplete>
+                  ) : (
+                    <input
+                      type="text"
+                      name="address"
+                      value={formData.address}
+                      onChange={handleChange}
+                      placeholder={loadError ? "Error loading maps" : "Loading map..."}
+                      className="w-full border border-gray-300 rounded-lg px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Other Contacts</label>

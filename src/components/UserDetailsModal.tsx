@@ -3,7 +3,9 @@ import { supabase } from '../lib/supabase';
 import { UserProfile } from '../types';
 import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
-import Autocomplete from 'react-google-autocomplete';
+import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+
+const libraries: "places"[] = ['places'];
 
 import { MultiServiceArea } from './MultiServiceArea';
 
@@ -135,6 +137,27 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
       return parseServicesOfferedToIds(formData.services_offered, categoryOptions);
     });
   }, [isOpen, hasClientProfile, formData.services_offered, categoryOptions.length]);
+
+  const { isLoaded, loadError } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
+
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+
+  const onLoadAutocomplete = (autoC: google.maps.places.Autocomplete) => setAutocomplete(autoC);
+
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
+      const place = autocomplete.getPlace();
+      if (place) {
+        setFormData(prev => ({ 
+          ...prev, 
+          address: place.formatted_address || place.name || ''
+        }));
+      }
+    }
+  };
 
   const fetchAdvisorOptions = async () => {
     try {
@@ -577,23 +600,33 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
                       <div className="relative" key={loadingClient ? 'loading' : 'loaded'}>
-                        <Autocomplete
-                          apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
-                          onPlaceSelected={(place) => {
-                            setFormData(prev => ({ 
-                              ...prev, 
-                              address: place?.formatted_address || place?.name || ''
-                            }));
-                          }}
-                          options={{
-                            types: [],
-                            componentRestrictions: { country: "gb" },
-                            fields: ['formatted_address', 'name']
-                          }}
-                          defaultValue={formData.address}
-                          placeholder="Search address..."
-                          className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500"
-                        />
+                        {isLoaded && !loadError ? (
+                          <Autocomplete
+                            onLoad={onLoadAutocomplete}
+                            onPlaceChanged={onPlaceChanged}
+                            options={{
+                              types: [],
+                              componentRestrictions: { country: "gb" },
+                              fields: ['formatted_address', 'name']
+                            }}
+                          >
+                            <input
+                              type="text"
+                              value={formData.address}
+                              onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                              placeholder="Search address..."
+                              className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500"
+                            />
+                          </Autocomplete>
+                        ) : (
+                          <input
+                            type="text"
+                            value={formData.address}
+                            onChange={(e) => setFormData(prev => ({ ...prev, address: e.target.value }))}
+                            placeholder={loadError ? "Error loading maps" : "Loading map..."}
+                            className="w-full border border-gray-300 rounded-lg pl-10 pr-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500"
+                          />
+                        )}
                         <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
                       </div>
                     </div>

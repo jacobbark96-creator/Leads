@@ -576,7 +576,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                     </div>
                     <div className="md:col-span-2">
                       <label className="block text-sm font-medium text-gray-700 mb-1">Full Address</label>
-                      <div className="relative">
+                      <div className="relative" key={loadingClient ? 'loading' : 'loaded'}>
                         <Autocomplete
                           apiKey={process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}
                           onPlaceSelected={(place) => {

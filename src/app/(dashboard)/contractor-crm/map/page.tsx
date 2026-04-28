@@ -421,10 +421,17 @@ export default function MapTab() {
                 )}
 
                 <p className="text-sm text-gray-600 mb-2">{selectedLead.location}</p>
-                <div className="space-y-1 text-xs text-gray-500">
-                  <p>Est. Spend: £{selectedLead.monthly_spend ? Number(selectedLead.monthly_spend).toLocaleString() : 'N/A'}</p>
+                <div className="space-y-1 text-xs text-gray-500 mb-3">
+                  <p>Est. Spend: £{selectedLead.monthly_spend ? Number(selectedLead.monthly_spend).toLocaleString() : 'N/A'}/mo</p>
                   <p>System Size: {selectedLead.est_system_size || 'N/A'}</p>
                 </div>
+                
+                <a
+                  href={`/sales-crm/lead?id=${selectedLead.id}`}
+                  className="block w-full text-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md transition-colors"
+                >
+                  View Details
+                </a>
               </div>
             </InfoWindow>
           )}

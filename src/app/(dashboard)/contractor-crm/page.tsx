@@ -147,15 +147,21 @@ function ContractorProcessingContent() {
       const hasNextPage = fetchedContractors.length > PAGE_SIZE;
       const contractorsToRender = hasNextPage ? fetchedContractors.slice(0, PAGE_SIZE) : fetchedContractors;
 
+      // Ensure unique IDs in case of backend duplicates causing React key errors
+      const uniqueContractors = Array.from(new Map(contractorsToRender.map(c => [c.id, c])).values());
+
       if (isInitial) {
-        setContractors(contractorsToRender);
+        setContractors(uniqueContractors);
         if (searchQuery.trim()) {
           setSearchCount(count || 0);
         } else {
           setSearchCount(null);
         }
       } else {
-        setContractors(prev => [...prev, ...contractorsToRender]);
+        setContractors(prev => {
+          const combined = [...prev, ...uniqueContractors];
+          return Array.from(new Map(combined.map(c => [c.id, c])).values());
+        });
       }
       
       setHasMore(hasNextPage);

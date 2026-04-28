@@ -20,7 +20,7 @@ export async function POST(req: Request) {
     }
 
     const { object } = await generateObject({
-      model: google('gemini-1.5-flash'),
+      model: google('gemini-2.5-flash'),
       system: 'You are a highly accurate CRM data extraction assistant. Your job is to extract lead information from pasted write-ups and map them perfectly to our database schema. If a value is not explicitly mentioned or clearly inferable, return an empty string or null. Ensure numbers like spend are just raw numbers.',
       prompt: `Extract the following details from this lead write-up:\n\n${text}`,
       schema: z.object({

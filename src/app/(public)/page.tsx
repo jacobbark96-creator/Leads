@@ -191,7 +191,7 @@ export default function Home() {
             {[
               { label: "Exclusive Leads", value: "100%", desc: "Never shared or resold" },
               { label: "Lead Categories", value: "4+", desc: "Solar, Roofing & more" },
-              { label: "Delivered Leads", value: "10k+", desc: "To growing contractors" },
+              { label: "Delivered Leads", value: "1K+", desc: "To growing contractors" },
               { label: "Avg. Min Saving", value: "180%", desc: "on lead cost with zero reduction in close rate." },
             ].map((stat, i) => (
               <div 

@@ -44,7 +44,7 @@ export default function About() {
                 Founded by industry veterans, our platform was built to solve the biggest bottleneck in contracting businesses: predictable revenue. We take the guesswork out of quality leads.
               </p>
               <p className="font-medium text-slate-800 bg-slate-50 p-6 rounded-2xl border border-slate-100">
-                By charging a small, transparent monthly fee, we are able to subsidize the cost of our leads. We acquire top-tier, high-intent prospects in bulk from premium providers and pass those savings directly to you.
+                We acquire top-tier, high-intent prospects and pass those high-converting opportunities directly to you. No hidden fees, no subscriptions—just pay for the leads you want.
               </p>
             </div>
 
@@ -52,7 +52,7 @@ export default function About() {
               {[
                 'Exclusive, never-shared leads',
                 'Real-time delivery to your CRM',
-                'Subsidized bulk pricing',
+                'Pay only for what you need',
                 'Take the guesswork out of quality'
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-3">

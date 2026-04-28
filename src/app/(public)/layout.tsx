@@ -15,7 +15,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
 
   const getDashboardLink = () => {
     if (!profile) return '/login';
-    if (profile.role === 'client') return '/client-portal';
+    if (profile.role === 'client') return '/my-openlead';
     return '/staff';
   };
 

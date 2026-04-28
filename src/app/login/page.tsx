@@ -41,7 +41,7 @@ export default function Login() {
   useEffect(() => {
     if (user && profile) {
       if (profile.role === 'client') {
-        window.location.href = '/client-portal';
+        window.location.href = '/my-openlead';
       } else {
         window.location.href = '/staff';
       }
@@ -125,12 +125,12 @@ export default function Login() {
           if (profileData) {
             useAuthStore.getState().setProfile(profileData);
             if (profileData.role === 'client') {
-              window.location.href = '/client-portal';
+              window.location.href = '/my-openlead';
             } else {
               window.location.href = '/staff';
             }
           } else {
-            window.location.href = '/staff';
+            window.location.href = '/my-openlead';
           }
         }
       }

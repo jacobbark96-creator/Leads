@@ -55,9 +55,9 @@ export default function Services() {
             <div className="w-14 h-14 bg-cyan-50 rounded-2xl flex items-center justify-center mb-6 relative z-10 border border-cyan-100">
               <ShieldCheck className="w-7 h-7 text-cyan-500" />
             </div>
-            <h3 className="text-xl font-bold text-slate-900 mb-4 relative z-10">Subsidized Pricing</h3>
+            <h3 className="text-xl font-bold text-slate-900 mb-4 relative z-10">Pay Per Lead</h3>
             <p className="text-slate-600 leading-relaxed relative z-10">
-              We charge a minimal monthly maintenance fee. This unique model allows us to heavily subsidize the cost of the leads themselves, making them cheaper than going straight to the source.
+              We never charge hidden fees or forced subscriptions. You simply browse the marketplace and pay only for the exact leads you want to pursue.
             </p>
           </div>
 
@@ -92,7 +92,7 @@ export default function Services() {
                 Everything you need, built right in.
               </h3>
               <p className="text-lg text-slate-400 mb-8 leading-relaxed">
-                Say goodbye to clunky spreadsheets and scattered data. Your minimal monthly fee grants you full access to our proprietary lead management ecosystem.
+                Say goodbye to clunky spreadsheets and scattered data. Openlead grants you full, free access to our proprietary lead management ecosystem.
               </p>
 
               <div className="space-y-8">

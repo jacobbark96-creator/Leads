@@ -48,8 +48,8 @@ export async function POST(req: Request) {
         clientId: clientId,
         amount: amount.toString()
       },
-      success_url: `${appUrl}/client-portal?topup_success=true`,
-      cancel_url: `${appUrl}/client-portal?topup_canceled=true`,
+      success_url: `${appUrl}/my-openlead?topup_success=true`,
+      cancel_url: `${appUrl}/my-openlead?topup_canceled=true`,
     });
 
     return NextResponse.json({ url: session.url });

@@ -25,34 +25,10 @@ export default function SubscriptionSummary() {
 
     setIsLoading(true);
     try {
-      // 1. Call API to create a Stripe Checkout Session for the free trial subscription
-      const response = await fetch('/api/create-checkout-session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ userId: user?.id, email: user?.email }),
-      });
-
-      let data;
-      try {
-        data = await response.json();
-      } catch (parseError) {
-        throw new Error(`Server returned an invalid response. Status: ${response.status}`);
-      }
-
-      if (!response.ok) {
-        throw new Error(data.error || `HTTP error ${response.status}`);
-      }
-
-      const { url, error } = data;
-
-      if (error) throw new Error(error);
-
-      // 2. Redirect to the Stripe Checkout page
-      if (url) {
-        window.location.href = url;
-      }
+      // Since it's free forever, we just redirect straight to the dashboard
+      window.location.href = '/my-openlead';
     } catch (err: any) {
-      toast.error('Failed to initiate checkout: ' + err.message);
+      toast.error('Failed to complete registration: ' + err.message);
       setIsLoading(false);
     }
   };
@@ -74,7 +50,7 @@ export default function SubscriptionSummary() {
         <div className="text-center">
           <img src="/openlead-logo.png" alt="Openlead" className="h-10 mx-auto mb-6" />
           <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 tracking-tight">Complete Your Registration</h2>
-          <p className="mt-3 text-lg text-slate-500 max-w-xl mx-auto">Start your 30-day free trial today and get immediate access to our exclusive lead marketplace.</p>
+          <p className="mt-3 text-lg text-slate-500 max-w-xl mx-auto">Get immediate, free access to our exclusive lead marketplace.</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
@@ -90,16 +66,16 @@ export default function SubscriptionSummary() {
                     Premium Access
                   </span>
                   <span className="inline-flex px-3 py-1 rounded-full text-xs font-bold tracking-wider uppercase bg-white/10 text-white border border-white/20">
-                    30 Days Free
+                    Free Forever
                   </span>
                 </div>
                 
                 <div className="flex items-baseline text-white">
                   <span className="text-5xl md:text-6xl font-extrabold tracking-tight">£0</span>
-                  <span className="ml-2 text-xl font-medium text-slate-400">for 30 days</span>
+                  <span className="ml-2 text-xl font-medium text-slate-400">/mo</span>
                 </div>
                 <p className="mt-4 text-base text-slate-300 leading-relaxed">
-                  Then just £15/mo for your first 6 months. Standard £30/mo applies thereafter. Cancel anytime.
+                  No hidden fees. No forced subscriptions. Just pay for the leads you want.
                 </p>
               </div>
             </div>
@@ -111,8 +87,7 @@ export default function SubscriptionSummary() {
                   'Full access to the exclusive lead marketplace',
                   'Built-in CRM to manage your pipeline and ROI',
                   'Personal Openlead Coach for ongoing support',
-                  'Subsidised bulk pricing on all leads',
-                  'Add child accounts for your sales team (£2/mo)',
+                  'Flexible bulk pricing on all leads',
                 ].map((feature, index) => (
                   <li key={index} className="flex items-start">
                     <div className="flex-shrink-0 mt-0.5 w-6 h-6 rounded-full bg-green-50 flex items-center justify-center border border-green-100">
@@ -134,8 +109,8 @@ export default function SubscriptionSummary() {
               </div>
               
               <div className="bg-slate-50 p-4 rounded-xl text-xs text-slate-600 mb-6 h-48 overflow-y-auto border border-slate-200 scrollbar-thin scrollbar-thumb-slate-300 scrollbar-track-transparent">
-                <p className="mb-1 font-bold text-slate-800">1. Subscription Terms</p>
-                <p className="mb-4">By starting your free trial, you agree to a 30-day free period. After 30 days, you will be automatically billed £15 per month for the next 6 months. From month 8 onwards, the standard rate of £30 per month applies. You may cancel at any time before the trial ends to avoid being charged.</p>
+                <p className="mb-1 font-bold text-slate-800">1. Platform Access</p>
+                <p className="mb-4">By completing registration, you gain full, free access to the Openlead marketplace. There are no monthly fees or hidden charges.</p>
                 
                 <p className="mb-1 font-bold text-slate-800">2. Lead Purchases</p>
                 <p className="mb-4">Leads purchased on the marketplace are billed separately via Pay-As-You-Go. Lead exclusivity is guaranteed per the Openlead standard operating procedure.</p>
@@ -154,7 +129,7 @@ export default function SubscriptionSummary() {
                   <p className="font-bold text-slate-700">
                     I accept the Terms & Conditions
                   </p>
-                  <p className="text-slate-500 text-xs mt-1">I understand my card will be vaulted securely today to begin the free trial.</p>
+                  <p className="text-slate-500 text-xs mt-1">I understand that platform access is free and leads are billed Pay-As-You-Go.</p>
                 </div>
               </div>
 
@@ -168,11 +143,13 @@ export default function SubscriptionSummary() {
                 }`}
               >
                 {isLoading ? (
-                  'Processing...'
+                  <div className="flex items-center gap-2">
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white"></div>
+                    Processing...
+                  </div>
                 ) : (
                   <>
-                    <CreditCard className="w-5 h-5 mr-2" />
-                    Start Free Trial
+                    Complete Registration <ChevronRight className="ml-2 w-5 h-5" />
                   </>
                 )}
               </button>
@@ -180,7 +157,7 @@ export default function SubscriptionSummary() {
 
             <div className="flex items-center justify-center gap-2 text-xs font-medium text-slate-400 bg-white/50 py-3 rounded-xl border border-slate-200">
               <Lock className="w-3.5 h-3.5" />
-              Secure Checkout powered by Stripe
+              Secure registration powered by Stripe
             </div>
           </div>
 

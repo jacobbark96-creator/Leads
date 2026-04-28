@@ -1,12 +1,12 @@
 import React, { useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { X } from 'lucide-react';
+import { X, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 interface AddLeadModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onLeadAdded: () => void;
+  onLeadAdded: (lead?: any) => void;
   isContractor?: boolean;
   editData?: {
     id: string;
@@ -19,6 +19,8 @@ interface AddLeadModalProps {
 
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onLeadAdded, isContractor = false, editData = null }) => {
   const [loading, setLoading] = useState(false);
+  const [aiMode, setAiMode] = useState(false);
+  const [aiText, setAiText] = useState('');
   const [formData, setFormData] = useState({
     name: '',
     phone: '',
@@ -90,26 +92,89 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           insertPayload.company_name = formData.company || null;
         }
 
-        const { error } = await supabase
+        const { data, error } = await supabase
           .from(table)
-          .insert([insertPayload]);
+          .insert([insertPayload])
+          .select()
+          .single();
 
         if (error) throw error;
         toast.success(`${isContractor ? 'Contractor' : 'Lead'} added successfully`);
+        
+        // Reset form before closing to prevent stale state on next open
+        setFormData({
+          name: '',
+          phone: '',
+          email: '',
+          company: '',
+        });
+        
+        onLeadAdded(data);
+        onClose();
       }
-      
-      // Reset form before closing to prevent stale state on next open
-      setFormData({
-        name: '',
-        phone: '',
-        email: '',
-        company: '',
-      });
-      
-      onLeadAdded();
-      onClose();
     } catch (error: any) {
       toast.error('Failed to add: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAiParse = async () => {
+    if (!aiText.trim()) {
+      toast.error('Please paste a write-up first');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch('/api/parse-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: aiText }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to parse text');
+
+      const parsed = json.data;
+
+      // Automatically create the lead in the DB so it can be qualified
+      const insertPayload: any = {
+        name: parsed.name || 'Unknown',
+        company: parsed.company || null,
+        phone: parsed.phone || '00000000000',
+        email: parsed.email || null,
+        location: parsed.location || null,
+        status: 'fresh',
+        // Also save the extracted qualification data
+        timeframe: parsed.timeframe || null,
+        monthly_spend: parsed.monthly_spend ? Number(parsed.monthly_spend.replace(/[^0-9.]/g, '')) : null,
+        property_ownership: parsed.property_ownership || null,
+        electrical_supply: parsed.electrical_supply || null,
+        solar_location: parsed.solar_location || null,
+        roof_material: parsed.roof_material || null,
+        roof_condition: parsed.roof_condition || null,
+        cover_skylights: parsed.cover_skylights || false,
+        ground_mount: parsed.ground_mount || false,
+        payment_options: parsed.payment_options || null,
+        qualification_notes: parsed.qualification_notes || null
+      };
+
+      const { data, error } = await supabase
+        .from('leads')
+        .insert([insertPayload])
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success('Lead extracted successfully');
+      
+      setAiText('');
+      setAiMode(false);
+      onLeadAdded(data);
+      onClose();
+    } catch (error: any) {
+      toast.error('AI Parsing failed: ' + error.message);
     } finally {
       setLoading(false);
     }
@@ -127,15 +192,37 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
           <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
             <div className="flex justify-between items-center mb-5">
-            <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
-              {editData ? `Edit ${isContractor ? 'Contractor' : 'Lead'}` : `Add New ${isContractor ? 'Contractor' : 'Lead'}`}
-            </h3>
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
-              <X className="w-6 h-6" />
-            </button>
-          </div>
-          
-          <form onSubmit={handleSubmit} className="space-y-4">
+              <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                {editData ? `Edit ${isContractor ? 'Contractor' : 'Lead'}` : `Add New ${isContractor ? 'Contractor' : 'Lead'}`}
+              </h3>
+              <div className="flex items-center gap-3">
+                {!isContractor && !editData && (
+                  <button 
+                    onClick={() => setAiMode(!aiMode)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${aiMode ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    {aiMode ? 'Manual Entry' : 'Qualified Lead Write-up'}
+                  </button>
+                )}
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            {aiMode ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500">Paste your unformatted lead write-up here, and our AI will automatically extract all details and prepare it for qualification.</p>
+                <textarea
+                  value={aiText}
+                  onChange={(e) => setAiText(e.target.value)}
+                  placeholder="Paste write-up here...&#10;e.g. Confirmed address: Fox Hill...&#10;Monthly energy spend: £350 monthly..."
+                  className="w-full h-64 p-4 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 placeholder-gray-400"
+                />
+              </div>
+            ) : (
+              <form id="add-lead-form" onSubmit={handleSubmit} className="space-y-4">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name *</label>
                 <input
@@ -201,6 +288,28 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
                 </button>
               </div>
             </form>
+            )}
+            
+            {aiMode && (
+              <div className="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={handleAiParse}
+                  disabled={loading || !aiText.trim()}
+                  className="w-full inline-flex justify-center items-center gap-2 rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                >
+                  {loading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Sparkles className="w-4 h-4" />}
+                  {loading ? 'Extracting...' : 'Extract & Qualify'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiMode(false)}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
           </div>
         </div>
       </div>

@@ -448,10 +448,14 @@ function LeadProcessingContent() {
       <AddLeadModal 
         isOpen={isAddModalOpen} 
         onClose={() => setIsAddModalOpen(false)} 
-        onLeadAdded={() => {
+        onLeadAdded={(newLead) => {
           setIsAddModalOpen(false);
           setPage(0);
           fetchLeads(0, true);
+          if (newLead && newLead.status === 'fresh' && newLead.location) {
+            // If it came from AI parser, it will have a location pre-filled. Let's auto-open qualify modal.
+            setTimeout(() => setLeadToQualify(newLead), 300);
+          }
         }}
       />
     </div>

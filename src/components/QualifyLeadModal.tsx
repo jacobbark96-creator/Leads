@@ -54,6 +54,13 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
   });
   
   const [formData, setFormData] = useState({
+    // Basic Details (editable in case AI parsed them slightly off)
+    name: lead.name || '',
+    company: lead.company || '',
+    phone: lead.phone || '',
+    email: lead.email || '',
+    
+    // Qualification Details
     category_id: lead.category_id || '',
     monthly_spend: lead.monthly_spend ? lead.monthly_spend.toString() : '',
     location: lead.location || '',
@@ -112,6 +119,10 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
       
       // Reset form data when opened to ensure it has the latest lead data
       setFormData({
+        name: lead.name || '',
+        company: lead.company || '',
+        phone: lead.phone || '',
+        email: lead.email || '',
         category_id: lead.category_id || '',
         monthly_spend: lead.monthly_spend ? lead.monthly_spend.toString() : '',
         location: lead.location || '',
@@ -302,6 +313,10 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
       setLoading(true);
       
       const updateData = {
+        name: formData.name,
+        company: formData.company,
+        phone: formData.phone,
+        email: formData.email,
         status: lead.status === 'fresh' ? 'qualified' : lead.status,
         category_id: formData.category_id || null,
         monthly_spend: formData.monthly_spend ? Number(formData.monthly_spend.toString().replace(/,/g, '')) : null,
@@ -389,6 +404,51 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
         <div className="p-6 overflow-y-auto flex-1">
           <form id="qualify-form" onSubmit={handleSubmit} className="space-y-6">
             
+            {/* Basic Lead Information Section */}
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+              <h4 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4">Basic Details</h4>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Full Name *</label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.name}
+                    onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Company</label>
+                  <input
+                    type="text"
+                    value={formData.company}
+                    onChange={(e) => setFormData({...formData, company: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Phone *</label>
+                  <input
+                    type="tel"
+                    required
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-medium text-gray-700">Email</label>
+                  <input
+                    type="email"
+                    value={formData.email}
+                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                  />
+                </div>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Left Column */}
               <div className="space-y-4">

@@ -50,9 +50,15 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
       if (place) {
         const lat = place.geometry?.location?.lat() || null;
         const lng = place.geometry?.location?.lng() || null;
+        
+        let finalAddress = place.formatted_address || place.name || '';
+        if (place.name && place.formatted_address && !place.formatted_address.includes(place.name)) {
+          finalAddress = `${place.name}, ${place.formatted_address}`;
+        }
+
         setFormData(prev => ({ 
           ...prev, 
-          address: place.formatted_address || place.name || prev.address, // Fallback to prev.address
+          address: finalAddress || prev.address,
           latitude: lat,
           longitude: lng
         }));

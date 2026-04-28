@@ -126,9 +126,15 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
       if (place) {
         const lat = place.geometry?.location?.lat() || null;
         const lng = place.geometry?.location?.lng() || null;
+        
+        let finalAddress = place.formatted_address || place.name || '';
+        if (place.name && place.formatted_address && !place.formatted_address.includes(place.name)) {
+          finalAddress = `${place.name}, ${place.formatted_address}`;
+        }
+
         setFormData(prev => ({ 
           ...prev, 
-          location: place.formatted_address || place.name || prev.location, // Fallback to prev.location to avoid blanking
+          location: finalAddress || prev.location,
           latitude: lat,
           longitude: lng
         }));

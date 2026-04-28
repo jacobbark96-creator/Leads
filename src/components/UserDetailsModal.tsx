@@ -151,9 +151,14 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     if (autocomplete !== null) {
       const place = autocomplete.getPlace();
       if (place) {
+        let finalAddress = place.formatted_address || place.name || '';
+        if (place.name && place.formatted_address && !place.formatted_address.includes(place.name)) {
+          finalAddress = `${place.name}, ${place.formatted_address}`;
+        }
+
         setFormData(prev => ({ 
           ...prev, 
-          address: place.formatted_address || place.name || prev.address // Fallback to prev.address to avoid blanking
+          address: finalAddress || prev.address
         }));
       }
     }

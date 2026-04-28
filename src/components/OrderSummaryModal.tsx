@@ -154,7 +154,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                   </div>
                   <div>
                     <span className="block text-gray-500 text-xs mb-1">Est. Spend</span>
-                    <span className="font-medium text-gray-900">£{lead.monthly_spend || 'N/A'}</span>
+                    <span className="font-medium text-gray-900">£{lead.monthly_spend ? Number(lead.monthly_spend).toLocaleString() : 'N/A'}/mo</span>
                   </div>
                   <div>
                     <span className="block text-gray-500 text-xs mb-1">System Size</span>

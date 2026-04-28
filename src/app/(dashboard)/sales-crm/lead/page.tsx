@@ -576,7 +576,7 @@ function LeadDetailsContent() {
                   </div>
                   <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
                     <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Monthly Spend</span>
-                    <span className="font-semibold text-gray-900 text-xs">£{lead.monthly_spend ? Number(lead.monthly_spend).toLocaleString() : 'N/A'}</span>
+                    <span className="font-semibold text-gray-900 text-xs">£{lead.monthly_spend ? Number(lead.monthly_spend).toLocaleString() : 'N/A'}/mo</span>
                   </div>
                   <div className="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
                     <span className="block text-[9px] text-gray-500 uppercase font-bold mb-0.5">Timeframe</span>

@@ -132,7 +132,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                     <DollarSign className="w-5 h-5 mr-2 text-gray-400" />
                     <span className="font-medium">Monthly Spend</span>
                   </div>
-                  <span className="font-bold text-green-600 text-lg">£{lead.monthly_spend || 'N/A'}</span>
+                  <span className="font-bold text-green-600 text-lg">£{lead.monthly_spend ? Number(lead.monthly_spend).toLocaleString() : 'N/A'}/mo</span>
                 </div>
 
                 <div className="flex items-center justify-between pb-3 border-b border-gray-100">

@@ -42,6 +42,7 @@ function ContractorProcessingContent() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [selectedOnboardContractor, setSelectedOnboardContractor] = useState<Contractor | null>(null);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
+  const [selectedContractors, setSelectedContractors] = useState<Set<string>>(new Set());
   const PAGE_SIZE = 25;
   const [radiusFilter, setRadiusFilter] = useState<string>('any');
   const [isGeocoding, setIsGeocoding] = useState(false);
@@ -206,6 +207,55 @@ function ContractorProcessingContent() {
     }
   };
 
+  const handleBulkDelete = async () => {
+    if (selectedContractors.size === 0) return;
+    if (!window.confirm(`Are you sure you want to completely delete ${selectedContractors.size} contractor(s)? This action cannot be undone.`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const idsToDelete = Array.from(selectedContractors);
+      
+      const { error } = await supabase
+        .from('contractors')
+        .delete()
+        .in('id', idsToDelete);
+
+      if (error) throw error;
+      
+      toast.success(`Successfully deleted ${idsToDelete.length} contractor(s)`);
+      setContractors(prev => prev.filter(c => !selectedContractors.has(c.id)));
+      setSelectedContractors(new Set());
+      setTotalCount(prev => Math.max(0, prev - idsToDelete.length));
+      if (searchCount !== null) {
+        setSearchCount(prev => Math.max(0, (prev || 0) - idsToDelete.length));
+      }
+    } catch (error: any) {
+      toast.error('Failed to delete contractors: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const toggleSelectAll = () => {
+    if (selectedContractors.size === contractors.length) {
+      setSelectedContractors(new Set());
+    } else {
+      setSelectedContractors(new Set(contractors.map(c => c.id)));
+    }
+  };
+
+  const toggleSelectContractor = (id: string) => {
+    const newSet = new Set(selectedContractors);
+    if (newSet.has(id)) {
+      newSet.delete(id);
+    } else {
+      newSet.add(id);
+    }
+    setSelectedContractors(newSet);
+  };
+
   // Remove the unmounting `if (loading)` entirely
   // Instead, we will show a spinner *inside* the content area, or dim it.
   
@@ -223,6 +273,22 @@ function ContractorProcessingContent() {
               ? `Showing ${searchCount} of ${totalCount} contractors` 
               : `Showing ${totalCount} contractors`}
           </div>
+          
+          {contractors.length > 0 && (
+            <div className="flex items-center gap-2">
+              <input
+                type="checkbox"
+                id="selectAll"
+                checked={selectedContractors.size === contractors.length && contractors.length > 0}
+                onChange={toggleSelectAll}
+                className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded cursor-pointer"
+              />
+              <label htmlFor="selectAll" className="text-sm text-gray-600 cursor-pointer select-none">
+                Select All
+              </label>
+            </div>
+          )}
+
           <div className="relative flex-1 w-full sm:min-w-[200px] flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -280,13 +346,36 @@ function ContractorProcessingContent() {
       </div>
 
       <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
+        {selectedContractors.size > 0 && (
+          <div className="bg-blue-50 px-4 py-3 border-b border-blue-100 flex items-center justify-between">
+            <span className="text-sm font-medium text-blue-800">
+              {selectedContractors.size} contractor{selectedContractors.size !== 1 ? 's' : ''} selected
+            </span>
+            <button
+              onClick={handleBulkDelete}
+              disabled={loading}
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+            >
+              Delete Selected
+            </button>
+          </div>
+        )}
+        
         {loading && contractors.length === 0 ? (
           <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
         ) : contractors.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {contractors.map((contractor) => (
-              <li key={contractor.id} className="flex items-center justify-between p-4 hover:bg-gray-50 transition-colors">
+              <li key={contractor.id} className={`flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${selectedContractors.has(contractor.id) ? 'bg-blue-50' : ''}`}>
                 <div className="flex items-center gap-4 flex-1 min-w-0">
+                  <div className="flex items-center h-5">
+                    <input
+                      type="checkbox"
+                      checked={selectedContractors.has(contractor.id)}
+                      onChange={() => toggleSelectContractor(contractor.id)}
+                      className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded cursor-pointer"
+                    />
+                  </div>
                   <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 relative">
                     <User className="w-5 h-5" />
                     {contractor.assigned_to && (

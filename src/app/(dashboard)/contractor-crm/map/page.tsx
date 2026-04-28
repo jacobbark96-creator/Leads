@@ -159,15 +159,22 @@ export default function MapTab() {
       if (clientsError) throw clientsError;
       
       // Filter clients who have at least one valid service area
-      const validClients = (clientsData || []).map((c: any) => {
-        // Find the first service area that has valid lat/lng coordinates
-        const validArea = c.service_areas?.find((area: any) => area.lat && area.lng);
-        return {
-          ...c,
-          // Store the valid area specifically for the map to use
-          primary_map_area: validArea
-        };
-      }).filter(c => c.primary_map_area);
+      // Map them out into individual map points so a single contractor with N valid areas gets N stars
+      const validClients: any[] = [];
+      (clientsData || []).forEach((c: any) => {
+        if (c.service_areas && Array.isArray(c.service_areas)) {
+          c.service_areas.forEach((area: any) => {
+            if (area.lat && area.lng) {
+              validClients.push({
+                ...c,
+                // Generate a unique ID for this specific pin
+                pin_id: `${c.id}-${area.id || Math.random().toString(36).substr(2, 9)}`,
+                primary_map_area: area
+              });
+            }
+          });
+        }
+      });
       
       setClients(validClients);
 
@@ -326,7 +333,7 @@ export default function MapTab() {
             if (!mapArea) return null;
             return (
               <Marker
-                key={client.id}
+                key={client.pin_id || client.id}
                 position={{ lat: Number(mapArea.lat), lng: Number(mapArea.lng) }}
                 title={client.company_name || client.contact_name || 'Contractor'}
                 icon={createStarIcon(selectedCategory === 'all' 

@@ -99,7 +99,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
         const lng = place.geometry?.location?.lng() || null;
         setFormData(prev => ({ 
           ...prev, 
-          location: place.formatted_address || place.name || '',
+          location: place.formatted_address || place.name || prev.location, // Fallback to prev.location to avoid blanking
           latitude: lat,
           longitude: lng
         }));

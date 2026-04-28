@@ -21,8 +21,8 @@ export async function POST(req: Request) {
 
     const { object } = await generateObject({
       model: google('gemini-2.5-flash'),
-      system: 'You are a highly accurate CRM data extraction assistant. Your job is to extract lead information from pasted write-ups and map them perfectly to our database schema. If a value is not explicitly mentioned or clearly inferable, return an empty string or null. Ensure numbers like spend are just raw numbers.',
-      prompt: `Extract the following details from this lead write-up:\n\n${text}`,
+      system: 'You are a highly accurate CRM data extraction assistant. Your job is to extract lead information from pasted write-ups and map them perfectly to our database schema. Read the text very carefully and extract EVERY detail requested. If a value is genuinely not explicitly mentioned or clearly inferable, return an empty string or null. Ensure numbers like spend are just raw numbers.',
+      prompt: `Extract ALL the following details from this lead write-up, do not leave fields blank if the information exists in the text:\n\n${text}`,
       schema: z.object({
         company: z.string().default("").describe("The business name or company name"),
         name: z.string().default("").describe("The contact person's full name"),

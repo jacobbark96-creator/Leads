@@ -145,9 +145,11 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         phone: parsed.phone || '00000000000',
         email: parsed.email || null,
         location: parsed.location || null,
+        job_title: parsed.job_title || null,
         status: 'fresh',
         // Also save the extracted qualification data
         timeframe: parsed.timeframe || null,
+        availability: parsed.timeframe || null,
         monthly_spend: parsed.monthly_spend ? Number(parsed.monthly_spend.replace(/[^0-9.]/g, '')) : null,
         property_ownership: parsed.property_ownership || null,
         electrical_supply: parsed.electrical_supply || null,

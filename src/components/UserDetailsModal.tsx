@@ -153,7 +153,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
       if (place) {
         setFormData(prev => ({ 
           ...prev, 
-          address: place.formatted_address || place.name || ''
+          address: place.formatted_address || place.name || prev.address // Fallback to prev.address to avoid blanking
         }));
       }
     }

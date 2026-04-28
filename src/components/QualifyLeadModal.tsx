@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Lead, Category } from '../types';
-import { X, Upload, Trash2, MapPin, CheckCircle, Info } from 'lucide-react';
+import { X, Upload, Trash2, MapPin, CheckCircle, Info, Compass } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 
@@ -94,8 +94,31 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
   });
 
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  const [isCoordinateMode, setIsCoordinateMode] = useState(false);
+  const [coordinateInput, setCoordinateInput] = useState('');
 
   const onLoadAutocomplete = (autoC: google.maps.places.Autocomplete) => setAutocomplete(autoC);
+
+  const handleCoordinateChange = (val: string) => {
+    setCoordinateInput(val);
+    // Parse format: lat, lng (e.g. "51.5074, -0.1278")
+    const match = val.match(/([+-]?\d+\.?\d*)\s*,\s*([+-]?\d+\.?\d*)/);
+    if (match) {
+      setFormData(prev => ({
+        ...prev,
+        location: val,
+        latitude: parseFloat(match[1]),
+        longitude: parseFloat(match[2])
+      }));
+    } else {
+      setFormData(prev => ({
+        ...prev,
+        location: val,
+        latitude: null,
+        longitude: null
+      }));
+    }
+  };
 
   const onPlaceChanged = () => {
     if (autocomplete !== null) {
@@ -105,7 +128,7 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
         const lng = place.geometry?.location?.lng() || null;
         setFormData(prev => ({ 
           ...prev, 
-          location: place.formatted_address || place.name || '',
+          location: place.formatted_address || place.name || prev.location, // Fallback to prev.location to avoid blanking
           latitude: lat,
           longitude: lng
         }));
@@ -117,6 +140,21 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
     if (isOpen) {
       fetchCategories();
       
+      // Initialize coordinate state if we have coordinates but it's not a normal address
+      if (lead.latitude && lead.longitude && lead.location && lead.location.includes(',')) {
+        const potentialCoords = lead.location.match(/([+-]?\d+\.?\d*)\s*,\s*([+-]?\d+\.?\d*)/);
+        if (potentialCoords) {
+          setIsCoordinateMode(true);
+          setCoordinateInput(lead.location);
+        } else {
+          setIsCoordinateMode(false);
+          setCoordinateInput('');
+        }
+      } else {
+        setIsCoordinateMode(false);
+        setCoordinateInput('');
+      }
+
       // Reset form data when opened to ensure it has the latest lead data
       setFormData({
         name: lead.name || '',
@@ -469,9 +507,28 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                 </div>
                 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Location (Full Address) *</label>
+                  <div className="flex justify-between items-center mb-1">
+                    <label className="block text-sm font-medium text-gray-700">Location (Full Address) *</label>
+                    <button
+                      type="button"
+                      onClick={() => setIsCoordinateMode(!isCoordinateMode)}
+                      className={`p-1 rounded-md transition-colors ${isCoordinateMode ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100'}`}
+                      title={isCoordinateMode ? "Switch back to address search" : "Enter exact coordinates instead"}
+                    >
+                      <Compass className="w-4 h-4" />
+                    </button>
+                  </div>
                   <div className="relative mt-1">
-                    {isLoaded && !loadError ? (
+                    {isCoordinateMode ? (
+                      <input
+                        type="text"
+                        required
+                        value={coordinateInput}
+                        onChange={(e) => handleCoordinateChange(e.target.value)}
+                        placeholder="e.g. 51.5074, -0.1278"
+                        className="block w-full pl-10 pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                      />
+                    ) : isLoaded && !loadError ? (
                       <Autocomplete
                         onLoad={onLoadAutocomplete}
                         onPlaceChanged={onPlaceChanged}

@@ -52,7 +52,7 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
         const lng = place.geometry?.location?.lng() || null;
         setFormData(prev => ({ 
           ...prev, 
-          address: place.formatted_address || place.name || '',
+          address: place.formatted_address || place.name || prev.address, // Fallback to prev.address
           latitude: lat,
           longitude: lng
         }));

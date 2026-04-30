@@ -80,8 +80,6 @@ export default function Login() {
       if (!data.company_name || !data.company_name.trim()) return toast.error('Company Name is required');
       if (!data.phone || !data.phone.trim()) return toast.error('Phone Number is required');
       if (!data.address || !data.address.trim()) return toast.error('Business Address is required');
-      if (!data.other_contacts || !data.other_contacts.trim()) return toast.error('Other Contacts is required');
-      if (!data.other_contact_numbers || !data.other_contact_numbers.trim()) return toast.error('Other Contact Numbers is required');
     }
 
     setIsLoading(true);
@@ -300,7 +298,7 @@ export default function Login() {
 
                       <div className="grid grid-cols-2 gap-4">
                         <div>
-                          <label className="block text-sm font-medium text-slate-700">Other Contacts</label>
+                          <label className="block text-sm font-medium text-slate-700">Other Contacts <span className="text-slate-400 font-normal">(Optional)</span></label>
                           <div className="mt-1">
                             <input
                               {...register('other_contacts')}
@@ -313,7 +311,7 @@ export default function Login() {
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-slate-700">Other Numbers</label>
+                          <label className="block text-sm font-medium text-slate-700">Other Numbers <span className="text-slate-400 font-normal">(Optional)</span></label>
                           <div className="mt-1">
                             <input
                               {...register('other_contact_numbers')}

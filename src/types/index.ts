@@ -40,6 +40,16 @@ export interface Category {
   created_at: string;
 }
 
+export interface IntranetResource {
+  id: string;
+  title: string;
+  description: string | null;
+  resource_type: 'pdf' | 'excel' | 'link';
+  url: string;
+  created_at: string;
+  created_by?: string;
+}
+
 export interface Lead {
   id: string;
   client_id: string | null;

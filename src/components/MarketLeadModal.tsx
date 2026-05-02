@@ -37,7 +37,8 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
     return [];
   });
   const [categories, setCategories] = useState<Category[]>([]);
-  const [price, setPrice] = useState<string>(lead.price ? lead.price.toString() : '135');
+  const [exclusivePrice, setExclusivePrice] = useState<string>(lead.exclusive_price ? lead.exclusive_price.toString() : '135');
+  const [sharePrice, setSharePrice] = useState<string>(lead.share_price ? lead.share_price.toString() : '45');
   const [billUrls, setBillUrls] = useState<string[]>(() => {
     let raw = (lead.bills_url || '').trim();
     if (!raw) return [];
@@ -145,7 +146,8 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
         job_title: lead.job_title || '',
         bills_url: lead.bills_url || '',
       });
-      setPrice(lead.price ? lead.price.toString() : '135');
+      setExclusivePrice(lead.exclusive_price ? lead.exclusive_price.toString() : '135');
+      setSharePrice(lead.share_price ? lead.share_price.toString() : '45');
       
       // Reset photos
       const p = lead.photos as any;
@@ -293,8 +295,12 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!price || Number(price) <= 0) {
-      toast.error('Please enter a valid Lead Price');
+    if (!exclusivePrice || Number(exclusivePrice) <= 0) {
+      toast.error('Please enter a valid Exclusive Lead Price');
+      return;
+    }
+    if (!sharePrice || Number(sharePrice) <= 0) {
+      toast.error('Please enter a valid Share Price');
       return;
     }
     if (!formData.category_id) {
@@ -315,7 +321,9 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
       
       const updateData = {
         is_marketed: true,
-        price: Number(price.toString().replace(/,/g, '')) || 135,
+        exclusive_price: Number(exclusivePrice.toString().replace(/,/g, '')) || 135,
+        share_price: Number(sharePrice.toString().replace(/,/g, '')) || 45,
+        price: Number(exclusivePrice.toString().replace(/,/g, '')) || 135, // Keep legacy field populated
         category_id: formData.category_id || null,
         monthly_spend: formData.monthly_spend ? Number(formData.monthly_spend.toString().replace(/,/g, '')) : null,
         location: formData.location,
@@ -387,25 +395,48 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
         <div className="p-6 overflow-y-auto flex-1">
           <form id="market-form" onSubmit={handleSubmit} className="space-y-6">
             
-            <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg">
-              <label className="block text-sm font-bold text-blue-900 mb-1">Marketplace Price (£) *</label>
-              <div className="relative rounded-md shadow-sm max-w-xs">
-                <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-                  <span className="text-gray-500 sm:text-sm">£</span>
-                </div>
+            <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <label className="block text-sm font-bold text-blue-900 mb-1">Exclusive Price (£) *</label>
+                <div className="relative rounded-md shadow-sm max-w-xs">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <span className="text-gray-500 sm:text-sm">£</span>
+                  </div>
                   <input
-                  type="number"
-                  name="price"
-                  id="price"
-                  className="block w-full rounded-md border-gray-300 pl-7 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  placeholder="135.00"
-                  value={price}
-                  onChange={(e) => setPrice(e.target.value)}
-                  min="0"
-                  step="0.01"
-                />
+                    type="number"
+                    name="exclusivePrice"
+                    id="exclusivePrice"
+                    className="block w-full rounded-md border-gray-300 pl-7 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="135.00"
+                    value={exclusivePrice}
+                    onChange={(e) => setExclusivePrice(e.target.value)}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-blue-700">Price for buying the lead exclusively (removes it from the market).</p>
               </div>
-              <p className="mt-1 text-xs text-blue-700">This is the price the client will pay to purchase this lead.</p>
+
+              <div className="flex-1">
+                <label className="block text-sm font-bold text-blue-900 mb-1">LeadShare Price (£) *</label>
+                <div className="relative rounded-md shadow-sm max-w-xs">
+                  <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
+                    <span className="text-gray-500 sm:text-sm">£</span>
+                  </div>
+                  <input
+                    type="number"
+                    name="sharePrice"
+                    id="sharePrice"
+                    className="block w-full rounded-md border-gray-300 pl-7 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    placeholder="45.00"
+                    value={sharePrice}
+                    onChange={(e) => setSharePrice(e.target.value)}
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <p className="mt-1 text-xs text-blue-700">Price for buying 1 of 3 LeadShares.</p>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

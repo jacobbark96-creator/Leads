@@ -106,14 +106,12 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
     if (match) {
       setFormData(prev => ({
         ...prev,
-        location: val,
         latitude: parseFloat(match[1]),
         longitude: parseFloat(match[2])
       }));
     } else {
       setFormData(prev => ({
         ...prev,
-        location: val,
         latitude: null,
         longitude: null
       }));
@@ -526,51 +524,106 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                   </div>
                   <div className="relative mt-1">
                     {isCoordinateMode ? (
-                      <input
-                        type="text"
-                        required
-                        value={coordinateInput}
-                        onChange={(e) => handleCoordinateChange(e.target.value)}
-                        placeholder="e.g. 51.5074, -0.1278"
-                        className="block w-full pl-10 pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                      />
+                      <div className="space-y-3">
+                        <div className="relative">
+                          <input
+                            type="text"
+                            required
+                            value={coordinateInput}
+                            onChange={(e) => handleCoordinateChange(e.target.value)}
+                            placeholder="e.g. 51.5074, -0.1278"
+                            className="block w-full pl-10 pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                          />
+                          <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                          {formData.latitude && formData.longitude ? (
+                            <div className="absolute right-3 top-2.5" title="Location coordinates found">
+                              <CheckCircle className="h-4 w-4 text-green-500" />
+                            </div>
+                          ) : (
+                            <div className="absolute right-3 top-2.5" title="Coordinates missing - lead will not show on map">
+                              <Info className="h-4 w-4 text-amber-500" />
+                            </div>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-medium text-gray-700 mb-1">Display Location (Shown on Marketplace)</label>
+                          <input
+                            type="text"
+                            required
+                            value={formData.location}
+                            onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                            placeholder="e.g. Birmingham, UK"
+                            list="uk-regions"
+                            className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                          />
+                          <datalist id="uk-regions">
+                            <option value="Scotland" />
+                            <option value="Wales" />
+                            <option value="Northern Ireland" />
+                            <option value="East Midlands" />
+                            <option value="East of England" />
+                            <option value="London" />
+                            <option value="North East" />
+                            <option value="North West" />
+                            <option value="South East" />
+                            <option value="South West" />
+                            <option value="West Midlands" />
+                            <option value="Yorkshire and the Humber" />
+                          </datalist>
+                          <p className="mt-1 text-[10px] text-gray-500">Since you're using exact coordinates, please provide a general area name to display to contractors so they don't see the raw coordinates.</p>
+                        </div>
+                      </div>
                     ) : isLoaded && !loadError ? (
-                      <Autocomplete
-                        onLoad={onLoadAutocomplete}
-                        onPlaceChanged={onPlaceChanged}
-                        options={{
-                          types: [],
-                          componentRestrictions: { country: "gb" },
-                          fields: ['formatted_address', 'geometry', 'name']
-                        }}
-                      >
+                      <div className="relative">
+                        <Autocomplete
+                          onLoad={onLoadAutocomplete}
+                          onPlaceChanged={onPlaceChanged}
+                          options={{
+                            types: [],
+                            componentRestrictions: { country: "gb" },
+                            fields: ['formatted_address', 'geometry', 'name']
+                          }}
+                        >
+                          <input
+                            type="text"
+                            required
+                            value={formData.location}
+                            onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
+                            placeholder="Search address..."
+                            className="block w-full pl-10 pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                          />
+                        </Autocomplete>
+                        <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                        {formData.latitude && formData.longitude ? (
+                          <div className="absolute right-3 top-2.5" title="Location coordinates found">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          </div>
+                        ) : (
+                          <div className="absolute right-3 top-2.5" title="Coordinates missing - lead will not show on map">
+                            <Info className="h-4 w-4 text-amber-500" />
+                          </div>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="relative">
                         <input
                           type="text"
                           required
                           value={formData.location}
                           onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                          placeholder="Search address..."
+                          placeholder={loadError ? "Error loading maps" : "Loading map..."}
                           className="block w-full pl-10 pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                         />
-                      </Autocomplete>
-                    ) : (
-                      <input
-                        type="text"
-                        required
-                        value={formData.location}
-                        onChange={(e) => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                        placeholder={loadError ? "Error loading maps" : "Loading map..."}
-                        className="block w-full pl-10 pr-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                      />
-                    )}
-                    <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
-                    {formData.latitude && formData.longitude ? (
-                      <div className="absolute right-3 top-2.5" title="Location coordinates found">
-                        <CheckCircle className="h-4 w-4 text-green-500" />
-                      </div>
-                    ) : (
-                      <div className="absolute right-3 top-2.5" title="Coordinates missing - lead will not show on map">
-                        <Info className="h-4 w-4 text-amber-500" />
+                        <MapPin className="absolute left-3 top-2.5 h-4 w-4 text-gray-400" />
+                        {formData.latitude && formData.longitude ? (
+                          <div className="absolute right-3 top-2.5" title="Location coordinates found">
+                            <CheckCircle className="h-4 w-4 text-green-500" />
+                          </div>
+                        ) : (
+                          <div className="absolute right-3 top-2.5" title="Coordinates missing - lead will not show on map">
+                            <Info className="h-4 w-4 text-amber-500" />
+                          </div>
+                        )}
                       </div>
                     )}
                   </div>

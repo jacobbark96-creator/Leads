@@ -69,6 +69,11 @@ export interface Lead {
   photos?: string[];
   is_marketed?: boolean;
   price?: number;
+  exclusive_price?: number;
+  share_price?: number;
+  purchase_count?: number;
+  is_exclusive_sold?: boolean;
+  max_shares?: number;
   latitude?: number | null;
   longitude?: number | null;
   property_ownership?: string;

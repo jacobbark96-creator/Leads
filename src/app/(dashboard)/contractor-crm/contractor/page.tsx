@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { Contractor, StaffUser } from '@/types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft } from 'lucide-react';
+import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft, Compass } from 'lucide-react';
 import { OnboardContractorModal } from '@/components/OnboardContractorModal';
 import { AddLeadModal } from '@/components/AddLeadModal';
 
@@ -23,6 +23,60 @@ const stringToColor = (str: string) => {
   }
   const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
   return '#' + '00000'.substring(0, 6 - c.length) + c;
+};
+
+const normalizeKey = (key: string) => String(key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const getCsvValue = (csvData: any, keys: string[]) => {
+  if (!csvData || typeof csvData !== 'object') return '';
+  for (const key of keys) {
+    const direct = csvData[key];
+    if (direct !== undefined && direct !== null && String(direct).trim()) return String(direct).trim();
+  }
+  const normalized = new Map<string, any>();
+  for (const k of Object.keys(csvData)) {
+    normalized.set(normalizeKey(k), (csvData as any)[k]);
+  }
+  for (const key of keys) {
+    const v = normalized.get(normalizeKey(key));
+    if (v !== undefined && v !== null && String(v).trim()) return String(v).trim();
+  }
+  return '';
+};
+
+const getDirectorNames = (contractor: Contractor) => {
+  const csv = contractor.csv_data;
+  const directors = [
+    getCsvValue(csv, ['Director 1', 'director1', 'director 1', 'Director1', 'Primary Director', 'Primary Contact']),
+    getCsvValue(csv, ['Director 2', 'director2', 'director 2', 'Director2']),
+    getCsvValue(csv, ['Director 3', 'director3', 'director 3', 'Director3']),
+    getCsvValue(csv, ['Director 4', 'director4', 'director 4', 'Director4']),
+    getCsvValue(csv, ['Director 5', 'director5', 'director 5', 'Director5'])
+  ]
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const withContactName = contractor.contact_name ? [contractor.contact_name, ...directors] : directors;
+  return Array.from(new Set(withContactName));
+};
+
+const getAdditionalNotesText = (contractor: Contractor) => {
+  const csv = contractor.csv_data;
+  return getCsvValue(csv, ['Additional Notes', 'additional notes', 'Notes', 'notes', 'Note', 'Comments', 'Comment', 'Details', 'Additional Details']);
+};
+
+const getAddressText = (contractor: Contractor) => {
+  const fromClient = contractor.clients?.address;
+  if (fromClient && String(fromClient).trim()) return String(fromClient).trim();
+  const csv = contractor.csv_data;
+  return getCsvValue(csv, ['Address', 'Business Address', 'address', 'Location', 'location', 'Postcode', 'Postal Code']);
+};
+
+const getPhoneText = (contractor: Contractor) => {
+  if (contractor.phone && String(contractor.phone).trim()) return String(contractor.phone).trim();
+  const fromClient = contractor.clients?.other_contact_numbers;
+  if (fromClient && String(fromClient).trim()) return String(fromClient).trim();
+  const csv = contractor.csv_data;
+  return getCsvValue(csv, ['phone', 'Phone', 'phoneNumber', 'Phone Number', 'contact number', 'Contact Number']);
 };
 
 interface ContractorNote {
@@ -208,35 +262,35 @@ function ContractorDetailsContent() {
   return (
     <div className="h-[calc(100vh-140px)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200 shrink-0">
+        <div className="flex items-center gap-3">
           <a 
             href={tab === 'onboarded' ? '/contractor-crm/onboarded' : '/contractor-crm'} 
-            className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
+            className="p-1.5 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </a>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900">{contractor.company_name || contractor.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold text-gray-900">{contractor.company_name || contractor.company || contractor.name}</h1>
               <button 
                 onClick={() => setIsEditModalOpen(true)}
-                className="text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                className="text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
               >
                 Edit
               </button>
             </div>
-            <p className="text-sm text-gray-500 mt-1">Contractor Details & Notes</p>
+            <p className="text-xs text-gray-500 mt-0.5">Contractor Details & Notes</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden px-2">
-            <span className="text-xs font-medium text-gray-500 mr-2">Assigned To:</span>
+            <span className="text-[10px] font-medium text-gray-500 mr-2 uppercase tracking-wider">Assigned:</span>
             <select
               value={contractor.assigned_to || 'unassigned'}
               onChange={(e) => assignContractor(e.target.value)}
-              className="py-2 pl-2 pr-8 text-sm font-medium text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-0 border-0 cursor-pointer"
+              className="py-1.5 pl-1 pr-6 text-xs font-medium text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-0 border-0 cursor-pointer"
             >
               <option value="unassigned">Unassigned</option>
               {staffUsers.map(user => (
@@ -248,7 +302,7 @@ function ContractorDetailsContent() {
           </div>
 
           <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-            <div className={`px-4 py-2 text-sm font-bold uppercase tracking-wider border-r border-gray-200
+            <div className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border-r border-gray-200
               ${contractor.status === 'fresh' ? 'bg-green-100 text-green-800' : 
                 contractor.status === 'no pitch' ? 'bg-yellow-100 text-yellow-800' : 
                 contractor.status === 'onboarded' ? 'bg-blue-100 text-blue-800' : 
@@ -261,7 +315,7 @@ function ContractorDetailsContent() {
             <select
               value={contractor.status}
               onChange={(e) => updateContractorStatus(e.target.value)}
-              className="py-2 pl-3 pr-8 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-0 border-0 cursor-pointer"
+              className="py-1.5 pl-2 pr-7 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-0 border-0 cursor-pointer"
             >
               <option value="fresh">Fresh</option>
               <option value="no pitch">No Pitch</option>
@@ -275,12 +329,12 @@ function ContractorDetailsContent() {
           <button
             onClick={goToNextContractor}
             disabled={!nextContractorId}
-            className={`flex items-center gap-2 px-5 py-2.5 rounded-lg text-sm font-bold shadow-sm transition-all
+            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold shadow-sm transition-all
               ${nextContractorId 
                 ? 'bg-gray-900 text-white hover:bg-gray-800 hover:shadow-md' 
                 : 'bg-gray-100 text-gray-400 cursor-not-allowed'}`}
           >
-            Next Contractor <ArrowRight className="w-4 h-4" />
+            Next <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>
@@ -291,93 +345,112 @@ function ContractorDetailsContent() {
         {/* Left Side: Contractor Card */}
         <div className="lg:w-1/3 flex flex-col gap-6 overflow-y-auto pr-2 pb-4">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden shrink-0">
-            <div className="bg-slate-50 p-6 border-b border-gray-200">
-              <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center mb-4">
-                <User className="w-8 h-8" />
-              </div>
-              <h2 className="text-2xl font-bold text-gray-900">{contractor.company_name || contractor.name || 'Unnamed Contractor'}</h2>
-              {contractor.contact_name && <p className="text-gray-500 font-medium mt-1">{contractor.contact_name}</p>}
-              {contractor.company && !contractor.company_name && <p className="text-gray-500 font-medium mt-1">{contractor.company}</p>}
-            </div>
-            
-            <div className="p-6 space-y-6">
-              {contractor.phone && (
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Phone Number</label>
-                  <a href={`tel:${contractor.phone}`} className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline">
-                    <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
-                    {contractor.phone}
-                  </a>
+            <div className="p-5 space-y-3">
+              {/* Rigid Top Section */}
+              <div className="grid grid-cols-1 gap-y-2 pb-4 border-b border-gray-100">
+                <div className="flex items-baseline gap-3 min-w-0">
+                  <span className="w-28 shrink-0 text-[10px] font-bold uppercase tracking-wider text-gray-400">Director 1</span>
+                  <span className="text-[13px] text-gray-800 font-medium truncate">{getDirectorNames(contractor)[0] || '—'}</span>
                 </div>
-              )}
-              
-              {contractor.email && (
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Email Address</label>
-                  <a href={`mailto:${contractor.email}`} className="flex items-center gap-3 text-gray-900 hover:text-blue-600 hover:underline">
-                    <div className="p-2 bg-gray-50 rounded-lg"><Mail className="w-5 h-5 text-gray-400" /></div>
-                    <span className="truncate">{contractor.email}</span>
-                  </a>
+                <div className="flex items-baseline gap-3 min-w-0">
+                  <span className="w-28 shrink-0 text-[10px] font-bold uppercase tracking-wider text-gray-400">Contact Number</span>
+                  {getPhoneText(contractor) ? (
+                    <a href={`tel:${getPhoneText(contractor)}`} className="text-[13px] text-blue-600 hover:text-blue-800 hover:underline font-medium truncate">
+                      {getPhoneText(contractor)}
+                    </a>
+                  ) : (
+                    <span className="text-[13px] text-gray-800 font-medium truncate">—</span>
+                  )}
                 </div>
-              )}
-
-              {contractor.clients?.address && (
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Business Address</label>
-                  <div className="flex items-center gap-3 text-gray-900">
-                    <div className="p-2 bg-gray-50 rounded-lg"><MapPin className="w-5 h-5 text-gray-400" /></div>
-                    <span className="truncate">{contractor.clients.address}</span>
-                  </div>
+                <div className="flex items-baseline gap-3 min-w-0">
+                  <span className="w-28 shrink-0 text-[10px] font-bold uppercase tracking-wider text-gray-400">Email</span>
+                  {contractor.email ? (
+                    <a href={`mailto:${contractor.email}`} className="text-[13px] text-blue-600 hover:text-blue-800 hover:underline font-medium truncate">
+                      {contractor.email}
+                    </a>
+                  ) : (
+                    <span className="text-[13px] text-gray-800 font-medium truncate">—</span>
+                  )}
                 </div>
-              )}
-
-              {contractor.clients?.other_contacts && (
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Other Contacts</label>
-                  <div className="text-gray-900 font-medium">
-                    {contractor.clients.other_contacts}
-                    {contractor.clients.other_contact_numbers && (
-                      <span className="text-gray-500 font-normal ml-2">({contractor.clients.other_contact_numbers})</span>
+                <div className="flex items-baseline gap-3 min-w-0">
+                  <span className="w-28 shrink-0 text-[10px] font-bold uppercase tracking-wider text-gray-400">Address</span>
+                  <div className="flex items-center gap-1.5 min-w-0">
+                    <span className="text-[13px] text-gray-800 font-medium break-words whitespace-normal">{getAddressText(contractor) || '—'}</span>
+                    {getAddressText(contractor) && (
+                      <a
+                        href={`https://earth.google.com/web/search/${encodeURIComponent(getAddressText(contractor))}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-gray-400 hover:text-blue-600 transition-colors shrink-0"
+                        title="View on Google Earth"
+                      >
+                        <Compass className="w-3.5 h-3.5" />
+                      </a>
                     )}
                   </div>
                 </div>
-              )}
+              </div>
 
-              <div>
-                <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Service Areas</label>
-                {contractor.service_areas && contractor.service_areas.length > 0 ? (
-                  <div className="flex flex-wrap gap-2">
-                    {contractor.service_areas.map((area: any) => (
-                      <div key={area.id} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2.5 py-1 rounded-md text-xs font-medium border border-blue-100">
-                        <span className="truncate max-w-[200px]">{area.address}</span>
-                        <span className="ml-1 bg-blue-100 px-1.5 rounded-full text-[10px]">{area.radiusMiles === 99999 ? 'National' : `${area.radiusMiles}mi`}</span>
-                      </div>
-                    ))}
+              {/* Additional Details */}
+              <div className="pt-2 space-y-4">
+                <h4 className="text-[10px] font-bold uppercase tracking-wider text-gray-400 bg-gray-50 px-2 py-1 rounded inline-block">Additional Details</h4>
+                
+                {contractor.service_areas && contractor.service_areas.length > 0 && (
+                  <div className="flex flex-col gap-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Service Areas</span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {contractor.service_areas.map((area: any) => (
+                        <div key={area.id} className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-1 rounded text-[10px] font-medium border border-blue-100">
+                          <span className="truncate max-w-[180px]">{area.address}</span>
+                          <span className="ml-1 bg-blue-100 px-1 rounded-full text-[9px]">{area.radiusMiles === 99999 ? 'National' : `${area.radiusMiles}mi`}</span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                ) : (
-                  <div className="flex items-center gap-3 text-gray-500">
-                    <div className="p-2 bg-gray-50 rounded-lg"><MapPin className="w-5 h-5 text-gray-400" /></div>
-                    <span className="text-sm">Not provided</span>
+                )}
+
+                {(contractor.clients?.other_contacts || (contractor as any).other_contacts) && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Other Contacts</span>
+                    <span className="text-[11px] text-gray-600">
+                      {contractor.clients?.other_contacts || (contractor as any).other_contacts}
+                      {(contractor.clients?.other_contact_numbers || (contractor as any).other_contact_numbers) && (
+                        <span className="ml-2">({contractor.clients?.other_contact_numbers || (contractor as any).other_contact_numbers})</span>
+                      )}
+                    </span>
+                  </div>
+                )}
+
+                {getAdditionalNotesText(contractor) && (
+                  <div className="flex flex-col gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400">Notes</span>
+                    <span className="text-[11px] text-gray-600 break-words">{getAdditionalNotesText(contractor)}</span>
+                  </div>
+                )}
+
+                {contractor.csv_data && Object.keys(contractor.csv_data).length > 0 && (
+                  <div className="pt-2 border-t border-gray-100">
+                    <div className="space-y-2">
+                      {Object.entries(contractor.csv_data).map(([key, value]) => {
+                        const ignoredKeys = [
+                          'name', 'phone', 'email', 'company', 'company_name', 'contact_name', 
+                          'address', 'business address', 'location', 'postcode', 'postal code', 
+                          'director 1', 'director1', 'primary director', 'primary contact', 
+                          'phone number', 'contact number', 'number', 'business name', 'trading name',
+                          'additional notes', 'notes', 'note', 'comments', 'comment', 'details', 'additional details'
+                        ];
+                        if (!value || ignoredKeys.includes(key.toLowerCase().trim())) return null;
+                        return (
+                          <div key={key} className="text-[11px]">
+                            <span className="text-gray-400 block mb-0.5">{key}</span>
+                            <span className="font-medium text-gray-700 break-words">{String(value)}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 )}
               </div>
-
-              {contractor.csv_data && Object.keys(contractor.csv_data).length > 0 && (
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 block pt-4 border-t border-gray-100">Additional Data</label>
-                  <div className="space-y-3">
-                    {Object.entries(contractor.csv_data).map(([key, value]) => {
-                      if (!value || ['name','phone','email','company'].includes(key.toLowerCase())) return null;
-                      return (
-                        <div key={key} className="text-sm">
-                          <span className="text-gray-500 block mb-0.5">{key}</span>
-                          <span className="font-medium text-gray-900 break-words">{String(value)}</span>
-                        </div>
-                      );
-                    })}
-                  </div>
-                </div>
-              )}
             </div>
           </div>
         </div>
@@ -464,7 +537,10 @@ function ContractorDetailsContent() {
           name: contractor.name || '',
           phone: contractor.phone || '',
           email: contractor.email,
-          company: contractor.company_name || contractor.company
+          company: contractor.company_name || contractor.company,
+          location: contractor.clients?.address || (contractor as any).location,
+          other_contacts: contractor.clients?.other_contacts || (contractor as any).other_contacts,
+          other_contact_numbers: contractor.clients?.other_contact_numbers || (contractor as any).other_contact_numbers
         }}
       />
     </div>

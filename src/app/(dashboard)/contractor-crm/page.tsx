@@ -3,7 +3,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Contractor } from '@/types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Users, Calendar, MapPin, Search } from 'lucide-react';
+import { Phone, Mail, Building, User, Users, Calendar, MapPin, Search, Plus, Filter, Trash2, ArrowRight, UserPlus, Compass } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
@@ -26,6 +26,61 @@ const stringToColor = (str: string) => {
   return '#' + '00000'.substring(0, 6 - c.length) + c;
 };
 
+const normalizeKey = (key: string) => String(key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+const getCsvValue = (csvData: any, keys: string[]) => {
+  if (!csvData || typeof csvData !== 'object') return '';
+  for (const key of keys) {
+    const direct = csvData[key];
+    if (direct !== undefined && direct !== null && String(direct).trim()) return String(direct).trim();
+  }
+  const normalized = new Map<string, any>();
+  for (const k of Object.keys(csvData)) {
+    normalized.set(normalizeKey(k), (csvData as any)[k]);
+  }
+  for (const key of keys) {
+    const v = normalized.get(normalizeKey(key));
+    if (v !== undefined && v !== null && String(v).trim()) return String(v).trim();
+  }
+  return '';
+};
+
+const getDirectorNames = (contractor: Contractor) => {
+  const csv = contractor.csv_data;
+  const directors = [
+    getCsvValue(csv, ['Director 1', 'director1', 'director 1', 'Director1', 'Primary Director', 'Primary Contact']),
+    getCsvValue(csv, ['Director 2', 'director2', 'director 2', 'Director2']),
+    getCsvValue(csv, ['Director 3', 'director3', 'director 3', 'Director3']),
+    getCsvValue(csv, ['Director 4', 'director4', 'director 4', 'Director4']),
+    getCsvValue(csv, ['Director 5', 'director5', 'director 5', 'Director5'])
+  ]
+    .map((s) => s.trim())
+    .filter(Boolean);
+
+  const withContactName = contractor.contact_name ? [contractor.contact_name, ...directors] : directors;
+  return Array.from(new Set(withContactName));
+};
+
+const getAddressText = (contractor: Contractor) => {
+  const fromClient = contractor.clients?.address;
+  if (fromClient && String(fromClient).trim()) return String(fromClient).trim();
+  const csv = contractor.csv_data;
+  return getCsvValue(csv, ['Address', 'Business Address', 'address', 'Location', 'location', 'Postcode', 'Postal Code']);
+};
+
+const getPhoneText = (contractor: Contractor) => {
+  if (contractor.phone && String(contractor.phone).trim()) return String(contractor.phone).trim();
+  const fromClient = contractor.clients?.other_contact_numbers;
+  if (fromClient && String(fromClient).trim()) return String(fromClient).trim();
+  const csv = contractor.csv_data;
+  return getCsvValue(csv, ['phone', 'Phone', 'phoneNumber', 'Phone Number', 'contact number', 'Contact Number']);
+};
+
+const getAdditionalNotesText = (contractor: Contractor) => {
+  const csv = contractor.csv_data;
+  return getCsvValue(csv, ['Additional Notes', 'additional notes', 'Notes', 'notes', 'Note', 'Comments', 'Comment', 'Details', 'Additional Details']);
+};
+
 function ContractorProcessingContent() {
   const { profile } = useAuthStore();
   const searchParams = useSearchParams();
@@ -46,6 +101,7 @@ function ContractorProcessingContent() {
   const PAGE_SIZE = 25;
   const [radiusFilter, setRadiusFilter] = useState<string>('any');
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
   useEffect(() => {
     // Fetch staff users for assignment name resolution
@@ -175,9 +231,10 @@ function ContractorProcessingContent() {
   };
 
   useEffect(() => {
+    if (profile === undefined) return; // wait for profile to load if needed
     setPage(0);
     fetchContractors(0, true);
-  }, [statusFilter, searchQuery, radiusFilter, assignedToMe]);
+  }, [statusFilter, searchQuery, radiusFilter, assignedToMe, profile]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -261,88 +318,100 @@ function ContractorProcessingContent() {
   
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Potential Contractors</h1>
-          <p className="text-sm text-gray-500 mt-1">Process and qualify incoming contractors.</p>
+      <div className="flex flex-col gap-4 mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Potential Contractors</h1>
+            <p className="text-xs text-gray-500 mt-0.5">Process and qualify incoming contractors.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block text-xs font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
+              {searchQuery.trim() && searchCount !== null 
+                ? `Showing ${searchCount} of ${totalCount} contractors` 
+                : `Total: ${totalCount} contractors`}
+            </div>
+            <button
+              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+              className={`inline-flex items-center px-3 py-1.5 border text-xs font-medium rounded-md shadow-sm transition-colors ${isFiltersOpen ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            >
+              <Filter className="w-3.5 h-3.5 mr-1.5" />
+              Filters & Actions
+            </button>
+          </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="text-sm font-medium text-gray-500 self-center whitespace-nowrap">
-            {searchQuery.trim() && searchCount !== null 
-              ? `Showing ${searchCount} of ${totalCount} contractors` 
-              : `Showing ${totalCount} contractors`}
-          </div>
-          
-          {contractors.length > 0 && (
+        {isFiltersOpen && (
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-3">
+            <div className="relative flex-1 min-w-[200px] flex gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+                <input
+                  type="text"
+                  placeholder="Search contractors or location..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500"
+                />
+                {isGeocoding && (
+                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-blue-600"></div>
+                  </div>
+                )}
+              </div>
+              <select
+                value={radiusFilter}
+                onChange={(e) => setRadiusFilter(e.target.value)}
+                className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7"
+                title="Filter by distance (requires a location search)"
+              >
+                <option value="any">Any Distance</option>
+                <option value="30">30 Miles</option>
+                <option value="50">50 Miles</option>
+                <option value="100">100 Miles</option>
+              </select>
+            </div>
+
             <div className="flex items-center gap-2">
-              <input
-                type="checkbox"
-                id="selectAll"
-                checked={selectedContractors.size === contractors.length && contractors.length > 0}
-                onChange={toggleSelectAll}
-                className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded cursor-pointer"
-              />
-              <label htmlFor="selectAll" className="text-sm text-gray-600 cursor-pointer select-none">
-                Select All
-              </label>
+              <label className="text-xs text-gray-600 font-medium">Status:</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7"
+              >
+                <option value="all">All Potential</option>
+                <option value="fresh">Fresh</option>
+                <option value="no pitch">No Pitch</option>
+                <option value="dnc">DNC</option>
+                <option value="call back">Call Back</option>
+                <option value="offboarded">Offboarded</option>
+              </select>
             </div>
-          )}
 
-          <div className="relative flex-1 w-full sm:min-w-[200px] flex gap-2">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-              <input
-                type="text"
-                placeholder="Search contractors or location..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
-              />
-              {isGeocoding && (
-                <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
-                </div>
-              )}
-            </div>
-            <select
-              value={radiusFilter}
-              onChange={(e) => setRadiusFilter(e.target.value)}
-              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
-              title="Filter by distance (requires a location search)"
-            >
-              <option value="any">Any Distance</option>
-              <option value="30">30 Miles</option>
-              <option value="50">50 Miles</option>
-              <option value="100">100 Miles</option>
-            </select>
+            {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Add Contractor
+              </button>
+            )}
           </div>
-
-          {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Add Contractor
-            </button>
-          )}
-          
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 font-medium">Status:</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
-            >
-              <option value="all">All Potential</option>
-              <option value="fresh">Fresh</option>
-              <option value="no pitch">No Pitch</option>
-              <option value="dnc">DNC</option>
-              <option value="call back">Call Back</option>
-              <option value="offboarded">Offboarded</option>
-            </select>
+        )}
+        
+        {contractors.length > 0 && (
+          <div className="flex items-center gap-2 px-1">
+            <input
+              type="checkbox"
+              id="selectAll"
+              checked={selectedContractors.size === contractors.length && contractors.length > 0}
+              onChange={toggleSelectAll}
+              className="focus:ring-blue-500 h-3.5 w-3.5 text-blue-600 border-gray-300 rounded cursor-pointer"
+            />
+            <label htmlFor="selectAll" className="text-xs text-gray-600 cursor-pointer select-none font-medium">
+              Select All
+            </label>
           </div>
-        </div>
+        )}
       </div>
 
       <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
@@ -373,31 +442,22 @@ function ContractorProcessingContent() {
                       type="checkbox"
                       checked={selectedContractors.has(contractor.id)}
                       onChange={() => toggleSelectContractor(contractor.id)}
-                      className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded cursor-pointer"
+                      className="focus:ring-blue-500 h-3.5 w-3.5 text-blue-600 border-gray-300 rounded cursor-pointer"
                     />
                   </div>
-                  <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 relative">
-                    <User className="w-5 h-5" />
-                    {contractor.assigned_to && (
-                      <div 
-                        className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-white"
-                        style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '') }}
-                        title={`Assigned to ${staffUsers.find(u => u.id === contractor.assigned_to)?.name || 'Unknown'}`}
-                      >
-                        {getInitials(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '')}
-                      </div>
-                    )}
-                  </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">
-                      {contractor.company_name || contractor.name || 'Unnamed Contractor'}
-                    </p>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {contractor.contact_name && (
-                        <p className="text-xs text-gray-500 truncate italic">Contact: {contractor.contact_name}</p>
+                    <p className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
+                      {contractor.company_name || contractor.company || contractor.name || 'Unnamed Contractor'}
+                      {contractor.assigned_to && (
+                        <span 
+                          className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white shadow-sm"
+                          style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '') }}
+                          title={`Assigned to ${staffUsers.find(u => u.id === contractor.assigned_to)?.name || 'Unknown'}`}
+                        >
+                          {getInitials(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '')}
+                        </span>
                       )}
-                      {contractor.phone && <p className="text-sm text-gray-500 truncate">{contractor.phone}</p>}
-                    </div>
+                    </p>
                   </div>
                 </div>
                 

@@ -231,7 +231,7 @@ export default function Marketplace() {
     fetchMarketplaceLeads(nextPage, false);
   };
 
-  const handlePurchaseLead = async (leadId: string, creditToUse: number) => {
+  const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive') => {
     if (!profile) return;
     try {
       let clientId = null;
@@ -260,6 +260,8 @@ export default function Marketplace() {
       const lead = leads.find(l => l.id === leadId);
       if (!lead) throw new Error('Lead details not found');
 
+      const targetPrice = purchaseType === 'exclusive' ? (lead.exclusive_price || 135) : (lead.share_price || 45);
+
       // Create checkout session via our API
       const res = await fetch('/api/create-lead-checkout', {
         method: 'POST',
@@ -271,8 +273,9 @@ export default function Marketplace() {
           clientId: clientId,
           leadLocation: lead.location,
           leadCategory: lead.category_id,
-          leadPrice: lead.price || '135.00',
-          creditToUse
+          leadPrice: targetPrice.toString(),
+          creditToUse,
+          purchaseType
         }),
       });
 
@@ -368,15 +371,27 @@ export default function Marketplace() {
                     <span className="text-gray-500">Est. Spend:</span>
                     <span className="font-semibold text-gray-900 truncate pl-2">£{lead.monthly_spend ? Number(lead.monthly_spend).toLocaleString() : 'N/A'}/mo</span>
                   </div>
-                  <div className="flex items-center text-xs text-gray-600">
-                    <Calendar className="w-3.5 h-3.5 mr-1.5 text-gray-400 shrink-0" />
-                    <span className="font-medium mr-1 shrink-0">Timeframe:</span> 
-                    <span className="truncate">{lead.timeframe || 'N/A'}</span>
-                  </div>
-                  <div className="flex items-center text-xs text-gray-600">
-                    <FileText className="w-3.5 h-3.5 mr-1.5 text-gray-400 shrink-0" />
-                    <span className="font-medium mr-1 shrink-0">System:</span> 
-                    <span className="truncate">{lead.est_system_size || 'N/A'}</span>
+                  
+                  <div className="pt-3 pb-1">
+                    <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
+                      <span>LeadShare</span>
+                      <span className={lead.purchase_count && lead.purchase_count >= 3 ? "text-red-500" : "text-blue-600"}>
+                        {lead.purchase_count || 0}/{lead.max_shares || 3}
+                      </span>
+                    </div>
+                    <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                      <div 
+                        className={`h-1.5 rounded-full ${
+                          (lead.purchase_count || 0) === 0 ? 'bg-gray-200' :
+                          (lead.purchase_count || 0) >= (lead.max_shares || 3) ? 'bg-red-500' : 
+                          'bg-blue-500'
+                        }`}
+                        style={{ width: `${Math.min(100, ((lead.purchase_count || 0) / (lead.max_shares || 3)) * 100)}%` }}
+                      ></div>
+                    </div>
+                    <div className="text-[10px] text-gray-400 mt-1 text-center font-medium">
+                      {(lead.purchase_count || 0) === 0 ? 'Available for Exclusive Purchase' : `${lead.purchase_count || 0} Contractors have purchased`}
+                    </div>
                   </div>
                 </div>
 
@@ -430,7 +445,7 @@ export default function Marketplace() {
           onClose={() => setLeadToPurchase(null)}
           lead={leadToPurchase}
           creditBalance={creditBalance}
-          onProceedToPay={(creditToUse) => handlePurchaseLead(leadToPurchase.id, creditToUse)}
+          onProceedToPay={(creditToUse, purchaseType) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType)}
         />
       )}
     </ProtectedRoute>

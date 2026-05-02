@@ -336,35 +336,35 @@ function LeadDetailsContent() {
   return (
     <div className="h-[calc(100vh-140px)] flex flex-col">
       {/* Header */}
-      <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-200 shrink-0">
-        <div className="flex items-center gap-4">
+      <div className="flex items-center justify-between mb-4 pb-3 border-b border-gray-200 shrink-0">
+        <div className="flex items-center gap-3">
           <a 
             href={tab === 'qualified' ? '/sales-crm/qualified' : '/sales-crm'} 
-            className="p-2 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
+            className="p-1.5 hover:bg-gray-100 rounded-full text-gray-500 transition-colors"
           >
-            <ChevronLeft className="w-6 h-6" />
+            <ChevronLeft className="w-5 h-5" />
           </a>
           <div>
-            <div className="flex items-center gap-3">
-              <h1 className="text-2xl font-bold text-gray-900">{lead.name}</h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold text-gray-900">{lead.company || lead.name}</h1>
               <button 
                 onClick={() => setIsEditModalOpen(true)}
-                className="text-xs font-medium text-blue-600 bg-blue-50 border border-blue-100 px-2 py-1 rounded hover:bg-blue-100 transition-colors"
+                className="text-[10px] font-medium text-blue-600 bg-blue-50 border border-blue-100 px-2 py-0.5 rounded hover:bg-blue-100 transition-colors"
               >
                 Edit
               </button>
             </div>
-            <p className="text-sm text-gray-500 mt-1">Lead Details & Notes</p>
+            <p className="text-xs text-gray-500 mt-0.5">Lead Details & Notes</p>
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3">
           <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden px-2">
-            <span className="text-xs font-medium text-gray-500 mr-2">Assigned To:</span>
+            <span className="text-[10px] font-medium text-gray-500 mr-2 uppercase tracking-wider">Assigned:</span>
             <select
               value={lead.assigned_to || 'unassigned'}
               onChange={(e) => assignLead(e.target.value)}
-              className="py-2 pl-2 pr-8 text-sm font-medium text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-0 border-0 cursor-pointer"
+              className="py-1.5 pl-1 pr-6 text-xs font-medium text-gray-900 bg-white hover:bg-gray-50 focus:outline-none focus:ring-0 border-0 cursor-pointer"
             >
               <option value="unassigned">Unassigned</option>
               {staffUsers.map(user => (
@@ -376,7 +376,7 @@ function LeadDetailsContent() {
           </div>
 
           <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden">
-            <div className={`px-4 py-2 text-sm font-bold uppercase tracking-wider border-r border-gray-200
+            <div className={`px-3 py-1.5 text-[10px] font-bold uppercase tracking-wider border-r border-gray-200
               ${lead.status === 'fresh' ? 'bg-green-100 text-green-800' : 
                 lead.status === 'no pitch' ? 'bg-yellow-100 text-yellow-800' : 
                 lead.status === 'qualified' ? 'bg-blue-100 text-blue-800' : 
@@ -388,7 +388,7 @@ function LeadDetailsContent() {
             <select
               value={lead.status}
               onChange={(e) => updateLeadStatus(e.target.value)}
-              className="py-2 pl-3 pr-8 text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-0 border-0 cursor-pointer"
+              className="py-1.5 pl-2 pr-7 text-xs font-medium text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-0 border-0 cursor-pointer"
             >
               <option value="fresh">Fresh</option>
               <option value="no pitch">No Pitch</option>
@@ -417,16 +417,13 @@ function LeadDetailsContent() {
         {/* Left Side: Lead Card */}
         <div className="lg:w-1/3 flex flex-col gap-6 overflow-y-auto pr-2 pb-4">
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden shrink-0">
-            <div className="bg-slate-50 p-6 border-b border-gray-200">
-              <div className="flex justify-between items-start mb-4">
-                <div className="w-16 h-16 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center">
-                  <User className="w-8 h-8" />
-                </div>
-                <div className="flex gap-2 flex-col items-end">
+            <div className="p-6 space-y-6">
+              {/* Marketing Actions */}
+              <div className="flex justify-end gap-2 border-b border-gray-100 pb-4">
                   {lead.status === 'qualified' && !lead.is_marketed && (
                     <button
                       onClick={() => setIsMarketModalOpen(true)}
-                      className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-bold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                      className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-bold rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
                     >
                       Market
                     </button>
@@ -434,24 +431,39 @@ function LeadDetailsContent() {
                   {lead.is_marketed && (
                     <button
                       onClick={() => setIsMarketModalOpen(true)}
-                      className="inline-flex items-center px-4 py-2 border border-green-200 text-sm font-bold rounded-lg shadow-sm text-green-800 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                      className="inline-flex items-center px-3 py-1.5 border border-green-200 text-xs font-bold rounded-lg shadow-sm text-green-800 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
                     >
                       Edit Marketed Lead
                     </button>
                   )}
-                </div>
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">{lead.name}</h2>
-              {lead.company && <p className="text-gray-500 font-medium mt-1">{lead.company}</p>}
-            </div>
-            
-            <div className="p-6 space-y-6">
               {lead.phone && (
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Phone Number</label>
                   <a href={`tel:${lead.phone}`} className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline">
                     <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
                     {lead.phone}
+                  </a>
+                </div>
+              )}
+
+              {/* Display additional contacts if present */}
+              {(lead as any).other_contacts && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Additional Contact</label>
+                  <div className="flex items-center gap-3 text-gray-900 font-medium">
+                    <div className="p-2 bg-gray-50 rounded-lg"><User className="w-5 h-5 text-gray-400" /></div>
+                    {(lead as any).other_contacts}
+                  </div>
+                </div>
+              )}
+
+              {(lead as any).other_contact_numbers && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Additional Phone</label>
+                  <a href={`tel:${(lead as any).other_contact_numbers}`} className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                    <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
+                    {(lead as any).other_contact_numbers}
                   </a>
                 </div>
               )}
@@ -469,11 +481,17 @@ function LeadDetailsContent() {
               {/* Qualification Details removed from here */}
 
               {lead.csv_data && Object.keys(lead.csv_data).length > 0 && (
-                <div>
-                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-3 block pt-4 border-t border-gray-100">Additional Data</label>
+                <div className="pt-4 border-t border-gray-100">
                   <div className="space-y-3">
                     {Object.entries(lead.csv_data).map(([key, value]) => {
-                      if (!value || ['name','phone','email','company'].includes(key.toLowerCase())) return null;
+                      const ignoredKeys = [
+                        'name', 'phone', 'email', 'company', 'company_name', 'contact_name', 
+                        'address', 'business address', 'location', 'postcode', 'postal code', 
+                        'director 1', 'director1', 'primary director', 'primary contact', 
+                        'phone number', 'contact number', 'number', 'business name', 'trading name',
+                        'additional notes', 'notes', 'note', 'comments', 'comment', 'details', 'additional details'
+                      ];
+                      if (!value || ignoredKeys.includes(key.toLowerCase().trim())) return null;
                       return (
                         <div key={key} className="text-sm">
                           <span className="text-gray-500 block mb-0.5">{key}</span>
@@ -794,7 +812,10 @@ function LeadDetailsContent() {
           name: lead.name,
           phone: lead.phone || '',
           email: lead.email,
-          company: lead.company
+          company: lead.company,
+          location: lead.location,
+          other_contacts: (lead as any).other_contacts,
+          other_contact_numbers: (lead as any).other_contact_numbers
         }}
       />
 

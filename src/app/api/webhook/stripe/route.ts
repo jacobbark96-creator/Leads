@@ -85,39 +85,23 @@ export async function POST(req: Request) {
           // This handles individual lead purchases
           const leadId = session.metadata?.leadId;
           const usedCredit = parseFloat(session.metadata?.usedCredit || '0');
+          const purchaseType = session.metadata?.purchaseType || 'exclusive'; // fallback for old sessions
+          const pricePaid = (session.amount_total || 0) / 100;
 
           if (leadId && clientId) {
-            // Assign lead
-            const { error } = await supabaseAdmin
-              .from('leads')
-              .update({ 
-                client_id: clientId, 
-                purchase_date: new Date().toISOString(),
-                status: 'sold'
-              })
-              .eq('id', leadId);
+            // Use the secure RPC function to process the purchase transaction
+            const { error: purchaseError } = await supabaseAdmin.rpc('purchase_lead', {
+              p_lead_id: leadId,
+              p_client_id: clientId,
+              p_purchase_type: purchaseType,
+              p_price_paid: pricePaid,
+              p_credit_used: usedCredit
+            });
               
-            if (error) {
-              console.error('Error assigning purchased lead:', error);
+            if (purchaseError) {
+              console.error('Error assigning purchased lead via RPC:', purchaseError);
             } else {
-              console.log(`Successfully assigned lead ${leadId} to client ${clientId}`);
-              
-              // Deduct credit if any was used
-              if (usedCredit > 0) {
-                const { data: currentClient } = await supabaseAdmin
-                  .from('clients')
-                  .select('credit_balance')
-                  .eq('id', clientId)
-                  .single();
-                
-                const currentBalance = currentClient?.credit_balance || 0;
-                const newBalance = Math.max(0, currentBalance - usedCredit);
-                
-                await supabaseAdmin
-                  .from('clients')
-                  .update({ credit_balance: newBalance })
-                  .eq('id', clientId);
-              }
+              console.log(`Successfully assigned lead ${leadId} to client ${clientId} (${purchaseType})`);
             }
           } else {
             console.error('Missing leadId or clientId in session metadata for payment');

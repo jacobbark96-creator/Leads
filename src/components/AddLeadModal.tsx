@@ -14,6 +14,9 @@ interface AddLeadModalProps {
     phone: string;
     email: string | null;
     company: string | null;
+    location?: string | null;
+    other_contacts?: string | null;
+    other_contact_numbers?: string | null;
   } | null;
 }
 
@@ -26,6 +29,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
     phone: '',
     email: '',
     company: '',
+    location: '',
+    other_contacts: '',
+    other_contact_numbers: '',
   });
 
   React.useEffect(() => {
@@ -35,6 +41,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         phone: editData.phone || '',
         email: editData.email || '',
         company: editData.company || '',
+        location: editData.location || '',
+        other_contacts: editData.other_contacts || '',
+        other_contact_numbers: editData.other_contact_numbers || '',
       });
     } else if (isOpen) {
       setFormData({
@@ -42,6 +51,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         phone: '',
         email: '',
         company: '',
+        location: '',
+        other_contacts: '',
+        other_contact_numbers: '',
       });
     }
   }, [isOpen, editData]);
@@ -63,11 +75,32 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           phone: formData.phone,
           email: formData.email || null,
           company: formData.company || null,
+          location: formData.location || null,
+          other_contacts: formData.other_contacts || null,
+          other_contact_numbers: formData.other_contact_numbers || null,
         };
         
         if (isContractor) {
           updatePayload.contact_name = formData.name;
           updatePayload.company_name = formData.company || null;
+          
+          // Sync with clients table if this contractor is onboarded
+          const { data: existingContractor } = await supabase
+            .from('contractors')
+            .select('client_id')
+            .eq('id', editData.id)
+            .single();
+            
+          if (existingContractor?.client_id) {
+             await supabase.from('clients').update({
+               contact_name: formData.name,
+               company_name: formData.company || null,
+               address: formData.location || null,
+               other_contacts: formData.other_contacts || null,
+               other_contact_numbers: formData.other_contact_numbers || null,
+               phone: formData.phone
+             }).eq('id', existingContractor.client_id);
+          }
         }
 
         const { error } = await supabase
@@ -84,6 +117,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           phone: formData.phone,
           email: formData.email || null,
           company: formData.company || null,
+          location: formData.location || null,
+          other_contacts: formData.other_contacts || null,
+          other_contact_numbers: formData.other_contact_numbers || null,
           status: status
         };
 
@@ -107,6 +143,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           phone: '',
           email: '',
           company: '',
+          location: '',
+          other_contacts: '',
+          other_contact_numbers: '',
         });
         
         onLeadAdded(data);
@@ -269,6 +308,42 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
                   id="company"
                   value={formData.company}
                   onChange={(e) => setFormData({...formData, company: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700">Address / Location</label>
+                <input
+                  type="text"
+                  name="location"
+                  id="location"
+                  value={formData.location}
+                  onChange={(e) => setFormData({...formData, location: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="other_contacts" className="block text-sm font-medium text-gray-700">Additional Contact Name</label>
+                <input
+                  type="text"
+                  name="other_contacts"
+                  id="other_contacts"
+                  value={formData.other_contacts}
+                  onChange={(e) => setFormData({...formData, other_contacts: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="other_contact_numbers" className="block text-sm font-medium text-gray-700">Additional Phone Number</label>
+                <input
+                  type="text"
+                  name="other_contact_numbers"
+                  id="other_contact_numbers"
+                  value={formData.other_contact_numbers}
+                  onChange={(e) => setFormData({...formData, other_contact_numbers: e.target.value})}
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>

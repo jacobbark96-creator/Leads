@@ -5,7 +5,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Lead } from '../../../types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Users, Calendar, MapPin, Search, Trash2 } from 'lucide-react';
+import { Phone, Mail, Building, User, Users, Calendar, MapPin, Search, Trash2, Filter } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
   import { AddLeadModal } from '@/components/AddLeadModal';
   import { QualifyLeadModal } from '@/components/QualifyLeadModal';
@@ -48,6 +48,7 @@ function LeadProcessingContent() {
   const [leadToQualify, setLeadToQualify] = useState<Lead | null>(null);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const PAGE_SIZE = 25;
 
   useEffect(() => {
@@ -140,9 +141,10 @@ function LeadProcessingContent() {
   };
 
   useEffect(() => {
+    if (profile === undefined) return;
     setPage(0);
     fetchLeads(0, true);
-  }, [statusFilter, phoneFilter, propertyTypeFilter, searchQuery, assignedToMe]);
+  }, [statusFilter, phoneFilter, propertyTypeFilter, searchQuery, assignedToMe, profile]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -223,86 +225,99 @@ function LeadProcessingContent() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Unqualified Leads</h1>
-          <p className="text-sm text-gray-500 mt-1">Process and qualify incoming leads.</p>
+      <div>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+          <div>
+            <h1 className="text-xl font-bold text-gray-900">Unqualified Leads</h1>
+            <p className="text-xs text-gray-500 mt-0.5">Process and qualify incoming leads.</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="hidden sm:block text-xs font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
+              {searchQuery.trim() && searchCount !== null 
+                ? `Showing ${searchCount} of ${totalCount} leads` 
+                : `Total: ${totalCount} leads`}
+            </div>
+            <button
+              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+              className={`inline-flex items-center px-3 py-1.5 border text-xs font-medium rounded-md shadow-sm transition-colors ${isFiltersOpen ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+            >
+              <Filter className="w-3.5 h-3.5 mr-1.5" />
+              Filters & Actions
+            </button>
+          </div>
         </div>
         
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="text-sm font-medium text-gray-500 self-center whitespace-nowrap">
-            {searchQuery.trim() && searchCount !== null 
-              ? `Showing ${searchCount} of ${totalCount} leads` 
-              : `Showing ${totalCount} leads`}
-          </div>
-          <div className="relative flex-1 w-full sm:min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search leads..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
-            />
-          </div>
+        {isFiltersOpen && (
+          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-3 mb-4">
+            <div className="relative flex-1 min-w-[200px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search leads..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500"
+              />
+            </div>
 
-          <div className="flex items-center p-1 bg-gray-100 rounded-lg border border-gray-200">
-            <button
-              onClick={() => setPropertyTypeFilter('all')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              All
-            </button>
-            <button
-              onClick={() => setPropertyTypeFilter('commercial')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'commercial' ? 'bg-purple-100 text-purple-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              Commercial Only
-            </button>
-            <button
-              onClick={() => setPropertyTypeFilter('residential')}
-              className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'residential' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-            >
-              Residential Only
-            </button>
-          </div>
+            <div className="flex items-center p-0.5 bg-gray-100 rounded-lg border border-gray-200">
+              <button
+                onClick={() => setPropertyTypeFilter('all')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                All
+              </button>
+              <button
+                onClick={() => setPropertyTypeFilter('commercial')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'commercial' ? 'bg-purple-100 text-purple-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Commercial Only
+              </button>
+              <button
+                onClick={() => setPropertyTypeFilter('residential')}
+                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'residential' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
+              >
+                Residential Only
+              </button>
+            </div>
 
-          {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-            >
-              Add Lead
-            </button>
-          )}
-          
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 font-medium">Phone:</label>
-            <select
-              value={phoneFilter}
-              onChange={(e) => setPhoneFilter(e.target.value)}
-              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
-            >
-              <option value="all">All</option>
-              <option value="with_phone">Has Phone Number</option>
-            </select>
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-600 font-medium">Phone:</label>
+              <select
+                value={phoneFilter}
+                onChange={(e) => setPhoneFilter(e.target.value)}
+                className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7"
+              >
+                <option value="all">All</option>
+                <option value="with_phone">Has Phone Number</option>
+              </select>
+            </div>
+            
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-600 font-medium">Status:</label>
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7"
+              >
+                <option value="all">All Unqualified</option>
+                <option value="fresh">Fresh</option>
+                <option value="no pitch">No Pitch</option>
+                <option value="dnc">DNC</option>
+                <option value="call back">Call Back</option>
+              </select>
+            </div>
+
+            {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
+              <button
+                onClick={() => setIsAddModalOpen(true)}
+                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                Add Lead
+              </button>
+            )}
           </div>
-          
-          <div className="flex items-center gap-2">
-            <label className="text-sm text-gray-600 font-medium">Status:</label>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
-            >
-              <option value="all">All Unqualified</option>
-              <option value="fresh">Fresh</option>
-              <option value="no pitch">No Pitch</option>
-              <option value="dnc">DNC</option>
-              <option value="call back">Call Back</option>
-            </select>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
@@ -347,18 +362,6 @@ function LeadProcessingContent() {
                       className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
                     />
                   )}
-                  <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 relative">
-                    <User className="w-5 h-5" />
-                    {lead.assigned_to && (
-                      <div 
-                        className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-white"
-                        style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === lead.assigned_to)?.name || '') }}
-                        title={`Assigned to ${staffUsers.find(u => u.id === lead.assigned_to)?.name || 'Unknown'}`}
-                      >
-                        {getInitials(staffUsers.find(u => u.id === lead.assigned_to)?.name || '')}
-                      </div>
-                    )}
-                  </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-bold text-gray-900 truncate">
@@ -369,15 +372,18 @@ function LeadProcessingContent() {
                           Commercial
                         </span>
                       )}
-                    </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {lead.company && <p className="text-xs text-gray-500 truncate italic">Contact: {lead.name}</p>}
-                      {lead.phone && <p className="text-sm text-gray-500 truncate">{lead.phone}</p>}
                       {lead.assigned_to && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800">
-                          Assigned to: {staffUsers.find(u => u.id === lead.assigned_to)?.name || 'Unknown'}
+                        <span 
+                          className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white shadow-sm ml-1"
+                          style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === lead.assigned_to)?.name || '') }}
+                          title={`Assigned to ${staffUsers.find(u => u.id === lead.assigned_to)?.name || 'Unknown'}`}
+                        >
+                          {getInitials(staffUsers.find(u => u.id === lead.assigned_to)?.name || '')}
                         </span>
                       )}
+                    </div>
+                    <div className="flex items-center gap-2 mt-0.5">
+                      {/* Only showing company name/badge above, keep it super clean */}
                     </div>
                   </div>
                 </div>
@@ -403,7 +409,7 @@ function LeadProcessingContent() {
                   
                   <a
                     href={`/sales-crm/lead?id=${lead.id}&tab=${assignedToMe ? 'my' : 'unqualified'}`}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
+                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
                   >
                     View Details
                   </a>

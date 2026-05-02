@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
-import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
 import { AdminNotifications } from './AdminNotifications';
@@ -57,17 +57,33 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
       case 'sales':
         return [
           { name: 'Staff Hub', path: '/staff', icon: Home },
-          { name: 'Sales CRM', path: '/sales-crm', icon: Database },
-          { name: 'Contractor CRM', path: '/contractor-crm', icon: Briefcase },
+          { 
+            name: 'CRM', 
+            path: '#',
+            icon: Database,
+            children: [
+              { name: 'Sales CRM', path: '/sales-crm', icon: Database },
+              { name: 'Contractor CRM', path: '/contractor-crm', icon: Briefcase },
+            ]
+          },
+          { name: 'Map', path: '/contractor-crm/map', icon: MapIcon },
           { name: 'Intranet', path: '/intranet', icon: BookOpen },
         ];
       case 'admin':
       case 'super_admin':
         return [
           { name: 'Staff Hub', path: '/staff', icon: Home },
-          { name: 'Admin CRM', path: '/admin-crm', icon: Settings },
-          { name: 'Sales CRM', path: '/sales-crm', icon: Database },
-          { name: 'Contractor CRM', path: '/contractor-crm', icon: Briefcase },
+          { 
+            name: 'CRM', 
+            path: '#',
+            icon: Database,
+            children: [
+              { name: 'Admin CRM', path: '/admin-crm', icon: Settings },
+              { name: 'Sales CRM', path: '/sales-crm', icon: Database },
+              { name: 'Contractor CRM', path: '/contractor-crm', icon: Briefcase },
+            ]
+          },
+          { name: 'Map', path: '/contractor-crm/map', icon: MapIcon },
           { name: 'Intranet', path: '/intranet', icon: BookOpen },
         ];
       default:
@@ -88,8 +104,50 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                   <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
                 </a>
                 <div className="hidden sm:flex sm:space-x-2">
-                  {navItems.map((item) => {
+                  {navItems.map((item: any) => {
                     const Icon = item.icon;
+                    if (item.children) {
+                      const isActive = item.children.some((child: any) => pathname.startsWith(child.path));
+                      return (
+                        <div key={item.name} className="relative group">
+                          <button
+                            className={`${
+                              isActive
+                                ? 'bg-blue-50 text-blue-700 font-semibold'
+                                : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium'
+                            } inline-flex items-center px-4 py-2.5 rounded-full text-sm transition-all duration-200 ease-in-out`}
+                          >
+                            <Icon className={`w-4 h-4 mr-2 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                            {item.name}
+                            <ChevronDown className={`w-4 h-4 ml-1 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                          </button>
+                          
+                          <div className="absolute left-0 mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 z-50 overflow-hidden transform origin-top -translate-y-2 group-hover:translate-y-0">
+                            <div className="py-1">
+                              {item.children.map((child: any) => {
+                                const ChildIcon = child.icon;
+                                const isChildActive = pathname.startsWith(child.path);
+                                return (
+                                  <a
+                                    key={child.name}
+                                    href={child.path}
+                                    className={`${
+                                      isChildActive
+                                        ? 'bg-blue-50 text-blue-700 font-semibold'
+                                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium'
+                                    } flex items-center px-4 py-3 text-sm transition-colors`}
+                                  >
+                                    <ChildIcon className={`w-4 h-4 mr-2 ${isChildActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                                    {child.name}
+                                  </a>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     const isActive = pathname.startsWith(item.path);
                     return (
                       <a
@@ -169,8 +227,37 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
             {mobileMenuOpen && (
               <div className="sm:hidden absolute left-0 right-0 top-full mt-3 bg-white/95 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
                 <div className="py-2 px-2">
-                  {navItems.map((item) => {
+                  {navItems.map((item: any) => {
                     const Icon = item.icon;
+                    if (item.children) {
+                      return (
+                        <div key={item.name} className="mb-2">
+                          <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
+                            {item.name}
+                          </div>
+                          {item.children.map((child: any) => {
+                            const ChildIcon = child.icon;
+                            const isChildActive = pathname.startsWith(child.path);
+                            return (
+                              <a
+                                key={child.name}
+                                href={child.path}
+                                onClick={() => setMobileMenuOpen(false)}
+                                className={`${
+                                  isChildActive
+                                    ? 'bg-blue-50 text-blue-700 font-semibold'
+                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium'
+                                } flex items-center px-4 py-3 rounded-xl text-base transition-colors ml-2`}
+                              >
+                                <ChildIcon className={`w-5 h-5 mr-3 ${isChildActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                                {child.name}
+                              </a>
+                            );
+                          })}
+                        </div>
+                      );
+                    }
+
                     const isActive = pathname.startsWith(item.path);
                     return (
                       <a
@@ -181,7 +268,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                           isActive
                             ? 'bg-blue-50 text-blue-700 font-semibold'
                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium'
-                        } flex items-center px-4 py-3 rounded-xl text-base transition-colors`}
+                        } flex items-center px-4 py-3 rounded-xl text-base transition-colors mb-1`}
                       >
                         <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                         {item.name}

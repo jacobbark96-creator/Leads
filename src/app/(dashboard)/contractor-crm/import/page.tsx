@@ -10,6 +10,41 @@ export default function ContractorImport() {
   const [uploadTarget, setUploadTarget] = useState<'fresh' | 'onboarded'>('fresh');
   const [progress, setProgress] = useState<{ total: number; processed: number; duplicates: number; added: number; failed: number } | null>(null);
 
+  const normalizeKey = (key: string) => String(key || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+
+  const getRowValue = (row: any, keys: string[]) => {
+    if (!row) return '';
+    for (const key of keys) {
+      const direct = row[key];
+      if (direct !== undefined && direct !== null && String(direct).trim()) return String(direct).trim();
+    }
+    const normalized = new Map<string, any>();
+    for (const k of Object.keys(row)) {
+      normalized.set(normalizeKey(k), row[k]);
+    }
+    for (const key of keys) {
+      const v = normalized.get(normalizeKey(key));
+      if (v !== undefined && v !== null && String(v).trim()) return String(v).trim();
+    }
+    return '';
+  };
+
+  const getCompanyNameFromRow = (row: any) =>
+    getRowValue(row, ['company_name', 'company', 'Company', 'Company Name', 'companyName', 'Business Name', 'Trading Name']);
+
+  const getDirectorNamesFromRow = (row: any) => {
+    const names = [
+      getRowValue(row, ['Director 1', 'director 1', 'director1', 'Director1', 'Primary Director', 'Primary Contact']),
+      getRowValue(row, ['Director 2', 'director 2', 'director2', 'Director2']),
+      getRowValue(row, ['Director 3', 'director 3', 'director3', 'Director3']),
+      getRowValue(row, ['Director 4', 'director 4', 'director4', 'Director4']),
+      getRowValue(row, ['Director 5', 'director 5', 'director5', 'Director5'])
+    ]
+      .map((s) => s.trim())
+      .filter(Boolean);
+    return Array.from(new Set(names));
+  };
+
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -32,8 +67,12 @@ export default function ContractorImport() {
         for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
           const chunk = rows.slice(i, i + CHUNK_SIZE);
           
-          const phones = chunk.map(r => String(r.phone || r.Phone || r.phoneNumber || r['Phone Number'] || '').substring(0, 20)).filter(Boolean);
-          const emails = chunk.map(r => String(r.email || r.Email || r.emailAddress || '').substring(0, 255)).filter(Boolean);
+          const phones = chunk
+            .map(r => getRowValue(r, ['phone', 'Phone', 'phoneNumber', 'Phone Number']).substring(0, 20))
+            .filter(Boolean);
+          const emails = chunk
+            .map(r => getRowValue(r, ['email', 'Email', 'emailAddress']).substring(0, 255).toLowerCase())
+            .filter(Boolean);
 
           const existingPhones = new Set<string>();
           const existingEmails = new Set<string>();
@@ -56,10 +95,14 @@ export default function ContractorImport() {
           const chunkDupEmails = new Set(existingEmails);
 
           for (const row of chunk) {
-            const phone = String(row.phone || row.Phone || row.phoneNumber || row['Phone Number'] || '').substring(0, 20);
-            const email = String(row.email || row.Email || row.emailAddress || '').substring(0, 255);
-            const name = String(row.name || row.Name || row.fullName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || 'Unknown').substring(0, 100);
-            const company = String(row.company || row.Company || row.companyName || '').substring(0, 200);
+            const phone = getRowValue(row, ['phone', 'Phone', 'phoneNumber', 'Phone Number']).substring(0, 20);
+            const email = getRowValue(row, ['email', 'Email', 'emailAddress']).substring(0, 255).toLowerCase();
+            const companyName = getCompanyNameFromRow(row).substring(0, 200);
+            const directors = getDirectorNamesFromRow(row);
+            const primaryDirector = directors[0] || '';
+
+            const fallbackName = companyName || email || phone || 'Unknown';
+            const name = String(fallbackName).substring(0, 100);
 
             if (!phone && !email) {
               failed++;
@@ -73,7 +116,9 @@ export default function ContractorImport() {
                 name,
                 phone,
                 email,
-                company,
+                company: companyName || null,
+                company_name: companyName || null,
+                contact_name: primaryDirector || null,
                 csv_data: row,
                 status: uploadTarget
               });

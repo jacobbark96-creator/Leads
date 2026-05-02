@@ -17,9 +17,9 @@ export async function POST(req: Request) {
       apiVersion: '2025-02-24.acacia' as any,
     });
 
-    const { userId, email, leadId, clientId, leadLocation, leadCategory, leadPrice, creditToUse } = await req.json();
+    const { userId, email, leadId, clientId, leadLocation, leadCategory, leadPrice, creditToUse, purchaseType } = await req.json();
 
-    if (!userId || !email || !leadId || !clientId) {
+    if (!userId || !email || !leadId || !clientId || !purchaseType) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -29,6 +29,7 @@ export async function POST(req: Request) {
     const fullPrice = parseFloat(leadPrice) || 135;
     const appliedCredit = parseFloat(creditToUse) || 0;
     const remainingPrice = fullPrice - appliedCredit;
+    const isExclusive = purchaseType === 'exclusive';
 
     // If fully covered by credit, process immediately
     if (remainingPrice <= 0) {
@@ -37,22 +38,18 @@ export async function POST(req: Request) {
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       );
       
-      // Update Lead
-      await supabaseAdmin.from('leads').update({
-        client_id: clientId,
-        purchase_date: new Date().toISOString(),
-        status: 'sold'
-      }).eq('id', leadId);
-
-      // Deduct Credit
-      const { data: currentClient } = await supabaseAdmin
-        .from('clients')
-        .select('credit_balance')
-        .eq('id', clientId)
-        .single();
+      // Call the secure RPC function to process purchase to prevent race conditions
+      const { error: purchaseError } = await supabaseAdmin.rpc('purchase_lead', {
+        p_lead_id: leadId,
+        p_client_id: clientId,
+        p_purchase_type: purchaseType,
+        p_price_paid: fullPrice,
+        p_credit_used: fullPrice
+      });
       
-      const newBalance = Math.max(0, (currentClient?.credit_balance || 0) - fullPrice);
-      await supabaseAdmin.from('clients').update({ credit_balance: newBalance }).eq('id', clientId);
+      if (purchaseError) {
+        return NextResponse.json({ error: purchaseError.message }, { status: 500 });
+      }
 
       return NextResponse.json({ skipStripe: true, url: `${appUrl}/my-openlead?purchase_success=true` });
     }
@@ -67,7 +64,7 @@ export async function POST(req: Request) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: `Exclusive Lead - ${leadLocation || 'Location TBC'}`,
+              name: `${isExclusive ? 'Exclusive' : 'LeadShare'} Lead - ${leadLocation || 'Location TBC'}`,
               description: appliedCredit > 0 ? `Category: ${leadCategory || 'General'} (Credit Applied: £${appliedCredit.toFixed(2)})` : `Category: ${leadCategory || 'General'}`,
             },
             unit_amount: Math.round(remainingPrice * 100),
@@ -78,7 +75,8 @@ export async function POST(req: Request) {
       metadata: {
         leadId: leadId,
         clientId: clientId,
-        usedCredit: appliedCredit.toString()
+        usedCredit: appliedCredit.toString(),
+        purchaseType: purchaseType
       },
       success_url: `${appUrl}/my-openlead?purchase_success=true&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${appUrl}/marketplace?purchase_canceled=true`,

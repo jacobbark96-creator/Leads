@@ -13,7 +13,6 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
   const tabs = [
     { name: 'Potential Contractors', path: '/contractor-crm', icon: Users },
     { name: 'Onboarded Contractors', path: '/contractor-crm/onboarded', icon: CheckCircle },
-    { name: 'Map', path: '/contractor-crm/map', icon: MapIcon },
     { name: 'Marketplace', path: '/contractor-crm/marketplace', icon: Store },
     { name: 'Import Leads', path: '/contractor-crm/import', icon: Upload },
   ];
@@ -22,7 +21,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
     <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin']}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h1 className="text-2xl font-bold text-gray-900">Contractor CRM</h1>
+          <h1 className="text-xl font-bold text-gray-900">Contractor CRM</h1>
           
           {/* Mobile menu button & actions */}
           <div className="flex items-center gap-2">
@@ -100,9 +99,9 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                       isActive
                         ? 'border-blue-500 text-blue-600'
                         : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    } whitespace-nowrap flex py-4 px-1 border-b-2 font-medium text-sm`}
+                    } whitespace-nowrap flex py-3 px-1 border-b-2 font-medium text-xs`}
                   >
-                    <Icon className={`${isActive ? 'text-blue-500' : 'text-gray-400'} mr-2 h-5 w-5`} />
+                    <Icon className={`${isActive ? 'text-blue-500' : 'text-gray-400'} mr-2 h-4 w-4`} />
                     {tab.name}
                   </a>
                 );
@@ -120,9 +119,9 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                   }
                   window.location.href = url.pathname + url.search;
                 }}
-                className="inline-flex items-center px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                <UserPlus className="w-4 h-4 mr-2 text-gray-400" />
+                <UserPlus className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
                 My Leads
               </button>
             )}

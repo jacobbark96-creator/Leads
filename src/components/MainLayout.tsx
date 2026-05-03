@@ -334,7 +334,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </nav>
 
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-28 pb-8">
+      <main className={`flex-1 w-full mx-auto ${pathname?.startsWith('/staff') ? 'px-0 pt-0 pb-0' : 'max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-8'}`}>
         {children}
       </main>
 

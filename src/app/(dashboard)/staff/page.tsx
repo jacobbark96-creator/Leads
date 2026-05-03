@@ -9,21 +9,21 @@ export default function StaffPortal() {
   if (!profile) return null;
 
   return (
-    <div className="relative min-h-[calc(100vh-4rem)] flex flex-col justify-center overflow-hidden">
+    <div className="relative min-h-screen flex flex-col justify-center overflow-hidden pt-20 pb-8">
       {/* Beautiful Background Image */}
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ 
-          backgroundImage: 'url("https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=2500&auto=format&fit=crop")',
+          backgroundImage: 'url("https://images.unsplash.com/photo-1501854140801-50d01698950b?q=100&w=3000&auto=format&fit=crop")',
         }}
       />
-      {/* Light Overlay to ensure text readability */}
-      <div className="absolute inset-0 z-0 bg-white/40 backdrop-blur-sm"></div>
+      {/* Dark Overlay to ensure text readability without blurring the beautiful image */}
+      <div className="absolute inset-0 z-0 bg-black/40" />
 
       <div className="relative z-10 p-8 max-w-7xl mx-auto w-full">
         <div className="text-center mb-12">
-          <h1 className="text-4xl sm:text-5xl font-extrabold text-gray-900 mb-4 drop-shadow-sm">Welcome back, {profile.name}</h1>
-          <p className="text-xl text-gray-700 font-medium drop-shadow-sm">Where would you like to go today?</p>
+          <h1 className="text-4xl sm:text-5xl font-extrabold text-white mb-4 drop-shadow-lg">Welcome back, {profile.name}</h1>
+          <p className="text-xl text-white/90 font-medium drop-shadow-md">Where would you like to go today?</p>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

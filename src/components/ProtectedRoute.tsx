@@ -92,26 +92,62 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         if (path === '/contractor-crm/map' && perms.includes('map')) hasAccess = true;
 
         // Sales CRM
-        if (path === '/sales-crm' && perms.includes('sales-crm/fresh')) hasAccess = true;
+        if (path === '/sales-crm') {
+          if (perms.includes('sales-crm/fresh')) {
+            hasAccess = true;
+          } else if (perms.includes('sales-crm')) {
+            if (perms.includes('sales-crm/qualified')) window.location.href = '/sales-crm/qualified';
+            else if (perms.includes('sales-crm/import')) window.location.href = '/sales-crm/import';
+            return;
+          }
+        }
         if (path.startsWith('/sales-crm/qualified') && perms.includes('sales-crm/qualified')) hasAccess = true;
         if (path.startsWith('/sales-crm/import') && perms.includes('sales-crm/import')) hasAccess = true;
         if (path.startsWith('/sales-crm/lead') && perms.includes('sales-crm')) hasAccess = true; // viewing a lead
 
         // Contractor CRM
-        if (path === '/contractor-crm' && perms.includes('contractor-crm/potential')) hasAccess = true;
+        if (path === '/contractor-crm') {
+          if (perms.includes('contractor-crm/potential')) {
+            hasAccess = true;
+          } else if (perms.includes('contractor-crm')) {
+            if (perms.includes('contractor-crm/onboarded')) window.location.href = '/contractor-crm/onboarded';
+            else if (perms.includes('contractor-crm/marketplace')) window.location.href = '/contractor-crm/marketplace';
+            else if (perms.includes('contractor-crm/import')) window.location.href = '/contractor-crm/import';
+            return;
+          }
+        }
         if (path.startsWith('/contractor-crm/onboarded') && perms.includes('contractor-crm/onboarded')) hasAccess = true;
         if (path.startsWith('/contractor-crm/marketplace') && perms.includes('contractor-crm/marketplace')) hasAccess = true;
         if (path.startsWith('/contractor-crm/import') && perms.includes('contractor-crm/import')) hasAccess = true;
         if (path.startsWith('/contractor-crm/contractor') && perms.includes('contractor-crm')) hasAccess = true; // viewing a contractor
 
         // Admin CRM
-        if (path === '/admin-crm' && perms.includes('admin-crm/users')) hasAccess = true;
+        if (path === '/admin-crm') {
+          if (perms.includes('admin-crm/users')) {
+            hasAccess = true;
+          } else if (perms.includes('admin-crm')) {
+            if (perms.includes('admin-crm/categories')) window.location.href = '/admin-crm/categories';
+            else if (perms.includes('admin-crm/discounts')) window.location.href = '/admin-crm/discounts';
+            else if (perms.includes('admin-crm/tracker')) window.location.href = '/admin-crm/tracker';
+            return;
+          }
+        }
         if (path.startsWith('/admin-crm/categories') && perms.includes('admin-crm/categories')) hasAccess = true;
         if (path.startsWith('/admin-crm/discounts') && perms.includes('admin-crm/discounts')) hasAccess = true;
         if (path.startsWith('/admin-crm/tracker') && perms.includes('admin-crm/tracker')) hasAccess = true;
 
         // Intranet
-        if (path === '/intranet' && perms.includes('intranet/pricing')) hasAccess = true;
+        if (path === '/intranet') {
+          if (perms.includes('intranet/pricing')) {
+            hasAccess = true;
+          } else if (perms.includes('intranet')) {
+            if (perms.includes('intranet/clients')) window.location.href = '/intranet/clients';
+            else if (perms.includes('intranet/grants')) window.location.href = '/intranet/grants';
+            else if (perms.includes('intranet/tracker')) window.location.href = '/intranet/tracker';
+            else if (perms.includes('intranet/resources')) window.location.href = '/intranet/resources';
+            return;
+          }
+        }
         if (path.startsWith('/intranet/clients') && perms.includes('intranet/clients')) hasAccess = true;
         if (path.startsWith('/intranet/grants') && perms.includes('intranet/grants')) hasAccess = true;
         if (path.startsWith('/intranet/tracker') && perms.includes('intranet/tracker')) hasAccess = true;

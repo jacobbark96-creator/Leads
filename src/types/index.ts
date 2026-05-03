@@ -1,4 +1,4 @@
-export type UserRole = 'client' | 'sales' | 'admin' | 'super_admin';
+export type UserRole = 'client' | 'sales' | 'admin' | 'super_admin' | 'rep';
 
 export interface UserProfile {
   id: string;
@@ -11,6 +11,7 @@ export interface UserProfile {
   about?: string | null;
   working_hours?: string | null;
   is_approved?: boolean;
+  permissions?: string[] | null;
   created_at: string;
 }
 

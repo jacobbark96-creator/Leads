@@ -69,6 +69,30 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           { name: 'Map', path: '/contractor-crm/map', icon: MapIcon },
           { name: 'Intranet', path: '/intranet', icon: BookOpen },
         ];
+      case 'rep':
+        const repTabs: any[] = [];
+        const perms = profile.permissions || [];
+        
+        if (perms.includes('staff')) repTabs.push({ name: 'Staff Hub', path: '/staff', icon: Home });
+        
+        const crmChildren = [];
+        if (perms.includes('admin-crm')) crmChildren.push({ name: 'Admin CRM', path: '/admin-crm', icon: Settings });
+        if (perms.includes('sales-crm')) crmChildren.push({ name: 'Sales CRM', path: '/sales-crm', icon: Database });
+        if (perms.includes('contractor-crm')) crmChildren.push({ name: 'Contractor CRM', path: '/contractor-crm', icon: Briefcase });
+        
+        if (crmChildren.length > 0) {
+          repTabs.push({
+            name: 'CRM',
+            path: '#',
+            icon: Database,
+            children: crmChildren
+          });
+        }
+        
+        if (perms.includes('map')) repTabs.push({ name: 'Map', path: '/contractor-crm/map', icon: MapIcon });
+        if (perms.includes('intranet')) repTabs.push({ name: 'Intranet', path: '/intranet', icon: BookOpen });
+        
+        return repTabs;
       case 'admin':
       case 'super_admin':
         return [

@@ -40,6 +40,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     job_title: user.job_title || '',
     about: user.about || '',
     working_hours: user.working_hours || '',
+    permissions: user.permissions || [],
     company_name: '',
     phone: '',
     other_contacts: '',
@@ -269,6 +270,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           job_title: formData.job_title,
           about: formData.about,
           working_hours: formData.working_hours,
+          permissions: formData.permissions
         })
         .eq('id', user.id);
 
@@ -491,6 +493,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                       className="block w-full pl-10 py-2 sm:text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="client">Client / Contractor</option>
+                      <option value="rep">Representative</option>
                       <option value="sales">Sales Staff</option>
                       <option value="admin">Admin</option>
                       <option value="super_admin">Super Admin</option>
@@ -499,8 +502,40 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                 </div>
               </div>
 
+              {formData.role === 'rep' && (
+                <div className="pt-4 border-t border-gray-200">
+                  <h4 className="text-sm font-bold text-gray-900 mb-3">Rep Accessible Tabs</h4>
+                  <div className="space-y-2">
+                    {[
+                      { id: 'sales-crm', label: 'Sales CRM' },
+                      { id: 'contractor-crm', label: 'Contractor CRM' },
+                      { id: 'admin-crm', label: 'Admin CRM' },
+                      { id: 'map', label: 'Map' },
+                      { id: 'intranet', label: 'Intranet' },
+                      { id: 'staff', label: 'Staff Hub' }
+                    ].map(tab => (
+                      <label key={tab.id} className="flex items-center">
+                        <input
+                          type="checkbox"
+                          checked={formData.permissions.includes(tab.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setFormData({ ...formData, permissions: [...formData.permissions, tab.id] });
+                            } else {
+                              setFormData({ ...formData, permissions: formData.permissions.filter(p => p !== tab.id) });
+                            }
+                          }}
+                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
+                        />
+                        <span className="ml-2 text-sm text-gray-700">{tab.label}</span>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {/* Admin/Sales Specific Fields */}
-              {['admin', 'super_admin', 'sales'].includes(formData.role) && (
+              {['admin', 'super_admin', 'sales', 'rep'].includes(formData.role) && (
                 <>
                   <div className="pt-4 border-t border-gray-200">
                     <h4 className="text-sm font-bold text-gray-900 mb-4">Advisor Profile Details</h4>

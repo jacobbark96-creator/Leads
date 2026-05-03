@@ -80,6 +80,21 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         window.location.href = '/login';
       } else if (profile.role === 'client' && profile.is_approved === false) {
         window.location.href = '/pending-approval';
+      } else if (profile.role === 'rep') {
+        const perms = profile.permissions || [];
+        const path = pathname || '';
+        let hasAccess = false;
+        
+        if (path.startsWith('/staff') && perms.includes('staff')) hasAccess = true;
+        if (path.startsWith('/admin-crm') && perms.includes('admin-crm')) hasAccess = true;
+        if (path.startsWith('/sales-crm') && perms.includes('sales-crm')) hasAccess = true;
+        if (path.startsWith('/contractor-crm/map') && perms.includes('map')) hasAccess = true;
+        else if (path.startsWith('/contractor-crm') && perms.includes('contractor-crm')) hasAccess = true;
+        if (path.startsWith('/intranet') && perms.includes('intranet')) hasAccess = true;
+        
+        if (!hasAccess && path !== '/staff' && path !== '/') {
+          window.location.href = '/staff';
+        }
       } else if (allowedRoles && !allowedRoles.includes(profile.role)) {
         // Redirect based on user's role if they try to access an unauthorized page
         if (profile.role === 'client') {

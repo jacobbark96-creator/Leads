@@ -50,6 +50,15 @@ function LeadProcessingContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const PAGE_SIZE = 25;
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+  // Debounce search query to prevent excessive API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     // Fetch staff users for assignment name resolution
@@ -87,8 +96,8 @@ function LeadProcessingContent() {
         setTotalCount(baseCount || 0);
       }
 
-      if (searchQuery.trim()) {
-        const search = `%${searchQuery.trim()}%`;
+      if (debouncedSearchQuery.trim()) {
+        const search = `%${debouncedSearchQuery.trim()}%`;
         query = query.or(`name.ilike.${search},company.ilike.${search}`);
       }
 
@@ -122,7 +131,7 @@ function LeadProcessingContent() {
 
       if (isInitial) {
         setLeads(leadsToRender);
-        if (searchQuery.trim()) {
+        if (debouncedSearchQuery.trim()) {
           setSearchCount(count || 0);
         } else {
           setSearchCount(null);
@@ -144,7 +153,7 @@ function LeadProcessingContent() {
     if (profile === undefined) return;
     setPage(0);
     fetchLeads(0, true);
-  }, [statusFilter, phoneFilter, propertyTypeFilter, searchQuery, assignedToMe, profile]);
+  }, [statusFilter, phoneFilter, propertyTypeFilter, debouncedSearchQuery, assignedToMe, profile]);
 
   const loadMore = () => {
     const nextPage = page + 1;

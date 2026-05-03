@@ -105,6 +105,15 @@ function ContractorProcessingContent() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [marketedLeads, setMarketedLeads] = useState<any[]>([]);
   const [nearbyLeadsModalContractor, setNearbyLeadsModalContractor] = useState<{ contractor: Contractor, leads: any[] } | null>(null);
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+  // Debounce search query to prevent excessive API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   // Haversine formula
   const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
@@ -157,10 +166,10 @@ function ContractorProcessingContent() {
       let searchLng: number | null = null;
       let radiusModeActive = false;
 
-      if (radiusFilter !== 'any' && searchQuery.trim()) {
+      if (radiusFilter !== 'any' && debouncedSearchQuery.trim()) {
         setIsGeocoding(true);
         try {
-          const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(searchQuery.trim())}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`);
+          const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(debouncedSearchQuery.trim())}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`);
           const geoData = await res.json();
           if (geoData.status === 'OK' && geoData.results[0]) {
             searchLat = geoData.results[0].geometry.location.lat;
@@ -195,9 +204,9 @@ function ContractorProcessingContent() {
             query = query.in('id', ['00000000-0000-0000-0000-000000000000']);
           }
         }
-      } else if (searchQuery.trim()) {
+      } else if (debouncedSearchQuery.trim()) {
         // Normal text search if not doing radius
-        const search = `%${searchQuery.trim()}%`;
+        const search = `%${debouncedSearchQuery.trim()}%`;
         query = query.or(`name.ilike.${search},company_name.ilike.${search},contact_name.ilike.${search},csv_data->>Address.ilike.${search}`);
       }
 
@@ -237,7 +246,7 @@ function ContractorProcessingContent() {
 
       if (isInitial) {
         setContractors(uniqueContractors);
-        if (searchQuery.trim()) {
+        if (debouncedSearchQuery.trim()) {
           setSearchCount(count || 0);
         } else {
           setSearchCount(null);
@@ -262,7 +271,7 @@ function ContractorProcessingContent() {
     if (profile === undefined) return; // wait for profile to load if needed
     setPage(0);
     fetchContractors(0, true);
-  }, [statusFilter, searchQuery, radiusFilter, assignedToMe, profile]);
+  }, [statusFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile]);
 
   const loadMore = () => {
     const nextPage = page + 1;

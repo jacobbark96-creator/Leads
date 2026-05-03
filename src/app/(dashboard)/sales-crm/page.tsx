@@ -394,8 +394,13 @@ function LeadProcessingContent() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      {/* Only showing company name/badge above, keep it super clean */}
+                    <div className="flex flex-col mt-0.5">
+                      {lead.company && lead.name && (
+                        <span className="text-xs text-gray-700 font-medium">{lead.name}</span>
+                      )}
+                      {lead.phone && (
+                        <span className="text-xs text-gray-500">{lead.phone}</span>
+                      )}
                     </div>
                   </div>
                 </div>

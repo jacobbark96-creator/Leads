@@ -503,18 +503,20 @@ function ContractorProcessingContent() {
                         </span>
                       )}
                     </p>
+                  </div>
+                  
+                  {(() => {
+                    if (!contractor.latitude || !contractor.longitude) return null;
+                    const nearbyCount = marketedLeads.filter(lead => {
+                      if (!lead.latitude || !lead.longitude) return false;
+                      const dist = getDistance(contractor.latitude!, contractor.longitude!, lead.latitude, lead.longitude);
+                      return dist !== null && dist <= 30;
+                    }).length;
                     
-                    {(() => {
-                      if (!contractor.latitude || !contractor.longitude) return null;
-                      const nearbyCount = marketedLeads.filter(lead => {
-                        if (!lead.latitude || !lead.longitude) return false;
-                        const dist = getDistance(contractor.latitude!, contractor.longitude!, lead.latitude, lead.longitude);
-                        return dist !== null && dist <= 30;
-                      }).length;
-                      
-                      if (nearbyCount === 0) return null;
-                      
-                      return (
+                    if (nearbyCount === 0) return null;
+                    
+                    return (
+                      <div className="hidden sm:flex items-center justify-center px-4">
                         <button
                           onClick={() => setNearbyLeadsModalContractor({
                             contractor,
@@ -524,16 +526,15 @@ function ContractorProcessingContent() {
                               return dist !== null && dist <= 30;
                             })
                           })}
-                          className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-colors"
+                          className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-colors whitespace-nowrap"
                         >
                           🔥 {nearbyCount} Leads within 30mi
                         </button>
-                      );
-                    })()}
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4">
+                      </div>
+                    );
+                  })()}
+                  
+                  <div className="flex items-center gap-3 shrink-0">
                   <select
                     value={contractor.status}
                     onChange={(e) => updateContractorStatus(contractor.id, e.target.value)}

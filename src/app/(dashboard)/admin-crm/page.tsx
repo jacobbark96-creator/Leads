@@ -152,7 +152,8 @@ export default function UserManagement() {
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                 <select value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                  <option value="client">Client</option>
+                  <option value="client">Client / Contractor</option>
+                  <option value="rep">Representative</option>
                   <option value="sales">Sales Staff</option>
                   <option value="admin">Admin</option>
                 </select>
@@ -206,7 +207,8 @@ export default function UserManagement() {
                           onChange={(e) => handleRoleChange(user.id, e.target.value)}
                           className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
                         >
-                          <option value="client">Contractor</option>
+                          <option value="client">Contractor / Client</option>
+                          <option value="rep">Representative</option>
                           <option value="sales">Sales Staff</option>
                           <option value="admin">Admin</option>
                           {profile?.role === 'super_admin' && <option value="super_admin">Super Admin</option>}

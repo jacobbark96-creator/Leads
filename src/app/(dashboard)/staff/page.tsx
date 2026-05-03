@@ -14,11 +14,11 @@ export default function StaffPortal() {
       <div 
         className="absolute inset-0 z-0 bg-cover bg-center bg-no-repeat"
         style={{ 
-          backgroundImage: 'url("https://images.unsplash.com/photo-1497366216548-37526070297c?q=80&w=2500&auto=format&fit=crop")',
+          backgroundImage: 'url("https://images.unsplash.com/photo-1501854140801-50d01698950b?q=80&w=2500&auto=format&fit=crop")',
         }}
       />
       {/* Light Overlay to ensure text readability */}
-      <div className="absolute inset-0 z-0 bg-white/70 backdrop-blur-sm"></div>
+      <div className="absolute inset-0 z-0 bg-white/40 backdrop-blur-sm"></div>
 
       <div className="relative z-10 p-8 max-w-7xl mx-auto w-full">
         <div className="text-center mb-12">

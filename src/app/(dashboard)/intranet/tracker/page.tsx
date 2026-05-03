@@ -201,18 +201,38 @@ export default function TrackerPage() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-200">
-                {rows.map((row, rowIndex) => (
-                  <tr key={rowIndex} className="hover:bg-gray-50 transition-colors">
-                    {headers.map((header, colIndex) => (
-                      <td
-                        key={`${rowIndex}-${colIndex}`}
-                        className="px-6 py-4 text-sm text-gray-900 whitespace-nowrap"
-                      >
-                        {row[header] || '-'}
-                      </td>
-                    ))}
-                  </tr>
-                ))}
+                {rows.map((row, rowIndex) => {
+                  // Determine if this row looks like a header/summary row
+                  // Usually header rows in sheets might have all caps, or specific keywords
+                  const isHeaderRow = Object.values(row).some((val: any) => 
+                    typeof val === 'string' && (val.toLowerCase() === 'total' || val.toLowerCase() === 'summary')
+                  );
+                  
+                  return (
+                    <tr key={rowIndex} className={`hover:bg-gray-50 transition-colors ${isHeaderRow ? 'bg-gray-50/80' : ''}`}>
+                      {headers.map((header, colIndex) => {
+                        const cellValue = row[header];
+                        // Empty cells in CSV come as empty strings, don't show '-' if it's truly blank to mimic merged/empty cells
+                        const displayValue = cellValue === undefined || cellValue === null ? '' : String(cellValue).trim();
+                        
+                        // Check if it's a number to right-align it optionally, or bold it
+                        const isNumber = displayValue !== '' && !isNaN(Number(displayValue.replace(/[,£$%]/g, '')));
+                        
+                        return (
+                          <td
+                            key={`${rowIndex}-${colIndex}`}
+                            className={`px-6 py-4 text-sm whitespace-nowrap ${
+                              isHeaderRow ? 'font-bold text-gray-900' : 
+                              isNumber ? 'font-medium text-gray-900' : 'text-gray-600'
+                            }`}
+                          >
+                            {displayValue}
+                          </td>
+                        );
+                      })}
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

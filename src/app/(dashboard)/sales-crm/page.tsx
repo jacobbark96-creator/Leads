@@ -352,8 +352,8 @@ function LeadProcessingContent() {
         ) : leads.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {leads.map((lead) => (
-              <li key={lead.id} className={`flex items-center justify-between p-4 transition-colors ${selectedLeads.has(lead.id) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}>
-                <div className="flex items-center gap-4 flex-1 min-w-0">
+              <li key={lead.id} className={`flex items-center justify-between p-3 sm:p-4 transition-colors ${selectedLeads.has(lead.id) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
                   {profile?.role === 'super_admin' && (
                     <input
                       type="checkbox"

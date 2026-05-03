@@ -132,7 +132,7 @@ function ContractorProcessingContent() {
     const fetchMarketedLeads = async () => {
       const { data } = await supabase
         .from('leads')
-        .select('id, name, location, latitude, longitude, exclusive_price, share_price, purchase_count, max_shares')
+        .select('id, name, company, location, latitude, longitude, exclusive_price, share_price, purchase_count, max_shares')
         .eq('is_marketed', true)
         .eq('status', 'qualified');
       if (data) setMarketedLeads(data);
@@ -463,17 +463,20 @@ function ContractorProcessingContent() {
         ) : contractors.length > 0 ? (
           <ul className="divide-y divide-gray-200">
             {contractors.map((contractor) => (
-              <li key={contractor.id} className={`flex items-center justify-between p-4 hover:bg-gray-50 transition-colors ${selectedContractors.has(contractor.id) ? 'bg-blue-50' : ''}`}>
-                <div className="flex items-center gap-4 flex-1 min-w-0">
-                  <div className="flex items-center h-5">
+              <li key={contractor.id} className={`flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 transition-colors ${selectedContractors.has(contractor.id) ? 'bg-blue-50' : ''}`}>
+                <div className="flex items-center gap-3 flex-1 min-w-0">
+                  <div className="flex items-center gap-3">
                     <input
                       type="checkbox"
                       checked={selectedContractors.has(contractor.id)}
                       onChange={() => toggleSelectContractor(contractor.id)}
-                      className="focus:ring-blue-500 h-3.5 w-3.5 text-blue-600 border-gray-300 rounded cursor-pointer"
+                      className="focus:ring-blue-500 h-3.5 w-3.5 text-blue-600 border-gray-300 rounded cursor-pointer shrink-0"
                     />
+                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs shrink-0 border border-blue-200">
+                      {getInitials(contractor.company_name || contractor.company || contractor.name || 'UC')}
+                    </div>
                   </div>
-                  <div className="min-w-0">
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
                       <a 
                         href={`/contractor-crm/contractor?id=${contractor.id}`}

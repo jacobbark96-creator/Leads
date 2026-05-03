@@ -39,7 +39,7 @@ export const NearbyLeadsModal: React.FC<NearbyLeadsModalProps> = ({ isOpen, onCl
                 <div className="flex items-start justify-between mb-3 border-b border-gray-100 pb-3">
                   <div className="min-w-0 pr-4">
                     <h3 className="font-bold text-gray-900 truncate">
-                      {lead.name || 'Solar Lead'}
+                      {lead.company || lead.name || 'Solar Lead'}
                     </h3>
                     <div className="flex items-center text-xs text-gray-500 mt-1">
                       <MapPin className="w-3 h-3 mr-1" />

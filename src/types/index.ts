@@ -115,6 +115,8 @@ export interface Contractor {
   csv_data: any | null;
   assigned_to: string | null;
   created_at: string;
+  latitude?: number | null;
+  longitude?: number | null;
   service_areas?: any[] | null;
   clients?: {
     address?: string | null;

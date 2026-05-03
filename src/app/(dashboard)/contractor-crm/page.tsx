@@ -8,6 +8,7 @@ import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
 import { OnboardContractorModal } from '@/components/OnboardContractorModal';
+import { NearbyLeadsModal } from '@/components/NearbyLeadsModal';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -102,6 +103,22 @@ function ContractorProcessingContent() {
   const [radiusFilter, setRadiusFilter] = useState<string>('any');
   const [isGeocoding, setIsGeocoding] = useState(false);
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [marketedLeads, setMarketedLeads] = useState<any[]>([]);
+  const [nearbyLeadsModalContractor, setNearbyLeadsModalContractor] = useState<{ contractor: Contractor, leads: any[] } | null>(null);
+
+  // Haversine formula
+  const getDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    if (!lat1 || !lon1 || !lat2 || !lon2) return null;
+    const R = 3958.8; // Radius of the earth in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c;
+  };
 
   useEffect(() => {
     // Fetch staff users for assignment name resolution
@@ -110,6 +127,17 @@ function ContractorProcessingContent() {
       if (data) setStaffUsers(data);
     };
     fetchStaff();
+
+    // Fetch all marketed leads to calculate nearby opportunities locally
+    const fetchMarketedLeads = async () => {
+      const { data } = await supabase
+        .from('leads')
+        .select('id, name, location, latitude, longitude, exclusive_price, share_price, purchase_count, max_shares')
+        .eq('is_marketed', true)
+        .eq('status', 'qualified');
+      if (data) setMarketedLeads(data);
+    };
+    fetchMarketedLeads();
   }, []);
 
   const fetchContractors = async (pageNumber: number, isInitial: boolean) => {
@@ -447,7 +475,12 @@ function ContractorProcessingContent() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
-                      {contractor.company_name || contractor.company || contractor.name || 'Unnamed Contractor'}
+                      <a 
+                        href={`/contractor-crm/contractor?id=${contractor.id}`}
+                        className="text-blue-600 hover:text-blue-800 hover:underline"
+                      >
+                        {contractor.company_name || contractor.company || contractor.name || 'Unnamed Contractor'}
+                      </a>
                       {contractor.assigned_to && (
                         <span 
                           className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white shadow-sm"
@@ -458,6 +491,33 @@ function ContractorProcessingContent() {
                         </span>
                       )}
                     </p>
+                    
+                    {(() => {
+                      if (!contractor.latitude || !contractor.longitude) return null;
+                      const nearbyCount = marketedLeads.filter(lead => {
+                        if (!lead.latitude || !lead.longitude) return false;
+                        const dist = getDistance(contractor.latitude!, contractor.longitude!, lead.latitude, lead.longitude);
+                        return dist !== null && dist <= 30;
+                      }).length;
+                      
+                      if (nearbyCount === 0) return null;
+                      
+                      return (
+                        <button
+                          onClick={() => setNearbyLeadsModalContractor({
+                            contractor,
+                            leads: marketedLeads.filter(lead => {
+                              if (!lead.latitude || !lead.longitude) return false;
+                              const dist = getDistance(contractor.latitude!, contractor.longitude!, lead.latitude, lead.longitude);
+                              return dist !== null && dist <= 30;
+                            })
+                          })}
+                          className="mt-1 inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-colors"
+                        >
+                          🔥 {nearbyCount} Leads within 30mi
+                        </button>
+                      );
+                    })()}
                   </div>
                 </div>
                 
@@ -481,13 +541,6 @@ function ContractorProcessingContent() {
                     <option value="onboarded">Onboarded</option>
                     <option value="offboarded">Offboarded</option>
                   </select>
-                  
-                  <a
-                    href={`/contractor-crm/contractor?id=${contractor.id}`}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
-                  >
-                    View Details
-                  </a>
                 </div>
               </li>
             ))}
@@ -533,6 +586,15 @@ function ContractorProcessingContent() {
             setSelectedOnboardContractor(null);
             setContractors(prev => prev.filter(c => c.id !== updatedContractor.id));
           }}
+        />
+      )}
+
+      {nearbyLeadsModalContractor && (
+        <NearbyLeadsModal
+          isOpen={!!nearbyLeadsModalContractor}
+          onClose={() => setNearbyLeadsModalContractor(null)}
+          contractor={nearbyLeadsModalContractor.contractor}
+          leads={nearbyLeadsModalContractor.leads}
         />
       )}
     </div>

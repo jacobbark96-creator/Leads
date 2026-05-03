@@ -471,10 +471,9 @@ function ContractorProcessingContent() {
           <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
         ) : contractors.length > 0 ? (
           <ul className="divide-y divide-gray-200">
-            {contractors.map((contractor) => (
-              <li key={contractor.id} className={`flex items-center justify-between p-3 sm:p-4 hover:bg-gray-50 transition-colors ${selectedContractors.has(contractor.id) ? 'bg-blue-50' : ''}`}>
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  <div className="flex items-center gap-3">
+              {contractors.map((contractor) => (
+                <li key={contractor.id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 sm:p-4 hover:bg-gray-50 transition-colors ${selectedContractors.has(contractor.id) ? 'bg-blue-50' : ''}`}>
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                     <input
                       type="checkbox"
                       checked={selectedContractors.has(contractor.id)}
@@ -484,28 +483,30 @@ function ContractorProcessingContent() {
                     <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs shrink-0 border border-blue-200">
                       {getInitials(contractor.company_name || contractor.company || contractor.name || 'UC')}
                     </div>
-                  </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
-                      <a 
-                        href={`/contractor-crm/contractor?id=${contractor.id}`}
-                        className="text-blue-600 hover:text-blue-800 hover:underline"
-                      >
-                        {contractor.company_name || contractor.company || contractor.name || 'Unnamed Contractor'}
-                      </a>
-                      {contractor.assigned_to && (
-                        <span 
-                          className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white shadow-sm"
-                          style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '') }}
-                          title={`Assigned to ${staffUsers.find(u => u.id === contractor.assigned_to)?.name || 'Unknown'}`}
+                  
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
+                        <a 
+                          href={`/contractor-crm/contractor?id=${contractor.id}`}
+                          className="text-blue-600 hover:text-blue-800 hover:underline"
                         >
-                          {getInitials(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '')}
-                        </span>
-                      )}
-                    </p>
+                          {contractor.company_name || contractor.company || contractor.name || 'Unnamed Contractor'}
+                        </a>
+                        {contractor.assigned_to && (
+                          <span 
+                            className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white shadow-sm"
+                            style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '') }}
+                            title={`Assigned to ${staffUsers.find(u => u.id === contractor.assigned_to)?.name || 'Unknown'}`}
+                          >
+                            {getInitials(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '')}
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
                   
-                  {(() => {
+                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0">
+                    {(() => {
                     if (!contractor.latitude || !contractor.longitude) return null;
                     const nearbyCount = marketedLeads.filter(lead => {
                       if (!lead.latitude || !lead.longitude) return false;
@@ -516,7 +517,7 @@ function ContractorProcessingContent() {
                     if (nearbyCount === 0) return null;
                     
                     return (
-                      <div className="hidden sm:flex items-center justify-center px-4">
+                      <div className="flex items-center justify-center px-4">
                         <button
                           onClick={() => setNearbyLeadsModalContractor({
                             contractor,
@@ -554,6 +555,7 @@ function ContractorProcessingContent() {
                     <option value="onboarded">Onboarded</option>
                     <option value="offboarded">Offboarded</option>
                   </select>
+                </div>
                 </div>
               </li>
             ))}

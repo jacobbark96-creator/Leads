@@ -11,13 +11,13 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const tabs = [
-    { name: 'Unqualified Leads', path: '/sales-crm', icon: Users },
-    { name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle },
-    { name: 'Import Leads', path: '/sales-crm/import', icon: Upload },
-  ];
+    { name: 'Unqualified Leads', path: '/sales-crm', icon: Users, id: 'sales-crm/fresh' },
+    { name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle, id: 'sales-crm/qualified' },
+    { name: 'Import Leads', path: '/sales-crm/import', icon: Upload, id: 'sales-crm/import' },
+  ].filter(tab => profile?.role !== 'rep' || profile?.permissions?.includes(tab.id));
 
   return (
-    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin']}>
+    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Sales CRM</h1>

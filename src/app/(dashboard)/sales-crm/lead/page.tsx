@@ -716,8 +716,8 @@ function LeadDetailsContent() {
                   <div className="mt-4 pt-4 border-t border-gray-100">
                     <div className="bg-green-50/50 p-3 rounded-xl border border-green-100 flex justify-between items-center">
                       <div>
-                        <span className="block text-[10px] text-green-700 uppercase font-bold mb-1">Marketplace Listing Price</span>
-                        <span className="text-lg font-bold text-green-700">£{lead.price || '135.00'}</span>
+                        <span className="block text-[10px] text-green-700 uppercase font-bold mb-1">Status</span>
+                        <span className="text-sm font-bold text-green-700">Currently Listed on Marketplace</span>
                       </div>
                       <span className="px-2.5 py-1 bg-green-100 text-green-800 text-[10px] font-bold rounded uppercase">Marketed</span>
                     </div>

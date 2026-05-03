@@ -3,20 +3,22 @@ import React from 'react';
 import { usePathname } from 'next/navigation';
 import { DollarSign, Search, Award, FileText, LineChart } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
+import { useAuthStore } from '@/store/authStore';
 
 export default function IntranetLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { profile } = useAuthStore();
 
   const tabs = [
-    { name: 'Pricing Matrix', path: '/intranet', icon: DollarSign },
-    { name: 'Client Search', path: '/intranet/clients', icon: Search },
-    { name: 'Grants Info', path: '/intranet/grants', icon: Award },
-    { name: 'Tracker', path: '/intranet/tracker', icon: LineChart },
-    { name: 'Resources', path: '/intranet/resources', icon: FileText },
-  ];
+    { name: 'Pricing Matrix', path: '/intranet', icon: DollarSign, id: 'intranet/pricing' },
+    { name: 'Client Search', path: '/intranet/clients', icon: Search, id: 'intranet/clients' },
+    { name: 'Grants Info', path: '/intranet/grants', icon: Award, id: 'intranet/grants' },
+    { name: 'Tracker', path: '/intranet/tracker', icon: LineChart, id: 'intranet/tracker' },
+    { name: 'Resources', path: '/intranet/resources', icon: FileText, id: 'intranet/resources' },
+  ].filter(tab => profile?.role !== 'rep' || profile?.permissions?.includes(tab.id));
 
   return (
-    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin']}>
+    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>
       <div className="space-y-6">
         <div className="sm:flex sm:items-center sm:justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Staff Intranet</h1>

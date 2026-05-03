@@ -505,30 +505,103 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
               {formData.role === 'rep' && (
                 <div className="pt-4 border-t border-gray-200">
                   <h4 className="text-sm font-bold text-gray-900 mb-3">Rep Accessible Tabs</h4>
-                  <div className="space-y-2">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
-                      { id: 'sales-crm', label: 'Sales CRM' },
-                      { id: 'contractor-crm', label: 'Contractor CRM' },
-                      { id: 'admin-crm', label: 'Admin CRM' },
-                      { id: 'map', label: 'Map' },
-                      { id: 'intranet', label: 'Intranet' },
-                      { id: 'staff', label: 'Staff Hub' }
-                    ].map(tab => (
-                      <label key={tab.id} className="flex items-center">
-                        <input
-                          type="checkbox"
-                          checked={formData.permissions.includes(tab.id)}
-                          onChange={(e) => {
-                            if (e.target.checked) {
-                              setFormData({ ...formData, permissions: [...formData.permissions, tab.id] });
-                            } else {
-                              setFormData({ ...formData, permissions: formData.permissions.filter(p => p !== tab.id) });
-                            }
-                          }}
-                          className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
-                        />
-                        <span className="ml-2 text-sm text-gray-700">{tab.label}</span>
-                      </label>
+                      { 
+                        id: 'sales-crm', 
+                        label: 'Sales CRM',
+                        subTabs: [
+                          { id: 'sales-crm/fresh', label: 'Fresh Leads' },
+                          { id: 'sales-crm/qualified', label: 'Qualified Leads' },
+                          { id: 'sales-crm/import', label: 'Import Leads' }
+                        ]
+                      },
+                      { 
+                        id: 'contractor-crm', 
+                        label: 'Contractor CRM',
+                        subTabs: [
+                          { id: 'contractor-crm/potential', label: 'Potential Contractors' },
+                          { id: 'contractor-crm/onboarded', label: 'Onboarded Contractors' },
+                          { id: 'contractor-crm/marketplace', label: 'Marketplace' },
+                          { id: 'contractor-crm/import', label: 'Import Leads' }
+                        ]
+                      },
+                      { 
+                        id: 'admin-crm', 
+                        label: 'Admin CRM',
+                        subTabs: [
+                          { id: 'admin-crm/users', label: 'Users' },
+                          { id: 'admin-crm/categories', label: 'Categories' },
+                          { id: 'admin-crm/discounts', label: 'Discounts' }
+                        ]
+                      },
+                      { 
+                        id: 'intranet', 
+                        label: 'Intranet',
+                        subTabs: [
+                          { id: 'intranet/pricing', label: 'Pricing Matrix' },
+                          { id: 'intranet/clients', label: 'Client Search' },
+                          { id: 'intranet/grants', label: 'Grants Info' },
+                          { id: 'intranet/tracker', label: 'Tracker' },
+                          { id: 'intranet/resources', label: 'Resources' }
+                        ]
+                      },
+                      { id: 'map', label: 'Map (Global)' },
+                      { id: 'staff', label: 'Staff Hub (Dashboard)' }
+                    ].map(section => (
+                      <div key={section.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+                        <label className="flex items-center font-bold text-sm text-gray-900 mb-2">
+                          <input
+                            type="checkbox"
+                            checked={formData.permissions.includes(section.id)}
+                            onChange={(e) => {
+                              let newPerms = [...formData.permissions];
+                              if (e.target.checked) {
+                                newPerms.push(section.id);
+                                // auto-check all subtabs
+                                section.subTabs?.forEach(sub => {
+                                  if (!newPerms.includes(sub.id)) newPerms.push(sub.id);
+                                });
+                              } else {
+                                newPerms = newPerms.filter(p => p !== section.id);
+                                // auto-uncheck all subtabs
+                                section.subTabs?.forEach(sub => {
+                                  newPerms = newPerms.filter(p => p !== sub.id);
+                                });
+                              }
+                              setFormData({ ...formData, permissions: newPerms });
+                            }}
+                            className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-2"
+                          />
+                          {section.label}
+                        </label>
+                        
+                        {section.subTabs && (
+                          <div className="ml-6 space-y-1.5 border-l-2 border-gray-200 pl-3">
+                            {section.subTabs.map(sub => (
+                              <label key={sub.id} className="flex items-center text-xs text-gray-700">
+                                <input
+                                  type="checkbox"
+                                  checked={formData.permissions.includes(sub.id)}
+                                  onChange={(e) => {
+                                    let newPerms = [...formData.permissions];
+                                    if (e.target.checked) {
+                                      newPerms.push(sub.id);
+                                      // if a sub is checked, ensure parent is checked
+                                      if (!newPerms.includes(section.id)) newPerms.push(section.id);
+                                    } else {
+                                      newPerms = newPerms.filter(p => p !== sub.id);
+                                    }
+                                    setFormData({ ...formData, permissions: newPerms });
+                                  }}
+                                  className="h-3 w-3 text-blue-600 focus:ring-blue-500 border-gray-300 rounded mr-2"
+                                />
+                                {sub.label}
+                              </label>
+                            ))}
+                          </div>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>

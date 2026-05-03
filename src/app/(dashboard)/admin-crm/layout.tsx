@@ -3,20 +3,22 @@ import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { Users, Tags, Ticket, Menu, X, TrendingUp } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
+import { useAuthStore } from '@/store/authStore';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const { profile } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const tabs = [
-    { name: 'User Management', path: '/admin-crm', icon: Users },
-    { name: 'Categories', path: '/admin-crm/categories', icon: Tags },
-    { name: 'Discount Codes', path: '/admin-crm/discounts', icon: Ticket },
-    { name: 'Sales Tracker', path: '/admin-crm/tracker', icon: TrendingUp },
-  ];
+    { name: 'User Management', path: '/admin-crm', icon: Users, id: 'admin-crm/users' },
+    { name: 'Categories', path: '/admin-crm/categories', icon: Tags, id: 'admin-crm/categories' },
+    { name: 'Discount Codes', path: '/admin-crm/discounts', icon: Ticket, id: 'admin-crm/discounts' },
+    { name: 'Sales Tracker', path: '/admin-crm/tracker', icon: TrendingUp, id: 'admin-crm/tracker' },
+  ].filter(tab => profile?.role !== 'rep' || profile?.permissions?.includes(tab.id));
 
   return (
-    <ProtectedRoute allowedRoles={['admin', 'super_admin']}>
+    <ProtectedRoute allowedRoles={['admin', 'super_admin', 'rep']}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-2xl font-bold text-gray-900">Admin CRM</h1>

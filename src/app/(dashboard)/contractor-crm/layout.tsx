@@ -11,14 +11,14 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const tabs = [
-    { name: 'Potential Contractors', path: '/contractor-crm', icon: Users },
-    { name: 'Onboarded Contractors', path: '/contractor-crm/onboarded', icon: CheckCircle },
-    { name: 'Marketplace', path: '/contractor-crm/marketplace', icon: Store },
-    { name: 'Import Leads', path: '/contractor-crm/import', icon: Upload },
-  ];
+    { name: 'Potential Contractors', path: '/contractor-crm', icon: Users, id: 'contractor-crm/potential' },
+    { name: 'Onboarded Contractors', path: '/contractor-crm/onboarded', icon: CheckCircle, id: 'contractor-crm/onboarded' },
+    { name: 'Marketplace', path: '/contractor-crm/marketplace', icon: Store, id: 'contractor-crm/marketplace' },
+    { name: 'Import Leads', path: '/contractor-crm/import', icon: Upload, id: 'contractor-crm/import' },
+  ].filter(tab => profile?.role !== 'rep' || profile?.permissions?.includes(tab.id));
 
   return (
-    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin']}>
+    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Contractor CRM</h1>

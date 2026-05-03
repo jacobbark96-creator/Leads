@@ -85,12 +85,37 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         const path = pathname || '';
         let hasAccess = false;
         
-        if (path.startsWith('/staff') && perms.includes('staff')) hasAccess = true;
-        if (path.startsWith('/admin-crm') && perms.includes('admin-crm')) hasAccess = true;
-        if (path.startsWith('/sales-crm') && perms.includes('sales-crm')) hasAccess = true;
-        if (path.startsWith('/contractor-crm/map') && perms.includes('map')) hasAccess = true;
-        else if (path.startsWith('/contractor-crm') && perms.includes('contractor-crm')) hasAccess = true;
-        if (path.startsWith('/intranet') && perms.includes('intranet')) hasAccess = true;
+        // Exact matching for specific tabs
+        if (path === '/staff' && perms.includes('staff')) hasAccess = true;
+        
+        // Map
+        if (path === '/contractor-crm/map' && perms.includes('map')) hasAccess = true;
+
+        // Sales CRM
+        if (path === '/sales-crm' && perms.includes('sales-crm/fresh')) hasAccess = true;
+        if (path.startsWith('/sales-crm/qualified') && perms.includes('sales-crm/qualified')) hasAccess = true;
+        if (path.startsWith('/sales-crm/import') && perms.includes('sales-crm/import')) hasAccess = true;
+        if (path.startsWith('/sales-crm/lead') && perms.includes('sales-crm')) hasAccess = true; // viewing a lead
+
+        // Contractor CRM
+        if (path === '/contractor-crm' && perms.includes('contractor-crm/potential')) hasAccess = true;
+        if (path.startsWith('/contractor-crm/onboarded') && perms.includes('contractor-crm/onboarded')) hasAccess = true;
+        if (path.startsWith('/contractor-crm/marketplace') && perms.includes('contractor-crm/marketplace')) hasAccess = true;
+        if (path.startsWith('/contractor-crm/import') && perms.includes('contractor-crm/import')) hasAccess = true;
+        if (path.startsWith('/contractor-crm/contractor') && perms.includes('contractor-crm')) hasAccess = true; // viewing a contractor
+
+        // Admin CRM
+        if (path === '/admin-crm' && perms.includes('admin-crm/users')) hasAccess = true;
+        if (path.startsWith('/admin-crm/categories') && perms.includes('admin-crm/categories')) hasAccess = true;
+        if (path.startsWith('/admin-crm/discounts') && perms.includes('admin-crm/discounts')) hasAccess = true;
+        if (path.startsWith('/admin-crm/tracker') && perms.includes('admin-crm/tracker')) hasAccess = true;
+
+        // Intranet
+        if (path === '/intranet' && perms.includes('intranet/pricing')) hasAccess = true;
+        if (path.startsWith('/intranet/clients') && perms.includes('intranet/clients')) hasAccess = true;
+        if (path.startsWith('/intranet/grants') && perms.includes('intranet/grants')) hasAccess = true;
+        if (path.startsWith('/intranet/tracker') && perms.includes('intranet/tracker')) hasAccess = true;
+        if (path.startsWith('/intranet/resources') && perms.includes('intranet/resources')) hasAccess = true;
         
         if (!hasAccess && path !== '/staff' && path !== '/') {
           window.location.href = '/staff';

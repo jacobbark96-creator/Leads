@@ -428,7 +428,7 @@ function LeadDetailsContent() {
                       Market
                     </button>
                   )}
-                  {lead.is_marketed && (
+                  {lead.is_marketed && profile?.role === 'super_admin' && (
                     <button
                       onClick={() => setIsMarketModalOpen(true)}
                       className="inline-flex items-center px-3 py-1.5 border border-green-200 text-xs font-bold rounded-lg shadow-sm text-green-800 bg-green-100 hover:bg-green-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"

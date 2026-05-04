@@ -37,8 +37,27 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
     return [];
   });
   const [categories, setCategories] = useState<Category[]>([]);
-  const [exclusivePrice, setExclusivePrice] = useState<string>(lead.exclusive_price ? lead.exclusive_price.toString() : '135');
+  const [exclusivePrice, setExclusivePrice] = useState<string>(lead.exclusive_price ? lead.exclusive_price.toString() : (lead.price ? lead.price.toString() : '135'));
   const [sharePrice, setSharePrice] = useState<string>(lead.share_price ? lead.share_price.toString() : '45');
+  const getSharePriceFromMatrix = (exclusive: number): number | null => {
+    if (exclusive === 135) return 95;
+    if (exclusive === 150) return 115;
+    if (exclusive === 285) return 185;
+    if (exclusive === 485) return 350;
+    return null;
+  };
+
+  const handleExclusivePriceChange = (val: string) => {
+    setExclusivePrice(val);
+    const numVal = Number(val);
+    if (!isNaN(numVal)) {
+      const matchedSharePrice = getSharePriceFromMatrix(numVal);
+      if (matchedSharePrice !== null) {
+        setSharePrice(matchedSharePrice.toString());
+      }
+    }
+  };
+
   const [billUrls, setBillUrls] = useState<string[]>(() => {
     let raw = (lead.bills_url || '').trim();
     if (!raw) return [];
@@ -409,7 +428,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                     className="block w-full rounded-md border-gray-300 pl-7 focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
                     placeholder="135.00"
                     value={exclusivePrice}
-                    onChange={(e) => setExclusivePrice(e.target.value)}
+                    onChange={(e) => handleExclusivePriceChange(e.target.value)}
                     min="0"
                     step="0.01"
                   />

@@ -75,15 +75,20 @@ export default function LeadImport() {
 
             try {
               if (phones.length > 0) {
-                const { data } = await supabase.from('leads').select('phone').in('phone', phones);
+                const { data, error } = await supabase.from('leads').select('phone').in('phone', phones);
+                if (error) throw error;
                 data?.forEach(d => { if (d.phone) existingPhones.add(d.phone.replace(/\s+/g, '')); });
               }
               if (emails.length > 0) {
-                const { data } = await supabase.from('leads').select('email').in('email', emails);
+                const { data, error } = await supabase.from('leads').select('email').in('email', emails);
+                if (error) throw error;
                 data?.forEach(d => { if (d.email) existingEmails.add(d.email.trim()); });
               }
-            } catch (err) {
+            } catch (err: any) {
               console.error('Error fetching duplicates', err);
+              if (err.message?.includes('Failed to fetch') || err.message?.includes('NetworkError')) {
+                toast.error("Connection Blocked! Please disable your Ad-blocker or Brave Shields.");
+              }
             }
 
             const toInsert: any[] = [];
@@ -160,7 +165,13 @@ export default function LeadImport() {
               } catch (err: any) {
                 console.error('Batch insert error', err);
                 failed += toInsert.length;
-                const errorReason = typeof err === 'object' ? (err.message || err.details || err.hint || JSON.stringify(err)) : String(err);
+                let errorReason = typeof err === 'object' ? (err.message || err.details || err.hint || JSON.stringify(err)) : String(err);
+                
+                if (errorReason.includes('Failed to fetch') || errorReason.includes('NetworkError')) {
+                  errorReason = "Blocked by Ad-blocker/Firewall";
+                  toast.error("Upload blocked! Your Ad-blocker is blocking the database connection.");
+                }
+
                 toInsert.forEach(item => failedList.push({ ...(item.csv_data || {}), reason: errorReason }));
               }
             }
@@ -189,7 +200,11 @@ export default function LeadImport() {
           }
         } catch (fatalError: any) {
           console.error('Fatal crash during CSV parsing/uploading:', fatalError);
-          toast.error(`Critical error during upload: ${fatalError.message || String(fatalError)}`);
+          if (fatalError.message?.includes('Failed to fetch') || fatalError.message?.includes('NetworkError')) {
+            toast.error("Upload Blocked! Please disable your Ad-blocker, Brave Shields, or VPN to allow database connections.");
+          } else {
+            toast.error(`Critical error during upload: ${fatalError.message || String(fatalError)}`);
+          }
           setIsUploading(false);
         }
       },
@@ -198,6 +213,11 @@ export default function LeadImport() {
         setIsUploading(false);
       }
     });
+
+    // Clear the input so the user can select the same file again if they want
+    if (e.target) {
+      e.target.value = '';
+    }
   };
 
   return (

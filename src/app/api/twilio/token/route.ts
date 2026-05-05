@@ -3,7 +3,7 @@ import twilio from 'twilio';
 
 // Use Edge runtime if possible, but Twilio SDK uses some node features.
 // Node runtime is safer for twilio.
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 export async function POST(req: Request) {
   try {

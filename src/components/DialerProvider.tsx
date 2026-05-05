@@ -69,9 +69,8 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       const newDevice = new Device(token, {
         codecPreferences: ['opus', 'pcmu'] as any,
-        fakeLocalDTMF: true,
         enableRingingState: true,
-      });
+      } as any);
 
       newDevice.on('error', (twilioError: any) => {
         console.error('Twilio Error:', twilioError);

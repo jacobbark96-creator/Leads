@@ -10,6 +10,7 @@ import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, Chevro
 import { QualifyLeadModal } from '@/components/QualifyLeadModal';
 import { MarketLeadModal } from '@/components/MarketLeadModal';
 import { AddLeadModal } from '@/components/AddLeadModal';
+import { useDialer } from '@/components/DialerProvider';
 
 interface Grant {
   id: string;
@@ -96,6 +97,8 @@ function LeadDetailsContent() {
   const [isMarketModalOpen, setIsMarketModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  
+  const { makeCall } = useDialer();
   
   const notesEndRef = useRef<HTMLDivElement>(null);
 
@@ -440,10 +443,20 @@ function LeadDetailsContent() {
               {lead.phone && (
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Phone Number</label>
-                  <a href={`tel:${lead.phone}`} className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline">
-                    <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
-                    {lead.phone}
-                  </a>
+                  <div className="flex items-center gap-4">
+                    <a href={`tel:${lead.phone}`} className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                      <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
+                      {lead.phone}
+                    </a>
+                    {profile?.twilio_number && (
+                      <button
+                        onClick={() => makeCall(lead.phone!)}
+                        className="text-xs font-bold bg-green-100 text-green-800 px-3 py-1.5 rounded-lg border border-green-200 hover:bg-green-200 transition-colors flex items-center gap-1.5 shadow-sm"
+                      >
+                        <Phone className="w-3.5 h-3.5" /> Call via Twilio
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
 

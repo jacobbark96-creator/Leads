@@ -3,6 +3,7 @@ import { Inter, Darker_Grotesque } from 'next/font/google';
 import './globals.css';
 import { Toaster } from 'react-hot-toast';
 import { AuthProvider } from '../components/AuthProvider';
+import { DialerProvider } from '../components/DialerProvider';
 
 const inter = Inter({ subsets: ['latin'], variable: '--font-inter' });
 const darkerGrotesque = Darker_Grotesque({ subsets: ['latin'], variable: '--font-darker-grotesque' });
@@ -68,8 +69,10 @@ export default function RootLayout({
       </head>
       <body className={`${inter.className} ${inter.variable} ${darkerGrotesque.variable}`}>
         <AuthProvider>
-          {children}
-          <Toaster position="top-right" />
+          <DialerProvider>
+            {children}
+            <Toaster position="top-right" />
+          </DialerProvider>
         </AuthProvider>
       </body>
     </html>

@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft, Compass } from 'lucide-react';
 import { OnboardContractorModal } from '@/components/OnboardContractorModal';
 import { AddLeadModal } from '@/components/AddLeadModal';
+import { useDialer } from '@/components/DialerProvider';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -103,6 +104,8 @@ function ContractorDetailsContent() {
   
   const [isOnboardModalOpen, setIsOnboardModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  
+  const { makeCall } = useDialer();
   
   const notesEndRef = useRef<HTMLDivElement>(null);
 
@@ -352,12 +355,22 @@ function ContractorDetailsContent() {
                   <span className="w-28 shrink-0 text-[10px] font-bold uppercase tracking-wider text-gray-400">Director 1</span>
                   <span className="text-[13px] text-gray-800 font-medium truncate">{getDirectorNames(contractor)[0] || '—'}</span>
                 </div>
-                <div className="flex items-baseline gap-3 min-w-0">
+                <div className="flex flex-col sm:flex-row sm:items-baseline gap-3 min-w-0">
                   <span className="w-28 shrink-0 text-[10px] font-bold uppercase tracking-wider text-gray-400">Contact Number</span>
                   {getPhoneText(contractor) ? (
-                    <a href={`tel:${getPhoneText(contractor)}`} className="text-[13px] text-blue-600 hover:text-blue-800 hover:underline font-medium truncate">
-                      {getPhoneText(contractor)}
-                    </a>
+                    <div className="flex items-center gap-4">
+                      <a href={`tel:${getPhoneText(contractor)}`} className="text-[13px] text-blue-600 hover:text-blue-800 hover:underline font-medium truncate">
+                        {getPhoneText(contractor)}
+                      </a>
+                      {profile?.twilio_number && (
+                        <button
+                          onClick={() => makeCall(getPhoneText(contractor)!)}
+                          className="text-[10px] font-bold bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200 hover:bg-green-200 transition-colors flex items-center gap-1.5 shadow-sm"
+                        >
+                          <Phone className="w-3 h-3" /> Call via Twilio
+                        </button>
+                      )}
+                    </div>
                   ) : (
                     <span className="text-[13px] text-gray-800 font-medium truncate">—</span>
                   )}

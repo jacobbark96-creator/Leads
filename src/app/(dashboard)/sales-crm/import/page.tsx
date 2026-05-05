@@ -51,8 +51,22 @@ export default function LeadImport() {
         for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
           const chunk = rows.slice(i, i + CHUNK_SIZE);
           
-          const phones = chunk.map(r => String(r.phone || r.Phone || r.phoneNumber || r['Phone Number'] || '').replace(/\s+/g, '').substring(0, 20)).filter(Boolean);
-          const emails = chunk.map(r => String(r.email || r.Email || r.emailAddress || '').trim().substring(0, 255)).filter(Boolean);
+          const getVal = (row: any, possibleKeys: string[]) => {
+            const keys = Object.keys(row);
+            for (const k of keys) {
+              const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+              if (possibleKeys.some(pk => pk === cleanK)) {
+                return row[k];
+              }
+            }
+            return '';
+          };
+
+          const extractPhone = (r: any) => String(getVal(r, ['phone', 'phonenumber', 'contactnumber', 'telephone', 'mobile', 'cell', 'number', 'tel'])).replace(/\s+/g, '').substring(0, 20);
+          const extractEmail = (r: any) => String(getVal(r, ['email', 'emailaddress', 'emailid'])).trim().substring(0, 255);
+
+          const phones = chunk.map(r => extractPhone(r)).filter(Boolean);
+          const emails = chunk.map(r => extractEmail(r)).filter(Boolean);
 
           const existingPhones = new Set<string>();
           const existingEmails = new Set<string>();
@@ -75,13 +89,20 @@ export default function LeadImport() {
           const chunkDupEmails = new Set(existingEmails);
 
           for (const row of chunk) {
-            const rawPhone = String(row.phone || row.Phone || row.phoneNumber || row['Phone Number'] || '');
-            const phone = rawPhone.replace(/\s+/g, '').substring(0, 20);
-            const email = String(row.email || row.Email || row.emailAddress || '').trim().substring(0, 255);
+            const phone = extractPhone(row);
+            const email = extractEmail(row);
             
-            const rawName = String(row.name || row.Name || row.fullName || `${row.firstName || ''} ${row.lastName || ''}`.trim() || '');
-            const name = rawName.substring(0, 100);
-            const company = String(row.company || row.Company || row.companyName || '').trim().substring(0, 200);
+            const rawName = String(getVal(row, ['name', 'fullname', 'contactname', 'contactperson', 'clientname', 'person']));
+            let name = rawName.trim().substring(0, 100);
+            if (!name) {
+               const firstName = String(getVal(row, ['firstname', 'first']));
+               const lastName = String(getVal(row, ['lastname', 'last', 'surname']));
+               if (firstName || lastName) {
+                 name = `${firstName} ${lastName}`.trim().substring(0, 100);
+               }
+            }
+            
+            const company = String(getVal(row, ['company', 'companyname', 'businessname', 'organization', 'tradingname'])).trim().substring(0, 200);
 
             // RULE: Must have a phone number
             if (!phone) {
@@ -158,9 +179,10 @@ export default function LeadImport() {
 
         setIsUploading(false);
         if (failed > 0) {
-          toast.error(`Import complete with errors: ${added} added, ${duplicates} duplicates, ${failed} failed.`);
+          const firstReason = failedList.length > 0 ? failedList[0].reason : 'Unknown error';
+          toast.error(`Import complete with errors: ${added} added, ${duplicates} duplicates, ${failed} failed. First error: ${firstReason}`);
         } else {
-          toast.success(`Import complete: ${added} added, ${duplicates} duplicates skipped.`);
+          toast.success(`Successfully imported ${added} leads. (${duplicates} duplicates skipped)`);
         }
       },
       error: (error) => {

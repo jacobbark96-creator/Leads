@@ -231,7 +231,7 @@ export default function Marketplace() {
     fetchMarketplaceLeads(nextPage, false);
   };
 
-  const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive') => {
+  const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive', discountedPrice?: number) => {
     if (!profile) return;
     try {
       let clientId = null;
@@ -260,7 +260,7 @@ export default function Marketplace() {
       const lead = leads.find(l => l.id === leadId);
       if (!lead) throw new Error('Lead details not found');
 
-      const targetPrice = purchaseType === 'exclusive' ? (lead.exclusive_price || 135) : (lead.share_price || 45);
+      const targetPrice = discountedPrice !== undefined ? discountedPrice : (purchaseType === 'exclusive' ? (lead.exclusive_price || 135) : (lead.share_price || 45));
 
       // Create checkout session via our API
       const res = await fetch('/api/create-lead-checkout', {
@@ -445,7 +445,7 @@ export default function Marketplace() {
           onClose={() => setLeadToPurchase(null)}
           lead={leadToPurchase}
           creditBalance={creditBalance}
-          onProceedToPay={(creditToUse, purchaseType) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType)}
+          onProceedToPay={(creditToUse, purchaseType, discountedPrice) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType, discountedPrice)}
         />
       )}
     </ProtectedRoute>

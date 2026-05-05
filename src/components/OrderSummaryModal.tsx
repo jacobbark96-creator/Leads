@@ -10,7 +10,7 @@ interface OrderSummaryModalProps {
   onClose: () => void;
   lead: Lead;
   creditBalance: number;
-  onProceedToPay: (creditToUse: number, purchaseType: 'exclusive' | 'share') => void; // Will handle Stripe logic later
+  onProceedToPay: (creditToUse: number, purchaseType: 'exclusive' | 'share', discountedPrice: number) => void;
 }
 
 export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, onClose, lead, creditBalance, onProceedToPay }) => {
@@ -305,7 +305,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                   </div>
 
                   <button
-                    onClick={() => onProceedToPay(creditToUse, purchaseType)}
+                    onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice)}
                     className="w-full flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
                   >
                     {totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay'}

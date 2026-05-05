@@ -26,12 +26,13 @@ export async function POST(req: Request) {
     const origin = req.headers.get('origin');
     const appUrl = origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
-    const fullPrice = parseFloat(leadPrice) || 135;
+    const parsedPrice = parseFloat(leadPrice);
+    const fullPrice = !isNaN(parsedPrice) ? parsedPrice : 135;
     const appliedCredit = parseFloat(creditToUse) || 0;
     const remainingPrice = fullPrice - appliedCredit;
     const isExclusive = purchaseType === 'exclusive';
 
-    // If fully covered by credit, process immediately
+    // If fully covered by credit or 100% discount, process immediately
     if (remainingPrice <= 0) {
       const supabaseAdmin = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -44,7 +45,7 @@ export async function POST(req: Request) {
         p_client_id: clientId,
         p_purchase_type: purchaseType,
         p_price_paid: fullPrice,
-        p_credit_used: fullPrice
+        p_credit_used: appliedCredit
       });
       
       if (purchaseError) {

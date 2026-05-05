@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { SignJWT } from 'jose';
 
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
@@ -29,7 +30,7 @@ export async function POST(req: Request) {
       iss: twilioApiKey,
       sub: twilioAccountSid,
       exp: exp,
-      nbf: now,
+      iat: now,
       grants: {
         identity: identity,
         voice: {

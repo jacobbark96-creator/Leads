@@ -1,25 +1,34 @@
 import { NextResponse } from 'next/server';
 
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const formData = await req.formData();
-    const to = formData.get('To') as string;
-    const callerId = formData.get('CallerId') as string;
+    const bodyText = await req.text();
+    const params = new URLSearchParams(bodyText);
+    
+    const toRaw = params.get('To') || '';
+    const callerIdRaw = params.get('CallerId') || '';
 
-    if (!to) {
+    if (!toRaw) {
       return new NextResponse(
         `<?xml version="1.0" encoding="UTF-8"?><Response><Say>No destination number provided.</Say></Response>`, 
         { headers: { 'Content-Type': 'text/xml' } }
       );
     }
 
+    // Clean phone numbers (allow only +, digits)
+    const to = toRaw.replace(/[^\d+]/g, '');
+    const callerId = callerIdRaw ? callerIdRaw.replace(/[^\d+]/g, '') : null;
+
     const callerIdAttr = callerId ? ` callerId="${callerId}"` : (process.env.TWILIO_DEFAULT_CALLER_ID ? ` callerId="${process.env.TWILIO_DEFAULT_CALLER_ID}"` : '');
     
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial${callerIdAttr}>${to}</Dial>
+  <Dial${callerIdAttr}>
+    <Number>${to}</Number>
+  </Dial>
 </Response>`;
 
     return new NextResponse(twiml, {

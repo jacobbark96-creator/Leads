@@ -10,6 +10,9 @@ export async function POST(req: Request) {
     
     const toRaw = params.get('To') || '';
     const callerIdRaw = params.get('CallerId') || '';
+    const entityId = params.get('EntityId') || '';
+    const userName = params.get('UserName') || '';
+    const entityType = params.get('EntityType') || 'lead';
 
     if (!toRaw) {
       return new NextResponse(
@@ -24,9 +27,17 @@ export async function POST(req: Request) {
 
     const callerIdAttr = callerId ? ` callerId="${callerId}"` : (process.env.TWILIO_DEFAULT_CALLER_ID ? ` callerId="${process.env.TWILIO_DEFAULT_CALLER_ID}"` : '');
     
+    const host = req.headers.get('host') || 'localhost:3000';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const baseUrl = `${protocol}://${host}`;
+    
+    // StatusCallback URL to capture call logs
+    const statusCallbackUrl = `${baseUrl}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName)}&entityType=${encodeURIComponent(entityType)}`;
+    const actionAttr = entityId ? ` action="${statusCallbackUrl}"` : '';
+
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial${callerIdAttr}>
+  <Dial${callerIdAttr}${actionAttr}>
     <Number>${to}</Number>
   </Dial>
 </Response>`;

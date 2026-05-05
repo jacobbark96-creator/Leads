@@ -359,16 +359,17 @@ function ContractorDetailsContent() {
                   <span className="w-28 shrink-0 text-[10px] font-bold uppercase tracking-wider text-gray-400">Contact Number</span>
                   {getPhoneText(contractor) ? (
                     <div className="flex items-center gap-4">
-                      <a href={`tel:${getPhoneText(contractor)}`} className="text-[13px] text-blue-600 hover:text-blue-800 hover:underline font-medium truncate">
-                        {getPhoneText(contractor)}
-                      </a>
-                      {profile?.twilio_number && (
+                      {profile?.twilio_number ? (
                         <button
-                          onClick={() => makeCall(getPhoneText(contractor)!)}
-                          className="text-[10px] font-bold bg-green-100 text-green-800 px-2 py-1 rounded border border-green-200 hover:bg-green-200 transition-colors flex items-center gap-1.5 shadow-sm"
+                          onClick={() => makeCall(getPhoneText(contractor)!, contractor.id, profile?.name, 'contractor')}
+                          className="text-[13px] text-blue-600 hover:text-blue-800 hover:underline font-medium truncate text-left"
                         >
-                          <Phone className="w-3 h-3" /> Call via Twilio
+                          {getPhoneText(contractor)}
                         </button>
+                      ) : (
+                        <a href={`tel:${getPhoneText(contractor)}`} className="text-[13px] text-blue-600 hover:text-blue-800 hover:underline font-medium truncate">
+                          {getPhoneText(contractor)}
+                        </a>
                       )}
                     </div>
                   ) : (

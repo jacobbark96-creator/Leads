@@ -444,17 +444,19 @@ function LeadDetailsContent() {
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Phone Number</label>
                   <div className="flex items-center gap-4">
-                    <a href={`tel:${lead.phone}`} className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline">
-                      <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
-                      {lead.phone}
-                    </a>
-                    {profile?.twilio_number && (
+                    {profile?.twilio_number ? (
                       <button
-                        onClick={() => makeCall(lead.phone!)}
-                        className="text-xs font-bold bg-green-100 text-green-800 px-3 py-1.5 rounded-lg border border-green-200 hover:bg-green-200 transition-colors flex items-center gap-1.5 shadow-sm"
+                        onClick={() => makeCall(lead.phone!, lead.id, profile?.name)}
+                        className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline text-left"
                       >
-                        <Phone className="w-3.5 h-3.5" /> Call via Twilio
+                        <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
+                        {lead.phone}
                       </button>
+                    ) : (
+                      <a href={`tel:${lead.phone}`} className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                        <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
+                        {lead.phone}
+                      </a>
                     )}
                   </div>
                 </div>
@@ -474,10 +476,20 @@ function LeadDetailsContent() {
               {(lead as any).other_contact_numbers && (
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Additional Phone</label>
-                  <a href={`tel:${(lead as any).other_contact_numbers}`} className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline">
-                    <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
-                    {(lead as any).other_contact_numbers}
-                  </a>
+                  {profile?.twilio_number ? (
+                    <button
+                      onClick={() => makeCall((lead as any).other_contact_numbers, lead.id, profile?.name)}
+                      className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline text-left"
+                    >
+                      <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
+                      {(lead as any).other_contact_numbers}
+                    </button>
+                  ) : (
+                    <a href={`tel:${(lead as any).other_contact_numbers}`} className="flex items-center gap-3 text-lg font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                      <div className="p-2 bg-blue-50 rounded-lg"><Phone className="w-5 h-5" /></div>
+                      {(lead as any).other_contact_numbers}
+                    </a>
+                  )}
                 </div>
               )}
               
@@ -488,6 +500,16 @@ function LeadDetailsContent() {
                     <div className="p-2 bg-gray-50 rounded-lg"><Mail className="w-5 h-5 text-gray-400" /></div>
                     <span className="truncate">{lead.email}</span>
                   </a>
+                </div>
+              )}
+
+              {lead.location && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Location</label>
+                  <div className="flex items-center gap-3 text-gray-900">
+                    <div className="p-2 bg-gray-50 rounded-lg"><MapPin className="w-5 h-5 text-gray-400" /></div>
+                    <span className="truncate font-medium">{lead.location}</span>
+                  </div>
                 </div>
               )}
 

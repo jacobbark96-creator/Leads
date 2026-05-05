@@ -360,7 +360,7 @@ function QualifiedLeadsContent() {
                       )}
                     </div>
                     <div className="flex items-center gap-2 mt-0.5">
-                      {lead.company && <p className="text-xs text-gray-500 truncate italic">Contact: {lead.name}</p>}
+                      <p className="text-xs text-gray-500 truncate italic">Contact: {lead.name}</p>
                       {lead.phone && <p className="text-sm text-gray-500 truncate">{lead.phone}</p>}
                       {lead.assigned_to && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800">

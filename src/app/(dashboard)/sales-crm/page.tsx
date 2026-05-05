@@ -395,9 +395,7 @@ function LeadProcessingContent() {
                       )}
                     </div>
                     <div className="flex flex-col mt-0.5">
-                      {lead.company && lead.name && (
-                        <span className="text-xs text-gray-700 font-medium">{lead.name}</span>
-                      )}
+                      <span className="text-xs text-gray-700 font-medium">{lead.name}</span>
                       {lead.phone && (
                         <span className="text-xs text-gray-500">{lead.phone}</span>
                       )}

@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
 
 interface DialerContextType {
-  makeCall: (number: string) => void;
+  makeCall: (number: string, entityId?: string, userName?: string, entityType?: string) => void;
 }
 
 const DialerContext = createContext<DialerContextType | undefined>(undefined);
@@ -88,7 +88,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
-  const makeCall = async (number: string) => {
+  const makeCall = async (number: string, entityId?: string, userName?: string, entityType: string = 'lead') => {
     if (!profile?.twilio_number) {
       toast.error('You do not have a Twilio Direct Dial Number assigned. Contact a Super Admin.');
       return;
@@ -105,7 +105,10 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const call = await currentDevice.connect({
         params: {
           To: number,
-          CallerId: profile.twilio_number
+          CallerId: profile.twilio_number,
+          EntityId: entityId || '',
+          UserName: userName || profile.name || '',
+          EntityType: entityType
         }
       });
 

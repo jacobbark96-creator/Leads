@@ -120,6 +120,15 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       call.on('disconnect', () => {
         setCallStatus('Disconnected');
+        
+        // Log manual disconnects if duration is 0 (failed to connect)
+        if (entityId && duration === 0) {
+          fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&entityType=${encodeURIComponent(entityType)}`, {
+            method: 'POST',
+            body: new URLSearchParams({ CallStatus: 'no-answer', CallDuration: '0' })
+          }).catch(console.error);
+        }
+        
         setTimeout(() => {
           setActiveCall(null);
           setCallStatus('');
@@ -128,6 +137,12 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       call.on('cancel', () => {
         setCallStatus('Canceled');
+        if (entityId) {
+          fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&entityType=${encodeURIComponent(entityType)}`, {
+            method: 'POST',
+            body: new URLSearchParams({ CallStatus: 'canceled', CallDuration: '0' })
+          }).catch(console.error);
+        }
         setTimeout(() => {
           setActiveCall(null);
           setCallStatus('');
@@ -138,6 +153,15 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         console.error(e);
         setCallStatus('Error');
         toast.error('Call failed');
+        
+        // Log the failure
+        if (entityId) {
+          fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&entityType=${encodeURIComponent(entityType)}`, {
+            method: 'POST',
+            body: new URLSearchParams({ CallStatus: 'failed', CallDuration: '0' })
+          }).catch(console.error);
+        }
+
         setTimeout(() => {
           setActiveCall(null);
           setCallStatus('');

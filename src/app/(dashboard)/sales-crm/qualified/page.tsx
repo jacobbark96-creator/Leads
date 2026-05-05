@@ -359,11 +359,11 @@ function QualifiedLeadsContent() {
                         </span>
                       )}
                     </div>
-                    <div className="flex items-center gap-2 mt-0.5">
-                      <p className="text-xs text-gray-500 truncate italic">Contact: {lead.name}</p>
+                    <div className="flex flex-col gap-0.5 mt-0.5">
+                      <p className="text-xs text-gray-500 truncate font-medium">Contact: {lead.name}</p>
                       {lead.phone && <p className="text-sm text-gray-500 truncate">{lead.phone}</p>}
                       {lead.assigned_to && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800">
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800 w-fit mt-1">
                           Assigned to: {staffUsers.find(u => u.id === lead.assigned_to)?.name || 'Unknown'}
                         </span>
                       )}

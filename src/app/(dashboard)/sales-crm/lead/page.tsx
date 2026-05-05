@@ -440,6 +440,17 @@ function LeadDetailsContent() {
                     </button>
                   )}
               </div>
+
+              {lead.name && (
+                <div>
+                  <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Contact Name</label>
+                  <div className="flex items-center gap-3 text-gray-900 font-medium text-lg">
+                    <div className="p-2 bg-gray-50 rounded-lg"><User className="w-5 h-5 text-gray-400" /></div>
+                    {lead.name}
+                  </div>
+                </div>
+              )}
+
               {lead.phone && (
                 <div>
                   <label className="text-xs font-bold text-gray-500 uppercase tracking-wider mb-2 block">Phone Number</label>

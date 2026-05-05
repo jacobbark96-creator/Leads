@@ -33,12 +33,12 @@ export async function POST(req: Request) {
     
     // StatusCallback URL to capture call logs
     const statusCallbackUrl = `${baseUrl}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName)}&entityType=${encodeURIComponent(entityType)}`;
-    const actionAttr = entityId ? ` action="${statusCallbackUrl}"` : '';
+    const statusAttr = entityId ? ` statusCallback="${statusCallbackUrl}" statusCallbackEvent="initiated ringing answered completed"` : '';
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial${callerIdAttr}${actionAttr}>
-    <Number>${to}</Number>
+  <Dial${callerIdAttr}>
+    <Number${statusAttr}>${to}</Number>
   </Dial>
 </Response>`;
 

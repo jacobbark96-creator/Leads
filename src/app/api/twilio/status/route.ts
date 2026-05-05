@@ -17,6 +17,13 @@ export async function POST(req: Request) {
     const callStatus = params.get('DialCallStatus') || params.get('CallStatus') || 'unknown';
     const duration = params.get('DialCallDuration') || params.get('CallDuration') || '0';
 
+    // Ignore interim statuses
+    if (['initiated', 'ringing'].includes(callStatus)) {
+      return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`, {
+        headers: { 'Content-Type': 'text/xml' },
+      });
+    }
+
     if (entityId && entityId.trim() !== '') {
       // Initialize Supabase Admin Client
       const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;

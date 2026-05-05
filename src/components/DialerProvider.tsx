@@ -68,7 +68,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (!token) return null;
 
       const newDevice = new Device(token, {
-        codecPreferences: ['opus', 'pcmu'],
+        codecPreferences: ['opus', 'pcmu'] as any,
         fakeLocalDTMF: true,
         enableRingingState: true,
       });

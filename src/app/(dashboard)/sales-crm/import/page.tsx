@@ -20,26 +20,42 @@ export default function LeadImport() {
   const [showDetailModal, setShowDetailModal] = useState<'failed' | 'duplicates' | null>(null);
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    try {
+      const file = e.target.files?.[0];
+      if (!file) return;
 
-    setIsUploading(true);
-    setProgress({ 
-      total: 0, 
-      processed: 0, 
-      duplicates: 0, 
-      added: 0, 
-      failed: 0,
-      failedList: [],
-      duplicateList: []
-    });
+      setIsUploading(true);
+      setProgress({ 
+        total: 0, 
+        processed: 0, 
+        duplicates: 0, 
+        added: 0, 
+        failed: 0,
+        failedList: [],
+        duplicateList: []
+      });
 
-    Papa.parse(file, {
+      Papa.parse(file, {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
+        // Reset file input safely after parsing starts
+        const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+        if (fileInput) fileInput.value = '';
+
         try {
+          if (!results || !results.data) {
+            toast.error("CSV parser returned no data. The file might be corrupted or empty.");
+            setIsUploading(false);
+            return;
+          }
+
           const rows = results.data as any[];
+          if (rows.length === 0) {
+            toast.error("No valid rows found in the CSV. Please check the file format.");
+            setIsUploading(false);
+            return;
+          }
           setProgress(prev => prev ? { ...prev, total: rows.length } : null);
 
           let duplicates = 0;
@@ -213,10 +229,10 @@ export default function LeadImport() {
         setIsUploading(false);
       }
     });
-
-    // Clear the input so the user can select the same file again if they want
-    if (e.target) {
-      e.target.value = '';
+    } catch (err: any) {
+      console.error("Outer try-catch caught an error:", err);
+      toast.error(`Error starting upload: ${err.message || String(err)}`);
+      setIsUploading(false);
     }
   };
 

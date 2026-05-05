@@ -94,9 +94,7 @@ export default function LeadImport() {
             let finalName = name;
             let finalStatus = uploadTarget;
             if (!name && company) {
-              failed++;
-              failedList.push({ ...row, reason: 'Enrich Needed - No Name' });
-              continue;
+              finalName = 'Enrich Needed - No Name';
             } else if (!name) {
               finalName = 'Unknown';
             }
@@ -120,13 +118,26 @@ export default function LeadImport() {
 
           if (toInsert.length > 0) {
             try {
-              const { error } = await supabase.from('leads').insert(toInsert);
-              if (error) throw error;
+              // Create a mapped array that ensures missing string properties are explicitly null, not undefined
+              const safeToInsert = toInsert.map(item => ({
+                name: item.name || null,
+                phone: item.phone,
+                email: item.email || null,
+                company: item.company || null,
+                csv_data: item.csv_data,
+                status: item.status
+              }));
+
+              const { error } = await supabase.from('leads').insert(safeToInsert);
+              if (error) {
+                console.error('Supabase specific error:', error);
+                throw error;
+              }
               added += toInsert.length;
             } catch (err: any) {
               console.error('Batch insert error', err);
               failed += toInsert.length;
-              toInsert.forEach(item => failedList.push({ ...item.csv_data, reason: err.message || 'Database error' }));
+              toInsert.forEach(item => failedList.push({ ...item.csv_data, reason: err.message || err.details || err.hint || 'Database error' }));
             }
           }
 

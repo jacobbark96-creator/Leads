@@ -99,6 +99,8 @@ export interface Lead {
   job_title?: string;
   bills_url?: string;
   clients?: { company_name: string; contact_name: string } | null;
+  purchase_id?: string;
+  purchase_status?: string;
 }
 
 export interface Contractor {

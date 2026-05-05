@@ -38,151 +38,159 @@ export default function LeadImport() {
       header: true,
       skipEmptyLines: true,
       complete: async (results) => {
-        const rows = results.data as any[];
-        setProgress(prev => prev ? { ...prev, total: rows.length } : null);
+        try {
+          const rows = results.data as any[];
+          setProgress(prev => prev ? { ...prev, total: rows.length } : null);
 
-        let duplicates = 0;
-        let added = 0;
-        let failed = 0;
-        let failedList: any[] = [];
-        let duplicateList: any[] = [];
+          let duplicates = 0;
+          let added = 0;
+          let failed = 0;
+          let failedList: any[] = [];
+          let duplicateList: any[] = [];
 
-        const CHUNK_SIZE = 100;
-        for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
-          const chunk = rows.slice(i, i + CHUNK_SIZE);
-          
-          const getVal = (row: any, possibleKeys: string[]) => {
-            const keys = Object.keys(row);
-            for (const k of keys) {
-              const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
-              if (possibleKeys.some(pk => pk === cleanK)) {
-                return row[k];
+          const CHUNK_SIZE = 100;
+          for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
+            const chunk = rows.slice(i, i + CHUNK_SIZE);
+            
+            const getVal = (row: any, possibleKeys: string[]) => {
+              if (!row || typeof row !== 'object') return '';
+              const keys = Object.keys(row);
+              for (const k of keys) {
+                const cleanK = k.toLowerCase().replace(/[^a-z0-9]/g, '');
+                if (possibleKeys.some(pk => pk === cleanK)) {
+                  return row[k];
+                }
               }
-            }
-            return '';
-          };
+              return '';
+            };
 
-          const extractPhone = (r: any) => String(getVal(r, ['phone', 'phonenumber', 'contactnumber', 'telephone', 'mobile', 'cell', 'number', 'tel'])).replace(/\s+/g, '').substring(0, 20);
-          const extractEmail = (r: any) => String(getVal(r, ['email', 'emailaddress', 'emailid'])).trim().substring(0, 255);
+            const extractPhone = (r: any) => String(getVal(r, ['phone', 'phonenumber', 'contactnumber', 'telephone', 'mobile', 'cell', 'number', 'tel'])).replace(/\s+/g, '').substring(0, 20);
+            const extractEmail = (r: any) => String(getVal(r, ['email', 'emailaddress', 'emailid'])).trim().substring(0, 255);
 
-          const phones = chunk.map(r => extractPhone(r)).filter(Boolean);
-          const emails = chunk.map(r => extractEmail(r)).filter(Boolean);
+            const phones = chunk.map(r => extractPhone(r)).filter(Boolean);
+            const emails = chunk.map(r => extractEmail(r)).filter(Boolean);
 
-          const existingPhones = new Set<string>();
-          const existingEmails = new Set<string>();
+            const existingPhones = new Set<string>();
+            const existingEmails = new Set<string>();
 
-          try {
-            if (phones.length > 0) {
-              const { data } = await supabase.from('leads').select('phone').in('phone', phones);
-              data?.forEach(d => { if (d.phone) existingPhones.add(d.phone.replace(/\s+/g, '')); });
-            }
-            if (emails.length > 0) {
-              const { data } = await supabase.from('leads').select('email').in('email', emails);
-              data?.forEach(d => { if (d.email) existingEmails.add(d.email.trim()); });
-            }
-          } catch (err) {
-            console.error('Error fetching duplicates', err);
-          }
-
-          const toInsert = [];
-          const chunkDupPhones = new Set(existingPhones);
-          const chunkDupEmails = new Set(existingEmails);
-
-          for (const row of chunk) {
-            const phone = extractPhone(row);
-            const email = extractEmail(row);
-            
-            const rawName = String(getVal(row, ['name', 'fullname', 'contactname', 'contactperson', 'clientname', 'person']));
-            let name = rawName.trim().substring(0, 100);
-            if (!name) {
-               const firstName = String(getVal(row, ['firstname', 'first']));
-               const lastName = String(getVal(row, ['lastname', 'last', 'surname']));
-               if (firstName || lastName) {
-                 name = `${firstName} ${lastName}`.trim().substring(0, 100);
-               }
-            }
-            
-            const company = String(getVal(row, ['company', 'companyname', 'businessname', 'organization', 'tradingname'])).trim().substring(0, 200);
-
-            // RULE: Must have a phone number
-            if (!phone) {
-              failed++;
-              failedList.push({ ...row, reason: 'No phone number provided' });
-              continue;
-            }
-
-            // RULE: If no name but has company, mark as Enrich Needed - No Name
-            let finalName = name;
-            let finalStatus = uploadTarget;
-            if (!name && company) {
-              finalName = 'Enrich Needed - No Name';
-            } else if (!name) {
-              finalName = 'Unknown';
-            }
-
-            if (chunkDupPhones.has(phone) || (email && chunkDupEmails.has(email))) {
-              duplicates++;
-              duplicateList.push({ ...row, reason: 'Duplicate phone or email' });
-            } else {
-              toInsert.push({
-                name: finalName,
-                phone,
-                email,
-                company,
-                csv_data: row,
-                status: finalStatus
-              });
-              chunkDupPhones.add(phone);
-              if (email) chunkDupEmails.add(email);
-            }
-          }
-
-          if (toInsert.length > 0) {
             try {
-              // Create a mapped array that ensures missing string properties are explicitly null, not undefined
-              const safeToInsert = toInsert.map(item => ({
-                name: item.name || null,
-                phone: item.phone,
-                email: item.email || null,
-                company: item.company || null,
-                csv_data: item.csv_data,
-                status: item.status
-              }));
-
-              const { error } = await supabase.from('leads').insert(safeToInsert);
-              if (error) {
-                console.error('Supabase specific error:', error);
-                throw error;
+              if (phones.length > 0) {
+                const { data } = await supabase.from('leads').select('phone').in('phone', phones);
+                data?.forEach(d => { if (d.phone) existingPhones.add(d.phone.replace(/\s+/g, '')); });
               }
-              added += toInsert.length;
-            } catch (err: any) {
-              console.error('Batch insert error', err);
-              failed += toInsert.length;
-              toInsert.forEach(item => failedList.push({ ...item.csv_data, reason: err.message || err.details || err.hint || 'Database error' }));
+              if (emails.length > 0) {
+                const { data } = await supabase.from('leads').select('email').in('email', emails);
+                data?.forEach(d => { if (d.email) existingEmails.add(d.email.trim()); });
+              }
+            } catch (err) {
+              console.error('Error fetching duplicates', err);
             }
+
+            const toInsert: any[] = [];
+            const chunkDupPhones = new Set(existingPhones);
+            const chunkDupEmails = new Set(existingEmails);
+
+            for (const row of chunk) {
+              const phone = extractPhone(row);
+              const email = extractEmail(row);
+              
+              const rawName = String(getVal(row, ['name', 'fullname', 'contactname', 'contactperson', 'clientname', 'person']));
+              let name = rawName.trim().substring(0, 100);
+              if (!name) {
+                 const firstName = String(getVal(row, ['firstname', 'first']));
+                 const lastName = String(getVal(row, ['lastname', 'last', 'surname']));
+                 if (firstName || lastName) {
+                   name = `${firstName} ${lastName}`.trim().substring(0, 100);
+                 }
+              }
+              
+              const company = String(getVal(row, ['company', 'companyname', 'businessname', 'organization', 'tradingname'])).trim().substring(0, 200);
+
+              // RULE: Must have a phone number
+              if (!phone) {
+                failed++;
+                failedList.push({ ...(typeof row === 'object' ? row : {}), reason: 'No phone number provided' });
+                continue;
+              }
+
+              // RULE: If no name but has company, mark as Enrich Needed - No Name
+              let finalName = name;
+              let finalStatus = uploadTarget;
+              if (!name && company) {
+                finalName = 'Enrich Needed - No Name';
+              } else if (!name) {
+                finalName = 'Unknown';
+              }
+
+              if (chunkDupPhones.has(phone) || (email && chunkDupEmails.has(email))) {
+                duplicates++;
+                duplicateList.push({ ...(typeof row === 'object' ? row : {}), reason: 'Duplicate phone or email' });
+              } else {
+                toInsert.push({
+                  name: finalName,
+                  phone,
+                  email,
+                  company,
+                  csv_data: row,
+                  status: finalStatus
+                });
+                chunkDupPhones.add(phone);
+                if (email) chunkDupEmails.add(email);
+              }
+            }
+
+            if (toInsert.length > 0) {
+              try {
+                // Create a mapped array that ensures missing string properties are explicitly null, not undefined
+                const safeToInsert = toInsert.map(item => ({
+                  name: item.name || null,
+                  phone: item.phone,
+                  email: item.email || null,
+                  company: item.company || null,
+                  csv_data: item.csv_data,
+                  status: item.status
+                }));
+
+                const { error } = await supabase.from('leads').insert(safeToInsert);
+                if (error) {
+                  console.error('Supabase specific error:', error);
+                  throw error;
+                }
+                added += toInsert.length;
+              } catch (err: any) {
+                console.error('Batch insert error', err);
+                failed += toInsert.length;
+                const errorReason = typeof err === 'object' ? (err.message || err.details || err.hint || JSON.stringify(err)) : String(err);
+                toInsert.forEach(item => failedList.push({ ...(item.csv_data || {}), reason: errorReason }));
+              }
+            }
+
+            setProgress(prev => ({ 
+              total: rows.length, 
+              processed: Math.min(i + CHUNK_SIZE, rows.length), 
+              duplicates, 
+              added, 
+              failed,
+              failedList: [...(prev?.failedList || []), ...failedList],
+              duplicateList: [...(prev?.duplicateList || []), ...duplicateList]
+            }));
+            
+            // Clear chunk lists for next iteration
+            failedList = [];
+            duplicateList = [];
           }
 
-          setProgress(prev => ({ 
-            total: rows.length, 
-            processed: Math.min(i + CHUNK_SIZE, rows.length), 
-            duplicates, 
-            added, 
-            failed,
-            failedList: [...(prev?.failedList || []), ...failedList],
-            duplicateList: [...(prev?.duplicateList || []), ...duplicateList]
-          }));
-          
-          // Clear chunk lists for next iteration
-          failedList = [];
-          duplicateList = [];
-        }
-
-        setIsUploading(false);
-        if (failed > 0) {
-          const firstReason = failedList.length > 0 ? failedList[0].reason : 'Unknown error';
-          toast.error(`Import complete with errors: ${added} added, ${duplicates} duplicates, ${failed} failed. First error: ${firstReason}`);
-        } else {
-          toast.success(`Successfully imported ${added} leads. (${duplicates} duplicates skipped)`);
+          setIsUploading(false);
+          if (failed > 0) {
+            const firstReason = failedList.length > 0 ? failedList[0].reason : 'Unknown error';
+            toast.error(`Import complete with errors: ${added} added, ${duplicates} duplicates, ${failed} failed. First error: ${firstReason}`);
+          } else {
+            toast.success(`Successfully imported ${added} leads. (${duplicates} duplicates skipped)`);
+          }
+        } catch (fatalError: any) {
+          console.error('Fatal crash during CSV parsing/uploading:', fatalError);
+          toast.error(`Critical error during upload: ${fatalError.message || String(fatalError)}`);
+          setIsUploading(false);
         }
       },
       error: (error) => {

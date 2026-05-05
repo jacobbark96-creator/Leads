@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
-import twilio from 'twilio';
+import { SignJWT } from 'jose';
 
-// Use Edge runtime if possible, but Twilio SDK uses some node features.
-// Node runtime is safer for twilio.
 export const runtime = 'edge';
 
 export async function POST(req: Request) {
@@ -22,26 +20,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Twilio configuration is missing' }, { status: 500 });
     }
 
-    const AccessToken = twilio.jwt.AccessToken;
-    const VoiceGrant = AccessToken.VoiceGrant;
+    const now = Math.floor(Date.now() / 1000);
+    const exp = now + 3600; // 1 hour expiration
 
-    // Create an access token
-    const token = new AccessToken(
-      twilioAccountSid,
-      twilioApiKey,
-      twilioApiSecret,
-      { identity: identity }
-    );
+    // Manually construct the Twilio Access Token payload
+    const payload = {
+      jti: `${twilioApiKey}-${now}`,
+      iss: twilioApiKey,
+      sub: twilioAccountSid,
+      exp: exp,
+      nbf: now,
+      grants: {
+        identity: identity,
+        voice: {
+          outgoing: {
+            application_sid: twilioTwiMLAppSid,
+          },
+          incoming: {
+            allow: true,
+          }
+        }
+      }
+    };
 
-    // Create a Voice grant
-    const voiceGrant = new VoiceGrant({
-      outgoingApplicationSid: twilioTwiMLAppSid,
-      incomingAllow: true,
-    });
+    // Sign the JWT using Edge-compatible jose library
+    const secret = new TextEncoder().encode(twilioApiSecret);
+    const token = await new SignJWT(payload)
+      .setProtectedHeader({ alg: 'HS256', typ: 'JWT', cty: 'twilio-fpa;v=1' })
+      .sign(secret);
 
-    token.addGrant(voiceGrant);
-
-    return NextResponse.json({ token: token.toJwt() });
+    return NextResponse.json({ token });
   } catch (error: any) {
     console.error('Error generating Twilio token:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

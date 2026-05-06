@@ -81,8 +81,16 @@ export default function LeadImport() {
               return '';
             };
 
-            const extractPhone = (r: any) => String(getVal(r, ['phone', 'phonenumber', 'contactnumber', 'telephone', 'mobile', 'cell', 'number', 'tel'])).replace(/\s+/g, '').substring(0, 20);
-            const extractEmail = (r: any) => String(getVal(r, ['email', 'emailaddress', 'emailid'])).trim().substring(0, 255);
+            const extractPhone = (r: any) => String(getVal(r, ['phone', 'phonenumber', 'contactnumber', 'telephone', 'mobile', 'cell', 'number', 'tel', 'primaryphone', 'phone1', 'number1'])).replace(/\s+/g, '').substring(0, 20);
+            const extractEmail = (r: any) => String(getVal(r, ['email', 'emailaddress', 'emailid', 'contactemail', 'mail', 'e-mail'])).trim().substring(0, 255);
+            const extractLocation = (r: any) => String(getVal(r, ['location', 'address', 'city', 'town', 'region', 'postcode', 'zip', 'zipcode', 'state', 'county'])).trim().substring(0, 255);
+            
+            const extractOtherNumbers = (r: any) => {
+              const num2 = getVal(r, ['phone2', 'number2', 'mobile2', 'telephone2', 'altphone', 'alternatephone', 'secondaryphone']);
+              const num3 = getVal(r, ['phone3', 'number3', 'mobile3', 'telephone3']);
+              const num4 = getVal(r, ['phone4', 'number4', 'mobile4', 'telephone4']);
+              return [num2, num3, num4].filter(Boolean).join(', ').substring(0, 255);
+            };
 
             const phones = chunk.map(r => extractPhone(r)).filter(Boolean);
             const emails = chunk.map(r => extractEmail(r)).filter(Boolean);
@@ -115,6 +123,8 @@ export default function LeadImport() {
             for (const row of chunk) {
               const phone = extractPhone(row);
               const email = extractEmail(row);
+              const location = extractLocation(row);
+              const other_contact_numbers = extractOtherNumbers(row);
               
               const rawName = String(getVal(row, ['name', 'fullname', 'contactname', 'contactperson', 'clientname', 'person']));
               let name = rawName.trim().substring(0, 100);
@@ -153,6 +163,8 @@ export default function LeadImport() {
                   phone,
                   email,
                   company,
+                  location,
+                  other_contact_numbers,
                   csv_data: row,
                   status: finalStatus
                 });
@@ -169,6 +181,8 @@ export default function LeadImport() {
                   phone: item.phone,
                   email: item.email || null,
                   company: item.company || null,
+                  location: item.location || null,
+                  other_contact_numbers: item.other_contact_numbers || null,
                   csv_data: item.csv_data,
                   status: item.status,
                   upload_name: uploadName.trim() || null

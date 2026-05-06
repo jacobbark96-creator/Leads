@@ -248,16 +248,20 @@ export default function MapTab() {
     };
   };
 
-  const createFlagIcon = () => {
+  const createFlagIcon = (color: string, direction: 'right' | 'left' = 'right') => {
     if (typeof window === 'undefined' || !window.google) return null;
+    
+    const pathRight = 'M4 2v20h2v-8h14l-2.5-4.5L20 5H6V2H4z';
+    const pathLeft = 'M-4 2v20h-2v-8h-14l2.5-4.5L-20 5H-6V2H-4z';
+    
     return {
-      path: 'M4 2v20h2v-8h14l-2.5-4.5L20 5H6V2H4z',
-      fillColor: '#2563eb', // Prominent blue
+      path: direction === 'left' ? pathLeft : pathRight,
+      fillColor: color,
       fillOpacity: 1,
       scale: 1.2,
       strokeColor: '#FFFFFF',
       strokeWeight: 1.5,
-      anchor: new window.google.maps.Point(5, 22),
+      anchor: new window.google.maps.Point(direction === 'left' ? -5 : 5, 22),
     };
   };
 
@@ -268,8 +272,20 @@ export default function MapTab() {
   }, [clients, selectedCategory, categories]);
 
   const filteredLeads = useMemo(() => {
-    if (selectedCategory === 'all') return leads;
-    return leads.filter(l => l.category_id === selectedCategory);
+    let result = leads;
+    if (selectedCategory !== 'all') {
+      result = leads.filter(l => l.category_id === selectedCategory);
+    }
+    
+    // Calculate overlaps for identical coordinates
+    const locationCounts: Record<string, number> = {};
+    return result.map(lead => {
+      const locKey = `${lead.latitude},${lead.longitude}`;
+      if (!locationCounts[locKey]) locationCounts[locKey] = 0;
+      const overlapIndex = locationCounts[locKey];
+      locationCounts[locKey]++;
+      return { ...lead, overlapIndex };
+    });
   }, [leads, selectedCategory]);
 
   if (loadError) {
@@ -362,16 +378,16 @@ export default function MapTab() {
           })}
 
           {/* Render Marketed Leads */}
-          {filteredLeads.map((lead) => {
-            const categoryName = categories.find(c => c.id === lead.category_id)?.name || '';
-            const isAsbestos = categoryName.toLowerCase().includes('asbestos');
+          {filteredLeads.map((lead: any) => {
+            const direction = lead.overlapIndex % 2 === 1 ? 'left' : 'right';
+            const color = getLeadColor(lead.category_id);
             
             return (
               <Marker
                 key={lead.id}
                 position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
                 title={lead.company || lead.name || 'Lead'}
-                icon={isAsbestos ? createFlagIcon() : createPinIcon(getLeadColor(lead.category_id))}
+                icon={createFlagIcon(color, direction)}
                 onClick={() => {
                   setSelectedLead(lead);
                   setSelectedClient(null);

@@ -25,6 +25,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
   const [resettingPassword, setResettingPassword] = useState(false);
   const [updatingDirectPassword, setUpdatingDirectPassword] = useState(false);
   const [hasClientProfile, setHasClientProfile] = useState(false);
+  const [missingClientProfile, setMissingClientProfile] = useState(false);
   const [advisorOptions, setAdvisorOptions] = useState<AdvisorOption[]>([]);
   const [selectedAdvisorId, setSelectedAdvisorId] = useState<string>('');
   const [originalAssignedTo, setOriginalAssignedTo] = useState<string | null>(null);
@@ -232,6 +233,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
       
       if (data) {
         setHasClientProfile(true);
+        setMissingClientProfile(false);
         setSelectedAdvisorId(data.assigned_to || '');
         setOriginalAssignedTo(data.assigned_to || null);
         setFormData(prev => ({
@@ -248,6 +250,9 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
         }));
 
         setSelectedServiceCategoryIds(parseServicesOfferedToIds(data.services_offered || '', categoryOptions));
+      } else {
+        setHasClientProfile(true); // Force it to show the client fields
+        setMissingClientProfile(true); // Track that it needs to be created, not updated
       }
     } finally {
       setLoadingClient(false);
@@ -280,40 +285,69 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
 
       // Update Client profile if it exists
       if (formData.role === 'client' && hasClientProfile) {
-        const { data: updatedClient, error: clientError } = await supabase
-          .from('clients')
-          .update({
-            company_name: formData.company_name,
-            phone: formData.phone,
-            other_contacts: formData.other_contacts,
-            other_contact_numbers: formData.other_contact_numbers,
-            address: formData.address,
-            areas_covered: formData.areas_covered,
-            service_areas: formData.service_areas,
-            services_offered: selectedServiceCategoryIds.join(', '),
-            assigned_to: selectedAdvisorId || null,
-            internal_notes: formData.internal_notes
-          })
-          .eq('user_id', user.id)
-          .select('id')
-          .single();
+        const clientPayload = {
+          contact_name: formData.name,
+          company_name: formData.company_name,
+          phone: formData.phone,
+          other_contacts: formData.other_contacts,
+          other_contact_numbers: formData.other_contact_numbers,
+          address: formData.address,
+          areas_covered: formData.areas_covered,
+          service_areas: formData.service_areas,
+          services_offered: selectedServiceCategoryIds.join(', '),
+          assigned_to: selectedAdvisorId || null,
+          internal_notes: formData.internal_notes,
+          is_profile_complete: true // Mark complete since admin is filling it out
+        };
+
+        let updatedClient = null;
+
+        if (missingClientProfile) {
+          // INSERT NEW PROFILE
+          const { data, error: insertError } = await supabase
+            .from('clients')
+            .insert([{ ...clientPayload, user_id: user.id }])
+            .select('id')
+            .single();
           
-        if (clientError) throw clientError;
+          if (insertError) throw insertError;
+          updatedClient = data;
+          setMissingClientProfile(false); // It now exists
+        } else {
+          // UPDATE EXISTING PROFILE
+          const { data, error: clientError } = await supabase
+            .from('clients')
+            .update(clientPayload)
+            .eq('user_id', user.id)
+            .select('id')
+            .single();
+            
+          if (clientError) throw clientError;
+          updatedClient = data;
+        }
 
         // Keep contractor record in sync
         if (updatedClient) {
-          const { error: contractorError } = await supabase
-            .from('contractors')
-            .update({
-              company_name: formData.company_name,
-              contact_name: formData.name, // Keep contact name synced with user name
-              phone: formData.phone,
-              service_areas: formData.service_areas
-            })
-            .eq('client_id', updatedClient.id);
-            
-          if (contractorError) {
-             console.error("Failed to sync contractor table:", contractorError);
+          const contractorPayload = {
+            company_name: formData.company_name,
+            contact_name: formData.name, // Keep contact name synced with user name
+            phone: formData.phone,
+            service_areas: formData.service_areas,
+            client_id: updatedClient.id
+          };
+
+          if (missingClientProfile) {
+            // Create contractor record if missing
+            const { error: contractorError } = await supabase
+              .from('contractors')
+              .insert([contractorPayload]);
+            if (contractorError) console.error("Failed to insert contractor table:", contractorError);
+          } else {
+            const { error: contractorError } = await supabase
+              .from('contractors')
+              .update(contractorPayload)
+              .eq('client_id', updatedClient.id);
+            if (contractorError) console.error("Failed to sync contractor table:", contractorError);
           }
         }
 

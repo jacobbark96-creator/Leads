@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { sendAdvisorEmail } from '@/lib/resend';
+import { sendAdvisorEmail, sendAdvisorNotificationEmail } from '@/lib/resend';
 import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'edge';
@@ -30,17 +30,20 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Advisor not found' }, { status: 404 });
     }
 
-    // Send the email
+    // Send the email to the client
     const result = await sendAdvisorEmail(clientEmail, clientName, advisor, isNewAssignment);
+
+    // Send a notification email to the advisor
+    const notificationResult = await sendAdvisorNotificationEmail(advisor.email, advisor.name, clientName, clientEmail);
 
     if (!result || !result.success) {
       return NextResponse.json(
-        { error: result?.error || 'Failed to send advisor email' },
+        { error: result?.error || 'Failed to send advisor email to client' },
         { status: 500 }
       );
     }
 
-    return NextResponse.json({ success: true, message: 'Advisor email sent successfully' });
+    return NextResponse.json({ success: true, message: 'Emails sent successfully' });
   } catch (error: any) {
     console.error('API Error /api/send-advisor-email:', error);
     return NextResponse.json(

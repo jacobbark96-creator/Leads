@@ -333,7 +333,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
             contact_name: formData.name, // Keep contact name synced with user name
             phone: formData.phone,
             service_areas: formData.service_areas,
-            client_id: updatedClient.id
+            client_id: updatedClient.id,
+            status: 'onboarded' // Ensure they show up in the onboarded tab
           };
 
           if (missingClientProfile) {

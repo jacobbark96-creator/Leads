@@ -152,6 +152,62 @@ export const sendAdvisorEmail = async (
 };
 
 /**
+ * Sends an email to the ADVISOR when a new client is assigned to them
+ */
+export const sendAdvisorNotificationEmail = async (
+  advisorEmail: string,
+  advisorName: string,
+  clientName: string,
+  clientEmail: string
+) => {
+  if (!resend) return { success: false, error: 'Resend API key missing' };
+  if (!advisorEmail) return { success: false, error: 'Advisor has no email' };
+
+  try {
+    const { data, error } = await resend.emails.send({
+      from: `Openlead Notifications <${defaultFromEmail}>`,
+      to: [advisorEmail],
+      subject: `New Client Assigned: ${clientName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb;">New Client Assignment 🎉</h2>
+          
+          <p style="color: #4b5563; line-height: 1.6;">
+            Hi ${advisorName},
+          </p>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            A new client has just been assigned to you on the Openlead platform. Please review their details and reach out to welcome them if necessary.
+          </p>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #1e293b;">Client Details</h3>
+            <p style="margin: 5px 0; color: #334155;"><strong>Client Name:</strong> ${clientName}</p>
+            <p style="margin: 5px 0; color: #334155;"><strong>Email:</strong> ${clientEmail}</p>
+          </div>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/intranet" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Log in to CRM
+            </a>
+          </div>
+        </div>
+      `,
+    });
+
+    if (error) {
+      console.error('Resend Advisor Notification Email Error:', error);
+      return { success: false, error };
+    }
+
+    return { success: true, data };
+  } catch (err: any) {
+    console.error('Failed to send advisor notification email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
  * Send Receipt Email (To be called from Stripe Webhook later)
  */
 export const sendReceiptEmail = async (email: string, leadId: string, amount: number) => {

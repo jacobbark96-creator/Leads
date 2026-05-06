@@ -82,7 +82,7 @@ export default function Marketplace() {
         // Fetch client ID and credit
         const { data: clientData, error: clientError } = await supabase
           .from('clients')
-          .select('id, services_offered, credit_balance')
+          .select('id, services_offered, credit_balance, property_type_preference')
           .eq('user_id', profile.id)
           .single();
 
@@ -92,14 +92,22 @@ export default function Marketplace() {
         // Use RPC to get leads within service area
         const res = await supabase.rpc('get_local_marketplace_leads', {
           p_client_id: clientData.id,
-          p_limit: PAGE_SIZE + 1, // Fetch one extra to determine if there are more pages
-          p_offset: pageNumber * PAGE_SIZE,
+          p_limit: 1000, // Fetch more to allow client-side property type filtering
+          p_offset: 0,
           p_sort_by: sortBy
         });
         
         const allowed = parseServicesOfferedToIds(clientData.services_offered || '');
         setAllowedCategoryIds(allowed);
-        const rawLeads = (res.data as Lead[]) || [];
+        let rawLeads = (res.data as Lead[]) || [];
+
+        // Apply Property Type Preference Filter
+        if (clientData.property_type_preference === 'commercial') {
+          rawLeads = rawLeads.filter(l => l.company && l.company.trim() !== '');
+        } else if (clientData.property_type_preference === 'residential') {
+          rawLeads = rawLeads.filter(l => !l.company || l.company.trim() === '');
+        }
+
         data = allowed.length > 0
           ? rawLeads.filter((l) => l.category_id && allowed.includes(String(l.category_id)))
           : [];
@@ -148,8 +156,20 @@ export default function Marketplace() {
       if (error) throw error;
       
       const fetchedLeads = data || [];
-      const hasNextPage = fetchedLeads.length > PAGE_SIZE;
-      const leadsToRender = hasNextPage ? fetchedLeads.slice(0, PAGE_SIZE) : fetchedLeads;
+      
+      // If we are a client, we fetched all 1000 items and filtered them. We must paginate client-side now.
+      let leadsToRender = [];
+      let hasNextPage = false;
+      
+      if (profile?.role === 'client') {
+        const startIndex = pageNumber * PAGE_SIZE;
+        const endIndex = startIndex + PAGE_SIZE;
+        leadsToRender = fetchedLeads.slice(startIndex, endIndex);
+        hasNextPage = fetchedLeads.length > endIndex;
+      } else {
+        hasNextPage = fetchedLeads.length > PAGE_SIZE;
+        leadsToRender = hasNextPage ? fetchedLeads.slice(0, PAGE_SIZE) : fetchedLeads;
+      }
 
       if (isInitial) {
         setLeads(leadsToRender);
@@ -347,9 +367,15 @@ export default function Marketplace() {
                     <Building className="w-12 h-12 opacity-20" />
                   </div>
                 )}
-                <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
-                  Qualified
-                </div>
+                {lead.company && lead.company.trim() !== '' ? (
+                  <div className="absolute top-3 right-3 bg-blue-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                    Commercial
+                  </div>
+                ) : (
+                  <div className="absolute top-3 right-3 bg-red-600 text-white text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                    Residential
+                  </div>
+                )}
               </div>
               
               <div className="p-4 flex-1 flex flex-col">

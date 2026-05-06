@@ -23,6 +23,7 @@ export default function MyOpenlead() {
     contact_name: '',
     phone: '',
     services_offered: '',
+    property_type_preference: 'both' as 'residential' | 'commercial' | 'both',
     service_areas: [] as any[],
     address: '',
     other_contacts: '',
@@ -117,6 +118,7 @@ export default function MyOpenlead() {
           contact_name: client.contact_name || '',
           phone: client.phone || '',
           services_offered: client.services_offered || '',
+          property_type_preference: client.property_type_preference || 'both',
           service_areas: client.service_areas || [],
           address: client.address || '',
           other_contacts: client.other_contacts || '',
@@ -214,6 +216,7 @@ export default function MyOpenlead() {
           other_contacts: formData.other_contacts,
           other_contact_numbers: formData.other_contact_numbers,
           services_offered: selectedCategoryIds.join(', '),
+          property_type_preference: formData.property_type_preference,
           service_areas: formData.service_areas,
           is_profile_complete: isComplete
         })
@@ -268,10 +271,28 @@ export default function MyOpenlead() {
     return <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
   }
 
+  const isCompleteProfile = clientData?.is_profile_complete;
+
   return (
     <ProtectedRoute allowedRoles={['client']}>
       <div className="space-y-8 max-w-5xl mx-auto">
         
+        {isCompleteProfile && (
+          <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 shadow-sm rounded-r-lg">
+            <div className="flex">
+              <div className="flex-shrink-0">
+                <AlertTriangle className="h-5 w-5 text-yellow-400" />
+              </div>
+              <div className="ml-3">
+                <p className="text-sm text-yellow-700 font-medium">
+                  Your profile is fully set up. You can view your selections below, but they are read-only. 
+                  Please contact your account manager to make any changes or additions to your service areas or categories.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Coach Section */}
         {coachName && (
           <div className="bg-gradient-to-r from-blue-600 to-cyan-600 rounded-2xl shadow-lg p-6 sm:p-8 text-white flex flex-col sm:flex-row items-center justify-between gap-6">
@@ -311,6 +332,51 @@ export default function MyOpenlead() {
             </div>
             
             <form onSubmit={handleUpdate} className="p-6 sm:p-8 space-y-6">
+              <div className="pb-6 border-b border-gray-100">
+                <h3 className="text-lg font-bold text-gray-900 mb-4">Target Property Type</h3>
+                <div className="flex flex-col gap-3">
+                  <label className="text-sm font-medium text-gray-700">What types of properties are you looking for?</label>
+                  <div className="flex p-1 bg-gray-100 rounded-lg max-w-md relative">
+                    {/* Highlight background slider */}
+                    <div 
+                      className={`absolute top-1 bottom-1 w-1/3 bg-white rounded-md shadow-sm transition-all duration-300 ease-in-out`}
+                      style={{ 
+                        left: formData.property_type_preference === 'residential' ? '0.25rem' 
+                            : formData.property_type_preference === 'commercial' ? 'calc(33.333% + 0.125rem)' 
+                            : 'calc(66.666%)',
+                        width: 'calc(33.333% - 0.25rem)'
+                      }}
+                    />
+                    
+                    <button
+                      type="button"
+                      disabled={isCompleteProfile}
+                      onClick={() => setFormData({ ...formData, property_type_preference: 'residential' })}
+                      className={`relative z-10 flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${formData.property_type_preference === 'residential' ? 'text-blue-700' : 'text-gray-500 hover:text-gray-700'} ${isCompleteProfile ? 'cursor-not-allowed opacity-70' : ''}`}
+                    >
+                      Residential
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isCompleteProfile}
+                      onClick={() => setFormData({ ...formData, property_type_preference: 'commercial' })}
+                      className={`relative z-10 flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${formData.property_type_preference === 'commercial' ? 'text-blue-700' : 'text-gray-500 hover:text-gray-700'} ${isCompleteProfile ? 'cursor-not-allowed opacity-70' : ''}`}
+                    >
+                      Commercial
+                    </button>
+                    <button
+                      type="button"
+                      disabled={isCompleteProfile}
+                      onClick={() => setFormData({ ...formData, property_type_preference: 'both' })}
+                      className={`relative z-10 flex-1 py-2 text-sm font-semibold rounded-md transition-colors ${formData.property_type_preference === 'both' ? 'text-blue-700' : 'text-gray-500 hover:text-gray-700'} ${isCompleteProfile ? 'cursor-not-allowed opacity-70' : ''}`}
+                    >
+                      Both
+                    </button>
+                  </div>
+                  <p className="text-xs text-gray-500 mt-1">This will automatically filter the marketplace to only show leads matching your preference.</p>
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Company Name</label>
@@ -318,7 +384,7 @@ export default function MyOpenlead() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Building className="h-4 w-4 text-gray-400" />
                     </div>
-                    <input type="text" required value={formData.company_name} onChange={e => setFormData({...formData, company_name: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
+                    <input type="text" required disabled={isCompleteProfile} value={formData.company_name} onChange={e => setFormData({...formData, company_name: e.target.value})} className={`pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${isCompleteProfile ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} />
                   </div>
                 </div>
                 <div>
@@ -327,7 +393,7 @@ export default function MyOpenlead() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <User className="h-4 w-4 text-gray-400" />
                     </div>
-                    <input type="text" required value={formData.contact_name} onChange={e => setFormData({...formData, contact_name: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
+                    <input type="text" required disabled={isCompleteProfile} value={formData.contact_name} onChange={e => setFormData({...formData, contact_name: e.target.value})} className={`pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${isCompleteProfile ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} />
                   </div>
                 </div>
                 <div>
@@ -336,7 +402,7 @@ export default function MyOpenlead() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Phone className="h-4 w-4 text-gray-400" />
                     </div>
-                    <input type="tel" required value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" />
+                    <input type="tel" required disabled={isCompleteProfile} value={formData.phone} onChange={e => setFormData({...formData, phone: e.target.value})} className={`pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${isCompleteProfile ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} />
                   </div>
                 </div>
                 <div>
@@ -345,7 +411,7 @@ export default function MyOpenlead() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <MapPin className="h-4 w-4 text-gray-400" />
                     </div>
-                    <input type="text" required value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="123 Business Rd, London" />
+                    <input type="text" required disabled={isCompleteProfile} value={formData.address} onChange={e => setFormData({...formData, address: e.target.value})} className={`pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${isCompleteProfile ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} placeholder="123 Business Rd, London" />
                   </div>
                 </div>
                 <div>
@@ -354,7 +420,7 @@ export default function MyOpenlead() {
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <Mail className="h-4 w-4 text-gray-400" />
                     </div>
-                    <input type="email" disabled value={profile?.email || ''} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm bg-gray-50 text-gray-500 sm:text-sm" />
+                    <input type="email" disabled value={profile?.email || ''} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm bg-gray-50 text-gray-500 sm:text-sm cursor-not-allowed" />
                   </div>
                   <p className="text-xs text-gray-400 mt-1">Email cannot be changed directly.</p>
                 </div>
@@ -366,7 +432,7 @@ export default function MyOpenlead() {
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Users className="h-4 w-4 text-gray-400" />
                       </div>
-                      <input type="text" required value={formData.other_contacts} onChange={e => setFormData({...formData, other_contacts: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Jane Smith" />
+                      <input type="text" required disabled={isCompleteProfile} value={formData.other_contacts} onChange={e => setFormData({...formData, other_contacts: e.target.value})} className={`pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${isCompleteProfile ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} placeholder="Jane Smith" />
                     </div>
                   </div>
                   <div>
@@ -375,7 +441,7 @@ export default function MyOpenlead() {
                       <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                         <Phone className="h-4 w-4 text-gray-400" />
                       </div>
-                      <input type="tel" required value={formData.other_contact_numbers} onChange={e => setFormData({...formData, other_contact_numbers: e.target.value})} className="pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="07712345678" />
+                      <input type="tel" required disabled={isCompleteProfile} value={formData.other_contact_numbers} onChange={e => setFormData({...formData, other_contact_numbers: e.target.value})} className={`pl-10 block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm ${isCompleteProfile ? 'bg-gray-50 text-gray-500 cursor-not-allowed' : ''}`} placeholder="07712345678" />
                     </div>
                   </div>
                 </div>
@@ -383,10 +449,13 @@ export default function MyOpenlead() {
                   <label className="block text-sm font-medium text-gray-700 mb-1">Service Areas</label>
                   <p className="text-xs font-semibold text-openlead-blue mb-1">Make sure your first service area is your office/home/yard address.</p>
                   <p className="text-xs text-gray-500 mb-3">Define the areas you cover. You will only see leads within these geofenced locations.</p>
-                  <MultiServiceArea 
-                    areas={formData.service_areas} 
-                    onChange={(areas) => setFormData({...formData, service_areas: areas})} 
-                  />
+                  <div className={isCompleteProfile ? 'pointer-events-none opacity-80' : ''}>
+                    <MultiServiceArea 
+                      areas={formData.service_areas} 
+                      onChange={(areas) => setFormData({...formData, service_areas: areas})} 
+                      allowNational={profile?.role === 'super_admin' || profile?.role === 'admin'}
+                    />
+                  </div>
                 </div>
                 <div className="sm:col-span-2">
                   <label className="block text-sm font-medium text-gray-700 mb-2">Services Offered</label>
@@ -397,9 +466,10 @@ export default function MyOpenlead() {
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                       {categories.map((cat) => (
-                        <label key={cat.id} className="flex items-center gap-2 cursor-pointer">
+                        <label key={cat.id} className={`flex items-center gap-2 ${isCompleteProfile ? 'cursor-not-allowed opacity-70' : 'cursor-pointer'}`}>
                           <input
                             type="checkbox"
+                            disabled={isCompleteProfile}
                             checked={selectedCategoryIds.includes(cat.id)}
                             onChange={() => {
                               setSelectedCategoryIds((current) =>
@@ -408,7 +478,7 @@ export default function MyOpenlead() {
                                   : [...current, cat.id]
                               );
                             }}
-                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4 disabled:bg-gray-200"
                           />
                           <span className="text-sm text-gray-700">{cat.name}</span>
                         </label>
@@ -419,15 +489,17 @@ export default function MyOpenlead() {
                 </div>
               </div>
 
-              <div className="pt-4 flex justify-end">
-                <button
-                  type="submit"
-                  disabled={saving}
-                  className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm disabled:opacity-50 transition-colors"
-                >
-                  {saving ? 'Saving...' : 'Save Changes'}
-                </button>
-              </div>
+              {!isCompleteProfile && (
+                <div className="pt-4 flex justify-end">
+                  <button
+                    type="submit"
+                    disabled={saving}
+                    className="inline-flex items-center px-6 py-3 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 shadow-sm disabled:opacity-50 transition-colors"
+                  >
+                    {saving ? 'Saving...' : 'Save Changes'}
+                  </button>
+                </div>
+              )}
             </form>
           </div>
 

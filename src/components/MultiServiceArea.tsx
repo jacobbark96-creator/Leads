@@ -14,6 +14,7 @@ interface ServiceArea {
 interface MultiServiceAreaProps {
   areas: ServiceArea[];
   onChange: (areas: ServiceArea[]) => void;
+  allowNational?: boolean;
 }
 
 const RADIUS_OPTIONS = [
@@ -26,7 +27,7 @@ const RADIUS_OPTIONS = [
 
 const libraries: "places"[] = ['places'];
 
-export function MultiServiceArea({ areas, onChange }: MultiServiceAreaProps) {
+export function MultiServiceArea({ areas, onChange, allowNational = true }: MultiServiceAreaProps) {
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries,
@@ -80,6 +81,8 @@ export function MultiServiceArea({ areas, onChange }: MultiServiceAreaProps) {
   const handleRemoveArea = (idToRemove: string) => {
     onChange(areas.filter(area => area.id !== idToRemove));
   };
+
+  const filteredRadiusOptions = allowNational ? RADIUS_OPTIONS : RADIUS_OPTIONS.filter(o => o.value !== 99999);
 
   if (loadError) {
     return <div className="text-red-500 text-sm">Error loading Google Maps. Please check your API key.</div>;
@@ -154,7 +157,7 @@ export function MultiServiceArea({ areas, onChange }: MultiServiceAreaProps) {
               onChange={(e) => setCurrentRadius(Number(e.target.value))}
               className="block w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-2.5"
             >
-              {RADIUS_OPTIONS.map(opt => (
+              {filteredRadiusOptions.map(opt => (
                 <option key={opt.value} value={opt.value}>{opt.label}</option>
               ))}
             </select>

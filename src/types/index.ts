@@ -27,7 +27,9 @@ export interface Client {
   address?: string | null;
   areas_covered?: string | null;
   services_offered?: string | null;
+  property_type_preference?: 'residential' | 'commercial' | 'both' | null;
   internal_notes?: string | null;
+  is_profile_complete?: boolean;
   latitude?: number | null;
   longitude?: number | null;
   assigned_to?: string | null;

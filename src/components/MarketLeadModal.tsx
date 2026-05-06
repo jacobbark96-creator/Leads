@@ -102,6 +102,34 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
     bills_url: lead.bills_url || '',
   });
 
+  useEffect(() => {
+    // Auto-calculate System Size (kW) based on roof size and skylights
+    const calculateSystemSize = () => {
+      const sizeStr = formData.roof_size || '';
+      const sizeNum = parseFloat(sizeStr.replace(/[^0-9.]/g, ''));
+      
+      if (isNaN(sizeNum) || sizeNum <= 0) {
+        setFormData(prev => ({ ...prev, est_system_size: '' }));
+        return;
+      }
+
+      // If 'cover_skylights' is false (meaning "No"), assume property has skylights we cannot cover -> 40% unusable (60% usable).
+      // Otherwise, 20% unusable (80% usable).
+      const usablePercentage = formData.cover_skylights === false ? 0.60 : 0.80;
+      const usableArea = sizeNum * usablePercentage;
+
+      // Assuming ~2 sqm per panel
+      const numberOfPanels = Math.floor(usableArea / 2);
+      
+      // System size (kW) = (number of panels * 420W) / 1000
+      const systemSizeKw = (numberOfPanels * 420) / 1000;
+
+      setFormData(prev => ({ ...prev, est_system_size: systemSizeKw > 0 ? `${systemSizeKw.toFixed(1)} kW` : '' }));
+    };
+
+    calculateSystemSize();
+  }, [formData.roof_size, formData.cover_skylights]);
+
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
     libraries,
@@ -328,6 +356,10 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
     }
     if (!formData.location) {
       toast.error('Please enter the Location');
+      return;
+    }
+    if (!formData.roof_size) {
+      toast.error('Please enter the Roof Size');
       return;
     }
     if (!formData.property_ownership) {
@@ -662,13 +694,14 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium text-gray-700">Roof Size</label>
+                  <label className="block text-sm font-medium text-gray-700">Roof Size (SqM) *</label>
                   <input
                     type="text"
+                    required
                     value={formData.roof_size}
                     onChange={(e) => setFormData({...formData, roof_size: e.target.value})}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                    placeholder="e.g. 50 SqM"
+                    placeholder="e.g. 50"
                   />
                 </div>
 
@@ -718,9 +751,10 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                   <label className="block text-sm font-medium text-gray-700">Est. System Size</label>
                   <input
                     type="text"
+                    disabled
                     value={formData.est_system_size}
-                    onChange={(e) => setFormData({...formData, est_system_size: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
+                    className="mt-1 block w-full rounded-md border-gray-300 bg-gray-100 shadow-sm text-gray-600 sm:text-sm cursor-not-allowed"
+                    placeholder="Auto-calculated"
                   />
                 </div>
 

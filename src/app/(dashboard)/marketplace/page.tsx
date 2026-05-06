@@ -371,6 +371,10 @@ export default function Marketplace() {
                     <span className="text-gray-500">Est. Spend:</span>
                     <span className="font-semibold text-gray-900 truncate pl-2">£{lead.monthly_spend ? Number(lead.monthly_spend).toLocaleString() : 'N/A'}/mo</span>
                   </div>
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="text-gray-500">Est. System Size:</span>
+                    <span className="font-semibold text-gray-900 truncate pl-2">{lead.est_system_size || 'N/A'}</span>
+                  </div>
                   
                   <div className="pt-3 pb-1">
                     <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">

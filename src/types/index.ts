@@ -98,6 +98,7 @@ export interface Lead {
   solar_location?: string;
   availability?: string;
   job_title?: string;
+  upload_name?: string | null;
   bills_url?: string;
   clients?: { company_name: string; contact_name: string } | null;
   purchase_id?: string;

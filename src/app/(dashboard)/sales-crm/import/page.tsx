@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 export default function LeadImport() {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadTarget, setUploadTarget] = useState<'fresh' | 'qualified'>('fresh');
+  const [uploadName, setUploadName] = useState('');
   const [progress, setProgress] = useState<{ 
     total: number; 
     processed: number; 
@@ -169,7 +170,8 @@ export default function LeadImport() {
                   email: item.email || null,
                   company: item.company || null,
                   csv_data: item.csv_data,
-                  status: item.status
+                  status: item.status,
+                  upload_name: uploadName.trim() || null
                 }));
 
                 const { error } = await supabase.from('leads').insert(safeToInsert);
@@ -247,17 +249,31 @@ export default function LeadImport() {
 
       <div className="mt-8 flex flex-col items-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-md">
         
-        <div className="mb-6 w-full max-w-xs">
-          <label className="block text-sm font-medium text-gray-700 mb-2">Upload Destination</label>
-          <select
-            value={uploadTarget}
-            onChange={(e) => setUploadTarget(e.target.value as 'fresh' | 'qualified')}
-            className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-            disabled={isUploading}
-          >
-            <option value="fresh">Unqualified Leads (Fresh)</option>
-            <option value="qualified">Qualified Leads</option>
-          </select>
+        <div className="mb-6 w-full max-w-xs space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Upload Name (Optional)</label>
+            <input
+              type="text"
+              value={uploadName}
+              onChange={(e) => setUploadName(e.target.value)}
+              placeholder="e.g. November 2024 Campaign"
+              className="block w-full pl-3 pr-3 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              disabled={isUploading}
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Upload Destination</label>
+            <select
+              value={uploadTarget}
+              onChange={(e) => setUploadTarget(e.target.value as 'fresh' | 'qualified')}
+              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              disabled={isUploading}
+            >
+              <option value="fresh">Unqualified Leads (Fresh)</option>
+              <option value="qualified">Qualified Leads</option>
+            </select>
+          </div>
         </div>
 
         <div className="space-y-1 text-center">

@@ -38,6 +38,8 @@ function LeadProcessingContent() {
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [phoneFilter, setPhoneFilter] = useState<string>('all');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'commercial' | 'residential'>('all');
+  const [uploadNameFilter, setUploadNameFilter] = useState<string>('all');
+  const [uploadNames, setUploadNames] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -66,7 +68,22 @@ function LeadProcessingContent() {
       const { data } = await supabase.rpc('get_staff_users');
       if (data) setStaffUsers(data);
     };
+    
+    // Fetch unique upload names for the filter dropdown
+    const fetchUploadNames = async () => {
+      const { data } = await supabase
+        .from('leads')
+        .select('upload_name')
+        .not('upload_name', 'is', null);
+        
+      if (data) {
+        const unique = Array.from(new Set(data.map(d => d.upload_name))).filter(Boolean) as string[];
+        setUploadNames(unique.sort());
+      }
+    };
+    
     fetchStaff();
+    fetchUploadNames();
   }, []);
 
   const fetchLeads = async (pageNumber: number, isInitial: boolean) => {
@@ -91,6 +108,7 @@ function LeadProcessingContent() {
         if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
         if (propertyTypeFilter === 'commercial') countQuery = countQuery.neq('company', '').not('company', 'is', null);
         else if (propertyTypeFilter === 'residential') countQuery = countQuery.or('company.eq.,company.is.null');
+        if (uploadNameFilter !== 'all') countQuery = countQuery.eq('upload_name', uploadNameFilter);
 
         const { count: baseCount } = await countQuery;
         setTotalCount(baseCount || 0);
@@ -119,6 +137,10 @@ function LeadProcessingContent() {
         query = query.neq('company', '').not('company', 'is', null);
       } else if (propertyTypeFilter === 'residential') {
         query = query.or('company.eq.,company.is.null');
+      }
+
+      if (uploadNameFilter !== 'all') {
+        query = query.eq('upload_name', uploadNameFilter);
       }
 
       const { data, error, count } = await query;
@@ -153,7 +175,7 @@ function LeadProcessingContent() {
     if (profile === undefined) return;
     setPage(0);
     fetchLeads(0, true);
-  }, [statusFilter, phoneFilter, propertyTypeFilter, debouncedSearchQuery, assignedToMe, profile]);
+  }, [statusFilter, phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, assignedToMe, profile]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -316,6 +338,22 @@ function LeadProcessingContent() {
                 <option value="call back">Call Back</option>
               </select>
             </div>
+
+            {uploadNames.length > 0 && (
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-600 font-medium">Upload:</label>
+                <select
+                  value={uploadNameFilter}
+                  onChange={(e) => setUploadNameFilter(e.target.value)}
+                  className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7 max-w-[150px] truncate"
+                >
+                  <option value="all">All Uploads</option>
+                  {uploadNames.map(name => (
+                    <option key={name} value={name}>{name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
               <button

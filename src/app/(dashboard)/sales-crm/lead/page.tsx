@@ -526,6 +526,15 @@ function LeadDetailsContent() {
 
               {/* Qualification Details removed from here */}
 
+              {lead.upload_name && (
+                <div>
+                  <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 block">List Upload Name</label>
+                  <span className="inline-flex items-center px-2.5 py-0.5 rounded-md text-[11px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                    {lead.upload_name}
+                  </span>
+                </div>
+              )}
+
               {lead.csv_data && Object.keys(lead.csv_data).length > 0 && (
                 <div className="pt-4 border-t border-gray-100">
                   <div className="space-y-3">

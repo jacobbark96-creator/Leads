@@ -39,6 +39,8 @@ function QualifiedLeadsContent() {
   const [loadingMore, setLoadingMore] = useState(false);
   const [phoneFilter, setPhoneFilter] = useState<string>('all');
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'commercial' | 'residential'>('all');
+  const [uploadNameFilter, setUploadNameFilter] = useState<string>('all');
+  const [uploadNames, setUploadNames] = useState<string[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
@@ -59,7 +61,23 @@ function QualifiedLeadsContent() {
       const { data } = await supabase.rpc('get_staff_users');
       if (data) setStaffUsers(data);
     };
+
+    // Fetch unique upload names for the filter dropdown
+    const fetchUploadNames = async () => {
+      const { data } = await supabase
+        .from('leads')
+        .select('upload_name')
+        .in('status', ['qualified', 'sold'])
+        .not('upload_name', 'is', null);
+        
+      if (data) {
+        const unique = Array.from(new Set(data.map(d => d.upload_name))).filter(Boolean) as string[];
+        setUploadNames(unique.sort());
+      }
+    };
+
     fetchStaff();
+    fetchUploadNames();
   }, []);
 
   const fetchLeads = async (pageNumber: number, isInitial: boolean) => {
@@ -80,6 +98,7 @@ function QualifiedLeadsContent() {
         if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
         if (propertyTypeFilter === 'commercial') countQuery = countQuery.neq('company', '').not('company', 'is', null);
         else if (propertyTypeFilter === 'residential') countQuery = countQuery.or('company.eq.,company.is.null');
+        if (uploadNameFilter !== 'all') countQuery = countQuery.eq('upload_name', uploadNameFilter);
 
         const { count: baseCount } = await countQuery;
         setTotalCount(baseCount || 0);
@@ -102,6 +121,10 @@ function QualifiedLeadsContent() {
         query = query.neq('company', '').not('company', 'is', null);
       } else if (propertyTypeFilter === 'residential') {
         query = query.or('company.eq.,company.is.null');
+      }
+
+      if (uploadNameFilter !== 'all') {
+        query = query.eq('upload_name', uploadNameFilter);
       }
 
       const { data, error, count } = await query;
@@ -135,7 +158,7 @@ function QualifiedLeadsContent() {
   useEffect(() => {
     setPage(0);
     fetchLeads(0, true);
-  }, [phoneFilter, propertyTypeFilter, searchQuery, assignedToMe]);
+  }, [phoneFilter, propertyTypeFilter, uploadNameFilter, searchQuery, assignedToMe]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -291,6 +314,22 @@ function QualifiedLeadsContent() {
               <option value="with_phone">Has Phone Number</option>
             </select>
           </div>
+
+          {uploadNames.length > 0 && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600 font-medium">Upload:</label>
+              <select
+                value={uploadNameFilter}
+                onChange={(e) => setUploadNameFilter(e.target.value)}
+                className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8 max-w-[150px] truncate"
+              >
+                <option value="all">All Uploads</option>
+                {uploadNames.map(name => (
+                  <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+          )}
         </div>
       </div>
 

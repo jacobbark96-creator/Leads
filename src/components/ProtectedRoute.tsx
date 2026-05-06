@@ -141,14 +141,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           if (perms.includes('intranet/pricing')) {
             hasAccess = true;
           } else if (perms.includes('intranet')) {
-            if (perms.includes('intranet/clients')) window.location.href = '/intranet/clients';
+            if (perms.includes('intranet/commission')) window.location.href = '/intranet/commission';
             else if (perms.includes('intranet/grants')) window.location.href = '/intranet/grants';
             else if (perms.includes('intranet/tracker')) window.location.href = '/intranet/tracker';
             else if (perms.includes('intranet/resources')) window.location.href = '/intranet/resources';
             return;
           }
         }
-        if (path.startsWith('/intranet/clients') && perms.includes('intranet/clients')) hasAccess = true;
+        if (path.startsWith('/intranet/commission') && perms.includes('intranet/commission')) hasAccess = true;
         if (path.startsWith('/intranet/grants') && perms.includes('intranet/grants')) hasAccess = true;
         if (path.startsWith('/intranet/tracker') && perms.includes('intranet/tracker')) hasAccess = true;
         if (path.startsWith('/intranet/resources') && perms.includes('intranet/resources')) hasAccess = true;

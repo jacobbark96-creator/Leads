@@ -1,7 +1,7 @@
 "use client";
 import React from 'react';
 import { usePathname } from 'next/navigation';
-import { DollarSign, Search, Award, FileText, LineChart } from 'lucide-react';
+import { DollarSign, Search, Award, FileText, LineChart, Banknote } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 
@@ -11,7 +11,7 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
 
   const tabs = [
     { name: 'Pricing Matrix', path: '/intranet', icon: DollarSign, id: 'intranet/pricing' },
-    { name: 'Client Search', path: '/intranet/clients', icon: Search, id: 'intranet/clients' },
+    { name: 'Commission', path: '/intranet/commission', icon: Banknote, id: 'intranet/commission' },
     { name: 'Grants Info', path: '/intranet/grants', icon: Award, id: 'intranet/grants' },
     { name: 'Tracker', path: '/intranet/tracker', icon: LineChart, id: 'intranet/tracker' },
     { name: 'Resources', path: '/intranet/resources', icon: FileText, id: 'intranet/resources' },

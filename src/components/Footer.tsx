@@ -57,9 +57,10 @@ export const Footer = () => {
           {/* Copyright & Legal */}
           <div className="flex flex-col md:flex-row items-center md:items-center gap-4 md:gap-6 text-sm text-slate-500 w-full justify-between">
             <p>© {new Date().getFullYear()} Openlead. All rights reserved.</p>
-            <div className="flex space-x-6">
-              <a href="#" className="hover:text-slate-900 transition-colors">Privacy Policy</a>
-              <a href="#" className="hover:text-slate-900 transition-colors">Terms of Service</a>
+            <div className="flex space-x-6 flex-wrap justify-center">
+              <a href="/privacy" className="hover:text-slate-900 transition-colors">Privacy Policy</a>
+              <a href="/terms" className="hover:text-slate-900 transition-colors">Terms of Service</a>
+              <a href="/anti-bribery" className="hover:text-slate-900 transition-colors">Anti-Bribery Policy</a>
             </div>
           </div>
           

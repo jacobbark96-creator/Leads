@@ -53,7 +53,18 @@ function QualifiedLeadsContent() {
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
+  const [radiusFilter, setRadiusFilter] = useState<string>('any');
+  const [isGeocoding, setIsGeocoding] = useState(false);
   const PAGE_SIZE = 25;
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+
+  // Debounce search query to prevent excessive API calls
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearchQuery(searchQuery);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
 
   useEffect(() => {
     // Fetch staff users for assignment name resolution
@@ -104,9 +115,52 @@ function QualifiedLeadsContent() {
         setTotalCount(baseCount || 0);
       }
 
-      if (searchQuery.trim()) {
-        const search = `%${searchQuery.trim()}%`;
-        query = query.or(`name.ilike.${search},company.ilike.${search}`);
+      // If we have a radius filter AND a search query, geocode it
+      let searchLat: number | null = null;
+      let searchLng: number | null = null;
+      let radiusModeActive = false;
+
+      if (radiusFilter !== 'any' && debouncedSearchQuery.trim()) {
+        setIsGeocoding(true);
+        try {
+          const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(debouncedSearchQuery.trim())}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`);
+          const geoData = await res.json();
+          if (geoData.status === 'OK' && geoData.results[0]) {
+            searchLat = geoData.results[0].geometry.location.lat;
+            searchLng = geoData.results[0].geometry.location.lng;
+            radiusModeActive = true;
+          } else {
+            toast.error('Could not find that location.');
+          }
+        } catch (e) {
+          console.error('Geocoding failed', e);
+        } finally {
+          setIsGeocoding(false);
+        }
+      }
+
+      if (radiusModeActive && searchLat !== null && searchLng !== null) {
+        // Fetch IDs within radius
+        const { data: radiusIds, error: radiusError } = await supabase.rpc('get_lead_ids_in_radius', {
+          search_lat: searchLat,
+          search_lng: searchLng,
+          radius_miles: Number(radiusFilter)
+        });
+        
+        if (radiusError) {
+          console.error("Radius error", radiusError);
+        } else {
+          const ids = radiusIds?.map((r: any) => r.id) || [];
+          if (ids.length > 0) {
+            query = query.in('id', ids);
+          } else {
+            // Force 0 results if nothing in radius
+            query = query.in('id', ['00000000-0000-0000-0000-000000000000']);
+          }
+        }
+      } else if (debouncedSearchQuery.trim()) {
+        const search = `%${debouncedSearchQuery.trim()}%`;
+        query = query.or(`name.ilike.${search},company.ilike.${search},location.ilike.${search}`);
       }
 
       if (assignedToMe && profile) {
@@ -158,7 +212,7 @@ function QualifiedLeadsContent() {
   useEffect(() => {
     setPage(0);
     fetchLeads(0, true);
-  }, [phoneFilter, propertyTypeFilter, uploadNameFilter, searchQuery, assignedToMe]);
+  }, [phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -262,15 +316,34 @@ function QualifiedLeadsContent() {
               ? `Showing ${searchCount} of ${totalCount} leads` 
               : `Showing ${totalCount} leads`}
           </div>
-          <div className="relative flex-1 w-full sm:min-w-[200px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search leads..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
-            />
+          <div className="relative flex-1 w-full sm:min-w-[200px] flex gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search leads or location..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
+              />
+              {isGeocoding && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2">
+                  <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                </div>
+              )}
+            </div>
+            <select
+              value={radiusFilter}
+              onChange={(e) => setRadiusFilter(e.target.value)}
+              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
+              title="Filter by distance (requires a location search)"
+            >
+              <option value="any">Any Distance</option>
+              <option value="10">10 Miles</option>
+              <option value="30">30 Miles</option>
+              <option value="50">50 Miles</option>
+              <option value="100">100 Miles</option>
+            </select>
           </div>
 
           <div className="flex items-center p-1 bg-gray-100 rounded-lg border border-gray-200">

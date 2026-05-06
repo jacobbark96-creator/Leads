@@ -248,6 +248,19 @@ export default function MapTab() {
     };
   };
 
+  const createFlagIcon = () => {
+    if (typeof window === 'undefined' || !window.google) return null;
+    return {
+      path: 'M4 2v20h2v-8h14l-2.5-4.5L20 5H6V2H4z',
+      fillColor: '#2563eb', // Prominent blue
+      fillOpacity: 1,
+      scale: 1.2,
+      strokeColor: '#FFFFFF',
+      strokeWeight: 1.5,
+      anchor: new window.google.maps.Point(5, 22),
+    };
+  };
+
   const filteredClients = useMemo(() => {
     if (selectedCategory === 'all') return clients;
     const catName = categories.find(c => c.id === selectedCategory)?.name || '';
@@ -349,18 +362,23 @@ export default function MapTab() {
           })}
 
           {/* Render Marketed Leads */}
-          {filteredLeads.map((lead) => (
-            <Marker
-              key={lead.id}
-              position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
-              title={lead.company || lead.name || 'Lead'}
-              icon={createPinIcon(getLeadColor(lead.category_id))}
-              onClick={() => {
-                setSelectedLead(lead);
-                setSelectedClient(null);
-              }}
-            />
-          ))}
+          {filteredLeads.map((lead) => {
+            const categoryName = categories.find(c => c.id === lead.category_id)?.name || '';
+            const isAsbestos = categoryName.toLowerCase().includes('asbestos');
+            
+            return (
+              <Marker
+                key={lead.id}
+                position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
+                title={lead.company || lead.name || 'Lead'}
+                icon={isAsbestos ? createFlagIcon() : createPinIcon(getLeadColor(lead.category_id))}
+                onClick={() => {
+                  setSelectedLead(lead);
+                  setSelectedClient(null);
+                }}
+              />
+            );
+          })}
 
           {/* InfoWindow for Client */}
           {selectedClient && (selectedClient as any).primary_map_area && (

@@ -32,7 +32,8 @@ export async function POST(req: Request) {
     const baseUrl = `${protocol}://${host}`;
     
     // StatusCallback URL to capture call logs
-    const statusCallbackUrl = `${baseUrl}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName)}&entityType=${encodeURIComponent(entityType)}`;
+    // We MUST use &amp; instead of & in XML attributes, otherwise Twilio's XML parser will crash.
+    const statusCallbackUrl = `${baseUrl}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&amp;userName=${encodeURIComponent(userName)}&amp;entityType=${encodeURIComponent(entityType)}`;
     const statusAttr = entityId ? ` statusCallback="${statusCallbackUrl}" statusCallbackEvent="initiated ringing answered completed"` : '';
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>

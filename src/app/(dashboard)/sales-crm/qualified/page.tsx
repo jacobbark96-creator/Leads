@@ -55,6 +55,7 @@ function QualifiedLeadsContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [radiusFilter, setRadiusFilter] = useState<string>('any');
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [assignedUserFilter, setAssignedUserFilter] = useState<string>('me');
   const PAGE_SIZE = 25;
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
 
@@ -105,7 +106,13 @@ function QualifiedLeadsContent() {
 
       if (isInitial) {
         let countQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).in('status', ['qualified', 'sold']);
-        if (assignedToMe && profile) countQuery = countQuery.eq('assigned_to', profile.id);
+        if (assignedToMe && profile) {
+          if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+            countQuery = countQuery.eq('assigned_to', assignedUserFilter);
+          } else {
+            countQuery = countQuery.eq('assigned_to', profile.id);
+          }
+        }
         if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
         if (propertyTypeFilter === 'commercial') countQuery = countQuery.neq('company', '').not('company', 'is', null);
         else if (propertyTypeFilter === 'residential') countQuery = countQuery.or('company.eq.,company.is.null');
@@ -164,7 +171,11 @@ function QualifiedLeadsContent() {
       }
 
       if (assignedToMe && profile) {
-        query = query.eq('assigned_to', profile.id);
+        if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+          query = query.eq('assigned_to', assignedUserFilter);
+        } else {
+          query = query.eq('assigned_to', profile.id);
+        }
       }
 
       if (phoneFilter === 'with_phone') {
@@ -212,7 +223,7 @@ function QualifiedLeadsContent() {
   useEffect(() => {
     setPage(0);
     fetchLeads(0, true);
-  }, [phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe]);
+  }, [phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile, assignedUserFilter]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -399,6 +410,22 @@ function QualifiedLeadsContent() {
                 <option value="all">All Uploads</option>
                 {uploadNames.map(name => (
                   <option key={name} value={name}>{name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
+          {assignedToMe && profile?.role === 'super_admin' && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600 font-medium">View User:</label>
+              <select
+                value={assignedUserFilter}
+                onChange={(e) => setAssignedUserFilter(e.target.value)}
+                className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8 max-w-[150px] truncate"
+              >
+                <option value="me">My Leads</option>
+                {staffUsers.map(u => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
                 ))}
               </select>
             </div>

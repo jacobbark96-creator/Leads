@@ -53,6 +53,7 @@ function LeadProcessingContent() {
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [radiusFilter, setRadiusFilter] = useState<string>('any');
   const [isGeocoding, setIsGeocoding] = useState(false);
+  const [assignedUserFilter, setAssignedUserFilter] = useState<string>('me');
   const PAGE_SIZE = 25;
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
 
@@ -104,7 +105,13 @@ function LeadProcessingContent() {
       // Base query for total count (without search)
       if (isInitial) {
         let countQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).neq('status', 'qualified');
-        if (assignedToMe && profile) countQuery = countQuery.eq('assigned_to', profile.id);
+        if (assignedToMe && profile) {
+          if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+            countQuery = countQuery.eq('assigned_to', assignedUserFilter);
+          } else {
+            countQuery = countQuery.eq('assigned_to', profile.id);
+          }
+        }
         else if (!assignedToMe) countQuery = countQuery.is('assigned_to', null);
         if (statusFilter !== 'all') countQuery = countQuery.eq('status', statusFilter);
         if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
@@ -165,7 +172,11 @@ function LeadProcessingContent() {
       }
 
       if (assignedToMe && profile) {
-        query = query.eq('assigned_to', profile.id);
+        if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+          query = query.eq('assigned_to', assignedUserFilter);
+        } else {
+          query = query.eq('assigned_to', profile.id);
+        }
       } else if (!assignedToMe) {
         query = query.is('assigned_to', null);
       }
@@ -220,7 +231,7 @@ function LeadProcessingContent() {
     if (profile === undefined) return;
     setPage(0);
     fetchLeads(0, true);
-  }, [statusFilter, phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile]);
+  }, [statusFilter, phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile, assignedUserFilter]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -402,6 +413,22 @@ function LeadProcessingContent() {
                 <option value="call back">Call Back</option>
               </select>
             </div>
+
+            {assignedToMe && profile?.role === 'super_admin' && (
+              <div className="flex items-center gap-2">
+                <label className="text-xs text-gray-600 font-medium">View User:</label>
+                <select
+                  value={assignedUserFilter}
+                  onChange={(e) => setAssignedUserFilter(e.target.value)}
+                  className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7 max-w-[150px] truncate"
+                >
+                  <option value="me">My Leads</option>
+                  {staffUsers.map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             {uploadNames.length > 0 && (
               <div className="flex items-center gap-2">

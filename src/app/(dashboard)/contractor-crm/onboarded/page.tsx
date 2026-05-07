@@ -41,6 +41,7 @@ function OnboardedContractorsContent() {
   const [searchCount, setSearchCount] = useState<number | null>(null);
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
+  const [assignedUserFilter, setAssignedUserFilter] = useState<string>('me');
   const PAGE_SIZE = 25;
 
   useEffect(() => {
@@ -66,7 +67,13 @@ function OnboardedContractorsContent() {
 
       if (isInitial) {
         let countQuery = supabase.from('contractors').select('id', { count: 'exact', head: true }).eq('status', 'onboarded');
-        if (assignedToMe && profile) countQuery = countQuery.eq('assigned_to', profile.id);
+        if (assignedToMe && profile) {
+          if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+            countQuery = countQuery.eq('assigned_to', assignedUserFilter);
+          } else {
+            countQuery = countQuery.eq('assigned_to', profile.id);
+          }
+        }
 
         const { count: baseCount } = await countQuery;
         setTotalCount(baseCount || 0);
@@ -78,7 +85,11 @@ function OnboardedContractorsContent() {
       }
 
       if (assignedToMe && profile) {
-        query = query.eq('assigned_to', profile.id);
+        if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+          query = query.eq('assigned_to', assignedUserFilter);
+        } else {
+          query = query.eq('assigned_to', profile.id);
+        }
       }
       // Note: intentionally removed the `else { query = query.is('assigned_to', null) }` block
       // so the onboarded tab shows ALL onboarded contractors, assigned or not.
@@ -114,7 +125,7 @@ function OnboardedContractorsContent() {
   useEffect(() => {
     setPage(0);
     fetchContractors(0, true);
-  }, [searchQuery, assignedToMe]);
+  }, [searchQuery, assignedToMe, profile, assignedUserFilter]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -161,6 +172,23 @@ function OnboardedContractorsContent() {
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500"
             />
           </div>
+
+          {assignedToMe && profile?.role === 'super_admin' && (
+            <div className="flex items-center gap-2">
+              <label className="text-sm text-gray-600 font-medium">View User:</label>
+              <select
+                value={assignedUserFilter}
+                onChange={(e) => setAssignedUserFilter(e.target.value)}
+                className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8 max-w-[150px] truncate"
+              >
+                <option value="me">My Leads</option>
+                {staffUsers.map(u => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+
           {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
             <button
               onClick={() => setIsAddModalOpen(true)}

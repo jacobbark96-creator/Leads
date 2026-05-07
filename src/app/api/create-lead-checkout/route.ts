@@ -33,9 +33,15 @@ export async function POST(req: Request) {
     const isExclusive = purchaseType === 'exclusive';
 
     // Helper to extract just the town from the location
-    const extractTown = (location: string) => {
-      if (!location) return 'Location TBC';
-      return location.split(',')[0].trim();
+    const extractTown = (address: string) => {
+      if (!address) return 'Location TBC';
+      let clean = address.replace(/,\s*(UK|United Kingdom)$/i, '');
+      clean = clean.replace(/,?\s*\b[A-Z]{1,2}[0-9][A-Z0-9]?\s?[0-9][A-Z]{2}\b/i, '');
+      const parts = clean.split(',').map(p => p.trim()).filter(Boolean);
+      if (parts.length > 1) {
+        return parts[parts.length - 1]; // Returns the town/city
+      }
+      return parts[0] || 'Location TBC';
     };
 
     // If fully covered by credit or 100% discount, process immediately

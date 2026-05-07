@@ -212,6 +212,7 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
 
       toast.success('Contractor successfully onboarded as a new Client!');
       onSuccess(updatedContractor as Contractor);
+      onClose();
     } catch (error: any) {
       toast.error('Failed to onboard contractor: ' + error.message);
     } finally {

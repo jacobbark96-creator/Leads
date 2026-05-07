@@ -384,6 +384,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
 
       toast.success('User details updated successfully');
       onUserUpdated();
+      onClose();
     } catch (error: any) {
       toast.error('Failed to update user: ' + error.message);
     } finally {

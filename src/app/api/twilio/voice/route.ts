@@ -44,7 +44,10 @@ export async function POST(req: Request) {
     // We MUST use &amp; instead of & in XML attributes, otherwise Twilio's XML parser will crash.
     const statusCallbackUrl = `${baseUrl}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&amp;userName=${encodeURIComponent(userName)}&amp;entityType=${encodeURIComponent(entityType)}`;
     const statusAttr = entityId ? ` action="${statusCallbackUrl}"` : '';
-    const fallbackAttr = entityId ? ` statusCallback="${statusCallbackUrl}" statusCallbackEvent="completed"` : '';
+    // Replace any &amp; in the URL generated earlier back to & for the fallback callback
+    // Twilio parses the outer <Dial> attribute differently than the inner <Number> attribute.
+    const rawStatusCallbackUrl = statusCallbackUrl.replace(/&amp;/g, '&');
+    const fallbackAttr = entityId ? ` statusCallback="${rawStatusCallbackUrl}" statusCallbackEvent="completed"` : '';
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>

@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState, useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, Circle } from '@react-google-maps/api';
 import { supabase } from '../../../../lib/supabase';
 import { Client, Lead } from '../../../../types';
 import { MapPin, Star, Briefcase, Filter, Info } from 'lucide-react';
@@ -169,7 +169,11 @@ export default function MapTab() {
                 ...c,
                 // Generate a unique ID for this specific pin
                 pin_id: `${c.id}-${area.id || Math.random().toString(36).substr(2, 9)}`,
-                primary_map_area: area
+                primary_map_area: {
+                  ...area,
+                  // Ensure radius is parsed as a pure Number to avoid String calculation bugs
+                  radius: Number(area.radius) || 30
+                }
               });
             }
           });
@@ -360,20 +364,42 @@ export default function MapTab() {
           {filteredClients.map((client: any) => {
             const mapArea = client.primary_map_area;
             if (!mapArea) return null;
+            const isSelected = (selectedClient as any)?.pin_id === client.pin_id;
+            const color = selectedCategory === 'all' 
+              ? getClientColor(client.services_offered) 
+              : getServiceColor(categories.find(c => c.id === selectedCategory)?.name);
+            
+            // If the radius is set to National (99999), cap the visual circle at 500 miles so it covers the whole UK without glitching the Google Map
+            const radiusInMiles = mapArea.radius === 99999 ? 500 : (mapArea.radius || 30);
+              
             return (
-              <Marker
-                key={client.pin_id || client.id}
-                position={{ lat: Number(mapArea.lat), lng: Number(mapArea.lng) }}
-                title={client.company_name || client.contact_name || 'Contractor'}
-                icon={createStarIcon(selectedCategory === 'all' 
-                  ? getClientColor(client.services_offered) 
-                  : getServiceColor(categories.find(c => c.id === selectedCategory)?.name)
+              <React.Fragment key={client.pin_id || client.id}>
+                {isSelected && (
+                  <Circle
+                    center={{ lat: Number(mapArea.lat), lng: Number(mapArea.lng) }}
+                    radius={radiusInMiles * 1609.34} // Convert miles to meters
+                    options={{
+                      fillColor: color,
+                      fillOpacity: 0.15,
+                      strokeColor: color,
+                      strokeOpacity: 0.5,
+                      strokeWeight: 2,
+                      clickable: false,
+                      zIndex: 1
+                    }}
+                  />
                 )}
-                onClick={() => {
-                  setSelectedClient(client);
-                  setSelectedLead(null);
-                }}
-              />
+                <Marker
+                  position={{ lat: Number(mapArea.lat), lng: Number(mapArea.lng) }}
+                  title={client.company_name || client.contact_name || 'Contractor'}
+                  icon={createStarIcon(color)}
+                  onClick={() => {
+                    setSelectedClient(client);
+                    setSelectedLead(null);
+                  }}
+                  zIndex={isSelected ? 100 : 2}
+                />
+              </React.Fragment>
             );
           })}
 

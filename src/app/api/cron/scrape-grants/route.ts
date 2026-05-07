@@ -1,5 +1,4 @@
 import { NextResponse } from 'next/server';
-import * as cheerio from 'cheerio';
 import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'edge';
@@ -41,26 +40,31 @@ export async function GET(req: Request) {
       }
       
       const html = await response.text();
-      const $ = cheerio.load(html);
 
       const grantsOnPage = [];
+      
+      // Simple regex based parsing for Gov.uk grants page
+      const grantItemRegex = /<li[^>]*>([\s\S]*?)<\/li>/gi;
+      let match;
 
-      $('h2 a').each((i, linkEl) => {
-        const parentContainer = $(linkEl).closest('li');
-        if (!parentContainer.length) return;
+      while ((match = grantItemRegex.exec(html)) !== null) {
+        const itemHtml = match[1];
         
-        const title = $(linkEl).text().trim();
-        const relativeLink = $(linkEl).attr('href');
-        if (!title || !relativeLink) return;
+        const titleMatch = itemHtml.match(/<h2[^>]*>\s*<a[^>]*href="([^"]+)"[^>]*>([\s\S]*?)<\/a>\s*<\/h2>/i);
+        if (!titleMatch) continue;
 
+        const relativeLink = titleMatch[1];
+        const title = titleMatch[2].replace(/<[^>]+>/g, '').trim();
         const url = relativeLink.startsWith('http') ? relativeLink : `${baseUrl}${relativeLink}`;
-        
+
         const details: Record<string, string> = {};
-        parentContainer.find('dl dt').each((j, dt) => {
-          const key = $(dt).text().trim();
-          const value = $(dt).next('dd').text().trim();
+        const dlRegex = /<dt[^>]*>([\s\S]*?)<\/dt>\s*<dd[^>]*>([\s\S]*?)<\/dd>/gi;
+        let dlMatch;
+        while ((dlMatch = dlRegex.exec(itemHtml)) !== null) {
+          const key = dlMatch[1].replace(/<[^>]+>/g, '').trim();
+          const value = dlMatch[2].replace(/<[^>]+>/g, '').trim();
           details[key] = value;
-        });
+        }
 
         grantsOnPage.push({
           title,
@@ -71,7 +75,7 @@ export async function GET(req: Request) {
           opening_date: details['Opening date'] || null,
           closing_date: details['Closing date'] || null,
         });
-      });
+      }
 
       if (grantsOnPage.length === 0) {
         hasNextPage = false;
@@ -98,7 +102,7 @@ export async function GET(req: Request) {
       totalProcessed += grantsOnPage.length;
 
       // Check if there is a "Next page" link
-      const nextLink = $('a:contains("Next")').length > 0 || $('.govuk-pagination__next a').length > 0;
+      const nextLink = /<a[^>]*rel="next"[^>]*>|govuk-pagination__next/i.test(html) || /<a[^>]*>Next\s*<\/a>/i.test(html);
       if (nextLink) {
         currentPage++;
         // Polite delay

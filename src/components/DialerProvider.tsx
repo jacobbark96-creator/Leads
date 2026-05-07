@@ -99,9 +99,9 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
     // Prevent calling 0800, 08xx, 09xx, and 118 toll/premium numbers
     const cleanNum = number.replace(/\s+/g, '');
-    const isBlocked = /^(\+44|0)(8|9|118)\d+/.test(cleanNum);
+    const isBlocked = /^(\+44|0)(84|87|9|118)\d+/.test(cleanNum);
     if (isBlocked) {
-      toast.error("Calls to 0800, toll, or premium rate numbers are not permitted.");
+      toast.error("Calls to toll or premium rate numbers are not permitted.");
       return;
     }
 

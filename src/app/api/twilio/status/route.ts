@@ -40,37 +40,24 @@ export async function POST(req: Request) {
 
         const noteContent = `📞 Call by ${userName}: ${statusText} (${duration} seconds)`;
         
-        const table = entityType === 'contractor' ? 'contractors' : 'leads';
-
-        // Fetch existing notes
-        const { data: entityData } = await supabase
-          .from(table)
-          .select('notes')
-          .eq('id', entityId)
-          .single();
-
-        let existingNotes = [];
-        if (entityData && entityData.notes) {
-          try {
-            existingNotes = typeof entityData.notes === 'string' ? JSON.parse(entityData.notes) : entityData.notes;
-          } catch (e) {
-            existingNotes = [];
-          }
-        }
+        const isContractor = entityType === 'contractor';
+        const tableName = isContractor ? 'contractor_notes' : 'lead_notes';
+        const idField = isContractor ? 'contractor_id' : 'lead_id';
 
         const newNote = {
-          id: crypto.randomUUID(),
+          [idField]: entityId,
           content: noteContent,
           author_name: 'System',
-          created_at: new Date().toISOString()
+          // Setting user_id to null or a system UUID if required. We'll just omit it or let it be null.
         };
 
-        const updatedNotes = [...existingNotes, newNote];
+        const { error } = await supabase
+          .from(tableName)
+          .insert([newNote]);
 
-        await supabase
-          .from(table)
-          .update({ notes: updatedNotes })
-          .eq('id', entityId);
+        if (error) {
+          console.error(`Failed to insert note into ${tableName}:`, error);
+        }
       }
     }
 

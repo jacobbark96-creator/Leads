@@ -115,11 +115,11 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       const call = await currentDevice.connect({
         params: {
-          To: number,
-          CallerId: profile.twilio_number,
-          EntityId: entityId || '',
-          UserName: userName || profile.name || '',
-          EntityType: entityType
+          To: String(number || ''),
+          CallerId: String(profile.twilio_number || ''),
+          EntityId: String(entityId || ''),
+          UserName: String(userName || profile.name || ''),
+          EntityType: String(entityType || 'lead')
         }
       });
 

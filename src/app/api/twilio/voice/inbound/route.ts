@@ -1,5 +1,8 @@
 import { NextResponse } from 'next/server';
 
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
+
 export async function POST(req: Request) {
   // Construct the absolute URL to handle the recording callback
   // Use your production domain if deployed, or fallback to the request origin

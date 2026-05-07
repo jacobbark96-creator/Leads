@@ -208,7 +208,10 @@ function QualifiedLeadsContent() {
           setSearchCount(null);
         }
       } else {
-        setLeads(prev => [...prev, ...leadsToRender]);
+        setLeads(prev => {
+          const combined = [...prev, ...leadsToRender];
+          return Array.from(new Map(combined.map(c => [c.id, c])).values());
+        });
       }
       
       setHasMore(hasNextPage);
@@ -222,7 +225,10 @@ function QualifiedLeadsContent() {
 
   useEffect(() => {
     setPage(0);
-    fetchLeads(0, true);
+    const timer = setTimeout(() => {
+      fetchLeads(0, true);
+    }, 50);
+    return () => clearTimeout(timer);
   }, [phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile, assignedUserFilter]);
 
   const loadMore = () => {

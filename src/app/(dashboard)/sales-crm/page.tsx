@@ -215,7 +215,10 @@ function LeadProcessingContent() {
           setSearchCount(null);
         }
       } else {
-        setLeads(prev => [...prev, ...leadsToRender]);
+        setLeads(prev => {
+          const combined = [...prev, ...leadsToRender];
+          return Array.from(new Map(combined.map(c => [c.id, c])).values());
+        });
       }
       
       setHasMore(hasNextPage);
@@ -230,7 +233,11 @@ function LeadProcessingContent() {
   useEffect(() => {
     if (profile === undefined) return;
     setPage(0);
-    fetchLeads(0, true);
+    // Add a small delay to ensure debouncedSearchQuery is stable
+    const timer = setTimeout(() => {
+      fetchLeads(0, true);
+    }, 50);
+    return () => clearTimeout(timer);
   }, [statusFilter, phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile, assignedUserFilter]);
 
   const loadMore = () => {

@@ -281,7 +281,10 @@ function ContractorProcessingContent() {
   useEffect(() => {
     if (profile === undefined) return; // wait for profile to load if needed
     setPage(0);
-    fetchContractors(0, true);
+    const timer = setTimeout(() => {
+      fetchContractors(0, true);
+    }, 50);
+    return () => clearTimeout(timer);
   }, [statusFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile, assignedUserFilter]);
 
   const loadMore = () => {

@@ -26,7 +26,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
           
           {/* Mobile menu button & actions */}
           <div className="flex items-center gap-2">
-            {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
+            {profile?.role && ['admin', 'super_admin', 'rep'].includes(profile.role) && (
               <button
                 onClick={() => {
                   const url = new URL(window.location.href);
@@ -109,7 +109,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                 );
               })}
             </nav>
-            {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
+            {profile?.role && ['admin', 'super_admin', 'rep'].includes(profile.role) && (
               <button
                 onClick={() => {
                   const url = new URL(window.location.href);

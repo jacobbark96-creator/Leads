@@ -5,6 +5,7 @@ import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home,
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
 import { AdminNotifications } from './AdminNotifications';
+import { SmsNotifications } from './SmsNotifications';
 import { supabase } from '../lib/supabase';
 
 export const MainLayout = ({ children }: { children: React.ReactNode }) => {
@@ -193,8 +194,13 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
 
               <div className="hidden sm:ml-6 sm:flex sm:items-center">
                 {(profile.role === 'admin' || profile.role === 'super_admin' || profile.role === 'sales') && (
-                  <div className="mr-4">
+                  <div className="mr-2">
                     <AdminNotifications />
+                  </div>
+                )}
+                {profile.role !== 'client' && (
+                  <div className="mr-4">
+                    <SmsNotifications />
                   </div>
                 )}
                 <div className="flex items-center space-x-3 bg-white border border-gray-200 rounded-full py-1.5 pl-1.5 pr-4 shadow-sm hover:shadow transition-all">

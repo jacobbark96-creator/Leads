@@ -110,6 +110,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
 
         if (error) throw error;
         toast.success(`${isContractor ? 'Contractor' : 'Lead'} updated successfully`);
+        onLeadAdded({ ...editData, ...updatePayload });
+        onClose();
       } else {
         const status = isContractor ? 'fresh' : 'fresh';
         const insertPayload: any = {

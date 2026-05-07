@@ -171,8 +171,8 @@ export default function MapTab() {
                 pin_id: `${c.id}-${area.id || Math.random().toString(36).substr(2, 9)}`,
                 primary_map_area: {
                   ...area,
-                  // Ensure radius is parsed as a pure Number to avoid String calculation bugs
-                  radius: Number(area.radius) || 30
+                  // Check both radius and radiusMiles to support all existing database entries
+                  radius: Number(area.radiusMiles || area.radius) || 30
                 }
               });
             }
@@ -292,6 +292,19 @@ export default function MapTab() {
     });
   }, [leads, selectedCategory]);
 
+  // Helper to accurately calculate distance between two coordinates
+  const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number) => {
+    const R = 3958.8; // Radius of the earth in miles
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
+    const a = 
+      Math.sin(dLat/2) * Math.sin(dLat/2) +
+      Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * 
+      Math.sin(dLon/2) * Math.sin(dLon/2);
+    const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+    return R * c; // Distance in miles
+  };
+
   if (loadError) {
     return <div className="text-center py-12 text-red-500">Error loading Google Maps</div>;
   }
@@ -365,6 +378,13 @@ export default function MapTab() {
             const mapArea = client.primary_map_area;
             if (!mapArea) return null;
             const isSelected = (selectedClient as any)?.pin_id === client.pin_id;
+            
+            // Only render the contractor pin if NO client is selected, OR if THIS specific client is selected
+            // This prevents a sea of contractor stars from hiding the leads when you are trying to view a specific catchment area
+            if (selectedClient && !isSelected) {
+              return null;
+            }
+
             const color = selectedCategory === 'all' 
               ? getClientColor(client.services_offered) 
               : getServiceColor(categories.find(c => c.id === selectedCategory)?.name);
@@ -408,6 +428,24 @@ export default function MapTab() {
             const direction = lead.overlapIndex % 2 === 1 ? 'left' : 'right';
             const color = getLeadColor(lead.category_id);
             
+            // If a client is selected, ONLY render leads that actually fall within their radius mathematically
+            if (selectedClient && (selectedClient as any).primary_map_area) {
+              const mapArea = (selectedClient as any).primary_map_area;
+              const radiusInMiles = mapArea.radius === 99999 ? 500 : (mapArea.radius || 30);
+              
+              const distance = calculateDistance(
+                Number(mapArea.lat), 
+                Number(mapArea.lng), 
+                Number(lead.latitude), 
+                Number(lead.longitude)
+              );
+              
+              // If the lead is further away than the radius, don't render it at all
+              if (distance > radiusInMiles) {
+                return null;
+              }
+            }
+
             return (
               <Marker
                 key={lead.id}

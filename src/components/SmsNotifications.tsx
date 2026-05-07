@@ -273,7 +273,7 @@ export function SmsNotifications() {
                             
                             {msg.media_url && (
                               <div className="mt-2">
-                                <audio controls src={msg.media_url} className="w-full h-10 max-w-[240px]" />
+                                <audio controls src={`/api/twilio/media?url=${encodeURIComponent(msg.media_url)}`} className="w-full h-10 max-w-[240px]" />
                               </div>
                             )}
 

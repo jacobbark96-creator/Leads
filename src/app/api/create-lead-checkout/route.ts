@@ -32,6 +32,12 @@ export async function POST(req: Request) {
     const remainingPrice = fullPrice - appliedCredit;
     const isExclusive = purchaseType === 'exclusive';
 
+    // Helper to extract just the town from the location
+    const extractTown = (location: string) => {
+      if (!location) return 'Location TBC';
+      return location.split(',')[0].trim();
+    };
+
     // If fully covered by credit or 100% discount, process immediately
     if (remainingPrice <= 0) {
       const supabaseAdmin = createClient(
@@ -65,7 +71,7 @@ export async function POST(req: Request) {
           price_data: {
             currency: 'gbp',
             product_data: {
-              name: `${isExclusive ? 'Exclusive' : 'LeadShare'} Lead - ${leadLocation || 'Location TBC'}`,
+              name: `${isExclusive ? 'Exclusive' : 'LeadShare'} Lead - ${extractTown(leadLocation)}`,
               description: appliedCredit > 0 ? `Category: ${leadCategory || 'General'} (Credit Applied: £${appliedCredit.toFixed(2)})` : `Category: ${leadCategory || 'General'}`,
             },
             unit_amount: Math.round(remainingPrice * 100),

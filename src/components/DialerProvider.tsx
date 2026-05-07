@@ -31,6 +31,9 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const callDurationRef = useRef<NodeJS.Timeout | null>(null);
   const [duration, setDuration] = useState(0);
 
+  const [isDialpadOpen, setIsDialpadOpen] = useState(false);
+  const [manualNumber, setManualNumber] = useState('');
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -196,11 +199,66 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return `${m}:${s}`;
   };
 
+  const handleManualCall = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!manualNumber.trim()) return;
+    setIsDialpadOpen(false);
+    makeCall(manualNumber.trim(), '', 'Manual Dial');
+    setManualNumber('');
+  };
+
+  const showFloatingDialer = profile && ['rep', 'super_admin', 'admin'].includes(profile.role);
+
   return (
     <DialerContext.Provider value={{ makeCall }}>
       {children}
       
-      {/* Dialer UI Overlay */}
+      {/* Floating Dialer Button & Manual Dialpad */}
+      {showFloatingDialer && !activeCall && callStatus !== 'Connecting...' && (
+        <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-4">
+          {isDialpadOpen && (
+            <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-72 border border-gray-200 animate-in slide-in-from-bottom-5">
+              <div className="bg-gray-900 p-4 text-white flex justify-between items-center">
+                <h3 className="font-bold">Manual Dial</h3>
+                <button onClick={() => setIsDialpadOpen(false)} className="text-gray-400 hover:text-white transition-colors">
+                  &times;
+                </button>
+              </div>
+              <form onSubmit={handleManualCall} className="p-4 flex flex-col gap-3">
+                <div>
+                  <label className="text-xs font-semibold text-gray-500 uppercase">Phone Number</label>
+                  <input
+                    type="tel"
+                    value={manualNumber}
+                    onChange={(e) => setManualNumber(e.target.value)}
+                    placeholder="+447..."
+                    className="mt-1 w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"
+                    autoFocus
+                  />
+                </div>
+                <button
+                  type="submit"
+                  disabled={!manualNumber.trim()}
+                  className="w-full bg-green-600 text-white font-bold py-2 rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+                >
+                  <Phone className="w-4 h-4" />
+                  Call
+                </button>
+              </form>
+            </div>
+          )}
+
+          <button
+            onClick={() => setIsDialpadOpen(!isDialpadOpen)}
+            className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition-transform hover:scale-105 active:scale-95"
+            title="Open Dialer"
+          >
+            <Phone className="w-6 h-6" />
+          </button>
+        </div>
+      )}
+
+      {/* Dialer UI Overlay (Active Call) */}
       {(activeCall || callStatus === 'Connecting...') && (
         <div className="fixed bottom-6 right-6 z-[100] w-80 bg-gray-900 rounded-2xl shadow-2xl overflow-hidden text-white animate-in slide-in-from-bottom-5">
           <div className="p-6">

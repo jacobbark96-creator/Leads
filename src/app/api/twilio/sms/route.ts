@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import twilio from 'twilio';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';

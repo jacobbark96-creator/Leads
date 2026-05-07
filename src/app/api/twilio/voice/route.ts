@@ -25,6 +25,15 @@ export async function POST(req: Request) {
     const to = toRaw.replace(/[^\d+]/g, '');
     const callerId = callerIdRaw ? callerIdRaw.replace(/[^\d+]/g, '') : null;
 
+    // Block 0800, 08xx, 09xx, and 118 toll/premium numbers
+    const isBlocked = /^(\+44|0)(8|9|118)\d+/.test(to);
+    if (isBlocked) {
+      return new NextResponse(
+        `<?xml version="1.0" encoding="UTF-8"?><Response><Say>Calls to this number prefix are not permitted.</Say><Hangup/></Response>`, 
+        { headers: { 'Content-Type': 'text/xml' } }
+      );
+    }
+
     const callerIdAttr = callerId ? ` callerId="${callerId}"` : (process.env.TWILIO_DEFAULT_CALLER_ID ? ` callerId="${process.env.TWILIO_DEFAULT_CALLER_ID}"` : '');
     
     const host = req.headers.get('host') || 'localhost:3000';

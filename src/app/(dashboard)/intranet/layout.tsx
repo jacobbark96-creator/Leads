@@ -1,6 +1,7 @@
 "use client";
 import React from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { DollarSign, Search, Award, FileText, LineChart, Banknote } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
@@ -30,7 +31,7 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
               const Icon = tab.icon;
               const isActive = pathname === tab.path;
               return (
-                <a
+                <Link
                   key={tab.name}
                   href={tab.path}
                   className={`${
@@ -41,7 +42,7 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
                 >
                   <Icon className={`${isActive ? 'text-emerald-600' : 'text-gray-400'} mr-3 h-5 w-5`} />
                   {tab.name}
-                </a>
+                </Link>
               );
             })}
           </nav>

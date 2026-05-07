@@ -1,12 +1,13 @@
 "use client";
 import React, { useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { Upload, Users, CheckCircle, Map as MapIcon, Menu, X, UserPlus, Store } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 
 export default function ContractorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
   const { profile } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -35,12 +36,13 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                   } else {
                     url.searchParams.set('assignedToMe', 'true');
                   }
-                  window.location.href = url.pathname + url.search;
+                  router.push(url.pathname + url.search);
                 }}
-                className="sm:hidden inline-flex items-center p-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none"
-                title="My Leads"
+                className="sm:hidden inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
-                <UserPlus className="w-5 h-5 text-gray-500" />
+                {typeof window !== 'undefined' && new URL(window.location.href).searchParams.get('assignedToMe') === 'true' 
+                  ? 'View All' 
+                  : 'My Leads'}
               </button>
             )}
             <button
@@ -117,12 +119,14 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                   } else {
                     url.searchParams.set('assignedToMe', 'true');
                   }
-                  window.location.href = url.pathname + url.search;
+                  router.push(url.pathname + url.search);
                 }}
                 className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
               >
                 <UserPlus className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
-                My Leads
+                {typeof window !== 'undefined' && new URL(window.location.href).searchParams.get('assignedToMe') === 'true' 
+                  ? 'View All' 
+                  : 'My Leads'}
               </button>
             )}
           </div>

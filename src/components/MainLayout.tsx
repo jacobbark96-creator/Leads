@@ -1,6 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
+import Link from 'next/link';
 import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
@@ -124,11 +125,11 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
           <div className="relative bg-white/80 backdrop-blur-xl border border-[#39CCCC]/45 rounded-2xl shadow-lg shadow-gray-200/40">
             <div className="flex justify-between h-20 px-3 sm:px-4">
-              <div className="flex items-center">
-                <a href="/" className="flex-shrink-0 flex items-center mr-6 sm:mr-8">
-                  <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
-                </a>
-                <div className="hidden sm:flex sm:space-x-2">
+                <div className="flex items-center">
+                  <Link href="/" className="flex-shrink-0 flex items-center mr-6 sm:mr-8">
+                    <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
+                  </Link>
+                  <div className="hidden sm:flex sm:space-x-2">
                   {navItems.map((item: any) => {
                     const Icon = item.icon;
                     if (item.children) {
@@ -153,7 +154,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                                 const ChildIcon = child.icon;
                                 const isChildActive = pathname.startsWith(child.path);
                                 return (
-                                  <a
+                                  <Link
                                     key={child.name}
                                     href={child.path}
                                     className={`${
@@ -164,7 +165,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                                   >
                                     <ChildIcon className={`w-4 h-4 mr-2 ${isChildActive ? 'text-blue-600' : 'text-gray-400'}`} />
                                     {child.name}
-                                  </a>
+                                  </Link>
                                 );
                               })}
                             </div>
@@ -175,7 +176,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
 
                     const isActive = pathname.startsWith(item.path);
                     return (
-                      <a
+                      <Link
                         key={item.name}
                         href={item.path}
                         className={`${
@@ -186,7 +187,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                       >
                         <Icon className={`w-4 h-4 mr-2 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                         {item.name}
-                      </a>
+                      </Link>
                     );
                   })}
                 </div>
@@ -269,7 +270,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                             const ChildIcon = child.icon;
                             const isChildActive = pathname.startsWith(child.path);
                             return (
-                              <a
+                              <Link
                                 key={child.name}
                                 href={child.path}
                                 onClick={() => setMobileMenuOpen(false)}
@@ -281,7 +282,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                               >
                                 <ChildIcon className={`w-5 h-5 mr-3 ${isChildActive ? 'text-blue-600' : 'text-gray-400'}`} />
                                 {child.name}
-                              </a>
+                              </Link>
                             );
                           })}
                         </div>
@@ -290,7 +291,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
 
                     const isActive = pathname.startsWith(item.path);
                     return (
-                      <a
+                      <Link
                         key={item.name}
                         href={item.path}
                         onClick={() => setMobileMenuOpen(false)}
@@ -302,7 +303,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                       >
                         <Icon className={`w-5 h-5 mr-3 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
                         {item.name}
-                      </a>
+                      </Link>
                     );
                   })}
                 </div>

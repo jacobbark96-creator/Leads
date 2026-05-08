@@ -242,7 +242,7 @@ function LeadDetailsContent() {
             const newNote = payload.new as LeadNote;
             setNotes(prev => {
               if (prev.find(n => n.id === newNote.id)) return prev;
-              return [...prev, newNote];
+              return [...prev, newNote].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
             });
           } else if (payload.eventType === 'UPDATE') {
             const updatedNote = payload.new as LeadNote;
@@ -271,11 +271,35 @@ function LeadDetailsContent() {
           });
           setTypingUsers(typing);
         })
+        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+          const state = presenceChannel.presenceState();
+          const typing: string[] = [];
+          Object.values(state).forEach((presences: any) => {
+            presences.forEach((p: any) => {
+              if (p.isTyping && p.userId !== profile?.id) {
+                typing.push(p.userName);
+              }
+            });
+          });
+          setTypingUsers(typing);
+        })
+        .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+          const state = presenceChannel.presenceState();
+          const typing: string[] = [];
+          Object.values(state).forEach((presences: any) => {
+            presences.forEach((p: any) => {
+              if (p.isTyping && p.userId !== profile?.id) {
+                typing.push(p.userName);
+              }
+            });
+          });
+          setTypingUsers(typing);
+        })
         .subscribe(async (status) => {
-          if (status === 'SUBSCRIBED') {
+          if (status === 'SUBSCRIBED' && profile?.id) {
             await presenceChannel.track({
-              userId: profile?.id,
-              userName: profile?.name,
+              userId: profile.id,
+              userName: profile.name,
               isTyping: false
             });
           }
@@ -538,10 +562,11 @@ function LeadDetailsContent() {
   };
 
   const handleTyping = (isTyping: boolean) => {
+    if (!profile?.id) return;
     const presenceChannel = supabase.channel(`lead-presence-${id}`);
     presenceChannel.track({
-      userId: profile?.id,
-      userName: profile?.name,
+      userId: profile.id,
+      userName: profile.name,
       isTyping
     });
   };

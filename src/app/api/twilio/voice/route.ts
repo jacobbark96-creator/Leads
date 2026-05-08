@@ -43,16 +43,17 @@ export async function POST(req: Request) {
     // StatusCallback URL to capture call logs
     // We MUST use &amp; instead of & in XML attributes, otherwise Twilio's XML parser will crash.
     const statusCallbackUrl = `${baseUrl}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&amp;userName=${encodeURIComponent(userName)}&amp;entityType=${encodeURIComponent(entityType)}`;
-    const statusAttr = entityId ? ` action="${statusCallbackUrl}"` : '';
-    // Replace any &amp; in the URL generated earlier back to & for the fallback callback
-    // Twilio parses the outer <Dial> attribute differently than the inner <Number> attribute.
-    const rawStatusCallbackUrl = statusCallbackUrl.replace(/&amp;/g, '&');
-    const fallbackAttr = entityId ? ` statusCallback="${rawStatusCallbackUrl}" statusCallbackEvent="completed"` : '';
+    
+    // We put the action attribute on <Dial> to handle when the call ends
+    const actionAttr = entityId ? ` action="${statusCallbackUrl}"` : '';
+    
+    // We also use statusCallback on <Number> or <Dial> with &amp;
+    const fallbackAttr = entityId ? ` statusCallback="${statusCallbackUrl}" statusCallbackEvent="completed"` : '';
 
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
-  <Dial${callerIdAttr}${fallbackAttr}>
-    <Number${statusAttr}>${to}</Number>
+  <Dial${callerIdAttr}${actionAttr}${fallbackAttr}>
+    <Number>${to}</Number>
   </Dial>
 </Response>`;
 

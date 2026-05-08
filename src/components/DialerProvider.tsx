@@ -62,6 +62,16 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     };
   }, [currentEntityId, profile?.id]);
 
+  // Initialize device on mount to receive incoming calls
+  useEffect(() => {
+    if (profile?.id && profile?.twilio_number) {
+      // Don't auto-init if they are just a client, etc.
+      if (['rep', 'super_admin', 'admin', 'sales'].includes(profile.role)) {
+        initDevice().catch(console.error);
+      }
+    }
+  }, [profile?.id, profile?.twilio_number, profile?.role]);
+
   useEffect(() => {
     if (!activeCall) {
       if (callDurationRef.current) clearInterval(callDurationRef.current);
@@ -97,6 +107,44 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       newDevice.on('error', (twilioError: any) => {
         console.error('Twilio Error:', twilioError);
         toast.error('Dialer error: ' + twilioError.message);
+      });
+
+      newDevice.on('incoming', (call: Call) => {
+        setCallStatus('Incoming Call');
+        setCurrentNumber(call.parameters.From || 'Unknown Caller');
+        setActiveCall(call);
+
+        call.on('accept', () => {
+          setCallStatus('Connected');
+          callDurationRef.current = setInterval(() => setDuration(d => d + 1), 1000);
+        });
+
+        call.on('disconnect', () => {
+          setCallStatus('Disconnected');
+          setTimeout(() => {
+            setActiveCall(null);
+            setCallStatus('');
+            setCurrentNumber('');
+          }, 2000);
+        });
+
+        call.on('cancel', () => {
+          setCallStatus('Missed Call');
+          setTimeout(() => {
+            setActiveCall(null);
+            setCallStatus('');
+            setCurrentNumber('');
+          }, 2000);
+        });
+
+        call.on('reject', () => {
+          setCallStatus('Rejected');
+          setTimeout(() => {
+            setActiveCall(null);
+            setCallStatus('');
+            setCurrentNumber('');
+          }, 2000);
+        });
       });
 
       await newDevice.register();
@@ -242,6 +290,18 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
   };
 
+  const answer = () => {
+    if (activeCall && activeCall.status() === 'pending') {
+      activeCall.accept();
+    }
+  };
+
+  const reject = () => {
+    if (activeCall && activeCall.status() === 'pending') {
+      activeCall.reject();
+    }
+  };
+
   const hangup = () => {
     if (activeCall) {
       activeCall.disconnect();
@@ -342,19 +402,38 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             </div>
             
             <div className="flex items-center justify-center gap-6">
-              <button 
-                onClick={toggleMute}
-                className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isMuted ? 'bg-white text-gray-900' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
-              >
-                {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
-              </button>
-              
-              <button 
-                onClick={hangup}
-                className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
-              >
-                <PhoneOff className="w-6 h-6" />
-              </button>
+              {callStatus === 'Incoming Call' ? (
+                <>
+                  <button 
+                    onClick={reject}
+                    className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+                  >
+                    <PhoneOff className="w-6 h-6" />
+                  </button>
+                  <button 
+                    onClick={answer}
+                    className="w-14 h-14 rounded-full bg-green-600 text-white flex items-center justify-center hover:bg-green-700 transition-colors shadow-lg shadow-green-600/20"
+                  >
+                    <Phone className="w-6 h-6" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <button 
+                    onClick={toggleMute}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${isMuted ? 'bg-white text-gray-900' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
+                  >
+                    {isMuted ? <MicOff className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+                  </button>
+                  
+                  <button 
+                    onClick={hangup}
+                    className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
+                  >
+                    <PhoneOff className="w-6 h-6" />
+                  </button>
+                </>
+              )}
             </div>
           </div>
           <div className="bg-gray-800 px-6 py-3 text-xs text-gray-400 text-center border-t border-gray-700">

@@ -38,7 +38,7 @@ export async function POST(req: Request) {
       if (user) {
         // Try to find if this caller matches a lead
         const callerMatch = fromNumber.replace(/[^\d]/g, '').slice(-10);
-        const { data: leads } = await supabase.from('leads').select('id').not('phone', 'is', null);
+        const { data: leads } = await supabase.from('leads').select('id, phone').not('phone', 'is', null);
         const lead = leads?.find(l => l.phone && l.phone.replace(/[^\d]/g, '').endsWith(callerMatch));
 
         // Create an immediate "reminder" so it pops up in the user's notification bell

@@ -194,7 +194,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
               </div>
 
               <div className="hidden sm:ml-6 sm:flex sm:items-center">
-                {(profile.role === 'admin' || profile.role === 'super_admin' || profile.role === 'sales') && (
+                {(profile.role === 'admin' || profile.role === 'super_admin' || profile.role === 'sales' || profile.role === 'rep') && (
                   <div className="mr-2">
                     <AdminNotifications />
                   </div>

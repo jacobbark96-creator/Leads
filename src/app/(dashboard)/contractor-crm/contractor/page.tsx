@@ -157,6 +157,7 @@ function ContractorDetailsContent() {
       // Find the next older lead
       const { data: nextData } = await nextQuery
         .lt('created_at', contractorData.created_at)
+        .is('being_dialed_by', null)
         .order('created_at', { ascending: false })
         .limit(1);
         

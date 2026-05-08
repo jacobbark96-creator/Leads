@@ -3,11 +3,14 @@
 import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
 import { Device, Call } from '@twilio/voice-sdk';
 import { useAuthStore } from '@/store/authStore';
+import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
 
 interface DialerContextType {
   makeCall: (number: string, entityId?: string, userName?: string, entityType?: string) => void;
+  activeCall: Call | null;
+  currentEntityId: string | null;
 }
 
 const DialerContext = createContext<DialerContextType | undefined>(undefined);
@@ -33,8 +36,9 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const [isDialpadOpen, setIsDialpadOpen] = useState(false);
   const [manualNumber, setManualNumber] = useState('');
+  const [currentEntityId, setCurrentEntityId] = useState<string | null>(null);
 
-  // Cleanup on unmount
+  // Cleanup on unmount - Only destroy device when provider unmounts
   useEffect(() => {
     return () => {
       if (device) {
@@ -42,6 +46,21 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
     };
   }, [device]);
+
+  // Handle dialing status cleanup separately
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (currentEntityId && profile?.id) {
+        // Use a separate async call or navigator.sendBeacon if needed for reliable cleanup on close
+        supabase.from('leads').update({ being_dialed_by: null }).eq('id', currentEntityId).eq('being_dialed_by', profile.id);
+      }
+    };
+
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => {
+      window.removeEventListener('beforeunload', handleBeforeUnload);
+    };
+  }, [currentEntityId, profile?.id]);
 
   useEffect(() => {
     if (!activeCall) {
@@ -97,8 +116,10 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return;
     }
 
+    // Clean number: remove all non-numeric characters except +
+    const cleanNum = number.replace(/[^\d+]/g, '');
+    
     // Prevent calling 0800, 08xx, 09xx, and 118 toll/premium numbers
-    const cleanNum = number.replace(/\s+/g, '');
     const isBlocked = /^(\+44|0)(84|87|9|118)\d+/.test(cleanNum);
     if (isBlocked) {
       toast.error("Calls to toll or premium rate numbers are not permitted.");
@@ -106,16 +127,25 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     }
 
     try {
-      setCurrentNumber(number);
+      setCurrentNumber(cleanNum);
+      setCurrentEntityId(entityId || null);
       
       const currentDevice = await initDevice();
       if (!currentDevice) return;
 
       setCallStatus('Connecting...');
+
+      // Mark lead as being dialed
+      if (entityId && entityType === 'lead') {
+        await supabase
+          .from('leads')
+          .update({ being_dialed_by: profile.id, last_dialed_at: new Date().toISOString() })
+          .eq('id', entityId);
+      }
       
       const call = await currentDevice.connect({
         params: {
-          To: String(number || ''),
+          To: String(cleanNum || ''),
           CallerId: String(profile.twilio_number || ''),
           EntityId: String(entityId || ''),
           UserName: String(userName || profile.name || ''),
@@ -132,6 +162,13 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       call.on('disconnect', () => {
         setCallStatus('Disconnected');
         
+        // Clear dialing status
+        if (entityId && entityType === 'lead') {
+          supabase.from('leads').update({ being_dialed_by: null }).eq('id', entityId).then(({ error }) => {
+            if (error) console.error('Error clearing dial status:', error);
+          });
+        }
+
         // Log manual disconnects if duration is 0 (failed to connect)
         if (entityId && duration === 0) {
           fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&entityType=${encodeURIComponent(entityType)}`, {
@@ -143,11 +180,20 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setTimeout(() => {
           setActiveCall(null);
           setCallStatus('');
+          setCurrentEntityId(null);
         }, 2000);
       });
 
       call.on('cancel', () => {
         setCallStatus('Canceled');
+
+        // Clear dialing status
+        if (entityId && entityType === 'lead') {
+          supabase.from('leads').update({ being_dialed_by: null }).eq('id', entityId).then(({ error }) => {
+            if (error) console.error('Error clearing dial status:', error);
+          });
+        }
+
         if (entityId) {
           fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&entityType=${encodeURIComponent(entityType)}`, {
             method: 'POST',
@@ -157,6 +203,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setTimeout(() => {
           setActiveCall(null);
           setCallStatus('');
+          setCurrentEntityId(null);
         }, 2000);
       });
 
@@ -165,6 +212,13 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setCallStatus('Error');
         toast.error('Call failed');
         
+        // Clear dialing status
+        if (entityId && entityType === 'lead') {
+          supabase.from('leads').update({ being_dialed_by: null }).eq('id', entityId).then(({ error }) => {
+            if (error) console.error('Error clearing dial status:', error);
+          });
+        }
+
         // Log the failure
         if (entityId) {
           fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&entityType=${encodeURIComponent(entityType)}`, {
@@ -176,6 +230,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         setTimeout(() => {
           setActiveCall(null);
           setCallStatus('');
+          setCurrentEntityId(null);
         }, 2000);
       });
 
@@ -218,7 +273,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const showFloatingDialer = profile && ['rep', 'super_admin', 'admin'].includes(profile.role);
 
   return (
-    <DialerContext.Provider value={{ makeCall }}>
+    <DialerContext.Provider value={{ makeCall, activeCall, currentEntityId }}>
       {children}
       
       {/* Floating Dialer Button & Manual Dialpad */}

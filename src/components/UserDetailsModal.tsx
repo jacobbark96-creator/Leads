@@ -386,6 +386,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
       onUserUpdated();
       onClose();
     } catch (error: any) {
+      console.error('Update Error:', error);
       toast.error('Failed to update user: ' + error.message);
     } finally {
       setLoading(false);

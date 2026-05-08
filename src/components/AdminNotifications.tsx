@@ -1,30 +1,36 @@
 import React, { useEffect, useState, useRef } from 'react';
-import { Bell, Check, UserPlus } from 'lucide-react';
+import { Bell, Check, UserPlus, Clock, ExternalLink } from 'lucide-react';
 import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
+import Link from 'next/link';
 
 export function AdminNotifications() {
+  const { profile } = useAuthStore();
   const [unassignedClients, setUnassignedClients] = useState<any[]>([]);
   const [unapprovedUsers, setUnapprovedUsers] = useState<any[]>([]);
+  const [reminders, setReminders] = useState<any[]>([]);
   const [admins, setAdmins] = useState<any[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
+    if (!profile) return;
     fetchData();
 
-    // Setup realtime subscription for new clients
+    // Setup realtime subscription
     const channel = supabase
-      .channel('public:clients_and_users')
+      .channel('notifications-realtime')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => fetchData())
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_reminders', filter: `user_id=eq.${profile.id}` }, () => fetchData())
       .subscribe();
 
     return () => {
       supabase.removeChannel(channel);
     };
-  }, []);
+  }, [profile?.id]);
 
   useEffect(() => {
     // Click outside to close
@@ -38,37 +44,43 @@ export function AdminNotifications() {
   }, []);
 
   const fetchData = async () => {
+    if (!profile) return;
     try {
-      // Fetch unassigned clients
-      const { data: clients, error: clientsError } = await supabase
-        .from('clients')
-        .select('id, company_name, contact_name, created_at')
-        .is('assigned_to', null)
-        .order('created_at', { ascending: false });
+      // 1. Fetch unassigned clients (Admins only)
+      if (['admin', 'super_admin'].includes(profile.role)) {
+        const { data: clients } = await supabase
+          .from('clients')
+          .select('id, company_name, contact_name, created_at')
+          .is('assigned_to', null)
+          .order('created_at', { ascending: false });
+        setUnassignedClients(clients || []);
 
-      if (clientsError) throw clientsError;
-      setUnassignedClients(clients || []);
+        const { data: users } = await supabase
+          .from('users')
+          .select('id, name, email, created_at')
+          .eq('role', 'client')
+          .eq('is_approved', false)
+          .order('created_at', { ascending: false });
+        setUnapprovedUsers(users || []);
 
-      // Fetch unapproved users
-      const { data: users, error: usersError } = await supabase
-        .from('users')
-        .select('id, name, email, created_at')
-        .eq('role', 'client')
-        .eq('is_approved', false)
-        .order('created_at', { ascending: false });
+        const { data: staff } = await supabase
+          .from('users')
+          .select('id, name, role')
+          .in('role', ['sales', 'admin', 'super_admin'])
+          .order('name');
+        setAdmins(staff || []);
+      }
 
-      if (usersError) throw usersError;
-      setUnapprovedUsers(users || []);
-
-      // Fetch potential advisors (sales, admin, super_admin)
-      const { data: staff, error: staffError } = await supabase
-        .from('users')
-        .select('id, name, role')
-        .in('role', ['sales', 'admin', 'super_admin'])
-        .order('name');
-
-      if (staffError) throw staffError;
-      setAdmins(staff || []);
+      // 2. Fetch due reminders for the current user
+      const { data: rems } = await supabase
+        .from('lead_reminders')
+        .select('*, leads(name, company)')
+        .eq('user_id', profile.id)
+        .eq('is_completed', false)
+        .lte('reminder_at', new Date().toISOString())
+        .order('reminder_at', { ascending: true });
+      
+      setReminders(rems || []);
 
     } catch (error) {
       console.error('Error fetching notifications data:', error);
@@ -99,8 +111,8 @@ export function AdminNotifications() {
       // Remove from local state immediately for snappy UI
       setUnassignedClients(prev => prev.filter(c => c.id !== clientId));
       
-      if (unassignedClients.length <= 1) {
-        setIsOpen(false); // Close dropdown if that was the last one
+      if (unassignedClients.length + unapprovedUsers.length + reminders.length <= 1) {
+        setIsOpen(false); 
       }
       
     } catch (error: any) {
@@ -123,7 +135,7 @@ export function AdminNotifications() {
       toast.success('User approved successfully!');
       setUnapprovedUsers(prev => prev.filter(u => u.id !== userId));
       
-      if (unassignedClients.length + unapprovedUsers.length <= 1) {
+      if (unassignedClients.length + unapprovedUsers.length + reminders.length <= 1) {
         setIsOpen(false);
       }
     } catch (error: any) {
@@ -133,7 +145,22 @@ export function AdminNotifications() {
     }
   };
 
-  const totalPending = unassignedClients.length + unapprovedUsers.length;
+  const completeReminder = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('lead_reminders')
+        .update({ is_completed: true })
+        .eq('id', id);
+      
+      if (error) throw error;
+      setReminders(prev => prev.filter(r => r.id !== id));
+      toast.success('Task marked as completed');
+    } catch (error: any) {
+      toast.error('Failed to update task: ' + error.message);
+    }
+  };
+
+  const totalPending = unassignedClients.length + unapprovedUsers.length + reminders.length;
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -167,6 +194,46 @@ export function AdminNotifications() {
               </div>
             ) : (
               <ul className="divide-y divide-gray-100">
+                {reminders.map((reminder) => (
+                  <li key={reminder.id} className="p-4 hover:bg-gray-50 transition-colors bg-blue-50/30">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider">Reminder</span>
+                          <span className="text-[10px] text-gray-400 flex items-center gap-1">
+                            <Clock className="w-3 h-3" />
+                            {new Date(reminder.reminder_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                        <p className="text-sm font-bold text-gray-900 truncate">
+                          Call: {reminder.leads?.company || reminder.leads?.name}
+                        </p>
+                        <p className="text-xs text-gray-500 line-clamp-2 mb-3">
+                          {reminder.content}
+                        </p>
+                        
+                        <div className="flex gap-2">
+                          <Link
+                            href={`/sales-crm/lead?id=${reminder.lead_id}`}
+                            onClick={() => setIsOpen(false)}
+                            className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-bold rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                          >
+                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                            View Lead
+                          </Link>
+                          <button
+                            onClick={() => completeReminder(reminder.id)}
+                            className="inline-flex items-center justify-center p-2 border border-transparent rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
+                            title="Mark as done"
+                          >
+                            <Check className="w-4 h-4" />
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+
                 {unapprovedUsers.map((user) => (
                   <li key={user.id} className="p-4 hover:bg-gray-50 transition-colors bg-amber-50/30">
                     <div className="flex items-start justify-between gap-3">

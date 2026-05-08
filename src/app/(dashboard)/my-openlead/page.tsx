@@ -45,10 +45,10 @@ export default function MyOpenlead() {
   }, []);
 
   useEffect(() => {
-    if (profile) {
+    if (profile?.id) {
       fetchMyData();
     }
-  }, [profile]);
+  }, [profile?.id]);
 
   const fetchMyData = async () => {
     try {

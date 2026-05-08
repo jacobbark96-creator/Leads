@@ -254,10 +254,9 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
 
     try {
       setUploading(true);
-      const newPhotos: string[] = [...photos];
-
-      for (let i = 0; i < e.target.files.length; i++) {
-        const file = e.target.files[i];
+      const fileArray = Array.from(e.target.files);
+      
+      const uploadPromises = fileArray.map(async (file) => {
         const fileExt = file.name.split('.').pop();
         const fileName = `${lead.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `${fileName}`;
@@ -275,10 +274,11 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
           .from('lead-photos')
           .getPublicUrl(filePath);
 
-        newPhotos.push(publicUrlData.publicUrl);
-      }
+        return publicUrlData.publicUrl;
+      });
 
-      setPhotos(newPhotos);
+      const uploadedUrls = await Promise.all(uploadPromises);
+      setPhotos(prev => [...prev, ...uploadedUrls]);
       toast.success('Photos uploaded successfully');
     } catch (error: any) {
       toast.error('Error uploading photos: ' + error.message);
@@ -299,9 +299,8 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
     
     try {
       setUploading(true);
-      const newUrls: string[] = [];
-
-      for (const file of files) {
+      
+      const uploadPromises = files.map(async (file) => {
         const fileExt = file.name.split('.').pop();
         const fileName = `bill-${lead.id}-${Math.random().toString(36).substring(2)}.${fileExt}`;
         const filePath = `${fileName}`;
@@ -319,10 +318,11 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
           .from('lead_documents')
           .getPublicUrl(filePath);
 
-        newUrls.push(publicUrlData.publicUrl);
-      }
+        return publicUrlData.publicUrl;
+      });
 
-      setBillUrls((prev) => [...prev, ...newUrls]);
+      const uploadedUrls = await Promise.all(uploadPromises);
+      setBillUrls((prev) => [...prev, ...uploadedUrls]);
       toast.success('Bill documents uploaded successfully');
     } catch (error: any) {
       toast.error('Error uploading bills: ' + error.message);
@@ -428,23 +428,23 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
   };
 
   return (
-    <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
-      <div className="bg-white rounded-xl shadow-xl w-full max-w-4xl max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center shrink-0">
           <div>
-            <h2 className="text-xl font-bold text-gray-900">Qualify Lead: {lead.name}</h2>
-            <p className="text-sm text-gray-500">Fill in the marketplace details for this lead.</p>
+            <h2 className="text-xl font-bold text-gray-900">Qualify Lead</h2>
+            <p className="text-sm text-gray-500">{lead.name} {lead.company ? `- ${lead.company}` : ''}</p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-500 transition-colors">
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
             <X className="w-6 h-6" />
           </button>
         </div>
 
         {/* Form Content */}
-        <div className="p-6 overflow-y-auto flex-1">
-          <form id="qualify-form" onSubmit={handleSubmit} className="space-y-6">
+        <div className="flex-1 overflow-y-auto p-6 sm:p-8 no-scrollbar">
+          <form id="qualify-form" onSubmit={handleSubmit} className="space-y-8">
             
             {/* Basic Lead Information Section */}
             <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">

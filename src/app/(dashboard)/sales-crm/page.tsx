@@ -5,7 +5,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Lead } from '../../../types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Users, Calendar, MapPin, Search, Trash2, Filter } from 'lucide-react';
+import { Phone, Mail, Building, User, Users, Calendar, MapPin, Search, Trash2, Filter, Clock } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
   import { AddLeadModal } from '@/components/AddLeadModal';
   import { QualifyLeadModal } from '@/components/QualifyLeadModal';
@@ -56,6 +56,7 @@ function LeadProcessingContent() {
   const [assignedUserFilter, setAssignedUserFilter] = useState<string>('me');
   const PAGE_SIZE = 25;
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  const [smartList, setSmartList] = useState<string>('all');
 
   // Debounce search query to prevent excessive API calls
   useEffect(() => {
@@ -97,9 +98,12 @@ function LeadProcessingContent() {
       // Fetch PAGE_SIZE + 1 to know if there's a next page without a slow exact count query
       let query = supabase
         .from('leads')
-        .select('*', { count: 'exact' })
+        .select('*, lead_notes(created_at)', { count: 'exact' })
         .neq('status', 'qualified')
+        .is('being_dialed_by', null) // Only show leads not being dialed
+        .order('last_dialed_at', { ascending: true, nullsFirst: true })
         .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
       // Base query for total count (without search)
@@ -199,6 +203,15 @@ function LeadProcessingContent() {
         query = query.eq('upload_name', uploadNameFilter);
       }
 
+      // Apply Smart List filters
+      if (smartList === 'recent_calls') {
+        query = query.not('last_dialed_at', 'is', null).order('last_dialed_at', { ascending: false });
+      } else if (smartList === 'never_called') {
+        query = query.is('last_dialed_at', null);
+      } else if (smartList === 'high_spend') {
+        query = query.gt('monthly_spend', 1000).order('monthly_spend', { ascending: false });
+      }
+
       const { data, error, count } = await query;
 
       if (error) throw error;
@@ -237,8 +250,37 @@ function LeadProcessingContent() {
     const timer = setTimeout(() => {
       fetchLeads(0, true);
     }, 50);
-    return () => clearTimeout(timer);
-  }, [statusFilter, phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile, assignedUserFilter]);
+
+    // Subscribe to real-time changes
+    const channel = supabase
+      .channel('leads-realtime')
+      .on('postgres_changes', { event: '*', table: 'leads', schema: 'public' }, (payload) => {
+        if (payload.eventType === 'INSERT') {
+          const newLead = payload.new as Lead;
+          if (newLead.status !== 'qualified' && !newLead.being_dialed_by) {
+            setLeads(prev => [newLead, ...prev]);
+            setTotalCount(prev => prev + 1);
+          }
+        } else if (payload.eventType === 'UPDATE') {
+          const updatedLead = payload.new as Lead;
+          if (updatedLead.status === 'qualified' || updatedLead.being_dialed_by) {
+            setLeads(prev => prev.filter(l => l.id !== updatedLead.id));
+            setTotalCount(prev => prev - 1);
+          } else {
+            setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
+          }
+        } else if (payload.eventType === 'DELETE') {
+          setLeads(prev => prev.filter(l => l.id !== payload.old.id));
+          setTotalCount(prev => prev - 1);
+        }
+      })
+      .subscribe();
+
+    return () => {
+      clearTimeout(timer);
+      supabase.removeChannel(channel);
+    };
+  }, [statusFilter, phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile?.id, assignedUserFilter]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -370,6 +412,20 @@ function LeadProcessingContent() {
                 <option value="30">30 Miles</option>
                 <option value="50">50 Miles</option>
                 <option value="100">100 Miles</option>
+              </select>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <label className="text-xs text-gray-600 font-medium">Smart List:</label>
+              <select
+                value={smartList}
+                onChange={(e) => setSmartList(e.target.value)}
+                className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7"
+              >
+                <option value="all">Standard List</option>
+                <option value="recent_calls">Recently Called</option>
+                <option value="never_called">Never Called</option>
+                <option value="high_spend">High Monthly Spend</option>
               </select>
             </div>
 
@@ -515,35 +571,47 @@ function LeadProcessingContent() {
                       >
                         {lead.company || lead.name}
                       </a>
+                      {!lead.company && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase tracking-tight">
+                          Residential
+                        </span>
+                      )}
                       {lead.company && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-tight">
                           Commercial
                         </span>
                       )}
-                      {lead.assigned_to && (
-                        <span 
-                          className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white shadow-sm ml-1"
-                          style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === lead.assigned_to)?.name || '') }}
-                          title={`Assigned to ${staffUsers.find(u => u.id === lead.assigned_to)?.name || 'Unknown'}`}
-                        >
-                          {getInitials(staffUsers.find(u => u.id === lead.assigned_to)?.name || '')}
-                        </span>
-                      )}
                     </div>
                     <div className="flex flex-col mt-0.5">
-                      <span className="text-xs text-gray-700 font-medium">{lead.name}</span>
-                      {lead.phone && (
-                        <span className="text-xs text-gray-500">{lead.phone}</span>
-                      )}
+                      {(() => {
+                        // Calculate last interaction from notes if last_dialed_at is null/outdated
+                        let lastContactDate = lead.last_dialed_at;
+                        if (lead.lead_notes && lead.lead_notes.length > 0) {
+                          const latestNoteDate = lead.lead_notes.reduce((latest: string, note: any) => 
+                            new Date(note.created_at) > new Date(latest) ? note.created_at : latest
+                          , lead.lead_notes[0].created_at);
+                          
+                          if (!lastContactDate || new Date(latestNoteDate) > new Date(lastContactDate)) {
+                            lastContactDate = latestNoteDate;
+                          }
+                        }
+
+                        if (!lastContactDate) return null;
+                        
+                        return (
+                          <span className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
+                            <Clock className="w-3 h-3 text-blue-500" />
+                            Last Contacted: {new Date(lastContactDate).toLocaleDateString()} {new Date(lastContactDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </div>
                 </div>
                 
                 <div className="flex items-center gap-4">
-                  <select
-                    value={lead.status}
-                    onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                    className={`text-xs font-bold rounded-full px-3 py-1.5 border-0 shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500
+                  <div
+                    className={`text-[10px] font-bold rounded-full px-3 py-1.5 border-0 shadow-sm uppercase tracking-wider
                       ${lead.status === 'fresh' ? 'bg-green-100 text-green-800' : 
                         lead.status === 'no pitch' ? 'bg-yellow-100 text-yellow-800' : 
                         lead.status === 'qualified' ? 'bg-blue-100 text-blue-800' : 
@@ -551,12 +619,8 @@ function LeadProcessingContent() {
                         lead.status === 'call back' ? 'bg-purple-100 text-purple-800' : 
                         'bg-gray-100 text-gray-800'}`}
                   >
-                    <option value="fresh">Fresh</option>
-                    <option value="no pitch">No Pitch</option>
-                    <option value="dnc">DNC</option>
-                    <option value="call back">Call Back</option>
-                    <option value="qualified">Qualified</option>
-                  </select>
+                    {lead.status}
+                  </div>
                 </div>
               </li>
             ))}

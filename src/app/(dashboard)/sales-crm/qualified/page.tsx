@@ -55,7 +55,7 @@ function QualifiedLeadsContent() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [radiusFilter, setRadiusFilter] = useState<string>('any');
   const [isGeocoding, setIsGeocoding] = useState(false);
-  const [assignedUserFilter, setAssignedUserFilter] = useState<string>('me');
+  const [assignedUserFilter, setAssignedUserFilter] = useState<string>(assignedToMe ? 'me' : 'all');
   const PAGE_SIZE = 25;
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
 
@@ -106,13 +106,13 @@ function QualifiedLeadsContent() {
 
       if (isInitial) {
         let countQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).in('status', ['qualified', 'sold']);
-        if (assignedToMe && profile) {
-          if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
-            countQuery = countQuery.eq('assigned_to', assignedUserFilter);
-          } else {
-            countQuery = countQuery.eq('assigned_to', profile.id);
-          }
+        
+        if (assignedUserFilter === 'me' && profile) {
+          countQuery = countQuery.eq('assigned_to', profile.id);
+        } else if (assignedUserFilter !== 'all' && profile?.role === 'super_admin') {
+          countQuery = countQuery.eq('assigned_to', assignedUserFilter);
         }
+
         if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
         if (propertyTypeFilter === 'commercial') countQuery = countQuery.neq('company', '').not('company', 'is', null);
         else if (propertyTypeFilter === 'residential') countQuery = countQuery.or('company.eq.,company.is.null');
@@ -170,12 +170,10 @@ function QualifiedLeadsContent() {
         query = query.or(`name.ilike.${search},company.ilike.${search},location.ilike.${search}`);
       }
 
-      if (assignedToMe && profile) {
-        if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
-          query = query.eq('assigned_to', assignedUserFilter);
-        } else {
-          query = query.eq('assigned_to', profile.id);
-        }
+      if (assignedUserFilter === 'me' && profile) {
+        query = query.eq('assigned_to', profile.id);
+      } else if (assignedUserFilter !== 'all' && profile?.role === 'super_admin') {
+        query = query.eq('assigned_to', assignedUserFilter);
       }
 
       if (phoneFilter === 'with_phone') {
@@ -229,7 +227,7 @@ function QualifiedLeadsContent() {
       fetchLeads(0, true);
     }, 50);
     return () => clearTimeout(timer);
-  }, [phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile, assignedUserFilter]);
+  }, [phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, profile?.id, assignedUserFilter]);
 
   const loadMore = () => {
     const nextPage = page + 1;
@@ -327,13 +325,13 @@ function QualifiedLeadsContent() {
           <p className="text-sm text-gray-500 mt-1">Manage leads that have been successfully pitched and qualified.</p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4">
-          <div className="text-sm font-medium text-gray-500 self-center whitespace-nowrap">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center gap-4 flex-wrap">
+          <div className="text-sm font-medium text-gray-500 whitespace-nowrap">
             {searchQuery.trim() && searchCount !== null 
               ? `Showing ${searchCount} of ${totalCount} leads` 
               : `Showing ${totalCount} leads`}
           </div>
-          <div className="relative flex-1 w-full sm:min-w-[200px] flex gap-2">
+          <div className="relative flex-1 w-full sm:min-w-[300px] flex gap-2">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
@@ -384,14 +382,20 @@ function QualifiedLeadsContent() {
             </button>
           </div>
 
-          {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
-            <button
-              onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+          <div className="flex items-center gap-2">
+            <label className="text-sm text-gray-600 font-medium">Assigned:</label>
+            <select
+              value={assignedUserFilter}
+              onChange={(e) => setAssignedUserFilter(e.target.value)}
+              className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8 max-w-[150px] truncate"
             >
-              Add Lead
-            </button>
-          )}
+              <option value="all">All Qualified</option>
+              <option value="me">My Qualified</option>
+              {profile?.role === 'super_admin' && staffUsers.map(u => (
+                <option key={u.id} value={u.id}>{u.name}</option>
+              ))}
+            </select>
+          </div>
           
           <div className="flex items-center gap-2">
             <label className="text-sm text-gray-600 font-medium">Phone:</label>
@@ -401,7 +405,7 @@ function QualifiedLeadsContent() {
               className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8"
             >
               <option value="all">All</option>
-              <option value="with_phone">Has Phone Number</option>
+              <option value="with_phone">Has Phone</option>
             </select>
           </div>
 
@@ -421,20 +425,13 @@ function QualifiedLeadsContent() {
             </div>
           )}
 
-          {assignedToMe && profile?.role === 'super_admin' && (
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 font-medium">View User:</label>
-              <select
-                value={assignedUserFilter}
-                onChange={(e) => setAssignedUserFilter(e.target.value)}
-                className="border-gray-300 rounded-lg shadow-sm text-sm focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8 max-w-[150px] truncate"
-              >
-                <option value="me">My Leads</option>
-                {staffUsers.map(u => (
-                  <option key={u.id} value={u.id}>{u.name}</option>
-                ))}
-              </select>
-            </div>
+          {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
+            <button
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+            >
+              Add Lead
+            </button>
           )}
         </div>
       </div>
@@ -498,6 +495,11 @@ function QualifiedLeadsContent() {
                       <p className="text-sm font-bold text-gray-900 truncate">
                         {lead.company || lead.name}
                       </p>
+                      {!lead.company && (
+                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase tracking-tight">
+                          Residential
+                        </span>
+                      )}
                       {lead.company && (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-tight">
                           Commercial

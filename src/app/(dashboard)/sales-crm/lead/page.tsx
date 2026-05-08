@@ -1,16 +1,128 @@
 "use client";
 import React, { useEffect, useState, useRef, Suspense } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
-import { Lead, StaffUser } from '@/types';
+import { Lead, StaffUser, LeadNote } from '@/types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft, Award, X } from 'lucide-react';
+import { Phone, Mail, Building, User, Calendar, MapPin, Send, ArrowRight, ChevronLeft, Award, X, Pin, Clock, Bell, MessageSquare } from 'lucide-react';
 
 import { QualifyLeadModal } from '@/components/QualifyLeadModal';
 import { MarketLeadModal } from '@/components/MarketLeadModal';
 import { AddLeadModal } from '@/components/AddLeadModal';
 import { useDialer } from '@/components/DialerProvider';
+
+const SMSModal = ({ isOpen, onClose, onSend, leadName, phoneNumber }: any) => {
+  const [message, setMessage] = useState('');
+  const [loading, setLoading] = useState(false);
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <MessageSquare className="w-5 h-5 text-blue-600" /> Send SMS to {leadName}
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div className="bg-gray-50 p-3 rounded-lg border border-gray-200">
+            <p className="text-xs text-gray-500 font-medium mb-1 uppercase tracking-wider">Recipient</p>
+            <p className="text-sm font-bold text-gray-900">{phoneNumber}</p>
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Message Body</label>
+            <textarea 
+              value={message} 
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Type your message here..."
+              className="w-full border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              rows={5}
+            />
+            <p className="text-[10px] text-gray-400 mt-1">Note: This will be logged as an interaction note.</p>
+          </div>
+          <button
+            onClick={async () => {
+              setLoading(true);
+              await onSend(message);
+              setLoading(false);
+              onClose();
+            }}
+            disabled={!message.trim() || loading}
+            className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
+            {loading ? 'Sending...' : 'Send SMS'} <Send className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// We'll create this component soon
+const CalendarModal = ({ isOpen, onClose, onSetReminder, leadId }: any) => {
+  const [date, setDate] = useState('');
+  const [time, setTime] = useState('');
+  const [content, setContent] = useState('Follow up call');
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Calendar className="w-5 h-5 text-blue-600" /> Set Call Reminder
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Date</label>
+            <input 
+              type="date" 
+              value={date} 
+              onChange={(e) => setDate(e.target.value)}
+              className="w-full border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Time</label>
+            <input 
+              type="time" 
+              value={time} 
+              onChange={(e) => setTime(e.target.value)}
+              className="w-full border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+            />
+          </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Reminder Note</label>
+            <textarea 
+              value={content} 
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="What is this reminder for?"
+              className="w-full border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              rows={3}
+            />
+          </div>
+          <button
+            onClick={() => onSetReminder(`${date}T${time}`, content)}
+            disabled={!date || !time}
+            className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
+          >
+            Save Reminder <Bell className="w-4 h-4" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 interface Grant {
   id: string;
@@ -70,16 +182,9 @@ const stringToColor = (str: string) => {
   return '#' + '00000'.substring(0, 6 - c.length) + c;
 };
 
-interface LeadNote {
-  id: string;
-  author_name: string;
-  content: string;
-  created_at: string;
-  user_id: string;
-}
-
 function LeadDetailsContent() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const { profile } = useAuthStore();
   
   const id = searchParams.get('id');
@@ -92,22 +197,96 @@ function LeadDetailsContent() {
   const [loading, setLoading] = useState(true);
   const [newNote, setNewNote] = useState('');
   const [nextLeadId, setNextLeadId] = useState<string | null>(null);
+  const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [isAutoDialEnabled, setIsAutoDialEnabled] = useState(false);
   
   const [isQualifyModalOpen, setIsQualifyModalOpen] = useState(false);
   const [isMarketModalOpen, setIsMarketModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
+  const [isSMSModalOpen, setIsSMSModalOpen] = useState(false);
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   
-  const { makeCall } = useDialer();
+  const { makeCall, activeCall } = useDialer();
   
   const notesEndRef = useRef<HTMLDivElement>(null);
+  const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const wasInCallRef = useRef(false);
+
+  useEffect(() => {
+    // Auto-dial logic: when call ends and auto-dial is on, go to next lead
+    if (wasInCallRef.current && !activeCall && isAutoDialEnabled && nextLeadId) {
+      toast.success('Auto-dialing next lead in 3 seconds...');
+      setTimeout(() => {
+        goToNextLead();
+      }, 3000);
+    }
+    wasInCallRef.current = !!activeCall;
+  }, [activeCall, isAutoDialEnabled, nextLeadId]);
 
   useEffect(() => {
     if (id) {
       fetchLeadAndNotes();
       fetchStaffUsers();
+
+      // Real-time notes subscription
+      const notesChannel = supabase
+        .channel(`lead-notes-${id}`)
+        .on('postgres_changes', { 
+          event: '*', 
+          table: 'lead_notes', 
+          schema: 'public', 
+          filter: `lead_id=eq.${id}` 
+        }, (payload) => {
+          if (payload.eventType === 'INSERT') {
+            const newNote = payload.new as LeadNote;
+            setNotes(prev => {
+              if (prev.find(n => n.id === newNote.id)) return prev;
+              return [...prev, newNote];
+            });
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedNote = payload.new as LeadNote;
+            setNotes(prev => prev.map(n => n.id === updatedNote.id ? updatedNote : n));
+          } else if (payload.eventType === 'DELETE') {
+            setNotes(prev => prev.filter(n => n.id === payload.old.id));
+          }
+        })
+        .subscribe();
+
+      // Typing indicator subscription
+      const presenceChannel = supabase.channel(`lead-presence-${id}`, {
+        config: { presence: { key: profile?.id || 'unknown' } }
+      });
+
+      presenceChannel
+        .on('presence', { event: 'sync' }, () => {
+          const state = presenceChannel.presenceState();
+          const typing: string[] = [];
+          Object.values(state).forEach((presences: any) => {
+            presences.forEach((p: any) => {
+              if (p.isTyping && p.userId !== profile?.id) {
+                typing.push(p.userName);
+              }
+            });
+          });
+          setTypingUsers(typing);
+        })
+        .subscribe(async (status) => {
+          if (status === 'SUBSCRIBED') {
+            await presenceChannel.track({
+              userId: profile?.id,
+              userName: profile?.name,
+              isTyping: false
+            });
+          }
+        });
+
+      return () => {
+        supabase.removeChannel(notesChannel);
+        supabase.removeChannel(presenceChannel);
+      };
     }
-  }, [id, tab]);
+  }, [id, tab, profile?.id]);
 
   useEffect(() => {
     // Scroll to bottom of notes when they load or update
@@ -140,17 +319,34 @@ function LeadDetailsContent() {
       setLead(leadData);
 
       // Fetch next lead for the "Next Lead" button
-      let nextQuery = supabase.from('leads').select('id');
+      // Match the order in sales-crm/page.tsx: last_dialed_at ASC NULLS FIRST, created_at DESC
+      let nextQuery = supabase.from('leads').select('id, last_dialed_at, created_at');
       if (tab === 'qualified') {
         nextQuery = nextQuery.eq('status', 'qualified');
       } else {
         nextQuery = nextQuery.neq('status', 'qualified');
       }
       
-      // Find the next older lead
+      // Filter for leads "after" the current one in the sort order
+      if (leadData.last_dialed_at === null) {
+        // Current is never dialed. Next is:
+        // 1. Another never dialed lead uploaded earlier (smaller created_at)
+        // 2. Another never dialed lead uploaded at the same time but smaller ID
+        // 3. A lead that has been dialed (since non-null > null)
+        nextQuery = nextQuery.or(`and(last_dialed_at.is.null,or(created_at.lt.${leadData.created_at},and(created_at.eq.${leadData.created_at},id.lt.${leadData.id}))),last_dialed_at.not.is.null`);
+      } else {
+        // Current has been dialed. Next is:
+        // 1. A lead dialed even longer ago (greater date)
+        // 2. A lead dialed at the same time but uploaded earlier
+        // 3. A lead dialed at the same time, uploaded at same time, but smaller ID
+        nextQuery = nextQuery.or(`last_dialed_at.gt.${leadData.last_dialed_at},and(last_dialed_at.eq.${leadData.last_dialed_at},or(created_at.lt.${leadData.created_at},and(created_at.eq.${leadData.created_at},id.lt.${leadData.id})))`);
+      }
+
       const { data: nextData } = await nextQuery
-        .lt('created_at', leadData.created_at)
+        .is('being_dialed_by', null)
+        .order('last_dialed_at', { ascending: true, nullsFirst: true })
         .order('created_at', { ascending: false })
+        .order('id', { ascending: false })
         .limit(1);
         
       if (nextData && nextData.length > 0) {
@@ -315,10 +511,129 @@ function LeadDetailsContent() {
 
       if (error) throw error;
       
-      setNotes([...notes, data]);
+      // Update last_dialed_at on the lead so the interaction is tracked for sorting
+      await supabase.from('leads').update({ last_dialed_at: new Date().toISOString() }).eq('id', lead.id);
+      
+      setNotes(prev => [...prev, data]);
       setNewNote('');
+      // Stop typing status
+      handleTyping(false);
     } catch (error: any) {
       toast.error('Failed to add note: ' + error.message);
+    }
+  };
+
+  const togglePinNote = async (noteId: string, currentPinned: boolean) => {
+    try {
+      const { error } = await supabase
+        .from('lead_notes')
+        .update({ is_pinned: !currentPinned })
+        .eq('id', noteId);
+
+      if (error) throw error;
+      setNotes(prev => prev.map(n => n.id === noteId ? { ...n, is_pinned: !currentPinned } : n));
+    } catch (error: any) {
+      toast.error('Failed to pin note: ' + error.message);
+    }
+  };
+
+  const handleTyping = (isTyping: boolean) => {
+    const presenceChannel = supabase.channel(`lead-presence-${id}`);
+    presenceChannel.track({
+      userId: profile?.id,
+      userName: profile?.name,
+      isTyping
+    });
+  };
+
+  const sendSMS = async (body: string) => {
+    if (!lead || !profile || !profile.id) return;
+
+    try {
+      const res = await fetch('/api/twilio/send-sms', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          to: lead.phone,
+          body: body,
+          userId: profile.id
+        })
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to send SMS');
+
+      // Add a note to interaction notes
+      const { data: noteData, error: noteError } = await supabase
+        .from('lead_notes')
+        .insert([{
+          lead_id: lead.id,
+          user_id: profile.id,
+          author_name: profile.name,
+          content: `✉️ SMS Sent: ${body}`
+        }])
+        .select()
+        .single();
+
+      if (noteError) throw noteError;
+      
+      // Update last_dialed_at on the lead so the interaction is tracked
+      await supabase.from('leads').update({ last_dialed_at: new Date().toISOString() }).eq('id', lead.id);
+
+      setNotes(prev => [...prev, noteData]);
+      toast.success('SMS sent successfully');
+    } catch (error: any) {
+      toast.error(error.message);
+    }
+  };
+
+  const onNoteInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setNewNote(e.target.value);
+    handleTyping(true);
+    
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      handleTyping(false);
+    }, 2000);
+  };
+
+  const setReminder = async (reminderAt: string, content: string) => {
+    if (!lead || !profile) return;
+
+    try {
+      const { error: reminderError } = await supabase
+        .from('lead_reminders')
+        .insert([{
+          lead_id: lead.id,
+          user_id: profile.id,
+          reminder_at: reminderAt,
+          content: content
+        }]);
+
+      if (reminderError) throw reminderError;
+
+      // Also add a note about the reminder
+      const { data: noteData, error: noteError } = await supabase
+        .from('lead_notes')
+        .insert([{
+          lead_id: lead.id,
+          user_id: profile.id,
+          author_name: profile.name,
+          content: `📅 Reminder set for ${new Date(reminderAt).toLocaleString()}: ${content}`
+        }])
+        .select()
+        .single();
+
+      if (noteError) throw noteError;
+      
+      // Update last_dialed_at on the lead so the interaction is tracked
+      await supabase.from('leads').update({ last_dialed_at: new Date().toISOString() }).eq('id', lead.id);
+      
+      setNotes(prev => [...prev, noteData]);
+      setIsCalendarModalOpen(false);
+      toast.success('Reminder set successfully');
+    } catch (error: any) {
+      toast.error('Failed to set reminder: ' + error.message);
     }
   };
 
@@ -401,6 +716,16 @@ function LeadDetailsContent() {
             </select>
           </div>
 
+          <div className="flex items-center bg-white border border-gray-200 rounded-lg shadow-sm overflow-hidden px-3 py-1.5 gap-2">
+            <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Auto-Dial</span>
+            <button
+              onClick={() => setIsAutoDialEnabled(!isAutoDialEnabled)}
+              className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none ${isAutoDialEnabled ? 'bg-blue-600' : 'bg-gray-200'}`}
+            >
+              <span className={`pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${isAutoDialEnabled ? 'translate-x-4' : 'translate-x-0'}`} />
+            </button>
+          </div>
+
           <button
             onClick={goToNextLead}
             disabled={!nextLeadId}
@@ -456,18 +781,36 @@ function LeadDetailsContent() {
                   <label className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1 block">Phone Number</label>
                   <div className="flex items-center gap-4">
                     {profile?.twilio_number ? (
-                      <button
-                        onClick={() => makeCall(lead.phone!, lead.id, profile?.name)}
-                        className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline text-left"
-                      >
-                        <div className="p-1.5 bg-blue-50 rounded-md"><Phone className="w-4 h-4" /></div>
-                        {lead.phone}
-                      </button>
+                      <div className="flex items-center gap-2">
+                        <button
+                          onClick={() => makeCall(lead.phone!, lead.id, profile?.name)}
+                          className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline text-left"
+                        >
+                          <div className="p-1.5 bg-blue-50 rounded-md"><Phone className="w-4 h-4" /></div>
+                          {lead.phone}
+                        </button>
+                        <button
+                          onClick={() => setIsSMSModalOpen(true)}
+                          className="p-1.5 bg-gray-50 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors"
+                          title="Send SMS"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                      </div>
                     ) : (
-                      <a href={`tel:${lead.phone}`} className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline">
-                        <div className="p-1.5 bg-blue-50 rounded-md"><Phone className="w-4 h-4" /></div>
-                        {lead.phone}
-                      </a>
+                      <div className="flex items-center gap-2">
+                        <a href={`tel:${lead.phone}`} className="flex items-center gap-2.5 text-sm font-semibold text-blue-600 hover:text-blue-800 hover:underline">
+                          <div className="p-1.5 bg-blue-50 rounded-md"><Phone className="w-4 h-4" /></div>
+                          {lead.phone}
+                        </a>
+                        <button
+                          onClick={() => setIsSMSModalOpen(true)}
+                          className="p-1.5 bg-gray-50 text-gray-500 hover:bg-blue-50 hover:text-blue-600 rounded-md transition-colors"
+                          title="Send SMS"
+                        >
+                          <MessageSquare className="w-4 h-4" />
+                        </button>
+                      </div>
                     )}
                   </div>
                 </div>
@@ -789,20 +1132,63 @@ function LeadDetailsContent() {
                 <p>No notes yet. Start the conversation!</p>
               </div>
             ) : (
-              notes.map((note) => {
-                const isMe = profile?.id === note.user_id;
-                return (
-                  <div key={note.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
-                    <div className="flex items-baseline gap-2 mb-1 mx-1">
-                      <span className="text-xs font-semibold text-gray-600">{note.author_name}</span>
-                      <span className="text-[10px] text-gray-400">{new Date(note.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</span>
+              <div className="space-y-6">
+                {/* Pinned Notes First */}
+                {notes.filter(n => n.is_pinned).map((note) => {
+                  const isMe = profile?.id === note.user_id;
+                  return (
+                    <div key={note.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                      <div className="flex items-baseline gap-2 mb-1 mx-1">
+                        <Pin className="w-3 h-3 text-blue-500 fill-blue-500" />
+                        <span className="text-xs font-semibold text-gray-600">{note.author_name}</span>
+                        <span className="text-[10px] text-gray-400">{new Date(note.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</span>
+                      </div>
+                      <div className={`group relative max-w-[85%] px-4 py-3 rounded-2xl text-sm bg-blue-50 border border-blue-200 text-gray-900 shadow-sm ${isMe ? 'rounded-tr-sm' : 'rounded-tl-sm'}`}>
+                        {note.content}
+                        <button 
+                          onClick={() => togglePinNote(note.id, true)}
+                          className="absolute -right-2 -top-2 p-1 bg-white rounded-full border border-gray-200 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Pin className="w-3 h-3 text-gray-400" />
+                        </button>
+                      </div>
                     </div>
-                    <div className={`max-w-[85%] px-4 py-3 rounded-2xl text-sm ${isMe ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white border border-gray-200 text-gray-900 shadow-sm rounded-tl-sm'}`}>
-                      {note.content}
+                  );
+                })}
+
+                {/* Regular Notes */}
+                {notes.filter(n => !n.is_pinned).map((note) => {
+                  const isMe = profile?.id === note.user_id;
+                  return (
+                    <div key={note.id} className={`flex flex-col ${isMe ? 'items-end' : 'items-start'}`}>
+                      <div className="flex items-baseline gap-2 mb-1 mx-1">
+                        <span className="text-xs font-semibold text-gray-600">{note.author_name}</span>
+                        <span className="text-[10px] text-gray-400">{new Date(note.created_at).toLocaleString([], { hour: '2-digit', minute: '2-digit', month: 'short', day: 'numeric' })}</span>
+                      </div>
+                      <div className={`group relative max-w-[85%] px-4 py-3 rounded-2xl text-sm ${isMe ? 'bg-blue-600 text-white rounded-tr-sm' : 'bg-white border border-gray-200 text-gray-900 shadow-sm rounded-tl-sm'}`}>
+                        {note.content}
+                        <button 
+                          onClick={() => togglePinNote(note.id, false)}
+                          className="absolute -right-2 -top-2 p-1 bg-white rounded-full border border-gray-200 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <Pin className="w-3 h-3 text-gray-400" />
+                        </button>
+                      </div>
                     </div>
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
+            )}
+            
+            {typingUsers.length > 0 && (
+              <div className="flex items-center gap-2 text-[10px] text-gray-400 italic mt-2 animate-pulse">
+                <div className="flex gap-1">
+                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                  <div className="w-1 h-1 bg-gray-400 rounded-full"></div>
+                </div>
+                {typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...
+              </div>
             )}
             <div ref={notesEndRef} />
           </div>
@@ -810,13 +1196,23 @@ function LeadDetailsContent() {
           {/* Note Input */}
           <div className="p-4 bg-white border-t border-gray-200 rounded-b-2xl shrink-0">
             <form onSubmit={submitNote} className="flex gap-3">
-              <input
-                type="text"
-                value={newNote}
-                onChange={(e) => setNewNote(e.target.value)}
-                placeholder="Type a note about this lead..."
-                className="flex-1 border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-              />
+              <div className="flex-1 relative">
+                <input
+                  type="text"
+                  value={newNote}
+                  onChange={onNoteInputChange}
+                  placeholder="Type a note about this lead..."
+                  className="w-full border-gray-300 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm pr-10"
+                />
+                <button
+                  type="button"
+                  onClick={() => setIsCalendarModalOpen(true)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-blue-600 transition-colors"
+                  title="Set Reminder"
+                >
+                  <Calendar className="w-4 h-4" />
+                </button>
+              </div>
               <button
                 type="submit"
                 disabled={!newNote.trim()}
@@ -829,6 +1225,21 @@ function LeadDetailsContent() {
         </div>
 
       </div>
+
+      <CalendarModal 
+        isOpen={isCalendarModalOpen} 
+        onClose={() => setIsCalendarModalOpen(false)} 
+        onSetReminder={setReminder}
+        leadId={lead.id}
+      />
+
+      <SMSModal 
+        isOpen={isSMSModalOpen} 
+        onClose={() => setIsSMSModalOpen(false)} 
+        onSend={sendSMS}
+        leadName={lead.company || lead.name}
+        phoneNumber={lead.phone}
+      />
 
       {isQualifyModalOpen && (
         <QualifyLeadModal 

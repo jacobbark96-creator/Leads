@@ -11,6 +11,7 @@ const darkerGrotesque = Darker_Grotesque({ subsets: ['latin'], variable: '--font
 export const metadata: Metadata = {
   title: 'Openlead | High-Converting Exclusive Leads for Contractors',
   description: 'Stop fighting over shared data. Openlead generates exclusive, pre-qualified leads for Solar, Roofing, and Home Services directly to your CRM.',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1',
   keywords: ['contractor leads', 'exclusive leads', 'solar leads', 'roofing leads', 'home services marketing', 'openlead', 'UK contractor leads'],
   authors: [{ name: 'Openlead' }],
   creator: 'Openlead',

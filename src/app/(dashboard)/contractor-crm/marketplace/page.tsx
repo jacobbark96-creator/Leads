@@ -129,7 +129,7 @@ function MarketplaceAdminContent() {
                   </div>
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
-                      {lead.name}
+                      {lead.company || lead.name}
                       {lead.is_marketed ? (
                         <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-green-100 text-green-800 border border-green-200 uppercase tracking-wider">
                           LIVE

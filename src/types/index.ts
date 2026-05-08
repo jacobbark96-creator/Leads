@@ -102,9 +102,32 @@ export interface Lead {
   job_title?: string;
   upload_name?: string | null;
   bills_url?: string;
+  being_dialed_by?: string | null;
+  last_dialed_at?: string | null;
   clients?: { company_name: string; contact_name: string } | null;
   purchase_id?: string;
   purchase_status?: string;
+  lead_notes?: any[];
+}
+
+export interface LeadNote {
+  id: string;
+  lead_id: string;
+  user_id: string;
+  author_name: string;
+  content: string;
+  is_pinned: boolean;
+  created_at: string;
+}
+
+export interface LeadReminder {
+  id: string;
+  lead_id: string;
+  user_id: string;
+  reminder_at: string;
+  content: string;
+  is_completed: boolean;
+  created_at: string;
 }
 
 export interface Contractor {

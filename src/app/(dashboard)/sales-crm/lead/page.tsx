@@ -271,7 +271,7 @@ function LeadDetailsContent() {
           });
           setTypingUsers(typing);
         })
-        .on('presence', { event: 'join' }, ({ key, newPresences }) => {
+        .on('presence', { event: 'join' }, () => {
           const state = presenceChannel.presenceState();
           const typing: string[] = [];
           Object.values(state).forEach((presences: any) => {
@@ -283,7 +283,7 @@ function LeadDetailsContent() {
           });
           setTypingUsers(typing);
         })
-        .on('presence', { event: 'leave' }, ({ key, leftPresences }) => {
+        .on('presence', { event: 'leave' }, () => {
           const state = presenceChannel.presenceState();
           const typing: string[] = [];
           Object.values(state).forEach((presences: any) => {
@@ -561,14 +561,18 @@ function LeadDetailsContent() {
     }
   };
 
-  const handleTyping = (isTyping: boolean) => {
+  const handleTyping = async (isTyping: boolean) => {
     if (!profile?.id) return;
     const presenceChannel = supabase.channel(`lead-presence-${id}`);
-    presenceChannel.track({
-      userId: profile.id,
-      userName: profile.name,
-      isTyping
-    });
+    
+    // Only track if we are already subscribed
+    if (presenceChannel.state === 'joined') {
+      await presenceChannel.track({
+        userId: profile.id,
+        userName: profile.name,
+        isTyping
+      });
+    }
   };
 
   const sendSMS = async (body: string) => {

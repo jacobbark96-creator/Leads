@@ -206,27 +206,29 @@ export function AdminNotifications() {
                           </span>
                         </div>
                         <p className="text-sm font-bold text-gray-900 truncate">
-                          Call: {reminder.leads?.company || reminder.leads?.name}
+                          {reminder.leads ? `Call: ${reminder.leads.company || reminder.leads.name}` : 'Missed Call'}
                         </p>
                         <p className="text-xs text-gray-500 line-clamp-2 mb-3">
                           {reminder.content}
                         </p>
                         
                         <div className="flex gap-2">
-                          <Link
-                            href={`/sales-crm/lead?id=${reminder.lead_id}`}
-                            onClick={() => setIsOpen(false)}
-                            className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-bold rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-                          >
-                            <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                            View Lead
-                          </Link>
+                          {reminder.lead_id && (
+                            <Link
+                              href={`/sales-crm/lead?id=${reminder.lead_id}`}
+                              onClick={() => setIsOpen(false)}
+                              className="flex-1 inline-flex items-center justify-center px-3 py-2 border border-gray-300 shadow-sm text-xs font-bold rounded-md text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+                            >
+                              <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
+                              View Lead
+                            </Link>
+                          )}
                           <button
                             onClick={() => completeReminder(reminder.id)}
-                            className="inline-flex items-center justify-center p-2 border border-transparent rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm"
+                            className="inline-flex items-center justify-center p-2 border border-transparent rounded-md text-white bg-green-600 hover:bg-green-700 transition-colors shadow-sm flex-1"
                             title="Mark as done"
                           >
-                            <Check className="w-4 h-4" />
+                            <Check className="w-4 h-4 mr-1.5" /> Done
                           </button>
                         </div>
                       </div>

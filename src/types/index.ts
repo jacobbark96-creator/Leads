@@ -104,6 +104,8 @@ export interface Lead {
   bills_url?: string;
   being_dialed_by?: string | null;
   last_dialed_at?: string | null;
+  other_contacts?: string | null;
+  other_contact_numbers?: string | null;
   clients?: { company_name: string; contact_name: string } | null;
   purchase_id?: string;
   purchase_status?: string;

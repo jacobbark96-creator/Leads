@@ -20,7 +20,10 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
 
   return (
     <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>
-      <div className="space-y-6">
+      {pathname === '/contractor-crm/contractor-v2' ? (
+        <>{children}</>
+      ) : (
+        <div className="space-y-6">
         <div className="flex items-center justify-between">
           <h1 className="text-xl font-bold text-gray-900">Contractor CRM</h1>
           
@@ -136,6 +139,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
           {children}
         </div>
       </div>
+      )}
     </ProtectedRoute>
   );
 }

@@ -245,7 +245,7 @@ function OnboardedContractorsContent() {
                   </select>
                   
                   <a
-                    href={`/contractor-crm/contractor?id=${contractor.id}`}
+                    href={`/contractor-crm/contractor-v2?id=${contractor.id}`}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
                   >
                     View Details

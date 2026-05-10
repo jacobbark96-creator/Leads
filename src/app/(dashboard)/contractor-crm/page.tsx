@@ -517,7 +517,7 @@ function ContractorProcessingContent() {
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
                         <a 
-                          href={`/contractor-crm/contractor?id=${contractor.id}`}
+                          href={`/contractor-crm/contractor-v2?id=${contractor.id}`}
                           className="text-blue-600 hover:text-blue-800 hover:underline"
                         >
                           {contractor.company_name || contractor.company || contractor.name || 'Unnamed Contractor'}

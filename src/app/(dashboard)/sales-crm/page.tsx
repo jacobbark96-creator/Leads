@@ -474,8 +474,8 @@ function LeadProcessingContent() {
                       
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${isCommercial ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
-                            {isCommercial ? <Building className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
+                          <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${lead.building_type === 'Residential' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
+                            {lead.building_type === 'Residential' ? <User className="w-3.5 h-3.5" /> : <Building className="w-3.5 h-3.5" />}
                           </div>
                           <a 
                             href={`/sales-crm/lead-v2?id=${lead.id}&tab=${assignedToMe ? 'my' : 'unqualified'}`}
@@ -487,13 +487,13 @@ function LeadProcessingContent() {
                       </td>
                       
                       <td className="py-3 px-4">
-                        {isCommercial ? (
-                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-100 uppercase tracking-wider">
-                            Commercial
-                          </span>
-                        ) : (
+                        {lead.building_type === 'Residential' ? (
                           <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-100 uppercase tracking-wider">
                             Residential
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-100 uppercase tracking-wider">
+                            Commercial
                           </span>
                         )}
                       </td>

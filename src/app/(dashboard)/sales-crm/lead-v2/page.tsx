@@ -164,24 +164,33 @@ const EditPrimaryContactModal = ({ isOpen, onClose, onSave, form, setForm }: any
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
-        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
-          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Contact className="w-5 h-5 text-blue-600" /> Edit Primary Contact
-          </h3>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-        <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
-          <div>
-            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Name</label>
-            <input 
-              type="text" 
-              value={form.name || ''} 
-              onChange={(e) => setForm({...form, name: e.target.value})}
-              className="w-full border border-gray-300 px-3 py-2 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
-            />
+          <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+              <Contact className="w-5 h-5 text-blue-600" /> Edit Details
+            </h3>
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+              <X className="w-5 h-5" />
+            </button>
           </div>
+          <div className="p-6 space-y-4 max-h-[70vh] overflow-y-auto">
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Company Name</label>
+              <input 
+                type="text" 
+                value={form.company || ''} 
+                onChange={(e) => setForm({...form, company: e.target.value})}
+                className="w-full border border-gray-300 px-3 py-2 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Contact Name</label>
+              <input 
+                type="text" 
+                value={form.name || ''} 
+                onChange={(e) => setForm({...form, name: e.target.value})}
+                className="w-full border border-gray-300 px-3 py-2 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              />
+            </div>
           <div>
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Job Title</label>
             <input 
@@ -423,9 +432,21 @@ function LeadDetailsV2Content() {
     try {
       setLoading(true);
       
+      // Join with companies, buildings, and contacts for the full enriched view
       const { data: leadData, error: leadError } = await supabase
         .from('leads')
-        .select('*')
+        .select(`
+          *,
+          companies!companies_lead_id_fkey (
+            id, normalized_name, company_number, incorporation_date, sic_code, industry, employee_count, estimated_revenue, description,
+            contacts (
+              id, full_name, role, email, mobile, linkedin_url, confidence_score, source
+            )
+          ),
+          buildings!buildings_lead_id_fkey (
+            id, property_type, roof_type, roof_area_estimate, solar_potential_score, epc_rating, orientation, estimated_energy_usage, installation_complexity, max_array_panels_count, max_sunshine_hours_per_year, satellite_image_url, latitude, longitude
+          )
+        `)
         .eq('id', id)
         .single();
         
@@ -581,13 +602,14 @@ function LeadDetailsV2Content() {
       const { error } = await supabase
         .from('leads')
         .update({
-          name: updatePayload.name,
-          job_title: updatePayload.job_title,
-          email: updatePayload.email,
-          phone: updatePayload.phone,
-          secondary_phone: updatePayload.secondary_phone,
-          linkedin_url: updatePayload.linkedin_url
-        })
+            name: updatePayload.name,
+            company: updatePayload.company,
+            job_title: updatePayload.job_title,
+            email: updatePayload.email,
+            phone: updatePayload.phone,
+            secondary_phone: updatePayload.secondary_phone,
+            linkedin_url: updatePayload.linkedin_url
+          })
         .eq('id', lead.id);
 
       if (error) throw error;
@@ -983,6 +1005,12 @@ function LeadDetailsV2Content() {
   if (!lead) {
     return <div className="h-screen w-full flex justify-center items-center bg-[#f5f7fb]">Lead not found.</div>;
   }
+
+  // Extract enriched data safely
+  const companyEnrichment = (lead as any)?.companies && (lead as any).companies.length > 0 ? (lead as any).companies[0] : null;
+  const buildingEnrichment = (lead as any)?.buildings && (lead as any).buildings.length > 0 ? (lead as any).buildings[0] : null;
+  const additionalContacts = companyEnrichment?.contacts || [];
+
   return (
     <div style={{ width: '142.85vw', height: '142.85vh', transform: 'scale(0.7)', transformOrigin: 'top left', position: 'fixed', top: 0, left: 0 }} className="overflow-hidden bg-[#f5f7fb] font-sans text-[#111827]">
       <div className="flex w-full h-full">
@@ -1095,15 +1123,15 @@ function LeadDetailsV2Content() {
                   {isMoreMenuOpen && (
                     <div className="absolute top-full mt-1 right-0 w-48 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
                       <button 
-                        onClick={() => {
-                          setEditForm(lead || {});
-                          setIsPrimaryContactModalOpen(true);
-                          setIsMoreMenuOpen(false);
-                        }}
-                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                      >
-                        <Pencil className="w-4 h-4" /> Edit Contact
-                      </button>
+                            onClick={() => {
+                              setEditForm(lead || {});
+                              setIsPrimaryContactModalOpen(true);
+                              setIsMoreMenuOpen(false);
+                            }}
+                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                          >
+                            <Pencil className="w-4 h-4" /> Edit Details
+                          </button>
                     </div>
                   )}
                 </div>
@@ -1137,7 +1165,7 @@ function LeadDetailsV2Content() {
                   {editingCard === 'snapshot' ? (
                     <input type="text" value={(editForm as any).industry || ''} onChange={e => setEditForm({...editForm, industry: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(lead as any).industry || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.industry || (lead as any).industry || 'N/A'}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
@@ -1145,7 +1173,7 @@ function LeadDetailsV2Content() {
                   {editingCard === 'snapshot' ? (
                     <input type="text" value={(editForm as any).company_type || ''} onChange={e => setEditForm({...editForm, company_type: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(lead as any).company_type || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.description?.replace('Status: ', '') || (lead as any).company_type || 'N/A'}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
@@ -1161,7 +1189,7 @@ function LeadDetailsV2Content() {
                   {editingCard === 'snapshot' ? (
                     <input type="text" value={(editForm as any).company_number || ''} onChange={e => setEditForm({...editForm, company_number: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(lead as any).company_number || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.company_number || (lead as any).company_number || 'N/A'}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
@@ -1169,7 +1197,7 @@ function LeadDetailsV2Content() {
                   {editingCard === 'snapshot' ? (
                     <input type="text" value={(editForm as any).revenue || ''} onChange={e => setEditForm({...editForm, revenue: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(lead as any).revenue || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.estimated_revenue || (lead as any).revenue || 'N/A'}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
@@ -1177,7 +1205,7 @@ function LeadDetailsV2Content() {
                   {editingCard === 'snapshot' ? (
                     <input type="text" value={(editForm as any).employees || ''} onChange={e => setEditForm({...editForm, employees: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(lead as any).employees || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.employee_count || (lead as any).employees || 'N/A'}</span>
                   )}
                 </div>
               </div>
@@ -1196,33 +1224,51 @@ function LeadDetailsV2Content() {
               </div>
               
               <div className="flex flex-col gap-3 mt-1 flex-1 overflow-y-auto pr-1">
-                {otherContacts && otherContacts.length > 0 ? (
-                  otherContacts.map((contact, i) => (
-                    <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 cursor-pointer group">
-                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
-                        {getInitials(contact.name || contact.contact_name)}
+                {(() => {
+                  const combinedContacts = [
+                    ...(otherContacts || []),
+                    ...(additionalContacts?.map((c: any) => ({
+                      name: c.full_name,
+                      role: c.role,
+                      email: c.email,
+                      phone: c.mobile,
+                      source: c.source
+                    })) || [])
+                  ];
+
+                  return combinedContacts.length > 0 ? (
+                    combinedContacts.map((contact, i) => (
+                      <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 cursor-pointer group relative">
+                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
+                          {getInitials(contact.name || contact.contact_name)}
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-gray-900 truncate">{contact.name || contact.contact_name}</span>
+                            {contact.source === 'Companies House' && (
+                              <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase">CH Verified</span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-gray-500 truncate">{contact.role || contact.job_title || 'Contact'}</span>
+                        </div>
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          {contact.phone && (
+                            <button onClick={(e) => { e.stopPropagation(); onCallClick(contact.phone); }} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Call">
+                              <Phone className="w-3 h-3" />
+                            </button>
+                          )}
+                          {contact.email && (
+                            <a href={`mailto:${contact.email}`} onClick={e => e.stopPropagation()} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Email">
+                              <Mail className="w-3 h-3" />
+                            </a>
+                          )}
+                        </div>
                       </div>
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <span className="text-xs font-bold text-gray-900 truncate">{contact.name || contact.contact_name}</span>
-                        <span className="text-[10px] text-gray-500 truncate">{contact.role || contact.job_title || 'Contact'}</span>
-                      </div>
-                      <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {contact.phone && (
-                          <button onClick={(e) => { e.stopPropagation(); onCallClick(contact.phone); }} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Call">
-                            <Phone className="w-3 h-3" />
-                          </button>
-                        )}
-                        {contact.email && (
-                          <a href={`mailto:${contact.email}`} onClick={e => e.stopPropagation()} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Email">
-                            <Mail className="w-3 h-3" />
-                          </a>
-                        )}
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-xs text-gray-500 text-center mt-4">No additional contacts.</div>
-                )}
+                    ))
+                  ) : (
+                    <div className="text-xs text-gray-500 text-center mt-4">No additional contacts.</div>
+                  );
+                })()}
               </div>
             </div>
 
@@ -1390,7 +1436,11 @@ function LeadDetailsV2Content() {
                     {editingCard === 'opportunity' ? (
                       <input type="text" value={(editForm as any).est_system_size || ''} onChange={e => setEditForm({...editForm, est_system_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(lead as any).est_system_size || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">
+                        {buildingEnrichment?.max_array_panels_count 
+                          ? `${(buildingEnrichment.max_array_panels_count * 0.4).toFixed(1)} kWp` 
+                          : (lead as any).est_system_size || 'N/A'}
+                      </span>
                     )}
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
@@ -1418,10 +1468,10 @@ function LeadDetailsV2Content() {
                     )}
                   </div>
                 </div>
-              </div>
-              <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
-                <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Key Information</h3>
+                </div>
+                <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Key Information</h3>
                   <button onClick={() => handleEditClick('keyinfo')} className="text-gray-400 hover:text-blue-600 transition-colors">
                     {editingCard === 'keyinfo' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
                   </button>
@@ -1473,7 +1523,7 @@ function LeadDetailsV2Content() {
                   </button>
                 </div>
                 <div className="w-full h-40 shrink-0 bg-gray-200 rounded-lg mb-4 overflow-hidden relative group cursor-pointer">
-                  <img src={(lead.photos && lead.photos.length > 0) ? lead.photos[currentImageIndex] : "https://images.unsplash.com/photo-1613545325278-f24b0cae1224?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"} alt="Building Aerial" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                  <img src={buildingEnrichment?.satellite_image_url || (lead.photos && lead.photos.length > 0 ? lead.photos[currentImageIndex] : "https://images.unsplash.com/photo-1613545325278-f24b0cae1224?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")} alt="Building Aerial" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   
                   {/* Left/Right Controls */}
                   {lead.photos && lead.photos.length > 1 && (
@@ -1535,7 +1585,7 @@ function LeadDetailsV2Content() {
                     {editingCard === 'building' ? (
                       <input type="text" value={(editForm as any).building_type || ''} onChange={e => setEditForm({...editForm, building_type: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(lead as any).building_type || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium capitalize">{buildingEnrichment?.property_type || (lead as any).building_type || 'N/A'}</span>
                     )}
                   </div>
                   <div className="flex flex-col">
@@ -1583,7 +1633,9 @@ function LeadDetailsV2Content() {
                     {editingCard === 'building' ? (
                       <input type="text" value={(editForm as any).roof_size || ''} onChange={e => setEditForm({...editForm, roof_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(lead as any).roof_size || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">
+                        {buildingEnrichment?.roof_area_estimate ? `${buildingEnrichment.roof_area_estimate} m²` : (lead as any).roof_size || 'N/A'}
+                      </span>
                     )}
                   </div>
                   <div className="flex flex-col">
@@ -1591,19 +1643,21 @@ function LeadDetailsV2Content() {
                     {editingCard === 'building' ? (
                       <input type="text" value={(editForm as any).solar_location || ''} onChange={e => setEditForm({...editForm, solar_location: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(lead as any).solar_location || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">{buildingEnrichment?.orientation || (lead as any).solar_location || 'N/A'}</span>
                     )}
                   </div>
                   <div className="flex flex-col">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Suitability</span>
-                    <span className="text-green-600 text-sm font-medium">95% (Excellent)</span>
+                    <span className="text-green-600 text-sm font-medium">
+                      {buildingEnrichment?.solar_potential_score ? `${buildingEnrichment.solar_potential_score}/100` : '95% (Excellent)'}
+                    </span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">EPC Rating</span>
                     {editingCard === 'building' ? (
                       <input type="text" value={(editForm as any).epc_rating || ''} onChange={e => setEditForm({...editForm, epc_rating: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium flex items-center gap-1">{(lead as any).epc_rating ? <><span className="w-4 h-4 bg-green-500 text-white rounded-sm flex items-center justify-center text-[10px] font-bold">{(lead as any).epc_rating[0]}</span> {(lead as any).epc_rating}</> : 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium flex items-center gap-1">{(buildingEnrichment?.epc_rating || (lead as any).epc_rating) ? <><span className="w-4 h-4 bg-green-500 text-white rounded-sm flex items-center justify-center text-[10px] font-bold">{(buildingEnrichment?.epc_rating || (lead as any).epc_rating)[0]}</span> {(buildingEnrichment?.epc_rating || (lead as any).epc_rating)}</> : 'N/A'}</span>
                     )}
                   </div>
                 </div>

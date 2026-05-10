@@ -1134,51 +1134,51 @@ function ContractorDetailsV2Content() {
               </div>
               <div className="flex flex-col gap-2.5">
                 <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Industry</span>
+                  <span className="text-gray-500 text-xs">Member Since</span>
                   {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).industry || ''} onChange={e => setEditForm({...editForm, industry: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                    <input type="text" value={(editForm as any).member_since || ''} onChange={e => setEditForm({...editForm, member_since: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).industry || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).member_since || 'N/A'}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Company Type</span>
+                  <span className="text-gray-500 text-xs">Coverage Area</span>
                   {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).company_type || ''} onChange={e => setEditForm({...editForm, company_type: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                    <input type="text" value={(editForm as any).coverage_area || ''} onChange={e => setEditForm({...editForm, coverage_area: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).company_type || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).coverage_area || 'N/A'}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Location</span>
+                  <span className="text-gray-500 text-xs">Installers</span>
                   {editingCard === 'snapshot' ? (
-                    <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                    <input type="text" value={(editForm as any).installers_count || ''} onChange={e => setEditForm({...editForm, installers_count: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{contractor.location || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{(contractor as any).installers_count || 'N/A'}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Company No.</span>
+                  <span className="text-gray-500 text-xs">Certifications</span>
                   {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).company_number || ''} onChange={e => setEditForm({...editForm, company_number: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                    <input type="text" value={(editForm as any).certifications || ''} onChange={e => setEditForm({...editForm, certifications: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).company_number || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).certifications || 'N/A'}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Est. Revenue</span>
+                  <span className="text-gray-500 text-xs">Insurance</span>
                   {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).revenue || ''} onChange={e => setEditForm({...editForm, revenue: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                    <input type="text" value={(editForm as any).insurance || ''} onChange={e => setEditForm({...editForm, insurance: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).revenue || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).insurance || 'N/A'}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Employees</span>
+                  <span className="text-gray-500 text-xs">Payment Terms</span>
                   {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).employees || ''} onChange={e => setEditForm({...editForm, employees: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                    <input type="text" value={(editForm as any).payment_terms || ''} onChange={e => setEditForm({...editForm, payment_terms: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).employees || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).payment_terms || 'N/A'}</span>
                   )}
                 </div>
               </div>
@@ -1227,47 +1227,30 @@ function ContractorDetailsV2Content() {
               </div>
             </div>
 
-            {/* 4. FILES & DOCUMENTS CARD */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex-1">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">Files & Documents</h3>
-                <label className="text-blue-600 hover:text-blue-700 bg-blue-50 p-1 rounded-md transition-colors cursor-pointer relative">
-                  <Plus className="w-3.5 h-3.5" />
-                  <input type="file" accept=".pdf,.xlsx,.csv,image/*" onChange={handleFileUpload} disabled={uploadingFile} className="hidden" />
-                  {uploadingFile && <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>}
-                </label>
+            {/* 4. COVERAGE MAP CARD */}
+            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex-1 flex flex-col">
+              <div className="flex items-center justify-between mb-3 shrink-0">
+                <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                  <MapPin className="w-3.5 h-3.5 text-gray-500" />
+                  Coverage Map
+                </h3>
               </div>
-              <div className="flex flex-col gap-3">
-                {files && files.length > 0 ? files.map(file => {
-                  const isPdf = file.file_type === 'pdf' || file.file_name.toLowerCase().includes('.pdf');
-                  return (
-                    <div key={file.id} className="flex items-center justify-between p-2 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors group">
-                      <div className="flex items-center gap-2">
-                        <div className={`w-8 h-8 rounded flex items-center justify-center relative overflow-hidden ${isPdf ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
-                          <svg className="w-4 h-4 group-hover:opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 24 24">
-                            {isPdf ? (
-                              <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
-                            ) : (
-                              <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
-                            )}
-                          </svg>
-                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteFile(file.id); }} className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-red-100 text-red-600 hover:text-red-700 hover:bg-red-200 z-10" title="Delete file">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                        <div className="flex flex-col min-w-0 max-w-[150px]">
-                          <span className="text-xs font-medium text-gray-900 truncate" title={file.file_name}>{file.file_name}</span>
-                          <span className="text-[10px] text-gray-500 truncate">{new Date(file.created_at).toLocaleDateString()}</span>
-                        </div>
-                      </div>
-                      <a href={file.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-xs font-medium px-2 py-1 rounded hover:bg-blue-50">View</a>
-                    </div>
-                  );
-                }) : (
-                  <div className="text-xs text-gray-500 text-center py-4">No files uploaded yet.</div>
-                )}
+              <div className="w-full h-full min-h-[120px] bg-blue-50 rounded-lg overflow-hidden relative border border-blue-100 flex items-center justify-center">
+                {/* Fake map representation using styling for static visual */}
+                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
+                <div className="absolute w-24 h-24 bg-blue-500/20 rounded-full border border-blue-500/30 flex items-center justify-center pointer-events-none">
+                  <div className="w-2 h-2 bg-blue-600 rounded-full shadow-[0_0_0_4px_rgba(59,130,246,0.3)]"></div>
+                </div>
+                
+                {/* Clickable mock leads on the map */}
+                <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-red-500 rounded-full cursor-pointer hover:scale-150 transition-transform shadow-[0_0_0_2px_white]" title="Acme Corp"></div>
+                <div className="absolute bottom-1/3 right-1/4 w-2 h-2 bg-red-500 rounded-full cursor-pointer hover:scale-150 transition-transform shadow-[0_0_0_2px_white]" title="Tech Park Solutions"></div>
+                <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-red-500 rounded-full cursor-pointer hover:scale-150 transition-transform shadow-[0_0_0_2px_white]" title="Southside Manufacturing"></div>
+                <div className="absolute bottom-1/4 left-1/4 w-2 h-2 bg-red-500 rounded-full cursor-pointer hover:scale-150 transition-transform shadow-[0_0_0_2px_white]" title="City Plaza"></div>
+                
+                <span className="absolute bottom-2 right-2 text-[10px] font-bold text-blue-700 bg-white/80 px-1.5 py-0.5 rounded">{(contractor as any).max_distance || '50 miles'} Radius</span>
               </div>
-              </div>
+            </div>
             </aside>
           
           {/* CENTER CONTENT AREA */}
@@ -1380,84 +1363,73 @@ function ContractorDetailsV2Content() {
               </div>
               <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Solar Opportunity</h3>
-                  <button onClick={() => handleEditClick('opportunity')} className="text-gray-400 hover:text-blue-600 transition-colors">
-                    {editingCard === 'opportunity' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
-                  </button>
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Performance</h3>
                 </div>
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Est. System Size</span>
-                    {editingCard === 'opportunity' ? (
-                      <input type="text" value={(editForm as any).est_system_size || ''} onChange={e => setEditForm({...editForm, est_system_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).est_system_size || 'N/A'}</span>
-                    )}
+                    <span className="text-gray-500 text-xs">Total Purchases</span>
+                    <span className="text-gray-900 text-sm font-medium">{(contractor as any).total_purchases || '0'}</span>
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Est. Generation</span>
-                    {editingCard === 'opportunity' ? (
-                      <input type="text" value={(editForm as any).est_ann_generation || ''} onChange={e => setEditForm({...editForm, est_ann_generation: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).est_ann_generation || 'N/A'}</span>
-                    )}
+                    <span className="text-gray-500 text-xs">Total Spent</span>
+                    <span className="text-gray-900 text-sm font-medium">£{(contractor as any).total_spent || '0'}</span>
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Est. Savings</span>
-                    {editingCard === 'opportunity' ? (
-                      <input type="text" value={(editForm as any).est_savings || ''} onChange={e => setEditForm({...editForm, est_savings: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                    ) : (
-                      <span className="text-green-600 text-sm font-bold">{(contractor as any).est_savings ? `£${(contractor as any).est_savings}/yr` : 'N/A'}</span>
-                    )}
+                    <span className="text-gray-500 text-xs">Avg Lead Cost</span>
+                    <span className="text-gray-900 text-sm font-medium">£{(contractor as any).avg_lead_cost || '0'}</span>
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Payback Period</span>
-                    {editingCard === 'opportunity' ? (
-                      <input type="text" value={(editForm as any).est_payback || ''} onChange={e => setEditForm({...editForm, est_payback: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).est_payback || 'N/A'}</span>
-                    )}
+                    <span className="text-gray-500 text-xs">Leads Won</span>
+                    <span className="text-gray-900 text-sm font-medium">{(contractor as any).leads_won || '0'}</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                    <span className="text-gray-500 text-xs">Conversion Rate</span>
+                    <span className="text-green-600 text-sm font-bold">{(contractor as any).conversion_rate || '0'}%</span>
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                    <span className="text-gray-500 text-xs">ROI</span>
+                    <span className="text-green-600 text-sm font-bold">{(contractor as any).roi || '0'}%</span>
                   </div>
                 </div>
               </div>
               <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Key Information</h3>
-                  <button onClick={() => handleEditClick('keyinfo')} className="text-gray-400 hover:text-blue-600 transition-colors">
-                    {editingCard === 'keyinfo' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Preferred Lead Criteria</h3>
+                  <button onClick={() => handleEditClick('criteria')} className="text-gray-400 hover:text-blue-600 transition-colors">
+                    {editingCard === 'criteria' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
                   </button>
                 </div>
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Primary Need</span>
-                    {editingCard === 'keyinfo' ? (
-                      <input type="text" value={(editForm as any).primary_need || ''} onChange={e => setEditForm({...editForm, primary_need: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                    <span className="text-gray-500 text-xs">Project Type</span>
+                    {editingCard === 'criteria' ? (
+                      <input type="text" value={(editForm as any).project_type || ''} onChange={e => setEditForm({...editForm, project_type: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium truncate max-w-[120px]">{(contractor as any).primary_need || 'Reduce bills'}</span>
+                      <span className="text-gray-900 text-sm font-medium truncate max-w-[120px]">{(contractor as any).project_type || 'Commercial'}</span>
                     )}
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Monthly Spend</span>
-                    {editingCard === 'keyinfo' ? (
-                      <input type="number" value={editForm.monthly_spend || ''} onChange={e => setEditForm({...editForm, monthly_spend: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                    <span className="text-gray-500 text-xs">System Size</span>
+                    {editingCard === 'criteria' ? (
+                      <input type="text" value={(editForm as any).system_size || ''} onChange={e => setEditForm({...editForm, system_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{contractor.monthly_spend ? `£${contractor.monthly_spend}` : 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).system_size || '50kW+'}</span>
                     )}
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Timeframe</span>
-                    {editingCard === 'keyinfo' ? (
-                      <input type="text" value={editForm.timeframe || ''} onChange={e => setEditForm({...editForm, timeframe: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                    <span className="text-gray-500 text-xs">Lead Types</span>
+                    {editingCard === 'criteria' ? (
+                      <input type="text" value={(editForm as any).lead_types || ''} onChange={e => setEditForm({...editForm, lead_types: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{contractor.timeframe || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).lead_types || 'Exclusive, Shared'}</span>
                     )}
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Property</span>
-                    {editingCard === 'keyinfo' ? (
-                      <input type="text" value={editForm.property_ownership || ''} onChange={e => setEditForm({...editForm, property_ownership: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                    <span className="text-gray-500 text-xs">Max Distance</span>
+                    {editingCard === 'criteria' ? (
+                      <input type="text" value={(editForm as any).max_distance || ''} onChange={e => setEditForm({...editForm, max_distance: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{contractor.property_ownership || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).max_distance || '50 miles'}</span>
                     )}
                   </div>
                 </div>
@@ -1468,150 +1440,41 @@ function ContractorDetailsV2Content() {
             <div className="grid grid-cols-2 gap-4 flex-1 min-h-0">
               <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col h-full min-h-0">
                 <div className="flex items-center justify-between mb-4 shrink-0">
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Building Details</h3>
-                  <button onClick={() => handleEditClick('building')} className="text-gray-400 hover:text-blue-600 transition-colors">
-                    {editingCard === 'building' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
-                  </button>
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Relevant Leads</h3>
                 </div>
-                <div className="w-full h-40 shrink-0 bg-gray-200 rounded-lg mb-4 overflow-hidden relative group cursor-pointer">
-                  <img src={(contractor.photos && contractor.photos.length > 0) ? contractor.photos[currentImageIndex] : "https://images.unsplash.com/photo-1613545325278-f24b0cae1224?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80"} alt="Building Aerial" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
-                  
-                  {/* Left/Right Controls */}
-                  {contractor.photos && contractor.photos.length > 1 && (
-                    <>
-                      <button 
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : contractor.photos!.length - 1)); }}
-                        className="absolute left-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 hover:text-blue-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" /></svg>
-                      </button>
-                      <button 
-                        onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrentImageIndex(prev => (prev < contractor.photos!.length - 1 ? prev + 1 : 0)); }}
-                        className="absolute right-2 top-1/2 -translate-y-1/2 p-1.5 bg-white/90 backdrop-blur-sm rounded-full text-gray-700 hover:text-blue-600 shadow-sm opacity-0 group-hover:opacity-100 transition-opacity z-20"
-                      >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" /></svg>
-                      </button>
-                    </>
-                  )}
-
-                  {/* Image Edit Controls */}
-                  <div className="absolute top-2 left-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity z-20">
-                    <label className="p-1.5 bg-white/90 backdrop-blur-sm rounded-md text-gray-700 hover:text-blue-600 cursor-pointer shadow-sm" title="Upload new photo">
-                      <Plus className="w-4 h-4" />
-                      <input type="file" accept="image/*" className="hidden" onChange={handleBuildingImageUpload} />
-                    </label>
-                    {contractor.photos && contractor.photos.length > 0 && (
-                      <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleBuildingImageDelete(); }} className="p-1.5 bg-white/90 backdrop-blur-sm rounded-md text-gray-700 hover:text-red-600 shadow-sm" title="Delete current photo">
-                        <Trash2 className="w-4 h-4" />
-                      </button>
-                    )}
-                  </div>
-
-                  <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                    <a href={`https://earth.google.com/web/search/${encodeURIComponent((editingCard === 'building' && editForm.location !== undefined ? editForm.location : contractor.location) || '')}`} target="_blank" rel="noopener noreferrer" className="bg-white/90 text-gray-900 text-xs font-bold px-3 py-1.5 rounded-md shadow-sm flex items-center gap-1.5 pointer-events-auto hover:bg-white hover:text-blue-600 transition-colors">
-                      <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
-                      Google Earth View
-                    </a>
-                  </div>
-                  <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold text-gray-900 shadow-sm z-20">
-                    High Suitability
-                  </div>
-                  {contractor.photos && contractor.photos.length > 1 && (
-                    <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full z-20 font-medium">
-                      {currentImageIndex + 1} / {contractor.photos.length}
+                <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
+                  <div className="p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-sm font-bold text-gray-900 group-hover:text-blue-700">Acme Corp Logistics</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded">98% Match</span>
                     </div>
-                  )}
-                </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3 flex-1 overflow-y-auto pr-2">
-                  <div className="flex flex-col col-span-2">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Address</span>
-                    {editingCard === 'building' ? (
-                      <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 w-full mt-1" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{contractor.location || 'N/A'}</span>
-                    )}
+                    <div className="text-xs text-gray-500 flex items-center gap-3">
+                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> 12 miles away</span>
+                      <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> 150kW System</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Building Type</span>
-                    {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).building_type || ''} onChange={e => setEditForm({...editForm, building_type: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).building_type || 'N/A'}</span>
-                    )}
+                  
+                  <div className="p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-sm font-bold text-gray-900 group-hover:text-blue-700">Tech Park Solutions</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded">92% Match</span>
+                    </div>
+                    <div className="text-xs text-gray-500 flex items-center gap-3">
+                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> 24 miles away</span>
+                      <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> 200kW System</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Ownership Status</span>
-                    {editingCard === 'building' ? (
-                      <input type="text" value={editForm.property_ownership || ''} onChange={e => setEditForm({...editForm, property_ownership: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{contractor.property_ownership || 'N/A'}</span>
-                    )}
+
+                  <div className="p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group">
+                    <div className="flex justify-between items-start mb-1">
+                      <span className="text-sm font-bold text-gray-900 group-hover:text-blue-700">Southside Manufacturing</span>
+                      <span className="text-[10px] font-bold px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">85% Match</span>
+                    </div>
+                    <div className="text-xs text-gray-500 flex items-center gap-3">
+                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> 45 miles away</span>
+                      <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> 80kW System</span>
+                    </div>
                   </div>
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Annual Consumption</span>
-                    {editingCard === 'building' ? (
-                      <input type="number" value={(editForm as any).est_ann_consumption || ''} onChange={e => setEditForm({...editForm, est_ann_consumption: Number(e.target.value)} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).est_ann_consumption ? `${(contractor as any).est_ann_consumption} kWh` : 'N/A'}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Grid Connection</span>
-                    {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).electrical_supply || ''} onChange={e => setEditForm({...editForm, electrical_supply: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).electrical_supply || 'N/A'}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Roof Type</span>
-                    {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).roof_material || ''} onChange={e => setEditForm({...editForm, roof_material: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).roof_material || 'N/A'}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Roof Condition</span>
-                    {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).roof_condition || ''} onChange={e => setEditForm({...editForm, roof_condition: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).roof_condition || 'N/A'}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Usable Roof Area</span>
-                    {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).roof_size || ''} onChange={e => setEditForm({...editForm, roof_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).roof_size || 'N/A'}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Orientation</span>
-                    {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).solar_location || ''} onChange={e => setEditForm({...editForm, solar_location: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).solar_location || 'N/A'}</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Suitability</span>
-                    <span className="text-green-600 text-sm font-medium">95% (Excellent)</span>
-                  </div>
-                  <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">EPC Rating</span>
-                    {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).epc_rating || ''} onChange={e => setEditForm({...editForm, epc_rating: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium flex items-center gap-1">{(contractor as any).epc_rating ? <><span className="w-4 h-4 bg-green-500 text-white rounded-sm flex items-center justify-center text-[10px] font-bold">{(contractor as any).epc_rating[0]}</span> {(contractor as any).epc_rating}</> : 'N/A'}</span>
-                    )}
-                  </div>
-                </div>
-                <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-2 shrink-0">
-                  <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[11px] font-semibold rounded-md">Technical Survey</span>
-                  <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[11px] font-semibold rounded-md">Battery Potential</span>
-                  <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-[11px] font-semibold rounded-md">EV Charging Potential</span>
                 </div>
               </div>
               <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col h-full min-h-0">

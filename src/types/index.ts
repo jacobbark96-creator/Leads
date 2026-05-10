@@ -163,6 +163,16 @@ export interface Contractor {
   latitude?: number | null;
   longitude?: number | null;
   service_areas?: any[] | null;
+  member_since?: string;
+  coverage_area?: string;
+  installers_count?: string;
+  certifications?: string;
+  insurance?: string;
+  payment_terms?: string;
+  project_type?: string;
+  system_size?: string;
+  lead_types?: string;
+  max_distance?: string;
   clients?: {
     address?: string | null;
     other_contacts?: string | null;

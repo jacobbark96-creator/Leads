@@ -1752,18 +1752,9 @@ function LeadDetailsV2Content() {
             </div>
 
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col flex-1 min-h-0">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Available Grants</h3>
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
-                <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
-                  <span className="text-xs font-bold text-gray-900">Green Business Fund</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">Up to £25,000 for energy efficiency</span>
-                  <button className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">Apply Now</button>
-                </div>
-                <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
-                  <span className="text-xs font-bold text-gray-900">Low Carbon Grant</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">Match funding for solar PV installation</span>
-                  <button className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">Check Eligibility</button>
-                </div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Credit Terms</h3>
+              <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
+                <span className="text-sm font-medium text-gray-500 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">Coming soon</span>
               </div>
             </div>
           </aside>

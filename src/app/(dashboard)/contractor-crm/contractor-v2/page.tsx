@@ -6,6 +6,7 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { Contractor, StaffUser } from '@/types';
+import { GoogleMap, useJsApiLoader, Circle, Marker } from '@react-google-maps/api';
 export interface ContractorNote { id: string; contractor_id: string; user_id: string; author_name: string; content: string; is_pinned: boolean; created_at: string; }
 import toast from 'react-hot-toast';
 import { useDialer } from '@/components/DialerProvider';
@@ -282,6 +283,14 @@ function ContractorDetailsV2Content() {
   const [isPrimaryContactModalOpen, setIsPrimaryContactModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
+  const [mapLeads, setMapLeads] = useState<any[]>([]);
+  const [map, setMap] = useState<google.maps.Map | null>(null);
+
+  const { isLoaded } = useJsApiLoader({
+    id: 'google-map-script',
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
+  });
+
   const { makeCall, activeCall } = useDialer();
   
   const notesEndRef = useRef<HTMLDivElement>(null);
@@ -304,6 +313,7 @@ function ContractorDetailsV2Content() {
       fetchContractorAndNotes();
       fetchStaffUsers();
       fetchTasks();
+      fetchMapLeads();
 
       // Real-time notes subscription
       const notesChannel = supabase
@@ -404,6 +414,22 @@ function ContractorDetailsV2Content() {
         
       if (!error && data) {
         setTasks(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
+  const fetchMapLeads = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('is_marketed', true)
+        .is('client_id', null)
+        .not('latitude', 'is', null);
+      if (!error && data) {
+        setMapLeads(data);
       }
     } catch (e) {
       console.error(e);
@@ -1236,20 +1262,69 @@ function ContractorDetailsV2Content() {
                   Coverage Map
                 </h3>
               </div>
-              <div className="w-full h-full min-h-[120px] bg-blue-50 rounded-lg overflow-hidden relative border border-blue-100 flex items-center justify-center">
-                {/* Fake map representation using styling for static visual */}
-                <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '10px 10px' }}></div>
-                <div className="absolute w-24 h-24 bg-blue-500/20 rounded-full border border-blue-500/30 flex items-center justify-center pointer-events-none">
-                  <div className="w-2 h-2 bg-blue-600 rounded-full shadow-[0_0_0_4px_rgba(59,130,246,0.3)]"></div>
-                </div>
-                
-                {/* Clickable mock leads on the map */}
-                <div className="absolute top-1/4 left-1/3 w-2 h-2 bg-red-500 rounded-full cursor-pointer hover:scale-150 transition-transform shadow-[0_0_0_2px_white]" title="Acme Corp"></div>
-                <div className="absolute bottom-1/3 right-1/4 w-2 h-2 bg-red-500 rounded-full cursor-pointer hover:scale-150 transition-transform shadow-[0_0_0_2px_white]" title="Tech Park Solutions"></div>
-                <div className="absolute top-1/2 right-1/3 w-2 h-2 bg-red-500 rounded-full cursor-pointer hover:scale-150 transition-transform shadow-[0_0_0_2px_white]" title="Southside Manufacturing"></div>
-                <div className="absolute bottom-1/4 left-1/4 w-2 h-2 bg-red-500 rounded-full cursor-pointer hover:scale-150 transition-transform shadow-[0_0_0_2px_white]" title="City Plaza"></div>
-                
-                <span className="absolute bottom-2 right-2 text-[10px] font-bold text-blue-700 bg-white/80 px-1.5 py-0.5 rounded">{(contractor as any).max_distance || '50 miles'} Radius</span>
+              <div className="w-full h-full min-h-[120px] bg-blue-50 rounded-lg overflow-hidden relative border border-blue-100">
+                {isLoaded && contractor?.latitude && contractor?.longitude ? (
+                  <GoogleMap
+                    mapContainerStyle={{ width: '100%', height: '100%' }}
+                    center={{ lat: Number(contractor.latitude), lng: Number(contractor.longitude) }}
+                    zoom={8}
+                    options={{
+                      disableDefaultUI: true,
+                      zoomControl: true,
+                      styles: [
+                        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
+                      ]
+                    }}
+                    onLoad={(m) => setMap(m)}
+                  >
+                    <Circle
+                      center={{ lat: Number(contractor.latitude), lng: Number(contractor.longitude) }}
+                      radius={((parseFloat((contractor as any).max_distance) || 50) * 1609.34)}
+                      options={{
+                        fillColor: '#3B82F6',
+                        fillOpacity: 0.15,
+                        strokeColor: '#3B82F6',
+                        strokeOpacity: 0.8,
+                        strokeWeight: 2,
+                      }}
+                    />
+                    <Marker 
+                      position={{ lat: Number(contractor.latitude), lng: Number(contractor.longitude) }}
+                      icon={{
+                        path: window.google.maps.SymbolPath.CIRCLE,
+                        fillColor: '#3B82F6',
+                        fillOpacity: 1,
+                        scale: 8,
+                        strokeColor: '#FFFFFF',
+                        strokeWeight: 2,
+                      }}
+                      title={contractor.company || contractor.name || 'Contractor'}
+                    />
+                    {mapLeads.map(lead => (
+                      <Marker
+                        key={lead.id}
+                        position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
+                        icon={{
+                          path: window.google.maps.SymbolPath.CIRCLE,
+                          fillColor: '#EF4444',
+                          fillOpacity: 1,
+                          scale: 5,
+                          strokeColor: '#FFFFFF',
+                          strokeWeight: 1,
+                        }}
+                        title={lead.company || lead.name || 'Lead'}
+                        onClick={() => window.open(`/sales-crm/lead-v2?id=${lead.id}&tab=unqualified`, '_blank')}
+                      />
+                    ))}
+                  </GoogleMap>
+                ) : (
+                  <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-500 bg-gray-50 text-center p-4">
+                    {!isLoaded ? 'Loading map...' : 'No location coordinates available for this contractor. Add address in edit mode.'}
+                  </div>
+                )}
+                <span className="absolute bottom-2 right-2 text-[10px] font-bold text-blue-700 bg-white/90 backdrop-blur px-1.5 py-0.5 rounded shadow-sm z-10 pointer-events-none">
+                  {(contractor as any).max_distance || '50'} Miles Radius
+                </span>
               </div>
             </div>
             </aside>

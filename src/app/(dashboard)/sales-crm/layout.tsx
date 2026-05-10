@@ -20,12 +20,15 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
 
   return (
     <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold text-gray-900">Sales CRM</h1>
-          
-          {/* Mobile menu button & actions */}
-          <div className="flex items-center gap-2">
+      {pathname === '/sales-crm/lead-v2' ? (
+        <>{children}</>
+      ) : (
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <h1 className="text-xl font-bold text-gray-900">Sales CRM</h1>
+            
+            {/* Mobile menu button & actions */}
+            <div className="flex items-center gap-2">
             {profile?.role && ['admin', 'super_admin', 'rep'].includes(profile.role) && (
               <button
                 onClick={() => {
@@ -136,6 +139,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
           {children}
         </div>
       </div>
+      )}
     </ProtectedRoute>
   );
 }

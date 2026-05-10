@@ -284,6 +284,7 @@ function ContractorDetailsV2Content() {
   const [isPrimaryContactModalOpen, setIsPrimaryContactModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [mapLeads, setMapLeads] = useState<any[]>([]);
+  const [mapCenter, setMapCenter] = useState<{lat: number, lng: number} | null>(null);
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -295,6 +296,29 @@ function ContractorDetailsV2Content() {
   const notesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const wasInCallRef = useRef(false);
+
+  useEffect(() => {
+    if (contractor && isLoaded) {
+      if ((contractor as any).latitude && (contractor as any).longitude) {
+        setMapCenter({ lat: (contractor as any).latitude, lng: (contractor as any).longitude });
+      } else if ((contractor as any).location) {
+        const geocoder = new window.google.maps.Geocoder();
+        geocoder.geocode({ address: (contractor as any).location }, (results, status) => {
+          if (status === 'OK' && results && results[0]) {
+            setMapCenter({
+              lat: results[0].geometry.location.lat(),
+              lng: results[0].geometry.location.lng()
+            });
+          } else {
+            // Default center if geocoding fails
+            setMapCenter({ lat: 54.5, lng: -2.5 });
+          }
+        });
+      } else {
+        setMapCenter({ lat: 54.5, lng: -2.5 });
+      }
+    }
+  }, [contractor, isLoaded]);
 
   useEffect(() => {
     // Auto-dial logic: when call ends and auto-dial is on, go to next contractor
@@ -1257,12 +1281,29 @@ function ContractorDetailsV2Content() {
                 {isLoaded ? (
                   <GoogleMap
                     mapContainerStyle={{ width: '100%', height: '100%' }}
-                    center={{ lat: contractor.latitude || 54.5, lng: contractor.longitude || -2.5 }}
+                    center={mapCenter || { lat: 54.5, lng: -2.5 }}
                     zoom={8}
                     options={{ disableDefaultUI: true, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, zoomControl: true }}
+                    onLoad={(map) => {
+                      if (mapCenter) {
+                        const radiusMiles = parseInt((contractor as any).max_distance) || 50;
+                        const radiusMeters = radiusMiles * 1609.34;
+                        
+                        // Calculate bounds roughly based on circle radius
+                        const earthRadius = 6371000; // meters
+                        const latOffset = (radiusMeters / earthRadius) * (180 / Math.PI);
+                        const lngOffset = (radiusMeters / (earthRadius * Math.cos((Math.PI * mapCenter.lat) / 180))) * (180 / Math.PI);
+                        
+                        const bounds = new window.google.maps.LatLngBounds(
+                          new window.google.maps.LatLng(mapCenter.lat - latOffset, mapCenter.lng - lngOffset), // SW
+                          new window.google.maps.LatLng(mapCenter.lat + latOffset, mapCenter.lng + lngOffset)  // NE
+                        );
+                        map.fitBounds(bounds);
+                      }
+                    }}
                   >
                     <Marker 
-                      position={{ lat: contractor.latitude || 54.5, lng: contractor.longitude || -2.5 }}
+                      position={mapCenter || { lat: 54.5, lng: -2.5 }}
                       icon={typeof window !== 'undefined' && window.google ? {
                         path: window.google.maps.SymbolPath.CIRCLE,
                         scale: 8,
@@ -1273,7 +1314,7 @@ function ContractorDetailsV2Content() {
                       } : undefined}
                     />
                     <Circle 
-                      center={{ lat: contractor.latitude || 54.5, lng: contractor.longitude || -2.5 }}
+                      center={mapCenter || { lat: 54.5, lng: -2.5 }}
                       radius={(parseInt((contractor as any).max_distance) || 50) * 1609.34}
                       options={{
                         fillColor: '#3b82f6',
@@ -1285,22 +1326,40 @@ function ContractorDetailsV2Content() {
                         zIndex: 1
                       }}
                     />
-                    {mapLeads.map((lead: any) => (
-                      <Marker 
-                        key={lead.id}
-                        position={{ lat: lead.latitude, lng: lead.longitude }}
-                        onClick={() => window.open(`/sales-crm/lead-v2?id=${lead.id}&tab=unqualified`, '_blank')}
-                        icon={typeof window !== 'undefined' && window.google ? {
-                          path: window.google.maps.SymbolPath.CIRCLE,
-                          scale: 5,
-                          fillColor: '#ef4444',
-                          fillOpacity: 1,
-                          strokeColor: '#ffffff',
-                          strokeWeight: 1.5
-                        } : undefined}
-                        title={lead.company || lead.name}
-                      />
-                    ))}
+                    {mapLeads.map((lead: any) => {
+                      if (!mapCenter || !lead.latitude || !lead.longitude) return null;
+                      
+                      // Calculate distance using basic Haversine to check if lead is in radius
+                      const R = 3958.8; // Radius of the earth in miles
+                      const dLat = (lead.latitude - mapCenter.lat) * Math.PI / 180;
+                      const dLon = (lead.longitude - mapCenter.lng) * Math.PI / 180;
+                      const a = 
+                        Math.sin(dLat/2) * Math.sin(dLat/2) +
+                        Math.cos(mapCenter.lat * Math.PI / 180) * Math.cos(lead.latitude * Math.PI / 180) * 
+                        Math.sin(dLon/2) * Math.sin(dLon/2);
+                      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+                      const distance = R * c;
+                      
+                      const maxDistance = parseInt((contractor as any).max_distance) || 50;
+                      if (distance > maxDistance) return null; // Don't render if outside circle
+
+                      return (
+                        <Marker 
+                          key={lead.id}
+                          position={{ lat: lead.latitude, lng: lead.longitude }}
+                          onClick={() => window.open(`/sales-crm/lead-v2?id=${lead.id}&tab=unqualified`, '_blank')}
+                          icon={typeof window !== 'undefined' && window.google ? {
+                            path: window.google.maps.SymbolPath.CIRCLE,
+                            scale: 5,
+                            fillColor: '#ef4444',
+                            fillOpacity: 1,
+                            strokeColor: '#ffffff',
+                            strokeWeight: 1.5
+                          } : undefined}
+                          title={lead.company || lead.name}
+                        />
+                      );
+                    })}
                   </GoogleMap>
                 ) : (
                   <div className="text-xs text-gray-500">Loading map...</div>

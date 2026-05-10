@@ -73,7 +73,7 @@ export const NearbyLeadsModal: React.FC<NearbyLeadsModalProps> = ({ isOpen, onCl
                     {lead.purchase_count || 0}/{lead.max_shares || 3} Shares Sold
                   </span>
                   <a 
-                    href={`/sales-crm/lead?id=${lead.id}&tab=unqualified`}
+                    href={`/sales-crm/lead-v2?id=${lead.id}&tab=unqualified`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="text-blue-600 hover:text-blue-800 hover:underline"

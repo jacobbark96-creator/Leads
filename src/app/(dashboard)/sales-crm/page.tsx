@@ -566,7 +566,7 @@ function LeadProcessingContent() {
                   <div className="min-w-0">
                     <div className="flex items-center gap-2">
                       <a 
-                        href={`/sales-crm/lead?id=${lead.id}&tab=${assignedToMe ? 'my' : 'unqualified'}`}
+                        href={`/sales-crm/lead-v2?id=${lead.id}&tab=${assignedToMe ? 'my' : 'unqualified'}`}
                         className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline truncate"
                       >
                         {lead.company || lead.name}

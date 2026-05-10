@@ -549,7 +549,7 @@ function QualifiedLeadsContent() {
                   )}
                   
                   <a
-                    href={`/sales-crm/lead?id=${lead.id}&tab=qualified`}
+                    href={`/sales-crm/lead-v2?id=${lead.id}&tab=qualified`}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
                   >
                     View Details

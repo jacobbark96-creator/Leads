@@ -525,7 +525,7 @@ export default function MapTab() {
                 </div>
                 
                 <a
-                  href={`/sales-crm/lead?id=${selectedLead.id}`}
+                  href={`/sales-crm/lead-v2?id=${selectedLead.id}`}
                   className="block w-full text-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md transition-colors"
                 >
                   View Details

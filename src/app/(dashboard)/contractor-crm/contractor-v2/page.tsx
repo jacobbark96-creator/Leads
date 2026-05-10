@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useRef, Suspense } from 'react';
+import React, { useEffect, useState, useRef, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -297,6 +297,38 @@ function ContractorDetailsV2Content() {
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const wasInCallRef = useRef(false);
 
+  const createFlagIcon = (color: string) => {
+    if (typeof window === 'undefined' || !window.google) return null;
+    return {
+      path: 'M4 2v20h2v-8h14l-2.5-4.5L20 5H6V2H4z',
+      fillColor: color,
+      fillOpacity: 1,
+      scale: 1.2,
+      strokeColor: '#FFFFFF',
+      strokeWeight: 1.5,
+      anchor: new window.google.maps.Point(5, 22),
+    };
+  };
+
+  const relevantLeads = useMemo(() => {
+    if (!mapCenter || !mapLeads || !contractor) return [];
+    const R = 3958.8; // Radius of the earth in miles
+    const maxDistance = parseInt((contractor as any).max_distance) || 50;
+    
+    return mapLeads.map(lead => {
+      if (!lead.latitude || !lead.longitude) return { ...lead, distance: Infinity };
+      const dLat = (lead.latitude - mapCenter.lat) * Math.PI / 180;
+      const dLon = (lead.longitude - mapCenter.lng) * Math.PI / 180;
+      const a = 
+        Math.sin(dLat/2) * Math.sin(dLat/2) +
+        Math.cos(mapCenter.lat * Math.PI / 180) * Math.cos(lead.latitude * Math.PI / 180) * 
+        Math.sin(dLon/2) * Math.sin(dLon/2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
+      const distance = R * c;
+      return { ...lead, distance };
+    }).filter(lead => lead.distance <= maxDistance).sort((a, b) => a.distance - b.distance);
+  }, [mapCenter, mapLeads, contractor]);
+
   useEffect(() => {
     if (contractor && isLoaded) {
       if ((contractor as any).latitude && (contractor as any).longitude) {
@@ -559,9 +591,11 @@ function ContractorDetailsV2Content() {
       // Fetch leads for the map
       const { data: leadsData } = await supabase
         .from('leads')
-        .select('id, name, company, latitude, longitude, exclusive_price, share_price, status')
+        .select('id, name, company, latitude, longitude, exclusive_price, share_price, status, est_system_size')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
+        .eq('is_marketed', true)
+        .is('client_id', null)
         .limit(200);
       setMapLeads(leadsData || []);
       
@@ -1326,40 +1360,15 @@ function ContractorDetailsV2Content() {
                         zIndex: 1
                       }}
                     />
-                    {mapLeads.map((lead: any) => {
-                      if (!mapCenter || !lead.latitude || !lead.longitude) return null;
-                      
-                      // Calculate distance using basic Haversine to check if lead is in radius
-                      const R = 3958.8; // Radius of the earth in miles
-                      const dLat = (lead.latitude - mapCenter.lat) * Math.PI / 180;
-                      const dLon = (lead.longitude - mapCenter.lng) * Math.PI / 180;
-                      const a = 
-                        Math.sin(dLat/2) * Math.sin(dLat/2) +
-                        Math.cos(mapCenter.lat * Math.PI / 180) * Math.cos(lead.latitude * Math.PI / 180) * 
-                        Math.sin(dLon/2) * Math.sin(dLon/2);
-                      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-                      const distance = R * c;
-                      
-                      const maxDistance = parseInt((contractor as any).max_distance) || 50;
-                      if (distance > maxDistance) return null; // Don't render if outside circle
-
-                      return (
-                        <Marker 
-                          key={lead.id}
-                          position={{ lat: lead.latitude, lng: lead.longitude }}
-                          onClick={() => window.open(`/sales-crm/lead-v2?id=${lead.id}&tab=unqualified`, '_blank')}
-                          icon={typeof window !== 'undefined' && window.google ? {
-                            path: window.google.maps.SymbolPath.CIRCLE,
-                            scale: 5,
-                            fillColor: '#ef4444',
-                            fillOpacity: 1,
-                            strokeColor: '#ffffff',
-                            strokeWeight: 1.5
-                          } : undefined}
-                          title={lead.company || lead.name}
-                        />
-                      );
-                    })}
+                    {relevantLeads.map((lead: any) => (
+                      <Marker 
+                        key={lead.id}
+                        position={{ lat: lead.latitude, lng: lead.longitude }}
+                        onClick={() => window.open(`/sales-crm/lead-v2?id=${lead.id}&tab=unqualified`, '_blank')}
+                        icon={createFlagIcon('#ef4444') || undefined}
+                        title={lead.company || lead.name}
+                      />
+                    ))}
                   </GoogleMap>
                 ) : (
                   <div className="text-xs text-gray-500">Loading map...</div>
@@ -1560,38 +1569,28 @@ function ContractorDetailsV2Content() {
                   <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Relevant Leads</h3>
                 </div>
                 <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
-                  <div className="p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-sm font-bold text-gray-900 group-hover:text-blue-700">Acme Corp Logistics</span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded">98% Match</span>
+                  {relevantLeads.length > 0 ? (
+                    relevantLeads.map((lead: any) => (
+                      <div 
+                        key={lead.id} 
+                        onClick={() => window.open(`/sales-crm/lead-v2?id=${lead.id}&tab=unqualified`, '_blank')}
+                        className="p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group"
+                      >
+                        <div className="flex justify-between items-start mb-1">
+                          <span className="text-sm font-bold text-gray-900 group-hover:text-blue-700 truncate mr-2">{lead.company || lead.name}</span>
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded whitespace-nowrap">Active</span>
+                        </div>
+                        <div className="text-xs text-gray-500 flex items-center gap-3">
+                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {Math.round(lead.distance)} miles</span>
+                          {lead.est_system_size && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> {lead.est_system_size}</span>}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <div className="text-xs text-gray-500 flex items-center justify-center h-full">
+                      No active marketplace leads found within radius.
                     </div>
-                    <div className="text-xs text-gray-500 flex items-center gap-3">
-                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> 12 miles away</span>
-                      <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> 150kW System</span>
-                    </div>
-                  </div>
-                  
-                  <div className="p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-sm font-bold text-gray-900 group-hover:text-blue-700">Tech Park Solutions</span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded">92% Match</span>
-                    </div>
-                    <div className="text-xs text-gray-500 flex items-center gap-3">
-                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> 24 miles away</span>
-                      <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> 200kW System</span>
-                    </div>
-                  </div>
-
-                  <div className="p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group">
-                    <div className="flex justify-between items-start mb-1">
-                      <span className="text-sm font-bold text-gray-900 group-hover:text-blue-700">Southside Manufacturing</span>
-                      <span className="text-[10px] font-bold px-2 py-0.5 bg-yellow-100 text-yellow-700 rounded">85% Match</span>
-                    </div>
-                    <div className="text-xs text-gray-500 flex items-center gap-3">
-                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> 45 miles away</span>
-                      <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> 80kW System</span>
-                    </div>
-                  </div>
+                  )}
                 </div>
               </div>
               <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col h-full min-h-0">

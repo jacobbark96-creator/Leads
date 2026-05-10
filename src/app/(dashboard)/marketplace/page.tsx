@@ -283,10 +283,11 @@ export default function Marketplace() {
       const targetPrice = discountedPrice !== undefined ? discountedPrice : (purchaseType === 'exclusive' ? (lead.exclusive_price || 135) : (lead.share_price || 45));
 
       // Create checkout session via our API
-      const res = await fetch('/api/create-lead-checkout', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
+          checkoutType: 'lead',
           userId: profile.id,
           email: profile.email || 'user@example.com',
           leadId: leadId,

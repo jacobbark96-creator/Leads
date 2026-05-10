@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { Resend } from 'resend';
 import { defaultFromEmail } from '@/lib/resend';
 
 export const runtime = 'edge';
@@ -79,7 +78,7 @@ export async function POST(req: Request) {
     }
 
     // 3. Get the emails of those clients and check 24h limit
-    const resend = new Resend(process.env.RESEND_API_KEY);
+    const resendApiKey = process.env.RESEND_API_KEY;
     let sentCount = 0;
     const now = new Date();
     const twentyFourHoursAgo = new Date(now.getTime() - 24 * 60 * 60 * 1000).toISOString();
@@ -106,42 +105,49 @@ export async function POST(req: Request) {
         .eq('id', client.user_id)
         .single();
 
-      if (!userData?.email) continue;
+      if (!userData?.email || !resendApiKey) continue;
 
       // Send email
-      const { error: emailError } = await resend.emails.send({
-        from: `Openlead <${defaultFromEmail}>`,
-        to: [userData.email],
-        subject: `New ${categoryName} Leads Available Soon!`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
-            <h2 style="color: #2563eb;">New Leads Alert! 🚨</h2>
-            <p style="color: #4b5563; line-height: 1.6;">
-              Hi ${client.contact_name || 'Partner'},
-            </p>
-            <p style="color: #4b5563; line-height: 1.6;">
-              We wanted to give you a quick heads up! New highly qualified <strong>${categoryName}</strong> leads in your service area (${location || 'your region'}) have just passed our verification checks.
-            </p>
-            <p style="color: #4b5563; line-height: 1.6; font-weight: bold;">
-              These leads will be added to the portal tomorrow at 9:00 AM.
-            </p>
-            <p style="color: #4b5563; line-height: 1.6;">
-              Make sure you have enough credit on your account to purchase the leads you want before they are snatched up!
-            </p>
-            <div style="margin-top: 30px; text-align: center;">
-              <a href="${process.env.NEXT_PUBLIC_APP_URL}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
-                Log In to Openlead
-              </a>
+      const emailResponse = await fetch('https://api.resend.com/emails', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${resendApiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          from: `Openlead <${defaultFromEmail}>`,
+          to: [userData.email],
+          subject: `New ${categoryName} Leads Available Soon!`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+              <h2 style="color: #2563eb;">New Leads Alert! 🚨</h2>
+              <p style="color: #4b5563; line-height: 1.6;">
+                Hi ${client.contact_name || 'Partner'},
+              </p>
+              <p style="color: #4b5563; line-height: 1.6;">
+                We wanted to give you a quick heads up! New highly qualified <strong>${categoryName}</strong> leads in your service area (${location || 'your region'}) have just passed our verification checks.
+              </p>
+              <p style="color: #4b5563; line-height: 1.6; font-weight: bold;">
+                These leads will be added to the portal tomorrow at 9:00 AM.
+              </p>
+              <p style="color: #4b5563; line-height: 1.6;">
+                Make sure you have enough credit on your account to purchase the leads you want before they are snatched up!
+              </p>
+              <div style="margin-top: 30px; text-align: center;">
+                <a href="${process.env.NEXT_PUBLIC_APP_URL}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+                  Log In to Openlead
+                </a>
+              </div>
+              <hr style="border: none; border-top: 1px solid #eaeaea; margin: 30px 0;" />
+              <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+                © ${new Date().getFullYear()} Openlead. All rights reserved.
+              </p>
             </div>
-            <hr style="border: none; border-top: 1px solid #eaeaea; margin: 30px 0;" />
-            <p style="color: #9ca3af; font-size: 12px; text-align: center;">
-              © ${new Date().getFullYear()} Openlead. All rights reserved.
-            </p>
-          </div>
-        `
+          `
+        })
       });
 
-      if (!emailError) {
+      if (emailResponse.ok) {
         sentCount++;
         // Log it
         await supabaseAdmin.from('email_logs').insert({

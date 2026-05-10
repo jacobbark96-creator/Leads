@@ -26,14 +26,17 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose, clientI
     
     setLoading(true);
     try {
-      const res = await fetch('/api/create-topup-checkout', {
+      const res = await fetch('/api/checkout', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
+          checkoutType: 'topup',
           amount,
           clientId,
           userId,
-          email: userEmail
+          email: userEmail,
         }),
       });
 

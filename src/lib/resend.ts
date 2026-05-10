@@ -1,23 +1,34 @@
-import { Resend } from 'resend';
-
 const resendApiKey = process.env.RESEND_API_KEY;
-// Only initialize if the key exists to prevent crashing if it's missing in dev
-export const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 // Replace this with your actual verified sending domain (e.g., 'hello@openlead.co.uk' or 'onboarding@openlead.co.uk')
 export const defaultFromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@openlead.co.uk';
+
+const sendResendEmail = async (payload: any) => {
+  if (!resendApiKey) {
+    console.warn('Resend API key not configured. Skipping email.');
+    return { success: false, error: 'Resend API key missing' };
+  }
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${resendApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    return { success: false, error: data };
+  }
+  return { success: true, data };
+};
 
 /**
  * Sends a welcome email to a newly onboarded client.
  */
 export const sendWelcomeEmail = async (email: string, name: string) => {
-  if (!resend) {
-    console.warn('Resend API key not configured. Skipping welcome email.');
-    return { success: false, error: 'Resend API key missing' };
-  }
-
   try {
-    const { data, error } = await resend.emails.send({
+    return await sendResendEmail({
       from: `Openlead <${defaultFromEmail}>`,
       to: [email],
       subject: 'Welcome to Openlead - You are fully onboarded!',
@@ -48,13 +59,6 @@ export const sendWelcomeEmail = async (email: string, name: string) => {
         </div>
       `,
     });
-
-    if (error) {
-      console.error('Resend Welcome Email Error:', error);
-      return { success: false, error };
-    }
-
-    return { success: true, data };
   } catch (err: any) {
     console.error('Failed to send welcome email:', err);
     return { success: false, error: err.message };
@@ -70,11 +74,6 @@ export const sendAdvisorEmail = async (
   advisor: { name: string, phone?: string, email?: string },
   isNewAssignment: boolean
 ) => {
-  if (!resend) {
-    console.warn('Resend API key not configured. Skipping advisor email.');
-    return { success: false, error: 'Resend API key missing' };
-  }
-
   const subject = isNewAssignment 
     ? 'Welcome to Openlead - Meet your Personal Account Manager!' 
     : 'Update: Your New Personal Account Manager at Openlead';
@@ -88,7 +87,7 @@ export const sendAdvisorEmail = async (
     : `Your new Personal Account Manager is here to ensure you continue to get the absolute best out of our platform and leads.`;
 
   try {
-    const { data, error } = await resend.emails.send({
+    return await sendResendEmail({
       from: `Openlead <${defaultFromEmail}>`,
       to: [email],
       subject: subject,
@@ -138,13 +137,6 @@ export const sendAdvisorEmail = async (
         </div>
       `,
     });
-
-    if (error) {
-      console.error('Resend Advisor Email Error:', error);
-      return { success: false, error };
-    }
-
-    return { success: true, data };
   } catch (err: any) {
     console.error('Failed to send advisor email:', err);
     return { success: false, error: err.message };
@@ -160,11 +152,10 @@ export const sendAdvisorNotificationEmail = async (
   clientName: string,
   clientEmail: string
 ) => {
-  if (!resend) return { success: false, error: 'Resend API key missing' };
   if (!advisorEmail) return { success: false, error: 'Advisor has no email' };
 
   try {
-    const { data, error } = await resend.emails.send({
+    return await sendResendEmail({
       from: `Openlead Notifications <${defaultFromEmail}>`,
       to: [advisorEmail],
       subject: `New Client Assigned: ${clientName}`,
@@ -194,13 +185,6 @@ export const sendAdvisorNotificationEmail = async (
         </div>
       `,
     });
-
-    if (error) {
-      console.error('Resend Advisor Notification Email Error:', error);
-      return { success: false, error };
-    }
-
-    return { success: true, data };
   } catch (err: any) {
     console.error('Failed to send advisor notification email:', err);
     return { success: false, error: err.message };
@@ -211,10 +195,8 @@ export const sendAdvisorNotificationEmail = async (
  * Send Receipt Email (To be called from Stripe Webhook later)
  */
 export const sendReceiptEmail = async (email: string, leadId: string, amount: number) => {
-  if (!resend) return;
-
   try {
-    await resend.emails.send({
+    await sendResendEmail({
       from: `Openlead Billing <${defaultFromEmail}>`,
       to: [email],
       subject: `Your Receipt from Openlead - Lead #${leadId.split('-')[0]}`,
@@ -236,17 +218,22 @@ export const sendReceiptEmail = async (email: string, leadId: string, amount: nu
  * Note: Requires you to create an Audience in Resend and grab the Audience ID
  */
 export const addContactToMarketingAudience = async (email: string, firstName: string, lastName?: string) => {
-  if (!resend) return;
   const audienceId = process.env.RESEND_AUDIENCE_ID;
-  if (!audienceId) return;
+  if (!audienceId || !resendApiKey) return;
 
   try {
-    await resend.contacts.create({
-      email,
-      firstName,
-      lastName,
-      unsubscribed: false,
-      audienceId,
+    await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        unsubscribed: false,
+      }),
     });
   } catch (err) {
     console.error('Failed to add contact to marketing audience:', err);

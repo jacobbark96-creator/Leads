@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server';
+import { NextResponse } from "next/server";
 import { sendAdvisorEmail, sendAdvisorNotificationEmail } from '@/lib/resend';
 import { createClient } from '@supabase/supabase-js';
 

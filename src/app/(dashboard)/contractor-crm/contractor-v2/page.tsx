@@ -255,7 +255,7 @@ function ContractorDetailsV2Content() {
   const id = searchParams.get('id');
   const tab = searchParams.get('tab') || 'unqualified';
 
-  const [contractor, setLead] = useState<Contractor | null>(null);
+  const [contractor, setContractor] = useState<Contractor | null>(null);
   const [notes, setNotes] = useState<ContractorNote[]>([]);
   const [staffUsers, setStaffUsers] = useState<StaffUser[]>([]);
   const [loading, setLoading] = useState(true);
@@ -288,7 +288,7 @@ function ContractorDetailsV2Content() {
   const wasInCallRef = useRef(false);
 
   useEffect(() => {
-    // Auto-dial logic: when call ends and auto-dial is on, go to next lead
+    // Auto-dial logic: when call ends and auto-dial is on, go to next contractor
     if (wasInCallRef.current && !activeCall && isAutoDialEnabled && nextContractorId) {
       toast.success('Auto-dialing next contractor in 3 seconds...');
       setTimeout(() => {
@@ -314,13 +314,13 @@ function ContractorDetailsV2Content() {
           filter: `contractor_id=eq.${id}` 
         }, (payload) => {
           if (payload.eventType === 'INSERT') {
-            const newNote = payload.new as LeadNote;
+            const newNote = payload.new as ContractorNote;
             setNotes(prev => {
               if (prev.find(n => n.id === newNote.id)) return prev;
               return [...prev, newNote].sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
             });
           } else if (payload.eventType === 'UPDATE') {
-            const updatedNote = payload.new as LeadNote;
+            const updatedNote = payload.new as ContractorNote;
             setNotes(prev => prev.map(n => n.id === updatedNote.id ? updatedNote : n));
           } else if (payload.eventType === 'DELETE') {
             setNotes(prev => prev.filter(n => n.id === payload.old.id));
@@ -548,7 +548,7 @@ function ContractorDetailsV2Content() {
     }
   };
 
-  const updateLeadStatus = async (newStatus: string) => {
+  const updateContractorStatus = async (newStatus: string) => {
     if (!contractor) return;
     try {
       const { error } = await supabase
@@ -996,7 +996,7 @@ function ContractorDetailsV2Content() {
           <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
             <LayoutDashboard className="w-6 h-6" />
           </Link>
-          <Link href="/leads" className="text-white bg-white/10 p-3 rounded-xl transition-colors">
+          <Link href="/contractors" className="text-white bg-white/10 p-3 rounded-xl transition-colors">
             <Users className="w-6 h-6" />
           </Link>
           <Link href="/companies" className="text-gray-400 hover:text-white transition-colors">
@@ -1030,7 +1030,7 @@ function ContractorDetailsV2Content() {
             <div className="flex items-center text-sm font-medium text-gray-500">
               <Link href="/contractor-crm" className="hover:text-gray-900 transition-colors">Contractor CRM</Link>
               <span className="mx-2">/</span>
-              <Link href={`/contractor-crm?tab=${tab}`} className="hover:text-gray-900 transition-colors capitalize">{tab} Leads</Link>
+              <Link href={`/contractor-crm?tab=${tab}`} className="hover:text-gray-900 transition-colors capitalize">{tab} Contractors</Link>
               <span className="mx-2">/</span>
               <span className="text-gray-900">{contractor.company || contractor.name}</span>
             </div>
@@ -1039,7 +1039,7 @@ function ContractorDetailsV2Content() {
                 onClick={goToPrevContractor} 
                 disabled={!prevContractorId} 
                 className="p-1.5 rounded-lg border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-30 transition-colors shadow-sm"
-                title="Previous Lead"
+                title="Previous Contractor"
               >
                 <ArrowLeft className="w-4 h-4" />
               </button>
@@ -1047,7 +1047,7 @@ function ContractorDetailsV2Content() {
                 onClick={goToNextContractor} 
                 disabled={!nextContractorId} 
                 className="p-1.5 rounded-lg border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-30 transition-colors shadow-sm"
-                title="Next Lead"
+                title="Next Contractor"
               >
                 <ArrowRight className="w-4 h-4" />
               </button>

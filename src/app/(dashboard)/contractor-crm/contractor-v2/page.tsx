@@ -709,7 +709,7 @@ function ContractorDetailsV2Content() {
   const saveEdit = async () => {
     if (!contractor) return;
     try {
-      const { id, created_at, clients, contractor_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
+      const { id, created_at, clients, contractor_notes, other_contacts, csv_data, category, categories, ...updatePayload } = editForm as any;
       const { error } = await supabase
         .from('contractors')
         .update(updatePayload)
@@ -1234,23 +1234,6 @@ function ContractorDetailsV2Content() {
               </div>
               <div className="flex flex-col gap-2.5">
                 <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Category</span>
-                  {editingCard === 'snapshot' ? (
-                    <select 
-                      value={(editForm as any).category_id || ''} 
-                      onChange={e => setEditForm({...editForm, category_id: e.target.value} as any)} 
-                      className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500"
-                    >
-                      <option value="">Select Category</option>
-                      {categories.map(cat => (
-                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                      ))}
-                    </select>
-                  ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).category?.name || 'Uncategorized'}</span>
-                  )}
-                </div>
-                <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500 text-xs">Member Since</span>
                   {editingCard === 'snapshot' ? (
                     <input type="text" value={(editForm as any).member_since || ''} onChange={e => setEditForm({...editForm, member_since: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
@@ -1480,6 +1463,23 @@ function ContractorDetailsV2Content() {
                   </button>
                 </div>
                 <div className="flex flex-col gap-3">
+                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                    <span className="text-gray-500 text-xs">Category</span>
+                    {editingCard === 'overview' ? (
+                      <select 
+                        value={(editForm as any).category_id || ''} 
+                        onChange={e => setEditForm({...editForm, category_id: e.target.value} as any)} 
+                        className="border rounded px-1.5 py-0.5 text-xs w-32 focus:ring-1 focus:ring-blue-500"
+                      >
+                        <option value="">Select Category</option>
+                        {categories.map(cat => (
+                          <option key={cat.id} value={cat.id}>{cat.name}</option>
+                        ))}
+                      </select>
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).category?.name || 'Uncategorized'}</span>
+                    )}
+                  </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
                     <span className="text-gray-500 text-xs">Status</span>
                     {editingCard === 'overview' ? (

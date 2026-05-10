@@ -173,6 +173,10 @@ export interface Contractor {
   system_size?: string;
   lead_types?: string;
   max_distance?: string;
+  upload_name?: string | null;
+  linkedin_url?: string | null;
+  secondary_phone?: string | null;
+  location?: string | null;
   clients?: {
     address?: string | null;
     other_contacts?: string | null;

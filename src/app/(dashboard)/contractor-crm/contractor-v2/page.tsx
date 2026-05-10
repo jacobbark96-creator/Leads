@@ -531,7 +531,7 @@ function ContractorDetailsV2Content() {
   };
 
   const assignContractor = async (userId: string) => {
-    if (!lead) return;
+    if (!contractor) return;
     const newAssignedTo = userId === 'unassigned' ? null : userId;
     
     try {
@@ -544,12 +544,12 @@ function ContractorDetailsV2Content() {
       setContractor({ ...contractor, assigned_to: newAssignedTo });
       toast.success('Contractor assigned successfully');
     } catch (error: any) {
-      toast.error('Failed to assign lead: ' + error.message);
+      toast.error('Failed to assign contractor: ' + error.message);
     }
   };
 
   const updateLeadStatus = async (newStatus: string) => {
-    if (!lead) return;
+    if (!contractor) return;
     try {
       const { error } = await supabase
         .from('contractors')
@@ -576,9 +576,9 @@ function ContractorDetailsV2Content() {
   };
 
   const handlePrimaryContactSave = async () => {
-    if (!lead) return;
+    if (!contractor) return;
     try {
-      const { id, created_at, clients, lead_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
+      const { id, created_at, clients, contractor_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
       const { error } = await supabase
         .from('contractors')
         .update({
@@ -610,9 +610,9 @@ function ContractorDetailsV2Content() {
   };
 
   const saveEdit = async () => {
-    if (!lead) return;
+    if (!contractor) return;
     try {
-      const { id, created_at, clients, lead_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
+      const { id, created_at, clients, contractor_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
       const { error } = await supabase
         .from('contractors')
         .update(updatePayload)
@@ -734,7 +734,7 @@ function ContractorDetailsV2Content() {
       return;
     }
     
-    if (!lead) {
+    if (!contractor) {
       toast.error('Error: Contractor data not loaded yet.');
       return;
     }
@@ -887,7 +887,7 @@ function ContractorDetailsV2Content() {
   };
 
   const handleBuildingImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!e.target.files || e.target.files.length === 0 || !lead) return;
+    if (!e.target.files || e.target.files.length === 0 || !contractor) return;
     const file = e.target.files[0];
     
     try {
@@ -981,7 +981,7 @@ function ContractorDetailsV2Content() {
     return <div className="h-screen w-full flex justify-center items-center bg-[#f5f7fb]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
   }
 
-  if (!lead) {
+  if (!contractor) {
     return <div className="h-screen w-full flex justify-center items-center bg-[#f5f7fb]">Contractor not found.</div>;
   }
   return (

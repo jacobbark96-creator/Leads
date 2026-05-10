@@ -137,23 +137,6 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           .single();
 
         if (error) throw error;
-        
-        // Trigger enrichment for new leads
-        if (!isContractor && formData.company) {
-          try {
-            await fetch('/api/enrichment/trigger', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                lead_id: data.id,
-                company_name: formData.company,
-                address: formData.location || ''
-              })
-            });
-          } catch (e) {
-            console.error('Failed to trigger enrichment:', e);
-          }
-        }
 
         toast.success(`${isContractor ? 'Contractor' : 'Lead'} added successfully`);
         
@@ -228,23 +211,6 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         .single();
 
       if (error) throw error;
-      
-      // Trigger enrichment for AI parsed leads
-      if (parsed.company) {
-        try {
-          await fetch('/api/enrichment/trigger', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              lead_id: data.id,
-              company_name: parsed.company,
-              address: parsed.location || ''
-            })
-          });
-        } catch (e) {
-          console.error('Failed to trigger enrichment:', e);
-        }
-      }
 
       toast.success('Lead extracted successfully');
       

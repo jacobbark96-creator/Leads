@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabase';
-import { parseCSV } from '../../../../server/enrichment/utils/csvParser';
+import { parseCSV } from '../../../../lib/csvParser';
 
 export const runtime = 'edge';
 

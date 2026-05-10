@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabase';
 import { parseCSV } from '../../../../server/enrichment/utils/csvParser';
 
+export const runtime = 'edge';
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

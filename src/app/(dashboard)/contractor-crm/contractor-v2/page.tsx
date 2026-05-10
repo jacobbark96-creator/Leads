@@ -6,7 +6,6 @@ import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { Contractor, StaffUser } from '@/types';
-import { GoogleMap, useJsApiLoader, Circle, Marker } from '@react-google-maps/api';
 export interface ContractorNote { id: string; contractor_id: string; user_id: string; author_name: string; content: string; is_pinned: boolean; created_at: string; }
 import toast from 'react-hot-toast';
 import { useDialer } from '@/components/DialerProvider';
@@ -32,8 +31,10 @@ import {
   Save,
   Trash2,
   Linkedin,
-  MapPin
+  MapPin,
+  Map
 } from 'lucide-react';
+import { GoogleMap, useJsApiLoader, Marker, Circle, InfoWindow } from '@react-google-maps/api';
 
 const CalendarModal = ({ isOpen, onClose, onSetReminder }: any) => {
   const [date, setDate] = useState('');
@@ -282,9 +283,7 @@ function ContractorDetailsV2Content() {
   
   const [isPrimaryContactModalOpen, setIsPrimaryContactModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
-
   const [mapLeads, setMapLeads] = useState<any[]>([]);
-  const [map, setMap] = useState<google.maps.Map | null>(null);
 
   const { isLoaded } = useJsApiLoader({
     id: 'google-map-script',
@@ -313,7 +312,6 @@ function ContractorDetailsV2Content() {
       fetchContractorAndNotes();
       fetchStaffUsers();
       fetchTasks();
-      fetchMapLeads();
 
       // Real-time notes subscription
       const notesChannel = supabase
@@ -414,22 +412,6 @@ function ContractorDetailsV2Content() {
         
       if (!error && data) {
         setTasks(data);
-      }
-    } catch (e) {
-      console.error(e);
-    }
-  };
-
-  const fetchMapLeads = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('is_marketed', true)
-        .is('client_id', null)
-        .not('latitude', 'is', null);
-      if (!error && data) {
-        setMapLeads(data);
       }
     } catch (e) {
       console.error(e);
@@ -549,6 +531,15 @@ function ContractorDetailsV2Content() {
         
       if (notesError) throw notesError;
       setNotes(notesData || []);
+      
+      // Fetch leads for the map
+      const { data: leadsData } = await supabase
+        .from('leads')
+        .select('id, name, company, latitude, longitude, exclusive_price, share_price, status')
+        .not('latitude', 'is', null)
+        .not('longitude', 'is', null)
+        .limit(200);
+      setMapLeads(leadsData || []);
       
     } catch (error: any) {
       toast.error('Failed to load contractor details: ' + error.message);
@@ -1148,12 +1139,12 @@ function ContractorDetailsV2Content() {
               </div>
             </div>
 
-            {/* 2. COMPANY SNAPSHOT CARD */}
+            {/* 2. CONTRACTOR SNAPSHOT CARD */}
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 shrink-0">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
                   <Building2 className="w-3.5 h-3.5 text-gray-500" />
-                  Company Snapshot
+                  Contractor Snapshot
                 </h3>
                 <button onClick={() => handleEditClick('snapshot')} className="text-gray-400 hover:text-blue-600 transition-colors">
                   {editingCard === 'snapshot' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
@@ -1169,11 +1160,11 @@ function ContractorDetailsV2Content() {
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Coverage Area</span>
+                  <span className="text-gray-500 text-xs">Address</span>
                   {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).coverage_area || ''} onChange={e => setEditForm({...editForm, coverage_area: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                    <input type="text" value={(editForm as any).location || ''} onChange={e => setEditForm({...editForm, location: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                   ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).coverage_area || 'N/A'}</span>
+                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).location || 'N/A'}</span>
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
@@ -1262,69 +1253,60 @@ function ContractorDetailsV2Content() {
                   Coverage Map
                 </h3>
               </div>
-              <div className="w-full h-full min-h-[120px] bg-blue-50 rounded-lg overflow-hidden relative border border-blue-100">
-                {isLoaded && contractor?.latitude && contractor?.longitude ? (
+              <div className="w-full h-full min-h-[120px] bg-blue-50 rounded-lg overflow-hidden relative border border-blue-100 flex items-center justify-center">
+                {isLoaded ? (
                   <GoogleMap
                     mapContainerStyle={{ width: '100%', height: '100%' }}
-                    center={{ lat: Number(contractor.latitude), lng: Number(contractor.longitude) }}
+                    center={{ lat: contractor.latitude || 54.5, lng: contractor.longitude || -2.5 }}
                     zoom={8}
-                    options={{
-                      disableDefaultUI: true,
-                      zoomControl: true,
-                      styles: [
-                        { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] },
-                      ]
-                    }}
-                    onLoad={(m) => setMap(m)}
+                    options={{ disableDefaultUI: true, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, zoomControl: true }}
                   >
-                    <Circle
-                      center={{ lat: Number(contractor.latitude), lng: Number(contractor.longitude) }}
-                      radius={((parseFloat((contractor as any).max_distance) || 50) * 1609.34)}
+                    <Marker 
+                      position={{ lat: contractor.latitude || 54.5, lng: contractor.longitude || -2.5 }}
+                      icon={typeof window !== 'undefined' && window.google ? {
+                        path: window.google.maps.SymbolPath.CIRCLE,
+                        scale: 8,
+                        fillColor: '#3b82f6',
+                        fillOpacity: 1,
+                        strokeColor: '#ffffff',
+                        strokeWeight: 2,
+                      } : undefined}
+                    />
+                    <Circle 
+                      center={{ lat: contractor.latitude || 54.5, lng: contractor.longitude || -2.5 }}
+                      radius={(parseInt((contractor as any).max_distance) || 50) * 1609.34}
                       options={{
-                        fillColor: '#3B82F6',
-                        fillOpacity: 0.15,
-                        strokeColor: '#3B82F6',
+                        fillColor: '#3b82f6',
+                        fillOpacity: 0.1,
+                        strokeColor: '#3b82f6',
                         strokeOpacity: 0.8,
                         strokeWeight: 2,
+                        clickable: false,
+                        zIndex: 1
                       }}
                     />
-                    <Marker 
-                      position={{ lat: Number(contractor.latitude), lng: Number(contractor.longitude) }}
-                      icon={{
-                        path: window.google.maps.SymbolPath.CIRCLE,
-                        fillColor: '#3B82F6',
-                        fillOpacity: 1,
-                        scale: 8,
-                        strokeColor: '#FFFFFF',
-                        strokeWeight: 2,
-                      }}
-                      title={contractor.company || contractor.name || 'Contractor'}
-                    />
-                    {mapLeads.map(lead => (
-                      <Marker
+                    {mapLeads.map((lead: any) => (
+                      <Marker 
                         key={lead.id}
-                        position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
-                        icon={{
-                          path: window.google.maps.SymbolPath.CIRCLE,
-                          fillColor: '#EF4444',
-                          fillOpacity: 1,
-                          scale: 5,
-                          strokeColor: '#FFFFFF',
-                          strokeWeight: 1,
-                        }}
-                        title={lead.company || lead.name || 'Lead'}
+                        position={{ lat: lead.latitude, lng: lead.longitude }}
                         onClick={() => window.open(`/sales-crm/lead-v2?id=${lead.id}&tab=unqualified`, '_blank')}
+                        icon={typeof window !== 'undefined' && window.google ? {
+                          path: window.google.maps.SymbolPath.CIRCLE,
+                          scale: 5,
+                          fillColor: '#ef4444',
+                          fillOpacity: 1,
+                          strokeColor: '#ffffff',
+                          strokeWeight: 1.5
+                        } : undefined}
+                        title={lead.company || lead.name}
                       />
                     ))}
                   </GoogleMap>
                 ) : (
-                  <div className="absolute inset-0 flex items-center justify-center text-xs text-gray-500 bg-gray-50 text-center p-4">
-                    {!isLoaded ? 'Loading map...' : 'No location coordinates available for this contractor. Add address in edit mode.'}
-                  </div>
+                  <div className="text-xs text-gray-500">Loading map...</div>
                 )}
-                <span className="absolute bottom-2 right-2 text-[10px] font-bold text-blue-700 bg-white/90 backdrop-blur px-1.5 py-0.5 rounded shadow-sm z-10 pointer-events-none">
-                  {(contractor as any).max_distance || '50'} Miles Radius
-                </span>
+                
+                <span className="absolute bottom-2 right-2 text-[10px] font-bold text-blue-700 bg-white/80 px-1.5 py-0.5 rounded z-10 shadow-sm pointer-events-none">{(contractor as any).max_distance || '50 miles'} Radius</span>
               </div>
             </div>
             </aside>
@@ -1692,18 +1674,9 @@ function ContractorDetailsV2Content() {
             </div>
 
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col flex-1 min-h-0">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Available Grants</h3>
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
-                <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
-                  <span className="text-xs font-bold text-gray-900">Green Business Fund</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">Up to £25,000 for energy efficiency</span>
-                  <button className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">Apply Now</button>
-                </div>
-                <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
-                  <span className="text-xs font-bold text-gray-900">Low Carbon Grant</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">Match funding for solar PV installation</span>
-                  <button className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">Check Eligibility</button>
-                </div>
+              <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Credit Terms</h3>
+              <div className="flex-1 flex items-center justify-center">
+                <span className="text-sm font-medium text-gray-500 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">Coming Soon</span>
               </div>
             </div>
           </aside>

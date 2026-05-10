@@ -1,5 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
-import { geocodingQueue, companyLookupQueue } from './queues/index.ts';
+import { geocodingQueue, companyLookupQueue } from './queues/index';
 import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env' });

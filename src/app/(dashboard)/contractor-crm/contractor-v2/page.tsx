@@ -542,59 +542,6 @@ function ContractorDetailsV2Content() {
         .order('created_at', { ascending: false });
       if (filesData) setFiles(filesData);
 
-      let nextQuery = supabase.from('contractors').select('id, last_dialed_at, created_at');
-      if (tab === 'qualified') {
-        nextQuery = nextQuery.eq('status', 'qualified');
-      } else {
-        nextQuery = nextQuery.neq('status', 'qualified');
-      }
-      
-      if (contractorData.last_dialed_at === null) {
-        nextQuery = nextQuery.or(`and(last_dialed_at.is.null,or(created_at.lt.${contractorData.created_at},and(created_at.eq.${contractorData.created_at},id.lt.${contractorData.id}))),last_dialed_at.not.is.null`);
-      } else {
-        nextQuery = nextQuery.or(`last_dialed_at.gt.${contractorData.last_dialed_at},and(last_dialed_at.eq.${contractorData.last_dialed_at},or(created_at.lt.${contractorData.created_at},and(created_at.eq.${contractorData.created_at},id.lt.${contractorData.id})))`);
-      }
-
-      const { data: nextData } = await nextQuery
-        .is('being_dialed_by', null)
-        .order('last_dialed_at', { ascending: true, nullsFirst: true })
-        .order('created_at', { ascending: false })
-        .order('id', { ascending: false })
-        .limit(1);
-        
-      if (nextData && nextData.length > 0) {
-        setNextContractorId(nextData[0].id);
-      } else {
-        setNextContractorId(null);
-      }
-
-      // Prev Contractor Query
-      let prevQuery = supabase.from('contractors').select('id, last_dialed_at, created_at');
-      if (tab === 'qualified') {
-        prevQuery = prevQuery.eq('status', 'qualified');
-      } else {
-        prevQuery = prevQuery.neq('status', 'qualified');
-      }
-      
-      if (contractorData.last_dialed_at === null) {
-        prevQuery = prevQuery.or(`and(last_dialed_at.is.null,or(created_at.gt.${contractorData.created_at},and(created_at.eq.${contractorData.created_at},id.gt.${contractorData.id})))`);
-      } else {
-        prevQuery = prevQuery.or(`last_dialed_at.lt.${contractorData.last_dialed_at},and(last_dialed_at.eq.${contractorData.last_dialed_at},or(created_at.gt.${contractorData.created_at},and(created_at.eq.${contractorData.created_at},id.gt.${contractorData.id}))),last_dialed_at.is.null`);
-      }
-
-      const { data: prevData } = await prevQuery
-        .is('being_dialed_by', null)
-        .order('last_dialed_at', { ascending: false, nullsFirst: false })
-        .order('created_at', { ascending: true })
-        .order('id', { ascending: true })
-        .limit(1);
-        
-      if (prevData && prevData.length > 0) {
-        setPrevContractorId(prevData[0].id);
-      } else {
-        setPrevContractorId(null);
-      }
-
       const { data: notesData, error: notesError } = await supabase
         .from('contractor_notes')
         .select('*')

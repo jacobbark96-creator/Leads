@@ -181,8 +181,8 @@ const EditPrimaryContactModal = ({ isOpen, onClose, onSave, form, setForm }: any
             <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Name</label>
             <input 
               type="text" 
-              value={form.name || ''} 
-              onChange={(e) => setForm({...form, name: e.target.value})}
+              value={form.contact_name || form.name || ''} 
+              onChange={(e) => setForm({...form, contact_name: e.target.value, name: e.target.value})}
               className="w-full border border-gray-300 px-3 py-2 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
             />
           </div>
@@ -507,11 +507,33 @@ function ContractorDetailsV2Content() {
       
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name)')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, users(email, created_at))')
         .eq('id', id)
         .single();
         
       if (contractorError) throw contractorError;
+
+      // Map client and user data to contractor if missing in contractors table
+      if (contractorData.clients) {
+        if (!contractorData.location && contractorData.clients.address) contractorData.location = contractorData.clients.address;
+        if (!contractorData.other_contacts && contractorData.clients.other_contacts) {
+           // We'll let the logic below parse it, but we assign it to contractorData
+           contractorData.other_contacts = contractorData.clients.other_contacts;
+           contractorData.other_contact_numbers = contractorData.clients.other_contact_numbers;
+        }
+        if (!contractorData.email && contractorData.clients.users?.email) {
+           contractorData.email = contractorData.clients.users.email;
+        }
+        
+        // Always sync category_id from clients.services_offered to ensure consistency
+        if (contractorData.clients.services_offered) {
+           const offered = contractorData.clients.services_offered.split(',').map((s: string) => s.trim());
+           if (offered.length > 0) {
+             contractorData.category_id = offered[0];
+           }
+        }
+      }
+
       setContractor(contractorData);
 
       // Extract other contacts if stored in JSON or similar (depends on DB structure)
@@ -627,6 +649,7 @@ function ContractorDetailsV2Content() {
         .from('contractors')
         .update({
           name: updatePayload.name,
+          contact_name: updatePayload.contact_name || updatePayload.name,
           job_title: updatePayload.job_title,
           email: updatePayload.email,
           phone: updatePayload.phone,
@@ -637,11 +660,48 @@ function ContractorDetailsV2Content() {
 
       if (error) throw error;
       
+      // Sync back to clients and users if client_id is present
+      if (contractor.client_id) {
+        const { data: clientData } = await supabase.from('clients').select('user_id').eq('id', contractor.client_id).single();
+        if (clientData) {
+          await supabase.from('clients').update({
+            contact_name: updatePayload.name,
+            phone: updatePayload.phone
+          }).eq('id', contractor.client_id);
+          
+          if (clientData.user_id) {
+            await supabase.from('users').update({
+              name: updatePayload.name,
+              job_title: updatePayload.job_title
+            }).eq('id', clientData.user_id);
+          }
+        }
+      }
+      
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, users(email, created_at))')
         .eq('id', contractor.id)
         .single();
+        
+      if (freshContractor && freshContractor.clients) {
+        if (!freshContractor.location && freshContractor.clients.address) freshContractor.location = freshContractor.clients.address;
+        if (!freshContractor.other_contacts && freshContractor.clients.other_contacts) {
+           freshContractor.other_contacts = freshContractor.clients.other_contacts;
+           freshContractor.other_contact_numbers = freshContractor.clients.other_contact_numbers;
+        }
+        if (!freshContractor.email && freshContractor.clients.users?.email) {
+           freshContractor.email = freshContractor.clients.users.email;
+        }
+        
+        // Always sync category_id from clients.services_offered to ensure consistency
+        if (freshContractor.clients.services_offered) {
+           const offered = freshContractor.clients.services_offered.split(',').map((s: string) => s.trim());
+           if (offered.length > 0) {
+             freshContractor.category_id = offered[0];
+           }
+        }
+      }
         
       setContractor(freshContractor || { ...contractor, ...updatePayload });
       setIsPrimaryContactModalOpen(false);
@@ -664,12 +724,42 @@ function ContractorDetailsV2Content() {
 
       if (error) throw error;
       
+      // Sync back to clients and users if client_id is present
+      if (contractor.client_id) {
+        const clientUpdate: any = {};
+        if (updatePayload.location !== undefined) clientUpdate.address = updatePayload.location;
+        if (updatePayload.assigned_to !== undefined) clientUpdate.assigned_to = updatePayload.assigned_to;
+        
+        if (Object.keys(clientUpdate).length > 0) {
+          await supabase.from('clients').update(clientUpdate).eq('id', contractor.client_id);
+        }
+      }
+      
       // Force a fresh fetch to ensure all data is in sync
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, users(email, created_at))')
         .eq('id', contractor.id)
         .single();
+        
+      if (freshContractor && freshContractor.clients) {
+        if (!freshContractor.location && freshContractor.clients.address) freshContractor.location = freshContractor.clients.address;
+        if (!freshContractor.other_contacts && freshContractor.clients.other_contacts) {
+           freshContractor.other_contacts = freshContractor.clients.other_contacts;
+           freshContractor.other_contact_numbers = freshContractor.clients.other_contact_numbers;
+        }
+        if (!freshContractor.email && freshContractor.clients.users?.email) {
+           freshContractor.email = freshContractor.clients.users.email;
+        }
+        
+        // Always sync category_id from clients.services_offered to ensure consistency
+        if (freshContractor.clients.services_offered) {
+           const offered = freshContractor.clients.services_offered.split(',').map((s: string) => s.trim());
+           if (offered.length > 0) {
+             freshContractor.category_id = offered[0];
+           }
+        }
+      }
         
       setContractor(freshContractor || { ...contractor, ...updatePayload });
       setEditingCard(null);
@@ -753,6 +843,17 @@ function ContractorDetailsV2Content() {
         .eq('id', contractor.id);
 
       if (error) throw error;
+      
+      if (contractor.client_id) {
+        // Also update clients table to keep in sync
+        const contactNames = updatedContacts.map((c: any) => c.name).join(', ');
+        const contactNumbers = updatedContacts.map((c: any) => c.phone).filter(Boolean).join(', ');
+        
+        await supabase.from('clients').update({
+          other_contacts: contactNames,
+          other_contact_numbers: contactNumbers
+        }).eq('id', contractor.client_id);
+      }
       
       setOtherContacts(updatedContacts);
       setContractor({ ...contractor, other_contacts: JSON.stringify(updatedContacts) } as any);
@@ -1164,8 +1265,10 @@ function ContractorDetailsV2Content() {
                   contractor.status === 'dnc' ? 'bg-red-100 text-red-700' :
                   'bg-gray-100 text-gray-700'
                 }`}>{contractor.status}</span>
-                {(contractor as any).category?.name && (
-                  <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-semibold uppercase">{(contractor as any).category.name}</span>
+                {(categories.find(c => c.id === (contractor as any).category_id)?.name || (contractor as any).category?.name) && (
+                  <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-semibold uppercase">
+                    {categories.find(c => c.id === (contractor as any).category_id)?.name || (contractor as any).category?.name}
+                  </span>
                 )}
                 {/* @ts-ignore */}
                 {contractor.score && <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-semibold">Score: {contractor.score}</span>}
@@ -1186,11 +1289,11 @@ function ContractorDetailsV2Content() {
               <div className="flex flex-col gap-2.5">
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500 text-xs">Member Since</span>
-                  {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).member_since || ''} onChange={e => setEditForm({...editForm, member_since: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
-                  ) : (
-                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).member_since || 'N/A'}</span>
-                  )}
+                  <span className="text-gray-900 text-xs font-medium text-right ml-2">
+                    {(contractor as any).clients?.users?.created_at 
+                      ? new Date((contractor as any).clients.users.created_at).toLocaleDateString() 
+                      : new Date((contractor as any).created_at).toLocaleDateString()}
+                  </span>
                 </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500 text-xs">Address</span>
@@ -1416,20 +1519,9 @@ function ContractorDetailsV2Content() {
                 <div className="flex flex-col gap-3">
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
                     <span className="text-gray-500 text-xs">Category</span>
-                    {editingCard === 'overview' ? (
-                      <select 
-                        value={(editForm as any).category_id || ''} 
-                        onChange={e => setEditForm({...editForm, category_id: e.target.value} as any)} 
-                        className="border rounded px-1.5 py-0.5 text-xs w-32 focus:ring-1 focus:ring-blue-500"
-                      >
-                        <option value="">Select Category</option>
-                        {categories.map(cat => (
-                          <option key={cat.id} value={cat.id}>{cat.name}</option>
-                        ))}
-                      </select>
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).category?.name || 'Uncategorized'}</span>
-                    )}
+                    <span className="text-gray-900 text-sm font-medium">
+                      {categories.find(c => c.id === (contractor as any).category_id)?.name || (contractor as any).category?.name || 'Uncategorized'}
+                    </span>
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
                     <span className="text-gray-500 text-xs">Status</span>

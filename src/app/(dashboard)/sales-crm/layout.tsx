@@ -2,144 +2,156 @@
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Users, CheckCircle, UserPlus, Menu, X } from 'lucide-react';
+import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
+import { AdminNotifications } from '@/components/AdminNotifications';
 
 export default function SalesLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { profile } = useAuthStore();
+  const { profile, signOut } = useAuthStore();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [crmDropdownOpen, setCrmDropdownOpen] = useState(false);
+  const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
-  const tabs = [
-    { name: 'Unqualified Leads', path: '/sales-crm', icon: Users, id: 'sales-crm/fresh' },
-    { name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle, id: 'sales-crm/qualified' },
-    { name: 'Import Leads', path: '/sales-crm/import', icon: Upload, id: 'sales-crm/import' },
-  ].filter(tab => profile?.role !== 'rep' || profile?.permissions?.includes(tab.id));
+  const sidebarItems = [
+    { name: 'Unqualified Leads', path: '/sales-crm', icon: Users, exact: true },
+    { name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle },
+    { name: 'Marketplace', path: '/sales-crm/marketplace', icon: Database },
+    { name: 'Import Leads', path: '/sales-crm/import', icon: Upload },
+    { name: 'Reports', path: '/sales-crm/reports', icon: BarChart2 },
+    { name: 'Settings', path: '/sales-crm/settings', icon: Settings },
+  ];
+
+  // If on lead-v2, render exactly what was there (bypassing layout)
+  if (pathname === '/sales-crm/lead-v2') {
+    return <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>{children}</ProtectedRoute>;
+  }
 
   return (
     <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>
-      {pathname === '/sales-crm/lead-v2' ? (
-        <>{children}</>
-      ) : (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900">Sales CRM</h1>
-            
-            {/* Mobile menu button & actions */}
-            <div className="flex items-center gap-2">
-            {profile?.role && ['admin', 'super_admin', 'rep'].includes(profile.role) && (
-              <button
-                onClick={() => {
-                  const url = new URL(window.location.href);
-                  const isMyLeads = url.searchParams.get('assignedToMe') === 'true';
-                  if (isMyLeads) {
-                    url.searchParams.delete('assignedToMe');
-                  } else {
-                    url.searchParams.set('assignedToMe', 'true');
-                  }
-                  router.push(url.pathname + url.search);
-                }}
-                className="sm:hidden inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                {typeof window !== 'undefined' && new URL(window.location.href).searchParams.get('assignedToMe') === 'true' 
-                  ? 'View All' 
-                  : 'My Leads'}
-              </button>
-            )}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="sm:hidden inline-flex items-center justify-center p-2 rounded-md text-gray-400 hover:text-gray-500 hover:bg-gray-100 focus:outline-none"
-            >
-              <span className="sr-only">Open sub-menu</span>
-              {mobileMenuOpen ? (
-                <X className="block h-6 w-6" aria-hidden="true" />
-              ) : (
-                <Menu className="block h-6 w-6" aria-hidden="true" />
-              )}
-            </button>
+      <div className="min-h-screen bg-[#F9FAFB] flex font-sans text-gray-900">
+        {/* LEFT SIDEBAR */}
+        <aside className="fixed inset-y-0 left-0 w-56 bg-white border-r border-gray-200 flex flex-col z-20 hidden md:flex">
+          <div className="h-12 flex items-center px-5 border-b border-gray-100 shrink-0">
+            <Link href="/" className="flex items-center gap-2">
+              <img src="/openlead-logo.png" alt="Openlead" className="h-5 object-contain" />
+            </Link>
           </div>
-        </div>
+          
+          <div className="px-5 py-3 shrink-0">
+            <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sales CRM</h2>
+          </div>
 
-        {/* Mobile Sub-Menu Panel */}
-        {mobileMenuOpen && (
-          <div className="sm:hidden bg-white shadow rounded-lg border border-gray-200 overflow-hidden mt-2">
-            <div className="py-2 space-y-1">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = pathname === tab.path;
-                return (
-                  <Link
-                    key={tab.name}
-                    href={tab.path}
-                    onClick={() => setMobileMenuOpen(false)}
-                    className={`${
-                      isActive
-                        ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
-                        : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 border-l-4 border-transparent'
-                    } flex items-center px-4 py-3 text-base font-medium`}
-                  >
-                    <Icon className={`${isActive ? 'text-blue-600' : 'text-gray-400'} mr-3 h-5 w-5`} />
-                    {tab.name}
-                  </Link>
-                );
-              })}
+          <nav className="flex-1 px-3 space-y-0.5 overflow-y-auto">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.exact ? pathname === item.path : pathname?.startsWith(item.path);
+              return (
+                <Link
+                  key={item.name}
+                  href={item.path}
+                  className={`flex items-center gap-2.5 px-3 py-1.5 rounded-lg text-[13px] font-medium transition-colors ${
+                    isActive 
+                      ? 'bg-blue-50 text-blue-700' 
+                      : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900'
+                  }`}
+                >
+                  <Icon className={`w-3.5 h-3.5 ${isActive ? 'text-blue-600' : 'text-gray-400'}`} />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </nav>
+
+          <div className="p-3 shrink-0 border-t border-gray-100">
+            {/* Help Card */}
+            <div className="bg-gray-50 rounded-xl p-3 mb-3 border border-gray-100">
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <HelpCircle className="w-3.5 h-3.5 text-blue-600" />
+                <h4 className="text-[11px] font-bold text-gray-900">Need help?</h4>
+              </div>
+              <p className="text-[9px] text-gray-500 mb-2">Check our docs or contact support.</p>
+              <button className="w-full py-1 bg-white border border-gray-200 rounded-md text-[11px] font-medium text-gray-700 hover:bg-gray-50 transition-colors shadow-sm">
+                Documentation
+              </button>
+            </div>
+
+            {/* User Profile */}
+            <div className="flex items-center gap-2.5 px-2 py-1.5">
+              <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-[10px] shadow-inner shrink-0">
+                {profile?.name?.charAt(0).toUpperCase() || 'U'}
+              </div>
+              <div className="flex flex-col min-w-0 flex-1">
+                <span className="text-[13px] font-bold text-gray-900 truncate">{profile?.name}</span>
+                <span className="text-[9px] text-gray-500 truncate uppercase tracking-wider">{profile?.role?.replace('_', ' ')}</span>
+              </div>
+              <button onClick={() => signOut()} className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors">
+                <LogOut className="w-3.5 h-3.5" />
+              </button>
             </div>
           </div>
-        )}
+        </aside>
 
-        {/* Desktop Tabs */}
-        <div className="hidden sm:block border-b border-gray-200">
-          <div className="flex justify-between items-center">
-            <nav className="-mb-px flex space-x-8" aria-label="Tabs">
-              {tabs.map((tab) => {
-                const Icon = tab.icon;
-                const isActive = pathname === tab.path;
-                return (
-                  <Link
-                    key={tab.name}
-                    href={tab.path}
-                    className={`${
-                      isActive
-                        ? 'border-blue-500 text-blue-600'
-                        : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-                    } whitespace-nowrap flex py-3 px-1 border-b-2 font-medium text-xs`}
-                  >
-                    <Icon className={`${isActive ? 'text-blue-500' : 'text-gray-400'} mr-2 h-4 w-4`} />
-                    {tab.name}
-                  </Link>
-                );
-              })}
-            </nav>
-            {profile?.role && ['admin', 'super_admin', 'rep'].includes(profile.role) && (
-              <button
-                onClick={() => {
-                  const url = new URL(window.location.href);
-                  const isMyLeads = url.searchParams.get('assignedToMe') === 'true';
-                  if (isMyLeads) {
-                    url.searchParams.delete('assignedToMe');
-                  } else {
-                    url.searchParams.set('assignedToMe', 'true');
-                  }
-                  router.push(url.pathname + url.search);
-                }}
-                className="inline-flex items-center px-3 py-1.5 border border-gray-300 shadow-sm text-xs font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                <UserPlus className="w-3.5 h-3.5 mr-1.5 text-gray-400" />
-                {typeof window !== 'undefined' && new URL(window.location.href).searchParams.get('assignedToMe') === 'true' 
-                  ? 'View All' 
-                  : 'My Leads'}
+        {/* MAIN CONTENT WRAPPER */}
+        <div className="flex-1 flex flex-col md:pl-56 min-w-0 h-screen">
+          {/* TOP NAVBAR */}
+          <header className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-10 flex items-center justify-between px-4 sm:px-5 shrink-0 shadow-sm">
+            <div className="flex items-center gap-4">
+              <button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+                <Menu className="w-5 h-5" />
               </button>
-            )}
-          </div>
-        </div>
+              
+              {/* CRM Selector */}
+              <div className="relative">
+                <button 
+                  onClick={() => setCrmDropdownOpen(!crmDropdownOpen)}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-gray-900 border border-transparent hover:border-gray-200"
+                >
+                  Sales CRM
+                  <ChevronDown className="w-4 h-4 text-gray-500" />
+                </button>
+                {crmDropdownOpen && (
+                  <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1">
+                    <Link href="/sales-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-blue-700 bg-blue-50 font-medium"><Database className="w-4 h-4" /> Sales CRM</Link>
+                    <Link href="/contractor-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 font-medium"><Users className="w-4 h-4" /> Contractor CRM</Link>
+                    <Link href="/admin-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 font-medium"><Settings className="w-4 h-4" /> Admin CRM</Link>
+                  </div>
+                )}
+              </div>
+            </div>
 
-        <div className="bg-white shadow rounded-lg p-6">
-          {children}
+            <div className="flex items-center gap-3">
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors relative">
+                <Bell className="w-4 h-4" />
+                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
+              </button>
+              <button className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors">
+                <MessageSquare className="w-4 h-4" />
+              </button>
+              <div className="h-4 w-px bg-gray-200 mx-1"></div>
+              <div className="relative">
+                <button 
+                  onClick={() => setUserDropdownOpen(!userDropdownOpen)}
+                  className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                >
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs shadow-inner">
+                    {profile?.name?.charAt(0).toUpperCase() || 'U'}
+                  </div>
+                </button>
+              </div>
+            </div>
+          </header>
+
+          {/* PAGE CONTENT */}
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+            <div className="max-w-7xl mx-auto">
+              {children}
+            </div>
+          </main>
         </div>
       </div>
-      )}
     </ProtectedRoute>
   );
 }

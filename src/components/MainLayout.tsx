@@ -34,7 +34,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
     }
   }, [profile]);
 
-  const isFullScreenPage = pathname === '/sales-crm/lead-v2' || pathname === '/contractor-crm/contractor-v2';
+  const isFullScreenPage = pathname?.startsWith('/sales-crm') || pathname === '/contractor-crm/contractor-v2';
   const isDetailsPage = pathname === '/contractor-crm/contractor-v2';
 
   if (!profile) return <>{children}</>;

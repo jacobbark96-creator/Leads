@@ -331,24 +331,55 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           const contractorPayload = {
             company_name: formData.company_name,
             contact_name: formData.name, // Keep contact name synced with user name
+            name: formData.name,
+            job_title: formData.job_title,
             phone: formData.phone,
+            email: user.email,
             service_areas: formData.service_areas,
+            location: formData.address,
+            coverage_area: formData.areas_covered,
+            other_contacts: formData.other_contacts,
+            other_contact_numbers: formData.other_contact_numbers,
+            assigned_to: selectedAdvisorId || null,
             client_id: updatedClient.id,
+            category_id: selectedServiceCategoryIds.length > 0 ? selectedServiceCategoryIds[0] : null,
             status: 'onboarded' // Ensure they show up in the onboarded tab
           };
 
-          if (missingClientProfile) {
-            // Create contractor record if missing
-            const { error: contractorError } = await supabase
-              .from('contractors')
-              .insert([contractorPayload]);
-            if (contractorError) console.error("Failed to insert contractor table:", contractorError);
-          } else {
+          // Find if there is already a contractor linked to this client
+          const { data: existingContractors } = await supabase
+            .from('contractors')
+            .select('id')
+            .eq('client_id', updatedClient.id);
+
+          if (existingContractors && existingContractors.length > 0) {
+            // Update existing contractor(s)
             const { error: contractorError } = await supabase
               .from('contractors')
               .update(contractorPayload)
               .eq('client_id', updatedClient.id);
             if (contractorError) console.error("Failed to sync contractor table:", contractorError);
+          } else {
+            // Check if there is an unlinked contractor with the same email
+            const { data: existingByEmail } = await supabase
+              .from('contractors')
+              .select('id')
+              .eq('email', user.email)
+              .single();
+              
+            if (existingByEmail) {
+              const { error: contractorError } = await supabase
+                .from('contractors')
+                .update(contractorPayload)
+                .eq('id', existingByEmail.id);
+              if (contractorError) console.error("Failed to link and sync contractor table:", contractorError);
+            } else {
+              // Create contractor record
+              const { error: contractorError } = await supabase
+                .from('contractors')
+                .insert([contractorPayload]);
+              if (contractorError) console.error("Failed to insert contractor table:", contractorError);
+            }
           }
         }
 

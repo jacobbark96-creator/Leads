@@ -1,15 +1,15 @@
 "use client";
 export const dynamic = 'force-dynamic';
 
-import React, { useEffect, useState, Suspense } from 'react';
+import React, { useEffect, useState, Suspense, useMemo } from 'react';
 import { supabase } from '../../../lib/supabase';
 import { Lead } from '../../../types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Users, Calendar, MapPin, Search, Trash2, Filter, Clock } from 'lucide-react';
+import { Phone, Mail, Building, User, Users, Calendar, MapPin, Search, Trash2, Filter, Clock, Eye, MoreHorizontal, LayoutGrid, CheckCircle2, XCircle, Flame, Plus, ChevronLeft, ChevronRight, MessageSquare, Leaf, Ban, PhoneForwarded, Hash } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
-  import { AddLeadModal } from '@/components/AddLeadModal';
-  import { QualifyLeadModal } from '@/components/QualifyLeadModal';
-  import { useAuthStore } from '@/store/authStore';
+import { AddLeadModal } from '@/components/AddLeadModal';
+import { QualifyLeadModal } from '@/components/QualifyLeadModal';
+import { useAuthStore } from '@/store/authStore';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -17,15 +17,16 @@ const getInitials = (name: string) => {
   return name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 };
 
-// Helper to generate a deterministic color based on string
-const stringToColor = (str: string) => {
-  if (!str) return '#CBD5E1'; // gray-300 fallback
-  let hash = 0;
-  for (let i = 0; i < str.length; i++) {
-    hash = str.charCodeAt(i) + ((hash << 5) - hash);
+const extractTown = (location: string) => {
+  if (!location) return 'Unknown';
+  const parts = location.split(',').map(p => p.trim());
+  if (parts.length === 1) return parts[0];
+  const lastPart = parts[parts.length - 1];
+  const hasPostcode = /[A-Z]{1,2}[0-9][0-9A-Z]?\s?[0-9][A-Z]{2}/i.test(lastPart) || /^\d{5}$/.test(lastPart);
+  if (hasPostcode && parts.length > 1) {
+    return parts[parts.length - 2];
   }
-  const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-  return '#' + '00000'.substring(0, 6 - c.length) + c;
+  return parts.length > 1 ? parts[1] : parts[0];
 };
 
 function LeadProcessingContent() {
@@ -35,30 +36,28 @@ function LeadProcessingContent() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [phoneFilter, setPhoneFilter] = useState<string>('all');
-  const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'commercial' | 'residential'>('all');
-  const [uploadNameFilter, setUploadNameFilter] = useState<string>('all');
-  const [uploadNames, setUploadNames] = useState<string[]>([]);
+  
+  // Filters
+  const [statusFilter, setStatusFilter] = useState<string>('fresh');
   const [searchQuery, setSearchQuery] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
+  const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'commercial' | 'residential'>('all');
+  const [assignedUserFilter, setAssignedUserFilter] = useState<string>('me');
+  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
+  const [staffUsers, setStaffUsers] = useState<any[]>([]);
+
+  // Pagination & Counts
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [totalCount, setTotalCount] = useState<number>(0);
-  const [searchCount, setSearchCount] = useState<number | null>(null);
-  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-  const [staffUsers, setStaffUsers] = useState<any[]>([]);
-  const [leadToQualify, setLeadToQualify] = useState<Lead | null>(null);
+  const [kpiCounts, setKpiCounts] = useState({ total: 0, fresh: 0, contacted: 0, hot: 0, dnc: 0 });
+  const PAGE_SIZE = 25;
+
+  // Selections & Modals
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
   const [isDeleting, setIsDeleting] = useState(false);
-  const [isFiltersOpen, setIsFiltersOpen] = useState(false);
-  const [radiusFilter, setRadiusFilter] = useState<string>('any');
-  const [isGeocoding, setIsGeocoding] = useState(false);
-  const [assignedUserFilter, setAssignedUserFilter] = useState<string>('me');
-  const PAGE_SIZE = 25;
-  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
-  const [smartList, setSmartList] = useState<string>('all');
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
+  const [leadToQualify, setLeadToQualify] = useState<Lead | null>(null);
 
-  // Debounce search query to prevent excessive API calls
   useEffect(() => {
     const timer = setTimeout(() => {
       setDebouncedSearchQuery(searchQuery);
@@ -67,110 +66,80 @@ function LeadProcessingContent() {
   }, [searchQuery]);
 
   useEffect(() => {
-    // Fetch staff users for assignment name resolution
     const fetchStaff = async () => {
       const { data } = await supabase.rpc('get_staff_users');
       if (data) setStaffUsers(data);
     };
-    
-    // Fetch unique upload names for the filter dropdown
-    const fetchUploadNames = async () => {
-      const { data } = await supabase
-        .from('leads')
-        .select('upload_name')
-        .not('upload_name', 'is', null);
-        
-      if (data) {
-        const unique = Array.from(new Set(data.map(d => d.upload_name))).filter(Boolean) as string[];
-        setUploadNames(unique.sort());
-      }
-    };
-    
     fetchStaff();
-    fetchUploadNames();
   }, []);
+
+  const fetchKpis = async () => {
+    try {
+      // Helper to apply current active filters to all KPI counts
+      const applyFilters = (q: any) => {
+        let filtered = q;
+        if (assignedToMe && profile) {
+          if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+            filtered = filtered.eq('assigned_to', assignedUserFilter);
+          } else {
+            filtered = filtered.eq('assigned_to', profile.id);
+          }
+        } else if (!assignedToMe) {
+          filtered = filtered.is('assigned_to', null);
+        }
+
+        if (propertyTypeFilter === 'commercial') {
+          filtered = filtered.neq('company', '').not('company', 'is', null);
+        } else if (propertyTypeFilter === 'residential') {
+          filtered = filtered.or('company.eq.,company.is.null');
+        }
+        return filtered;
+      };
+
+      const getBaseQuery = () => applyFilters(supabase.from('leads').select('id', { count: 'exact', head: true }).neq('status', 'qualified'));
+
+      // Run precise count queries to bypass the 1000 row limit and respect active filters
+      const [
+        { count: dncCount },
+        { count: freshCount },
+        { count: contactedCount },
+        { count: hotCount },
+        { count: totalCount }
+      ] = await Promise.all([
+        getBaseQuery().eq('status', 'dnc'),
+        getBaseQuery().eq('status', 'fresh'),
+        getBaseQuery().neq('status', 'dnc').not('last_dialed_at', 'is', null),
+        getBaseQuery().neq('status', 'dnc').gte('score', 80),
+        getBaseQuery().neq('status', 'dnc') // Total excludes DNC
+      ]);
+
+      setKpiCounts({
+        total: totalCount || 0,
+        fresh: freshCount || 0,
+        contacted: contactedCount || 0,
+        hot: hotCount || 0,
+        dnc: dncCount || 0
+      });
+    } catch (err) {
+      console.error("Failed to fetch KPIs", err);
+    }
+  };
 
   const fetchLeads = async (pageNumber: number, isInitial: boolean) => {
     try {
       if (isInitial) setLoading(true);
       else setLoadingMore(true);
 
-      // Fetch PAGE_SIZE + 1 to know if there's a next page without a slow exact count query
       let query = supabase
         .from('leads')
-        .select('*, lead_notes(created_at)', { count: 'exact' })
+        .select('*, lead_notes(created_at, content)', { count: 'exact' })
         .neq('status', 'qualified')
-        .is('being_dialed_by', null) // Only show leads not being dialed
-        .order('last_dialed_at', { ascending: true, nullsFirst: true })
+        .is('being_dialed_by', null)
         .order('created_at', { ascending: false })
         .order('id', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
-      // Base query for total count (without search)
-      if (isInitial) {
-        let countQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).neq('status', 'qualified');
-        if (assignedToMe && profile) {
-          if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
-            countQuery = countQuery.eq('assigned_to', assignedUserFilter);
-          } else {
-            countQuery = countQuery.eq('assigned_to', profile.id);
-          }
-        }
-        else if (!assignedToMe) countQuery = countQuery.is('assigned_to', null);
-        if (statusFilter !== 'all') countQuery = countQuery.eq('status', statusFilter);
-        if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
-        if (propertyTypeFilter === 'commercial') countQuery = countQuery.neq('company', '').not('company', 'is', null);
-        else if (propertyTypeFilter === 'residential') countQuery = countQuery.or('company.eq.,company.is.null');
-        if (uploadNameFilter !== 'all') countQuery = countQuery.eq('upload_name', uploadNameFilter);
-
-        const { count: baseCount } = await countQuery;
-        setTotalCount(baseCount || 0);
-      }
-
-      // If we have a radius filter AND a search query, geocode it
-      let searchLat: number | null = null;
-      let searchLng: number | null = null;
-      let radiusModeActive = false;
-
-      if (radiusFilter !== 'any' && debouncedSearchQuery.trim()) {
-        setIsGeocoding(true);
-        try {
-          const res = await fetch(`https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(debouncedSearchQuery.trim())}&key=${process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY}`);
-          const geoData = await res.json();
-          if (geoData.status === 'OK' && geoData.results[0]) {
-            searchLat = geoData.results[0].geometry.location.lat;
-            searchLng = geoData.results[0].geometry.location.lng;
-            radiusModeActive = true;
-          } else {
-            toast.error('Could not find that location.');
-          }
-        } catch (e) {
-          console.error('Geocoding failed', e);
-        } finally {
-          setIsGeocoding(false);
-        }
-      }
-
-      if (radiusModeActive && searchLat !== null && searchLng !== null) {
-        // Fetch IDs within radius
-        const { data: radiusIds, error: radiusError } = await supabase.rpc('get_lead_ids_in_radius', {
-          search_lat: searchLat,
-          search_lng: searchLng,
-          radius_miles: Number(radiusFilter)
-        });
-        
-        if (radiusError) {
-          console.error("Radius error", radiusError);
-        } else {
-          const ids = radiusIds?.map((r: any) => r.id) || [];
-          if (ids.length > 0) {
-            query = query.in('id', ids);
-          } else {
-            // Force 0 results if nothing in radius
-            query = query.in('id', ['00000000-0000-0000-0000-000000000000']);
-          }
-        }
-      } else if (debouncedSearchQuery.trim()) {
+      if (debouncedSearchQuery.trim()) {
         const search = `%${debouncedSearchQuery.trim()}%`;
         query = query.or(`name.ilike.${search},company.ilike.${search},location.ilike.${search}`);
       }
@@ -185,12 +154,18 @@ function LeadProcessingContent() {
         query = query.is('assigned_to', null);
       }
 
-      if (statusFilter !== 'all') {
+      if (statusFilter === 'all') {
+        query = query.neq('status', 'dnc');
+      } else if (statusFilter === 'dnc') {
+        query = query.eq('status', 'dnc');
+      } else if (statusFilter === 'fresh') {
+        query = query.eq('status', 'fresh');
+      } else if (statusFilter === 'contacted') {
+        query = query.neq('status', 'dnc').not('last_dialed_at', 'is', null);
+      } else if (statusFilter === 'hot') {
+        query = query.neq('status', 'dnc').gte('score', 80);
+      } else {
         query = query.eq('status', statusFilter);
-      }
-
-      if (phoneFilter === 'with_phone') {
-        query = query.neq('phone', '');
       }
 
       if (propertyTypeFilter === 'commercial') {
@@ -199,21 +174,7 @@ function LeadProcessingContent() {
         query = query.or('company.eq.,company.is.null');
       }
 
-      if (uploadNameFilter !== 'all') {
-        query = query.eq('upload_name', uploadNameFilter);
-      }
-
-      // Apply Smart List filters
-      if (smartList === 'recent_calls') {
-        query = query.not('last_dialed_at', 'is', null).order('last_dialed_at', { ascending: false });
-      } else if (smartList === 'never_called') {
-        query = query.is('last_dialed_at', null);
-      } else if (smartList === 'high_spend') {
-        query = query.gt('monthly_spend', 1000).order('monthly_spend', { ascending: false });
-      }
-
-      const { data, error, count } = await query;
-
+      const { data, error } = await query;
       if (error) throw error;
       
       const fetchedLeads = data as Lead[] || [];
@@ -222,11 +183,6 @@ function LeadProcessingContent() {
 
       if (isInitial) {
         setLeads(leadsToRender);
-        if (debouncedSearchQuery.trim()) {
-          setSearchCount(count || 0);
-        } else {
-          setSearchCount(null);
-        }
       } else {
         setLeads(prev => {
           const combined = [...prev, ...leadsToRender];
@@ -235,6 +191,9 @@ function LeadProcessingContent() {
       }
       
       setHasMore(hasNextPage);
+      
+      if (isInitial) fetchKpis();
+      
     } catch (error: any) {
       toast.error('Failed to fetch leads: ' + error.message);
     } finally {
@@ -246,33 +205,15 @@ function LeadProcessingContent() {
   useEffect(() => {
     if (profile === undefined) return;
     setPage(0);
-    // Add a small delay to ensure debouncedSearchQuery is stable
     const timer = setTimeout(() => {
       fetchLeads(0, true);
     }, 50);
 
-    // Subscribe to real-time changes
     const channel = supabase
       .channel('leads-realtime')
       .on('postgres_changes', { event: '*', table: 'leads', schema: 'public' }, (payload) => {
-        if (payload.eventType === 'INSERT') {
-          const newLead = payload.new as Lead;
-          if (newLead.status !== 'qualified' && !newLead.being_dialed_by) {
-            setLeads(prev => [newLead, ...prev]);
-            setTotalCount(prev => prev + 1);
-          }
-        } else if (payload.eventType === 'UPDATE') {
-          const updatedLead = payload.new as Lead;
-          if (updatedLead.status === 'qualified' || updatedLead.being_dialed_by) {
-            setLeads(prev => prev.filter(l => l.id !== updatedLead.id));
-            setTotalCount(prev => prev - 1);
-          } else {
-            setLeads(prev => prev.map(l => l.id === updatedLead.id ? updatedLead : l));
-          }
-        } else if (payload.eventType === 'DELETE') {
-          setLeads(prev => prev.filter(l => l.id !== payload.old.id));
-          setTotalCount(prev => prev - 1);
-        }
+        fetchLeads(0, true);
+        fetchKpis();
       })
       .subscribe();
 
@@ -280,37 +221,12 @@ function LeadProcessingContent() {
       clearTimeout(timer);
       supabase.removeChannel(channel);
     };
-  }, [statusFilter, phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, assignedToMe, profile?.id, assignedUserFilter]);
+  }, [statusFilter, debouncedSearchQuery, assignedToMe, profile?.id, assignedUserFilter, propertyTypeFilter]);
 
   const loadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);
     fetchLeads(nextPage, false);
-  };
-
-  const updateLeadStatus = async (id: string, newStatus: string) => {
-    if (newStatus === 'qualified') {
-      const lead = leads.find(l => l.id === id);
-      if (lead) {
-        setLeadToQualify(lead);
-      }
-      return;
-    }
-
-    try {
-      const { error } = await supabase
-        .from('leads')
-        .update({ status: newStatus })
-        .eq('id', id);
-
-      if (error) throw error;
-      toast.success('Lead status updated');
-      // Optimistically update the UI instead of refetching the entire list
-      setLeads(prev => prev.map(lead => lead.id === id ? { ...lead, status: newStatus } : lead));
-    } catch (error: any) {
-      console.error('Error updating lead:', error);
-      toast.error('Failed to update lead: ' + error.message);
-    }
   };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -334,24 +250,16 @@ function LeadProcessingContent() {
   const handleDeleteSelected = async () => {
     if (!profile || profile.role !== 'super_admin') return;
     if (selectedLeads.size === 0) return;
-
-    if (!window.confirm(`Are you sure you want to delete ${selectedLeads.size} selected lead(s)? This action cannot be undone.`)) {
-      return;
-    }
+    if (!window.confirm(`Are you sure you want to delete ${selectedLeads.size} selected lead(s)?`)) return;
 
     try {
       setIsDeleting(true);
-      
-      const { error } = await supabase
-        .from('leads')
-        .delete()
-        .in('id', Array.from(selectedLeads));
-
+      const { error } = await supabase.from('leads').delete().in('id', Array.from(selectedLeads));
       if (error) throw error;
-
       toast.success(`Successfully deleted ${selectedLeads.size} lead(s)`);
       setLeads(prev => prev.filter(l => !selectedLeads.has(l.id)));
       setSelectedLeads(new Set());
+      fetchKpis();
     } catch (error: any) {
       toast.error('Failed to delete leads: ' + error.message);
     } finally {
@@ -360,304 +268,326 @@ function LeadProcessingContent() {
   };
 
   return (
-    <div>
-      <div>
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">Unqualified Leads</h1>
-            <p className="text-xs text-gray-500 mt-0.5">Process and qualify incoming leads.</p>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="hidden sm:block text-xs font-medium text-gray-500 bg-gray-50 px-3 py-1 rounded-full border border-gray-200">
-              {searchQuery.trim() && searchCount !== null 
-                ? `Showing ${searchCount} of ${totalCount} leads` 
-                : `Total: ${totalCount} leads`}
+    <div className="font-sans text-gray-900 pb-12">
+      {/* PAGE HEADER */}
+      <div className="mb-6">
+        <h1 className="text-xl font-bold tracking-tight text-gray-900">Unqualified Leads</h1>
+        <p className="text-xs text-gray-500 mt-1">Process and qualify incoming commercial solar leads.</p>
+      </div>
+
+      {/* KPI COUNTERS */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-2 mb-5">
+        {[
+          { id: 'all', label: 'Total Leads', value: kpiCounts.total, color: 'bg-blue-500', textColor: 'text-blue-500', icon: Hash, bgClass: 'bg-white hover:bg-gray-50', borderClass: 'border-gray-200' },
+          { id: 'fresh', label: 'Fresh', value: kpiCounts.fresh, color: 'bg-emerald-500', textColor: 'text-emerald-500', icon: Leaf, bgClass: 'bg-emerald-50/50 hover:bg-emerald-50', borderClass: 'border-emerald-100' },
+          { id: 'contacted', label: 'Contacted', value: kpiCounts.contacted, color: 'bg-amber-500', textColor: 'text-amber-500', icon: PhoneForwarded, bgClass: 'bg-amber-50/30 hover:bg-amber-50/50', borderClass: 'border-amber-100' },
+          { id: 'hot', label: 'Hot', value: kpiCounts.hot, color: 'bg-orange-500', textColor: 'text-orange-500', icon: Flame, bgClass: 'bg-orange-50/50 hover:bg-orange-50', borderClass: 'border-orange-100' },
+          { id: 'dnc', label: 'DNC', value: kpiCounts.dnc, color: 'bg-red-500', textColor: 'text-red-500', icon: Ban, bgClass: 'bg-red-50/80 hover:bg-red-100/80', borderClass: 'border-red-200' },
+        ].map((kpi, idx) => (
+          <div 
+            key={idx} 
+            onClick={() => setStatusFilter(kpi.id)}
+            className={`relative overflow-hidden rounded-lg border ${kpi.borderClass} ${kpi.bgClass} px-3 py-2 shadow-sm flex flex-col justify-between transition-all hover:shadow-md cursor-pointer group ${statusFilter === kpi.id ? 'ring-1 ring-offset-1 ring-blue-400' : ''}`}
+          >
+            <kpi.icon className={`absolute -bottom-1 -right-1 w-8 h-8 opacity-10 group-hover:scale-110 transition-transform ${kpi.textColor}`} />
+            <div className="flex items-center justify-between mb-0.5 relative z-10">
+              <span className="text-[9px] font-bold text-gray-600 uppercase tracking-wider">{kpi.label}</span>
+              <span className={`w-1 h-1 rounded-full ${kpi.color}`}></span>
             </div>
+            <div className="text-sm font-extrabold text-gray-900 relative z-10">{kpi.value.toLocaleString()}</div>
+          </div>
+        ))}
+      </div>
+
+      {/* TOP ACTION BAR */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div className="relative flex-1 max-w-md">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
+          <input
+            type="text"
+            placeholder="Search leads or location..."
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg shadow-sm text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+          />
+        </div>
+        
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => setIsFiltersOpen(!isFiltersOpen)}
+            className={`inline-flex items-center px-3 py-1.5 border text-xs font-medium rounded-lg shadow-sm transition-all ${isFiltersOpen ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'}`}
+          >
+            <Filter className="w-3.5 h-3.5 mr-1.5" />
+            Filters
+          </button>
+          <button className="inline-flex items-center px-3 py-1.5 border border-gray-200 text-xs font-medium rounded-lg shadow-sm bg-white text-gray-700 hover:bg-gray-50 transition-all">
+            <LayoutGrid className="w-3.5 h-3.5 mr-1.5" />
+            Columns
+          </button>
+          {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
             <button
-              onClick={() => setIsFiltersOpen(!isFiltersOpen)}
-              className={`inline-flex items-center px-3 py-1.5 border text-xs font-medium rounded-md shadow-sm transition-colors ${isFiltersOpen ? 'bg-blue-50 border-blue-200 text-blue-700' : 'bg-white border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+              onClick={() => setIsAddModalOpen(true)}
+              className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
             >
-              <Filter className="w-3.5 h-3.5 mr-1.5" />
-              Filters & Actions
+              <Plus className="w-3.5 h-3.5 mr-1.5" />
+              Add Lead
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* FILTER DRAWER (Collapsible) */}
+      {isFiltersOpen && (
+        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-3 mb-5">
+          <div className="flex flex-col gap-1">
+            <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Status</label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+              className="border-gray-200 rounded-md shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1 pl-2 pr-6 bg-gray-50"
+            >
+              <option value="all">All Statuses</option>
+              <option value="fresh">Fresh</option>
+              <option value="no pitch">No Pitch</option>
+              <option value="dnc">DNC</option>
+              <option value="call back">Call Back</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Type</label>
+            <select
+              value={propertyTypeFilter}
+              onChange={(e) => setPropertyTypeFilter(e.target.value as any)}
+              className="border-gray-200 rounded-md shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1 pl-2 pr-6 bg-gray-50"
+            >
+              <option value="all">All Types</option>
+              <option value="commercial">Commercial</option>
+              <option value="residential">Residential</option>
+            </select>
+          </div>
+
+          {assignedToMe && profile?.role === 'super_admin' && (
+            <div className="flex flex-col gap-1">
+              <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Assigned To</label>
+              <select
+                value={assignedUserFilter}
+                onChange={(e) => setAssignedUserFilter(e.target.value)}
+                className="border-gray-200 rounded-md shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1 pl-2 pr-6 bg-gray-50 max-w-[140px] truncate"
+              >
+                <option value="me">My Leads</option>
+                {staffUsers.map(u => (
+                  <option key={u.id} value={u.id}>{u.name}</option>
+                ))}
+              </select>
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* DATA TABLE */}
+      <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
+        {/* Table Toolbar (Bulk Actions) */}
+        {profile?.role === 'super_admin' && selectedLeads.size > 0 && (
+          <div className="bg-blue-50/50 px-4 py-2 border-b border-gray-200 flex items-center justify-between transition-all">
+            <span className="text-xs text-blue-800 font-semibold">
+              {selectedLeads.size} lead{selectedLeads.size !== 1 ? 's' : ''} selected
+            </span>
+            <button
+              onClick={handleDeleteSelected}
+              disabled={isDeleting}
+              className="inline-flex items-center px-2.5 py-1 border border-red-200 text-[11px] font-semibold rounded-md text-red-700 bg-red-50 hover:bg-red-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50 transition-all"
+            >
+              <Trash2 className="w-3 h-3 mr-1" />
+              {isDeleting ? 'Deleting...' : 'Delete Selected'}
+            </button>
+          </div>
+        )}
+
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse whitespace-nowrap">
+            <thead className="bg-gray-50/50 border-b border-gray-200 sticky top-0 z-10">
+              <tr>
+                <th className="py-2.5 px-4 w-10 text-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedLeads.size === leads.length && leads.length > 0}
+                    onChange={handleSelectAll}
+                    className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer transition-all"
+                  />
+                </th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Lead / Company</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Type</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Location</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Added</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Last Activity</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {loading && leads.length === 0 ? (
+                <tr>
+                  <td colSpan={8} className="py-16 text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </td>
+                </tr>
+              ) : leads.length > 0 ? (
+                leads.map((lead) => {
+                  const isSelected = selectedLeads.has(lead.id);
+                  const isCommercial = !!lead.company;
+                  
+                  // Calculate last activity
+                  let lastActivityText = "No activity yet";
+                  if (lead.lead_notes && lead.lead_notes.length > 0) {
+                    const latestNoteDate = lead.lead_notes.reduce((latest: string, note: any) => 
+                      new Date(note.created_at) > new Date(latest) ? note.created_at : latest
+                    , lead.lead_notes[0].created_at);
+                    
+                    const noteTime = new Date(latestNoteDate).getTime();
+                    const callTime = lead.last_dialed_at ? new Date(lead.last_dialed_at).getTime() : 0;
+                    
+                    if (noteTime > callTime) {
+                      lastActivityText = `Note on ${new Date(noteTime).toLocaleDateString()}`;
+                    } else if (callTime > 0) {
+                      lastActivityText = `Called on ${new Date(callTime).toLocaleDateString()}`;
+                    }
+                  } else if (lead.last_dialed_at) {
+                    lastActivityText = `Called on ${new Date(lead.last_dialed_at).toLocaleDateString()}`;
+                  }
+
+                  return (
+                    <tr 
+                      key={lead.id} 
+                      className={`transition-colors group hover:bg-gray-50/80 ${isSelected ? 'bg-blue-50/30' : 'bg-white'}`}
+                    >
+                      <td className="py-3 px-4 text-center">
+                        {profile?.role === 'super_admin' && (
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => handleSelectLead(lead.id, e.target.checked)}
+                            className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer transition-all"
+                          />
+                        )}
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${isCommercial ? 'bg-purple-100 text-purple-600' : 'bg-blue-100 text-blue-600'}`}>
+                            {isCommercial ? <Building className="w-3.5 h-3.5" /> : <User className="w-3.5 h-3.5" />}
+                          </div>
+                          <a 
+                            href={`/sales-crm/lead-v2?id=${lead.id}&tab=${assignedToMe ? 'my' : 'unqualified'}`}
+                            className="text-xs font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                          >
+                            {lead.company || lead.name || 'Unknown Lead'}
+                          </a>
+                        </div>
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        {isCommercial ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-100 uppercase tracking-wider">
+                            Commercial
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-100 uppercase tracking-wider">
+                            Residential
+                          </span>
+                        )}
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                          <MapPin className="w-3 h-3 text-gray-400" />
+                          <span className="truncate max-w-[130px]" title={lead.location || 'Unknown'}>
+                            {extractTown(lead.location)}
+                          </span>
+                        </div>
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-gray-900 font-medium">
+                            {new Date(lead.created_at).toLocaleDateString()}
+                          </span>
+                          <span className="text-[10px] text-gray-500 mt-0.5">
+                            {new Date(lead.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <span className="text-xs text-gray-600 flex items-center gap-1.5">
+                          {lastActivityText === "No activity yet" ? (
+                            <div className="w-1.5 h-1.5 rounded-full bg-gray-300"></div>
+                          ) : (
+                            <div className="w-1.5 h-1.5 rounded-full bg-blue-400"></div>
+                          )}
+                          {lastActivityText}
+                        </span>
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <div className="flex items-center">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[11px] font-semibold bg-emerald-50 text-emerald-700 border border-emerald-100 capitalize">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500"></span>
+                            {lead.status}
+                          </span>
+                        </div>
+                      </td>
+                      
+                      <td className="py-3 px-4 text-right">
+                        <a 
+                          href={`/sales-crm/lead-v2?id=${lead.id}&tab=${assignedToMe ? 'my' : 'unqualified'}`}
+                          className="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 group-hover:bg-white"
+                          title="Open Lead"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                        </a>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={8} className="py-16 text-center">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-50 mb-4">
+                      <Search className="w-6 h-6 text-gray-400" />
+                    </div>
+                    <h3 className="text-sm font-semibold text-gray-900">No leads found</h3>
+                    <p className="mt-1 text-sm text-gray-500">Adjust your filters or add new leads to get started.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* PAGINATION */}
+        <div className="bg-white px-4 py-3 border-t border-gray-200 flex items-center justify-between">
+          <div className="text-xs text-gray-500">
+            Showing <span className="font-medium text-gray-900">{leads.length}</span> leads
+          </div>
+          <div className="flex items-center gap-2">
+            <button
+              disabled={page === 0}
+              onClick={() => { setPage(p => p - 1); fetchLeads(page - 1, true); }}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            >
+              <ChevronLeft className="w-3.5 h-3.5" />
+            </button>
+            <button
+              onClick={loadMore}
+              disabled={!hasMore || loadingMore}
+              className="inline-flex items-center justify-center w-7 h-7 rounded-md border border-gray-200 text-gray-500 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+            >
+              <ChevronRight className="w-3.5 h-3.5" />
             </button>
           </div>
         </div>
-        
-        {isFiltersOpen && (
-          <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-wrap items-center gap-3 mb-4">
-            <div className="relative flex-1 min-w-[200px] flex gap-2">
-              <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-                <input
-                  type="text"
-                  placeholder="Search leads or location..."
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full pl-9 pr-3 py-1.5 border border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500"
-                />
-                {isGeocoding && (
-                  <div className="absolute right-3 top-1/2 -translate-y-1/2">
-                    <div className="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-blue-600"></div>
-                  </div>
-                )}
-              </div>
-              <select
-                value={radiusFilter}
-                onChange={(e) => setRadiusFilter(e.target.value)}
-                className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7"
-                title="Filter by distance (requires a location search)"
-              >
-                <option value="any">Any Distance</option>
-                <option value="10">10 Miles</option>
-                <option value="30">30 Miles</option>
-                <option value="50">50 Miles</option>
-                <option value="100">100 Miles</option>
-              </select>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-600 font-medium">Smart List:</label>
-              <select
-                value={smartList}
-                onChange={(e) => setSmartList(e.target.value)}
-                className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7"
-              >
-                <option value="all">Standard List</option>
-                <option value="recent_calls">Recently Called</option>
-                <option value="never_called">Never Called</option>
-                <option value="high_spend">High Monthly Spend</option>
-              </select>
-            </div>
-
-            <div className="flex items-center p-0.5 bg-gray-100 rounded-lg border border-gray-200">
-              <button
-                onClick={() => setPropertyTypeFilter('all')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'all' ? 'bg-white text-blue-600 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                All
-              </button>
-              <button
-                onClick={() => setPropertyTypeFilter('commercial')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'commercial' ? 'bg-purple-100 text-purple-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                Commercial Only
-              </button>
-              <button
-                onClick={() => setPropertyTypeFilter('residential')}
-                className={`px-3 py-1.5 text-xs font-bold rounded-md transition-all ${propertyTypeFilter === 'residential' ? 'bg-blue-100 text-blue-700 shadow-sm' : 'text-gray-500 hover:text-gray-700'}`}
-              >
-                Residential Only
-              </button>
-            </div>
-
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-600 font-medium">Phone:</label>
-              <select
-                value={phoneFilter}
-                onChange={(e) => setPhoneFilter(e.target.value)}
-                className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7"
-              >
-                <option value="all">All</option>
-                <option value="with_phone">Has Phone Number</option>
-              </select>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <label className="text-xs text-gray-600 font-medium">Status:</label>
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7"
-              >
-                <option value="all">All Unqualified</option>
-                <option value="fresh">Fresh</option>
-                <option value="no pitch">No Pitch</option>
-                <option value="dnc">DNC</option>
-                <option value="call back">Call Back</option>
-              </select>
-            </div>
-
-            {assignedToMe && profile?.role === 'super_admin' && (
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-600 font-medium">View User:</label>
-                <select
-                  value={assignedUserFilter}
-                  onChange={(e) => setAssignedUserFilter(e.target.value)}
-                  className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7 max-w-[150px] truncate"
-                >
-                  <option value="me">My Leads</option>
-                  {staffUsers.map(u => (
-                    <option key={u.id} value={u.id}>{u.name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {uploadNames.length > 0 && (
-              <div className="flex items-center gap-2">
-                <label className="text-xs text-gray-600 font-medium">Upload:</label>
-                <select
-                  value={uploadNameFilter}
-                  onChange={(e) => setUploadNameFilter(e.target.value)}
-                  className="border-gray-300 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-2 pr-7 max-w-[150px] truncate"
-                >
-                  <option value="all">All Uploads</option>
-                  {uploadNames.map(name => (
-                    <option key={name} value={name}>{name}</option>
-                  ))}
-                </select>
-              </div>
-            )}
-
-            {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
-              <button
-                onClick={() => setIsAddModalOpen(true)}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-              >
-                Add Lead
-              </button>
-            )}
-          </div>
-        )}
       </div>
-
-      <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
-        {profile?.role === 'super_admin' && leads.length > 0 && (
-          <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <input
-                type="checkbox"
-                checked={selectedLeads.size === leads.length && leads.length > 0}
-                onChange={handleSelectAll}
-                className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
-              />
-              <span className="text-sm text-gray-700 font-medium">
-                {selectedLeads.size > 0 ? `${selectedLeads.size} selected` : 'Select All'}
-              </span>
-            </div>
-            {selectedLeads.size > 0 && (
-              <button
-                onClick={handleDeleteSelected}
-                disabled={isDeleting}
-                className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded text-red-700 bg-red-100 hover:bg-red-200 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-              >
-                <Trash2 className="w-4 h-4 mr-1.5" />
-                {isDeleting ? 'Deleting...' : 'Delete Selected'}
-              </button>
-            )}
-          </div>
-        )}
-
-        {loading && leads.length === 0 ? (
-          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-        ) : leads.length > 0 ? (
-          <ul className="divide-y divide-gray-200">
-            {leads.map((lead) => (
-              <li key={lead.id} className={`flex items-center justify-between p-3 sm:p-4 transition-colors ${selectedLeads.has(lead.id) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}>
-                <div className="flex items-center gap-3 flex-1 min-w-0">
-                  {profile?.role === 'super_admin' && (
-                    <input
-                      type="checkbox"
-                      checked={selectedLeads.has(lead.id)}
-                      onChange={(e) => handleSelectLead(lead.id, e.target.checked)}
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
-                    />
-                  )}
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <a 
-                        href={`/sales-crm/lead-v2?id=${lead.id}&tab=${assignedToMe ? 'my' : 'unqualified'}`}
-                        className="text-sm font-bold text-blue-600 hover:text-blue-800 hover:underline truncate"
-                      >
-                        {lead.company || lead.name}
-                      </a>
-                      {!lead.company && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase tracking-tight">
-                          Residential
-                        </span>
-                      )}
-                      {lead.company && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-tight">
-                          Commercial
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col mt-0.5">
-                      {(() => {
-                        // Calculate last interaction from notes if last_dialed_at is null/outdated
-                        let lastContactDate = lead.last_dialed_at;
-                        if (lead.lead_notes && lead.lead_notes.length > 0) {
-                          const latestNoteDate = lead.lead_notes.reduce((latest: string, note: any) => 
-                            new Date(note.created_at) > new Date(latest) ? note.created_at : latest
-                          , lead.lead_notes[0].created_at);
-                          
-                          if (!lastContactDate || new Date(latestNoteDate) > new Date(lastContactDate)) {
-                            lastContactDate = latestNoteDate;
-                          }
-                        }
-
-                        if (!lastContactDate) return null;
-                        
-                        return (
-                          <span className="text-[10px] text-gray-500 flex items-center gap-1 mt-0.5">
-                            <Clock className="w-3 h-3 text-blue-500" />
-                            Last Contacted: {new Date(lastContactDate).toLocaleDateString()} {new Date(lastContactDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                        );
-                      })()}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4">
-                  <div
-                    className={`text-[10px] font-bold rounded-full px-3 py-1.5 border-0 shadow-sm uppercase tracking-wider
-                      ${lead.status === 'fresh' ? 'bg-green-100 text-green-800' : 
-                        lead.status === 'no pitch' ? 'bg-yellow-100 text-yellow-800' : 
-                        lead.status === 'qualified' ? 'bg-blue-100 text-blue-800' : 
-                        lead.status === 'dnc' ? 'bg-red-100 text-red-800' : 
-                        lead.status === 'call back' ? 'bg-purple-100 text-purple-800' : 
-                        'bg-gray-100 text-gray-800'}`}
-                  >
-                    {lead.status}
-                  </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-center py-12">
-            <Users className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No leads found</h3>
-            <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or import new leads.</p>
-          </div>
-        )}
-      </div>
-
-      {hasMore && leads.length > 0 && (
-        <div className="mt-8 flex justify-center">
-          <button
-            onClick={loadMore}
-            disabled={loadingMore}
-            className="px-6 py-3 border border-gray-300 shadow-sm text-sm font-medium rounded-lg text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50"
-          >
-            {loadingMore ? 'Loading...' : 'Load More Leads'}
-          </button>
-        </div>
-      )}
-
-      {leadToQualify && (
-        <QualifyLeadModal 
-          isOpen={!!leadToQualify} 
-          onClose={() => setLeadToQualify(null)} 
-          lead={leadToQualify}
-          onSuccess={(updatedLead) => {
-            setLeadToQualify(null);
-            // Remove from unqualified list since it's now qualified
-            setLeads(prev => prev.filter(l => l.id !== updatedLead.id));
-          }}
-        />
-      )}
 
       <AddLeadModal 
         isOpen={isAddModalOpen} 
@@ -667,18 +597,30 @@ function LeadProcessingContent() {
           setPage(0);
           fetchLeads(0, true);
           if (newLead && newLead.status === 'fresh' && newLead.location) {
-            // If it came from AI parser, it will have a location pre-filled. Let's auto-open qualify modal.
             setTimeout(() => setLeadToQualify(newLead), 300);
           }
         }}
       />
+
+      {leadToQualify && (
+        <QualifyLeadModal 
+          isOpen={!!leadToQualify} 
+          onClose={() => setLeadToQualify(null)} 
+          lead={leadToQualify}
+          onSuccess={(updatedLead) => {
+            setLeadToQualify(null);
+            setLeads(prev => prev.filter(l => l.id !== updatedLead.id));
+            fetchKpis();
+          }}
+        />
+      )}
     </div>
   );
 }
 
 export default function LeadProcessing() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+    <Suspense fallback={<div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
       <LeadProcessingContent />
     </Suspense>
   );

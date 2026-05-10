@@ -1,9 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabase } from '../../../../lib/supabase';
 import { parseCSV } from '../../../../server/enrichment/utils/csvParser';
-import { geocodingQueue, companyLookupQueue } from '../../../../server/enrichment/queues';
-
-export const runtime = 'edge';
 
 export async function POST(request: NextRequest) {
   try {
@@ -44,7 +41,7 @@ export async function POST(request: NextRequest) {
           status: uploadTarget,
           upload_name: uploadName,
           csv_data: rawData,
-          enrichment_status: 'processing'
+          enrichment_status: 'pending' // Just mark as pending, an external worker script will poll for these
         }])
         .select()
         .single();
@@ -55,28 +52,10 @@ export async function POST(request: NextRequest) {
       }
 
       insertedLeads.push(lead);
-
-      // 3. Dispatch to Queues
-      
-      // Every lead gets geocoding and a satellite image
-      await geocodingQueue.add('geocode_and_image', {
-        lead_id: lead.id,
-        address: address,
-        company_name: company_name
-      });
-
-      // Every lead gets a Companies House lookup
-      await companyLookupQueue.add('lookup_company', {
-        lead_id: lead.id,
-        company_name: company_name
-      });
-      
-      // Note: Solar Analysis Queue is NOT triggered here. 
-      // It will be triggered via a webhook or UI action when the lead status changes to 'qualified'.
     }
 
     return NextResponse.json({
-      message: `Successfully imported and queued ${insertedLeads.length} leads for enrichment.`,
+      message: `Successfully imported ${insertedLeads.length} leads.`,
       count: insertedLeads.length
     });
 

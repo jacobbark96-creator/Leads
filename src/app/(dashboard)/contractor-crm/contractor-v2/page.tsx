@@ -256,7 +256,7 @@ function ContractorDetailsV2Content() {
   const { profile } = useAuthStore();
   
   const id = searchParams.get('id');
-  const tab = searchParams.get('tab') || 'unqualified';
+  const tab = searchParams.get('tab') || 'potential';
 
   const [contractor, setContractor] = useState<Contractor | null>(null);
   const [notes, setNotes] = useState<ContractorNote[]>([]);
@@ -1074,9 +1074,13 @@ function ContractorDetailsV2Content() {
             <div className="flex items-center text-sm font-medium text-gray-500">
               <Link href="/contractor-crm" className="hover:text-gray-900 transition-colors">Contractor CRM</Link>
               <span className="mx-2">/</span>
-              <Link href={`/contractor-crm?tab=${tab}`} className="hover:text-gray-900 transition-colors capitalize">{tab} Contractors</Link>
+              {tab === 'onboarded' ? (
+                <Link href="/contractor-crm/onboarded" className="hover:text-gray-900 transition-colors capitalize">Onboarded Contractors</Link>
+              ) : (
+                <Link href={`/contractor-crm?tab=${tab}`} className="hover:text-gray-900 transition-colors capitalize">{tab} Contractors</Link>
+              )}
               <span className="mx-2">/</span>
-              <span className="text-gray-900">{contractor.company || contractor.name}</span>
+              <span className="text-gray-900">{contractor.company_name || contractor.company || contractor.contact_name || contractor.name}</span>
             </div>
             <div className="flex items-center gap-2">
               <button 
@@ -1108,9 +1112,9 @@ function ContractorDetailsV2Content() {
                 <MoreHorizontal className="w-4 h-4" />
               </button>
               <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200 mb-3 overflow-hidden">
-                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(contractor.company || contractor.name)}&background=0D8ABC&color=fff&size=64`} alt="Company Logo" className="w-full h-full object-cover" />
+                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(contractor.company_name || contractor.company || contractor.contact_name || contractor.name || 'Company')}&background=0D8ABC&color=fff&size=64`} alt="Company Logo" className="w-full h-full object-cover" />
               </div>
-              <h1 className="text-lg font-bold text-gray-900 tracking-tight leading-tight">{contractor.company || contractor.name}</h1>
+              <h1 className="text-lg font-bold text-gray-900 tracking-tight leading-tight">{contractor.company_name || contractor.company || contractor.contact_name || contractor.name}</h1>
               {/* @ts-ignore */}
               {contractor.website && <a href={contractor.website.startsWith('http') ? contractor.website : `https://${contractor.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs mt-1">{contractor.website}</a>}
               
@@ -1357,16 +1361,16 @@ function ContractorDetailsV2Content() {
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex items-center justify-between shrink-0">
               <div className="flex items-center gap-4">
                 <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg flex-shrink-0 relative overflow-hidden">
-                  <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(contractor.name || 'Unknown')}&background=0D8ABC&color=fff`} alt="Contact Avatar" className="w-full h-full object-cover" />
+                  <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(contractor.contact_name || contractor.name || 'Unknown')}&background=0D8ABC&color=fff`} alt="Contact Avatar" className="w-full h-full object-cover" />
                   <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white" title="Online"></span>
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
-                    <h2 className="text-xl font-bold text-gray-900 tracking-tight leading-none">{contractor.name || 'Unknown Contact'}</h2>
+                    <h2 className="text-xl font-bold text-gray-900 tracking-tight leading-none">{contractor.contact_name || contractor.name || 'Unknown Contact'}</h2>
                   </div>
                   <div className="text-sm text-gray-500 mt-1 mb-1.5">
                     {/* @ts-ignore */}
-                    {contractor.job_title || 'Contact'} <span className="mx-1">•</span> {contractor.company || contractor.name}
+                    {contractor.job_title || 'Contact'} <span className="mx-1">•</span> {contractor.company_name || contractor.company || contractor.name}
                   </div>
                   <div className="flex flex-wrap gap-1.5">
                     {/* @ts-ignore */}

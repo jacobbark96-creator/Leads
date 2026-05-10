@@ -227,8 +227,8 @@ function OnboardedContractorsContent() {
                     )}
                   </div>
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-gray-900 truncate">{contractor.company_name || contractor.name}</p>
-                    {contractor.contact_name && <p className="text-xs text-gray-600 truncate">{contractor.contact_name}</p>}
+                    <p className="text-sm font-bold text-gray-900 truncate">{contractor.company_name || contractor.company || contractor.contact_name || contractor.name || 'Unnamed Contractor'}</p>
+                    {(contractor.contact_name || contractor.name) && <p className="text-xs text-gray-600 truncate">{contractor.contact_name || contractor.name}</p>}
                     {contractor.phone && <p className="text-xs text-gray-500 truncate">{contractor.phone}</p>}
                   </div>
                 </div>
@@ -245,7 +245,7 @@ function OnboardedContractorsContent() {
                   </select>
                   
                   <a
-                    href={`/contractor-crm/contractor-v2?id=${contractor.id}`}
+                    href={`/contractor-crm/contractor-v2?id=${contractor.id}&tab=onboarded`}
                     className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
                   >
                     View Details

@@ -520,7 +520,7 @@ function ContractorProcessingContent() {
                           href={`/contractor-crm/contractor-v2?id=${contractor.id}`}
                           className="text-blue-600 hover:text-blue-800 hover:underline"
                         >
-                          {contractor.company_name || contractor.company || contractor.name || 'Unnamed Contractor'}
+                          {contractor.company_name || contractor.company || contractor.contact_name || contractor.name || 'Unnamed Contractor'}
                         </a>
                         {contractor.assigned_to && (
                           <span 

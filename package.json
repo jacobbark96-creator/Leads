@@ -9,6 +9,7 @@
     "start": "next start",
     "lint": "next lint",
     "worker": "ts-node src/server/enrichment/worker.ts",
+    "poll": "ts-node src/server/enrichment/pollWorker.ts",
     "pages:build": "npx @cloudflare/next-on-pages"
   },
   "dependencies": {

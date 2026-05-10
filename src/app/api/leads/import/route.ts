@@ -3,6 +3,8 @@ import { supabase } from '../../../../lib/supabase';
 import { parseCSV } from '../../../../server/enrichment/utils/csvParser';
 import { geocodingQueue, companyLookupQueue } from '../../../../server/enrichment/queues';
 
+export const runtime = 'edge';
+
 export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();

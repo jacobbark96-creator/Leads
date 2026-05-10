@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { geocodingQueue, companyLookupQueue } from '../../../../server/enrichment/queues';
 
+export const runtime = 'edge';
+
 export async function POST(request: NextRequest) {
   try {
     const { lead_id, company_name, address } = await request.json();

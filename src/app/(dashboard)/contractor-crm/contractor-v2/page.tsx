@@ -280,6 +280,7 @@ function ContractorDetailsV2Content() {
   const [uploadingFile, setUploadingFile] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Contractor>>({});
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  const [categories, setCategories] = useState<any[]>([]);
   
   const [isPrimaryContactModalOpen, setIsPrimaryContactModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -368,6 +369,7 @@ function ContractorDetailsV2Content() {
       fetchContractorAndNotes();
       fetchStaffUsers();
       fetchTasks();
+      fetchCategories();
 
       // Real-time notes subscription
       const notesChannel = supabase
@@ -481,6 +483,20 @@ function ContractorDetailsV2Content() {
       setStaffUsers(data || []);
     } catch (error) {
       console.error('Failed to load staff users', error);
+    }
+  };
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('categories')
+        .select('*')
+        .order('name', { ascending: true });
+      if (!error && data) {
+        setCategories(data);
+      }
+    } catch (e) {
+      console.error('Failed to load categories', e);
     }
   };
 
@@ -765,19 +781,19 @@ function ContractorDetailsV2Content() {
       let updatedContacts = [];
       
       // Attempt to parse existing contacts if it's a JSON string
-      if (typeof contractor.other_contacts === 'string') {
+      if (typeof (contractor as any).other_contacts === 'string') {
         try {
-          const parsed = JSON.parse(contractor.other_contacts);
+          const parsed = JSON.parse((contractor as any).other_contacts);
           if (Array.isArray(parsed)) {
             updatedContacts = parsed;
           } else {
-            updatedContacts = [{ name: contractor.other_contacts }];
+            updatedContacts = [{ name: (contractor as any).other_contacts }];
           }
         } catch (e) {
-          updatedContacts = [{ name: contractor.other_contacts }];
+          updatedContacts = [{ name: (contractor as any).other_contacts }];
         }
-      } else if (Array.isArray(contractor.other_contacts)) {
-        updatedContacts = [...contractor.other_contacts];
+      } else if (Array.isArray((contractor as any).other_contacts)) {
+        updatedContacts = [...(contractor as any).other_contacts];
       } else if (otherContacts && otherContacts.length > 0) {
         updatedContacts = [...otherContacts];
       }
@@ -792,7 +808,7 @@ function ContractorDetailsV2Content() {
       if (error) throw error;
       
       setOtherContacts(updatedContacts);
-      setContractor({ ...contractor, other_contacts: JSON.stringify(updatedContacts) as any });
+      setContractor({ ...contractor, other_contacts: JSON.stringify(updatedContacts) } as any);
       setIsAddContactModalOpen(false);
       setNewContactName('');
       setNewContactRole('');
@@ -991,12 +1007,12 @@ function ContractorDetailsV2Content() {
         .from('contractor-photos')
         .getPublicUrl(fileName);
 
-      const newPhotos = [publicUrl, ...(contractor.photos || [])];
+      const newPhotos = [publicUrl, ...((contractor as any).photos || [])];
       const { error } = await supabase.from('contractors').update({ photos: newPhotos }).eq('id', contractor.id);
       
       if (error) throw error;
       
-      setContractor({ ...contractor, photos: newPhotos });
+      setContractor({ ...contractor, photos: newPhotos } as any);
       toast.success('Building image updated', { id: 'building-upload' });
       router.refresh();
     } catch (error: any) {
@@ -1007,14 +1023,14 @@ function ContractorDetailsV2Content() {
   };
 
   const handleBuildingImageDelete = async () => {
-    if (!contractor || !contractor.photos || contractor.photos.length === 0) return;
+    if (!contractor || !(contractor as any).photos || (contractor as any).photos.length === 0) return;
     try {
-      const newPhotos = [...contractor.photos];
+      const newPhotos = [...(contractor as any).photos];
       newPhotos.splice(currentImageIndex, 1);
       const { error } = await supabase.from('contractors').update({ photos: newPhotos }).eq('id', contractor.id);
       if (error) throw error;
       
-      setContractor({ ...contractor, photos: newPhotos });
+      setContractor({ ...contractor, photos: newPhotos } as any);
       if (currentImageIndex >= newPhotos.length && newPhotos.length > 0) {
         setCurrentImageIndex(newPhotos.length - 1);
       } else if (newPhotos.length === 0) {
@@ -1217,6 +1233,23 @@ function ContractorDetailsV2Content() {
                 </button>
               </div>
               <div className="flex flex-col gap-2.5">
+                <div className="flex justify-between items-center py-0.5">
+                  <span className="text-gray-500 text-xs">Category</span>
+                  {editingCard === 'snapshot' ? (
+                    <select 
+                      value={(editForm as any).category_id || ''} 
+                      onChange={e => setEditForm({...editForm, category_id: e.target.value} as any)} 
+                      className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500"
+                    >
+                      <option value="">Select Category</option>
+                      {categories.map(cat => (
+                        <option key={cat.id} value={cat.id}>{cat.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <span className="text-gray-900 text-xs font-medium">{(contractor as any).category?.name || 'Uncategorized'}</span>
+                  )}
+                </div>
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500 text-xs">Member Since</span>
                   {editingCard === 'snapshot' ? (

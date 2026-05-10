@@ -30,7 +30,8 @@ import {
   Bell,
   Save,
   Trash2,
-  Linkedin
+  Linkedin,
+  MapPin
 } from 'lucide-react';
 
 const CalendarModal = ({ isOpen, onClose, onSetReminder }: any) => {

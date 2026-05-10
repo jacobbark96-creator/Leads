@@ -1,4 +1,4 @@
-import { parse } from 'csv-parse/sync';
+import Papa from 'papaparse';
 
 /**
  * Fuzzy column mapper to intelligently guess what a CSV column represents
@@ -38,12 +38,13 @@ export function fuzzyMapColumn(header: string): string | null {
   return null;
 }
 
-export function parseCSV(fileContent: string | Buffer): any[] {
-  const records = parse(fileContent, {
-    columns: true,
-    skip_empty_lines: true,
-    trim: true,
+export function parseCSV(fileContent: string): any[] {
+  const parsed = Papa.parse(fileContent, {
+    header: true,
+    skipEmptyLines: true,
   });
+
+  const records = parsed.data;
 
   const normalizedRecords = records.map((record: any) => {
     const normalized: any = { _raw: record };

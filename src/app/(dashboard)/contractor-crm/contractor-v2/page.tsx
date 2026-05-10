@@ -491,7 +491,7 @@ function ContractorDetailsV2Content() {
       
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
-        .select('*')
+        .select('*, categories!contractors_category_id_fkey(name)')
         .eq('id', id)
         .single();
         
@@ -589,14 +589,19 @@ function ContractorDetailsV2Content() {
       setNotes(notesData || []);
       
       // Fetch leads for the map
-      const { data: leadsData } = await supabase
+      let leadsQuery = supabase
         .from('leads')
         .select('id, name, company, latitude, longitude, exclusive_price, share_price, status, est_system_size')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .eq('is_marketed', true)
-        .is('client_id', null)
-        .limit(200);
+        .is('client_id', null);
+
+      if (contractorData.category_id) {
+        leadsQuery = leadsQuery.eq('category_id', contractorData.category_id);
+      }
+
+      const { data: leadsData } = await leadsQuery.limit(200);
       setMapLeads(leadsData || []);
       
     } catch (error: any) {
@@ -1192,6 +1197,9 @@ function ContractorDetailsV2Content() {
                   contractor.status === 'dnc' ? 'bg-red-100 text-red-700' :
                   'bg-gray-100 text-gray-700'
                 }`}>{contractor.status}</span>
+                {(contractor as any).category?.name && (
+                  <span className="px-2 py-0.5 rounded-full bg-purple-100 text-purple-700 text-[10px] font-semibold uppercase">{(contractor as any).category.name}</span>
+                )}
                 {/* @ts-ignore */}
                 {contractor.score && <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-semibold">Score: {contractor.score}</span>}
               </div>

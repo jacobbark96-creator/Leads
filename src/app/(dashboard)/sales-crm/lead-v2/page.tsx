@@ -578,7 +578,7 @@ function LeadDetailsV2Content() {
     if (!lead) return;
     try {
       const { id, created_at, clients, lead_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
-      const { error } = await supabase
+      const { data: updatedLead, error } = await supabase
         .from('leads')
         .update({
           name: updatePayload.name,
@@ -588,13 +588,17 @@ function LeadDetailsV2Content() {
           secondary_phone: updatePayload.secondary_phone,
           linkedin_url: updatePayload.linkedin_url
         })
-        .eq('id', lead.id);
+        .eq('id', lead.id)
+        .select()
+        .single();
 
       if (error) throw error;
-      setLead({ ...lead, ...updatePayload });
+      
+      setLead(updatedLead || { ...lead, ...updatePayload });
       setIsPrimaryContactModalOpen(false);
       setIsMoreMenuOpen(false);
       toast.success('Primary contact updated successfully');
+      router.refresh();
     } catch (error: any) {
       toast.error('Failed to update contact: ' + error.message);
     }
@@ -603,16 +607,20 @@ function LeadDetailsV2Content() {
   const saveEdit = async () => {
     if (!lead) return;
     try {
-      const { id, created_at, clients, lead_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
-      const { error } = await supabase
+      const { id, created_at, clients, lead_notes, other_contacts, csv_data, photos, ...updatePayload } = editForm as any;
+      const { data: updatedLead, error } = await supabase
         .from('leads')
         .update(updatePayload)
-        .eq('id', lead.id);
+        .eq('id', lead.id)
+        .select()
+        .single();
 
       if (error) throw error;
-      setLead({ ...lead, ...updatePayload });
+      
+      setLead(updatedLead || { ...lead, ...updatePayload });
       setEditingCard(null);
       toast.success('Updated successfully');
+      router.refresh();
     } catch (error: any) {
       toast.error('Failed to update: ' + error.message);
     }
@@ -963,9 +971,10 @@ function LeadDetailsV2Content() {
     return <div className="h-screen w-full flex justify-center items-center bg-[#f5f7fb]">Lead not found.</div>;
   }
   return (
-    <div className="h-screen overflow-hidden bg-[#f5f7fb] font-sans text-[#111827] flex">
-      {/* LEFT SIDEBAR (84px) */}
-      <aside className="w-[84px] bg-[#111827] flex-shrink-0 fixed h-full z-10 flex flex-col items-center py-6 shadow-xl">
+    <div style={{ zoom: 0.9 }} className="overflow-hidden bg-[#f5f7fb] font-sans text-[#111827] h-screen">
+      <div className="flex w-full h-full">
+        {/* LEFT SIDEBAR (84px) */}
+        <aside className="w-[84px] bg-[#111827] flex-shrink-0 h-full z-10 flex flex-col items-center py-6 shadow-xl relative">
         <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center mb-10 text-white font-bold">
           OL
         </div>
@@ -998,9 +1007,9 @@ function LeadDetailsV2Content() {
       </aside>
 
       {/* MAIN CONTENT WRAPPER */}
-      <main className="flex-1 ml-[84px] flex justify-center h-full">
-        {/* INNER CONTAINER (Max 1600px) */}
-        <div className="w-full max-w-[1600px] flex flex-col px-4 py-4 gap-4 h-full">
+      <main className="flex-1 flex justify-center h-full min-w-0">
+        {/* INNER CONTAINER */}
+        <div className="w-full flex flex-col px-6 py-4 gap-4 h-full">
           
           {/* TOP NAVIGATION BAR */}
           <div className="flex justify-between items-center shrink-0 px-2 py-1">
@@ -1768,13 +1777,14 @@ function LeadDetailsV2Content() {
         phone={newContactPhone}
         setPhone={setNewContactPhone}
       />
-      <EditPrimaryContactModal
-        isOpen={isPrimaryContactModalOpen}
-        onClose={() => setIsPrimaryContactModalOpen(false)}
-        onSave={handlePrimaryContactSave}
-        form={editForm}
-        setForm={setEditForm}
-      />
+        <EditPrimaryContactModal
+          isOpen={isPrimaryContactModalOpen}
+          onClose={() => setIsPrimaryContactModalOpen(false)}
+          onSave={handlePrimaryContactSave}
+          form={editForm}
+          setForm={setEditForm}
+        />
+      </div>
     </div>
   );
 }

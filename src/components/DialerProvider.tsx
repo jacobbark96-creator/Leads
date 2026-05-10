@@ -106,7 +106,34 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       newDevice.on('error', (twilioError: any) => {
         console.error('Twilio Error:', twilioError);
+        
+        // Suppress noisy token and connection errors from popping up toasts
+        // 20104: AccessTokenExpired, 20101: AccessTokenInvalid
+        // 31009: TransportError, 31005: ConnectionError
+        const ignoredCodes = [20104, 20101, 31009, 31005];
+        if (ignoredCodes.includes(twilioError.code)) {
+          return;
+        }
+        
         toast.error('Dialer error: ' + twilioError.message);
+      });
+
+      newDevice.on('tokenWillExpire', async () => {
+        try {
+          console.log('Renewing Twilio token...');
+          const res = await fetch('/api/twilio/token', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ identity: profile?.id || 'unknown' })
+          });
+          const { token: newToken } = await res.json();
+          if (newToken) {
+            newDevice.updateToken(newToken);
+            console.log('Twilio token renewed.');
+          }
+        } catch (e) {
+          console.error('Failed to renew Twilio token:', e);
+        }
       });
 
       newDevice.on('incoming', (call: Call) => {

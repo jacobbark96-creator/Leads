@@ -70,6 +70,7 @@ export interface Lead {
   assigned_to: string | null;
   created_at: string;
   monthly_spend?: number;
+  primary_need?: string;
   location?: string;
   timeframe?: string;
   roof_condition?: string;

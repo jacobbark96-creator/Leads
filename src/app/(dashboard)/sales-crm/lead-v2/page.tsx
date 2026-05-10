@@ -578,7 +578,7 @@ function LeadDetailsV2Content() {
     if (!lead) return;
     try {
       const { id, created_at, clients, lead_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
-      const { data: updatedLead, error } = await supabase
+      const { error } = await supabase
         .from('leads')
         .update({
           name: updatePayload.name,
@@ -588,13 +588,17 @@ function LeadDetailsV2Content() {
           secondary_phone: updatePayload.secondary_phone,
           linkedin_url: updatePayload.linkedin_url
         })
-        .eq('id', lead.id)
-        .select()
-        .single();
+        .eq('id', lead.id);
 
       if (error) throw error;
       
-      setLead(updatedLead || { ...lead, ...updatePayload });
+      const { data: freshLead } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', lead.id)
+        .single();
+        
+      setLead(freshLead || { ...lead, ...updatePayload });
       setIsPrimaryContactModalOpen(false);
       setIsMoreMenuOpen(false);
       toast.success('Primary contact updated successfully');
@@ -607,17 +611,22 @@ function LeadDetailsV2Content() {
   const saveEdit = async () => {
     if (!lead) return;
     try {
-      const { id, created_at, clients, lead_notes, other_contacts, csv_data, photos, ...updatePayload } = editForm as any;
-      const { data: updatedLead, error } = await supabase
+      const { id, created_at, clients, lead_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
+      const { error } = await supabase
         .from('leads')
         .update(updatePayload)
-        .eq('id', lead.id)
-        .select()
-        .single();
+        .eq('id', lead.id);
 
       if (error) throw error;
       
-      setLead(updatedLead || { ...lead, ...updatePayload });
+      // Force a fresh fetch to ensure all data is in sync
+      const { data: freshLead } = await supabase
+        .from('leads')
+        .select('*')
+        .eq('id', lead.id)
+        .single();
+        
+      setLead(freshLead || { ...lead, ...updatePayload });
       setEditingCard(null);
       toast.success('Updated successfully');
       router.refresh();
@@ -850,6 +859,7 @@ function LeadDetailsV2Content() {
       }]);
       
       toast.success('File uploaded successfully');
+      router.refresh();
     } catch (error: any) {
       toast.error('Failed to upload file: ' + error.message);
     } finally {
@@ -869,6 +879,7 @@ function LeadDetailsV2Content() {
       if (error) throw error;
       setFiles(prev => prev.filter(f => f.id !== fileId));
       toast.success('File deleted');
+      router.refresh();
     } catch (error: any) {
       toast.error('Failed to delete file: ' + error.message);
     }
@@ -905,6 +916,7 @@ function LeadDetailsV2Content() {
       
       setLead({ ...lead, photos: newPhotos });
       toast.success('Building image updated', { id: 'building-upload' });
+      router.refresh();
     } catch (error: any) {
       toast.error('Failed to upload image: ' + error.message, { id: 'building-upload' });
     } finally {
@@ -928,6 +940,7 @@ function LeadDetailsV2Content() {
       }
       
       toast.success('Building image removed');
+      router.refresh();
     } catch (error: any) {
       toast.error('Failed to remove image: ' + error.message);
     }
@@ -971,7 +984,7 @@ function LeadDetailsV2Content() {
     return <div className="h-screen w-full flex justify-center items-center bg-[#f5f7fb]">Lead not found.</div>;
   }
   return (
-    <div style={{ zoom: 0.9 }} className="overflow-hidden bg-[#f5f7fb] font-sans text-[#111827] h-screen">
+    <div style={{ width: '142.85vw', height: '142.85vh', transform: 'scale(0.7)', transformOrigin: 'top left', position: 'fixed', top: 0, left: 0 }} className="overflow-hidden bg-[#f5f7fb] font-sans text-[#111827]">
       <div className="flex w-full h-full">
         {/* LEFT SIDEBAR (84px) */}
         <aside className="w-[84px] bg-[#111827] flex-shrink-0 h-full z-10 flex flex-col items-center py-6 shadow-xl relative">
@@ -1007,9 +1020,9 @@ function LeadDetailsV2Content() {
       </aside>
 
       {/* MAIN CONTENT WRAPPER */}
-      <main className="flex-1 flex justify-center h-full min-w-0">
-        {/* INNER CONTAINER */}
-        <div className="w-full flex flex-col px-6 py-4 gap-4 h-full">
+      <main className="flex-1 flex justify-center h-full">
+        {/* INNER CONTAINER (Max width expanded) */}
+        <div className="w-full max-w-[2400px] flex flex-col px-6 py-4 gap-4 h-full">
           
           {/* TOP NAVIGATION BAR */}
           <div className="flex justify-between items-center shrink-0 px-2 py-1">
@@ -1237,7 +1250,7 @@ function LeadDetailsV2Content() {
                               <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z"/>
                             )}
                           </svg>
-                          <button onClick={(e) => { e.preventDefault(); deleteFile(file.id); }} className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-red-100 text-red-600 hover:text-red-700 hover:bg-red-200" title="Delete file">
+                          <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteFile(file.id); }} className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-red-100 text-red-600 hover:text-red-700 hover:bg-red-200 z-10" title="Delete file">
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>

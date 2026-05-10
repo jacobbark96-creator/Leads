@@ -1,8 +1,8 @@
 import { Worker, Job } from 'bullmq';
 import { createClient } from '@supabase/supabase-js';
-import { connection } from '../queues/index.ts';
-import { searchCompany, getCompanyProfile, getCompanyOfficers } from '../services/companiesHouse.service.ts';
-import dotenv from 'dotenv';
+import { connection } from '../queues/index';
+import { searchCompany, getCompanyProfile, getCompanyOfficers } from '../services/companiesHouse.service';
+import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
 

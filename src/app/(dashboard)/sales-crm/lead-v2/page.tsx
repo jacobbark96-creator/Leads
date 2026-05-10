@@ -598,7 +598,7 @@ function LeadDetailsV2Content() {
   const handlePrimaryContactSave = async () => {
     if (!lead) return;
     try {
-      const { id, created_at, clients, lead_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
+      const { id, created_at, clients, lead_notes, other_contacts, csv_data, companies, buildings, ...updatePayload } = editForm as any;
       const { error } = await supabase
         .from('leads')
         .update({
@@ -633,7 +633,7 @@ function LeadDetailsV2Content() {
   const saveEdit = async () => {
     if (!lead) return;
     try {
-      const { id, created_at, clients, lead_notes, other_contacts, csv_data, ...updatePayload } = editForm as any;
+      const { id, created_at, clients, lead_notes, other_contacts, csv_data, companies, buildings, ...updatePayload } = editForm as any;
       const { error } = await supabase
         .from('leads')
         .update(updatePayload)

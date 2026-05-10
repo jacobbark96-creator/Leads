@@ -1,8 +1,8 @@
 import { Worker, Job } from 'bullmq';
 import axios from 'axios';
 import { createClient } from '@supabase/supabase-js';
-import { connection } from '../queues/index.ts';
-import dotenv from 'dotenv';
+import { connection } from '../queues/index';
+import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
 

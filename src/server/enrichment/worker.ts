@@ -1,7 +1,7 @@
-import { geocodingWorker } from './workers/geocoding.worker.ts';
-import { solarAnalysisWorker } from './workers/solarAnalysis.worker.ts';
-import { companyLookupWorker } from './workers/companyLookup.worker.ts';
-import dotenv from 'dotenv';
+import { geocodingWorker } from './workers/geocoding.worker';
+import { solarAnalysisWorker } from './workers/solarAnalysis.worker';
+import { companyLookupWorker } from './workers/companyLookup.worker';
+import * as dotenv from 'dotenv';
 
 dotenv.config({ path: '.env.local' });
 

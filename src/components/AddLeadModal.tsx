@@ -23,6 +23,9 @@ interface AddLeadModalProps {
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onLeadAdded, isContractor = false, editData = null }) => {
   const [loading, setLoading] = useState(false);
   const [aiMode, setAiMode] = useState(false);
+  const [profileMode, setProfileMode] = useState(false);
+  const [clientsWithoutContractor, setClientsWithoutContractor] = useState<any[]>([]);
+  const [loadingClients, setLoadingClients] = useState(false);
   const [aiText, setAiText] = useState('');
   const [formData, setFormData] = useState({
     name: '',
@@ -55,8 +58,81 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         other_contacts: '',
         other_contact_numbers: '',
       });
+      setAiMode(false);
+      setProfileMode(false);
     }
   }, [isOpen, editData]);
+
+  React.useEffect(() => {
+    if (isOpen && profileMode) {
+      fetchClientsWithoutContractor();
+    }
+  }, [isOpen, profileMode]);
+
+  const fetchClientsWithoutContractor = async () => {
+    setLoadingClients(true);
+    try {
+      // Fetch all clients
+      const { data: clients } = await supabase.from('clients').select('*');
+      // Fetch all contractors to see which client_ids are used
+      const { data: contractors } = await supabase.from('contractors').select('client_id');
+      
+      const usedClientIds = new Set(contractors?.map(c => c.client_id).filter(Boolean));
+      const available = clients?.filter(c => !usedClientIds.has(c.id)) || [];
+      
+      const { data: users } = await supabase.from('users').select('id, email');
+      const emailMap = new Map(users?.map(u => [u.id, u.email]));
+      
+      const enriched = available.map(c => ({
+        ...c,
+        email: emailMap.get(c.user_id) || ''
+      }));
+      
+      setClientsWithoutContractor(enriched);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+
+  const handleAddFromProfile = async (client: any) => {
+    if (!window.confirm(`Are you sure you want to create a contractor profile for ${client.company_name || client.contact_name}?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const insertPayload = {
+        name: client.contact_name || client.company_name || 'Unknown',
+        contact_name: client.contact_name || 'Unknown',
+        company_name: client.company_name || null,
+        company: client.company_name || null,
+        phone: client.phone || '',
+        email: client.email || null,
+        location: client.address || null,
+        other_contacts: client.other_contacts || null,
+        other_contact_numbers: client.other_contact_numbers || null,
+        client_id: client.id,
+        status: 'onboarded'
+      };
+
+      const { data, error } = await supabase
+        .from('contractors')
+        .insert([insertPayload])
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success('Contractor added from profile successfully');
+      onLeadAdded(data);
+      onClose();
+    } catch (e: any) {
+      toast.error('Failed to add contractor: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -243,11 +319,29 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
               <div className="flex items-center gap-3">
                 {!isContractor && !editData && (
                   <button 
-                    onClick={() => setAiMode(!aiMode)}
+                    onClick={() => {
+                      setAiMode(!aiMode);
+                      setProfileMode(false);
+                    }}
                     className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${aiMode ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
                   >
                     <Sparkles className="w-3.5 h-3.5" />
                     {aiMode ? 'Manual Entry' : 'Qualified Lead Write-up'}
+                  </button>
+                )}
+                {isContractor && !editData && (
+                  <button
+                    onClick={() => {
+                      setProfileMode(!profileMode);
+                      setAiMode(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                      profileMode 
+                        ? 'bg-blue-100 text-blue-700' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {profileMode ? 'Manual Entry' : 'Add from Profile'}
                   </button>
                 )}
                 <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
@@ -256,7 +350,39 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
               </div>
             </div>
             
-            {aiMode ? (
+            {profileMode ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500">Select an existing Admin CRM client to automatically create their contractor profile.</p>
+                
+                {loadingClients ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : clientsWithoutContractor.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
+                    No available clients found. All clients already have a contractor profile.
+                  </div>
+                ) : (
+                  <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-200">
+                    {clientsWithoutContractor.map(client => (
+                      <div key={client.id} className="p-4 hover:bg-gray-50 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{client.company_name || client.contact_name}</p>
+                          <p className="text-sm text-gray-500">{client.email || 'No email'}</p>
+                        </div>
+                        <button
+                          onClick={() => handleAddFromProfile(client)}
+                          disabled={loading}
+                          className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : aiMode ? (
               <div className="space-y-4">
                 <p className="text-sm text-gray-500">Paste your unformatted lead write-up here, and our AI will automatically extract all details and prepare it for qualification.</p>
                 <textarea

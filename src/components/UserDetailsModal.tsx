@@ -253,6 +253,26 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
       } else {
         setHasClientProfile(true); // Force it to show the client fields
         setMissingClientProfile(true); // Track that it needs to be created, not updated
+        
+        // Fetch raw metadata from auth.users (because it's not in public.users yet)
+        try {
+          const res = await fetch(`/api/admin/get-user-metadata?userId=${user.id}`);
+          if (res.ok) {
+            const { metadata } = await res.json();
+            if (metadata) {
+              setFormData(prev => ({
+                ...prev,
+                company_name: metadata.company_name || prev.company_name,
+                phone: metadata.phone || prev.phone,
+                address: metadata.address || prev.address,
+                other_contacts: metadata.other_contacts || prev.other_contacts,
+                other_contact_numbers: metadata.other_contact_numbers || prev.other_contact_numbers,
+              }));
+            }
+          }
+        } catch (e) {
+          console.error('Failed to fetch user metadata', e);
+        }
       }
     } finally {
       setLoadingClient(false);

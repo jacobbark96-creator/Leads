@@ -8,10 +8,12 @@ import toast from 'react-hot-toast';
 export default function MonitoringTab() {
   const { profile } = useAuthStore();
   const [loading, setLoading] = useState(true);
+  const [dateRange, setDateRange] = useState('total');
   
   const [stats, setStats] = useState({
     totalCalls: 0,
     totalDuration: '0m 0s',
+    avgDuration: '0m 0s',
     activeUsers: 0
   });
   const [representatives, setRepresentatives] = useState<any[]>([]);
@@ -21,7 +23,7 @@ export default function MonitoringTab() {
     const fetchMonitoringData = async () => {
       try {
         setLoading(true);
-        const res = await fetch('/api/twilio/monitoring');
+        const res = await fetch(`/api/twilio/monitoring?dateRange=${dateRange}`);
         if (!res.ok) {
           throw new Error('Failed to fetch monitoring data');
         }
@@ -40,9 +42,9 @@ export default function MonitoringTab() {
     };
 
     fetchMonitoringData();
-  }, []);
+  }, [dateRange]);
 
-  if (loading) {
+  if (loading && representatives.length === 0) {
     return (
       <div className="flex justify-center items-center py-20">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -132,13 +134,25 @@ export default function MonitoringTab() {
           </h2>
           <p className="text-sm text-gray-500 mt-1">Monitor staff call times, connection logs, and recordings.</p>
         </div>
-        <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
-          Refresh Data
-        </button>
+        <div className="flex items-center gap-3">
+          <select
+            value={dateRange}
+            onChange={(e) => setDateRange(e.target.value)}
+            className="border border-gray-300 rounded-lg text-sm px-3 py-2 bg-white text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="today">Today</option>
+            <option value="week">This Week</option>
+            <option value="month">This Month</option>
+            <option value="total">Total</option>
+          </select>
+          <button onClick={() => window.location.reload()} className="px-4 py-2 bg-blue-50 text-blue-600 rounded-lg text-sm font-medium hover:bg-blue-100 transition-colors">
+            Refresh Data
+          </button>
+        </div>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center gap-4">
           <div className="p-3 bg-blue-50 text-blue-600 rounded-lg">
             <Phone className="w-6 h-6" />
@@ -155,6 +169,15 @@ export default function MonitoringTab() {
           <div>
             <p className="text-sm font-medium text-gray-500">Total Duration</p>
             <p className="text-2xl font-bold text-gray-900">{stats.totalDuration}</p>
+          </div>
+        </div>
+        <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center gap-4">
+          <div className="p-3 bg-orange-50 text-orange-600 rounded-lg">
+            <Activity className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-sm font-medium text-gray-500">Avg Duration</p>
+            <p className="text-2xl font-bold text-gray-900">{stats.avgDuration}</p>
           </div>
         </div>
         <div className="bg-white border border-gray-200 rounded-xl p-4 shadow-sm flex items-center gap-4">
@@ -182,13 +205,14 @@ export default function MonitoringTab() {
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Twilio Number</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Calls</th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Total Duration</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Avg Duration</th>
                 <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Action</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
               {representatives.length === 0 ? (
                 <tr>
-                  <td colSpan={5} className="px-6 py-8 text-center text-gray-500">No representatives with Twilio numbers found.</td>
+                  <td colSpan={6} className="px-6 py-8 text-center text-gray-500">No representatives with Twilio numbers found.</td>
                 </tr>
               ) : (
                 representatives.map((rep) => (
@@ -205,6 +229,7 @@ export default function MonitoringTab() {
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{rep.formattedDuration}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{rep.formattedAvgDuration}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <ChevronRight className="w-5 h-5 text-gray-400 ml-auto" />
                     </td>

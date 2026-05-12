@@ -65,14 +65,30 @@ async function handleMonitoring(request: Request) {
 
     if (usersError) return NextResponse.json({ error: 'Database error' }, { status: 500 });
 
-    const callsUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?PageSize=500`;
+    const url = new URL(request.url);
+    const dateRange = url.searchParams.get('dateRange') || 'total';
+
+    let startTimeFilter = '';
+    const now = new Date();
+    if (dateRange === 'today') {
+      const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      startTimeFilter = `&StartTime>=${today.toISOString().split('T')[0]}`;
+    } else if (dateRange === 'week') {
+      const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+      startTimeFilter = `&StartTime>=${weekAgo.toISOString().split('T')[0]}`;
+    } else if (dateRange === 'month') {
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+      startTimeFilter = `&StartTime>=${startOfMonth.toISOString().split('T')[0]}`;
+    }
+
+    const callsUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?PageSize=500${startTimeFilter}`;
     const callsResponse = await fetch(callsUrl, { headers: { 'Authorization': authHeader } });
     if (!callsResponse.ok) return NextResponse.json({ error: 'Failed to fetch calls' }, { status: 500 });
     
     const callsData = await callsResponse.json();
     const calls = callsData.calls || [];
 
-    const recordingsUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Recordings.json?PageSize=500`;
+    const recordingsUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Recordings.json?PageSize=500${startTimeFilter.replace('StartTime', 'DateCreated')}`;
     const recordingsResponse = await fetch(recordingsUrl, { headers: { 'Authorization': authHeader } });
     let recordings = [];
     if (recordingsResponse.ok) {
@@ -135,11 +151,21 @@ async function handleMonitoring(request: Request) {
     repSummaries.forEach(rep => {
       // @ts-ignore
       rep.formattedDuration = formatDuration(rep.totalDuration);
+      const avgDuration = rep.totalCalls > 0 ? Math.floor(rep.totalDuration / rep.totalCalls) : 0;
+      // @ts-ignore
+      rep.formattedAvgDuration = formatDuration(avgDuration);
       rep.logs.sort((a, b) => new Date(b.time).getTime() - new Date(a.time).getTime());
     });
 
+    const globalAvgDuration = totalGlobalCalls > 0 ? Math.floor(totalGlobalDuration / totalGlobalCalls) : 0;
+
     return NextResponse.json({
-      stats: { totalCalls: totalGlobalCalls, totalDuration: formatDuration(totalGlobalDuration), activeUsers: activeUserIds.size },
+      stats: { 
+        totalCalls: totalGlobalCalls, 
+        totalDuration: formatDuration(totalGlobalDuration), 
+        avgDuration: formatDuration(globalAvgDuration),
+        activeUsers: activeUserIds.size 
+      },
       representatives: repSummaries
     });
   } catch (error: any) {

@@ -12,6 +12,7 @@ interface TopUpModalProps {
 
 export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose, clientId, userEmail, userId }) => {
   const [customAmount, setCustomAmount] = useState('');
+  const [discountCode, setDiscountCode] = useState('');
   const [loading, setLoading] = useState(false);
 
   if (!isOpen) return null;
@@ -37,6 +38,7 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose, clientI
           clientId,
           userId,
           email: userEmail,
+          discountCode: discountCode.trim() || undefined,
         }),
       });
 
@@ -113,6 +115,17 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose, clientI
               >
                 Top Up
               </button>
+            </div>
+
+            <div className="mt-6 pt-6 border-t border-gray-200">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Have a discount code?</label>
+              <input
+                type="text"
+                value={discountCode}
+                onChange={e => setDiscountCode(e.target.value.toUpperCase())}
+                placeholder="Enter code before selecting amount"
+                className="block w-full rounded-xl border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm py-3"
+              />
             </div>
           </div>
         </div>

@@ -99,8 +99,76 @@ export async function POST(req: Request) {
     } 
     
     else if (checkoutType === 'topup') {
-      const { amount, clientId, userId, email } = body;
+      const { amount, clientId, userId, email, discountCode } = body;
       if (!amount || !clientId || !userId) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+
+      let finalAmount = amount;
+
+      if (discountCode) {
+        const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+        const { data: discount, error: discountError } = await supabaseAdmin
+          .from('discount_codes')
+          .select('*')
+          .eq('code', discountCode)
+          .eq('is_active', true)
+          .single();
+
+        if (discountError || !discount) {
+          return NextResponse.json({ error: 'Invalid or inactive discount code' }, { status: 400 });
+        }
+
+        if (discount.valid_until && new Date(discount.valid_until) < new Date()) {
+          return NextResponse.json({ error: 'Discount code has expired' }, { status: 400 });
+        }
+
+        if (discount.max_uses && discount.current_uses >= discount.max_uses) {
+          return NextResponse.json({ error: 'Discount code usage limit reached' }, { status: 400 });
+        }
+
+        if (discount.discount_type === 'percentage') {
+          finalAmount = amount * (1 - discount.discount_value / 100);
+        } else if (discount.discount_type === 'fixed') {
+          finalAmount = Math.max(0, amount - discount.discount_value);
+        }
+
+        // Increment current_uses
+        await supabaseAdmin
+          .from('discount_codes')
+          .update({ current_uses: discount.current_uses + 1 })
+          .eq('id', discount.id);
+      }
+
+      if (finalAmount <= 0) {
+        // If discount makes it free, just update the balance directly
+        const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+        
+        const { data: currentClient } = await supabaseAdmin
+          .from('clients')
+          .select('credit_balance')
+          .eq('id', clientId)
+          .single();
+        
+        const currentBalance = currentClient?.credit_balance || 0;
+        const newBalance = currentBalance + amount;
+
+        const { error: updateError } = await supabaseAdmin
+          .from('clients')
+          .update({ credit_balance: newBalance })
+          .eq('id', clientId);
+
+        if (updateError) {
+          return NextResponse.json({ error: 'Failed to add balance: ' + updateError.message }, { status: 500 });
+        }
+
+        await supabaseAdmin.from('transactions').insert([{
+          client_id: clientId,
+          amount: amount,
+          type: 'topup',
+          description: `Top up via 100% discount code (${discountCode})`
+        }]);
+
+        return NextResponse.json({ url: `${appUrl}/my-openlead?topup_success=true` });
+      }
 
       const session = await stripe.checkout.sessions.create({
         payment_method_types: ['card'],
@@ -110,8 +178,11 @@ export async function POST(req: Request) {
         line_items: [{
           price_data: {
             currency: 'gbp',
-            product_data: { name: 'Openlead Balance Top Up', description: `Add £${amount} to your account balance` },
-            unit_amount: Math.round(amount * 100),
+            product_data: { 
+              name: 'Openlead Balance Top Up', 
+              description: discountCode ? `Add £${amount} to your account balance (Code: ${discountCode})` : `Add £${amount} to your account balance` 
+            },
+            unit_amount: Math.round(finalAmount * 100),
           },
           quantity: 1,
         }],

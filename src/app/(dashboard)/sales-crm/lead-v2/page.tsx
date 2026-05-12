@@ -275,6 +275,7 @@ function LeadDetailsV2Content() {
   const [isAutoDialEnabled, setIsAutoDialEnabled] = useState(false);
   const [tasks, setTasks] = useState<any[]>([]);
   const [otherContacts, setOtherContacts] = useState<any[]>([]);
+  const [availableGrants, setAvailableGrants] = useState<any[]>([]);
   
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
@@ -543,6 +544,17 @@ function LeadDetailsV2Content() {
         
       if (notesError) throw notesError;
       setNotes(notesData || []);
+
+      // Fetch top 5 active grants
+      const { data: grantsData, error: grantsError } = await supabase
+        .from('government_grants')
+        .select('*')
+        .order('updated_at', { ascending: false })
+        .limit(5);
+
+      if (!grantsError && grantsData) {
+        setAvailableGrants(grantsData);
+      }
       
     } catch (error: any) {
       toast.error('Failed to load lead details: ' + error.message);
@@ -1782,16 +1794,22 @@ function LeadDetailsV2Content() {
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col flex-1 min-h-0">
               <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Available Grants</h3>
               <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
-                <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
-                  <span className="text-xs font-bold text-gray-900">Green Business Fund</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">Up to £25,000 for energy efficiency</span>
-                  <button className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">Apply Now</button>
-                </div>
-                <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
-                  <span className="text-xs font-bold text-gray-900">Low Carbon Grant</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">Match funding for solar PV installation</span>
-                  <button className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">Check Eligibility</button>
-                </div>
+                {availableGrants && availableGrants.length > 0 ? (
+                  availableGrants.map(grant => (
+                    <div key={grant.id} className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
+                      <span className="text-xs font-bold text-gray-900">{grant.title}</span>
+                      <span className="text-[10px] text-gray-500 mt-0.5 line-clamp-2">
+                        {grant.amount ? `${grant.amount} ` : ''}
+                        {grant.who_can_apply ? `- ${grant.who_can_apply}` : ''}
+                      </span>
+                      <a href={grant.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">
+                        View Details
+                      </a>
+                    </div>
+                  ))
+                ) : (
+                  <div className="text-xs text-gray-500 text-center mt-2">No available grants found.</div>
+                )}
               </div>
             </div>
 

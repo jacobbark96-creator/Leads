@@ -51,7 +51,7 @@ export default function DiscountCodesTab() {
 
     setIsCreating(true);
     try {
-      const { error } = await supabase.from('discount_codes').insert({
+      const { data, error } = await supabase.from('discount_codes').insert({
         code: newCode.code.toUpperCase(),
         description: newCode.description || null,
         discount_type: newCode.discount_type,
@@ -59,7 +59,7 @@ export default function DiscountCodesTab() {
         max_uses: newCode.max_uses ? Number(newCode.max_uses) : null,
         valid_until: newCode.valid_until ? new Date(newCode.valid_until).toISOString() : null,
         created_by: profile?.id
-      });
+      }).select().single();
 
       if (error) throw error;
 
@@ -72,7 +72,7 @@ export default function DiscountCodesTab() {
         max_uses: '',
         valid_until: ''
       });
-      fetchCodes();
+      setCodes([data, ...codes]);
     } catch (error: any) {
       toast.error('Failed to create discount code: ' + error.message);
     } finally {

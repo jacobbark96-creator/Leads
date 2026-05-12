@@ -1,27 +1,12 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Device, Call } from '@twilio/voice-sdk';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
-
-interface DialerContextType {
-  makeCall: (number: string, entityId?: string, userName?: string, entityType?: string) => void;
-  activeCall: Call | null;
-  currentEntityId: string | null;
-}
-
-const DialerContext = createContext<DialerContextType | undefined>(undefined);
-
-export const useDialer = () => {
-  const context = useContext(DialerContext);
-  if (!context) {
-    throw new Error('useDialer must be used within a DialerProvider');
-  }
-  return context;
-};
+import { DialerContext } from '@/contexts/DialerContext';
 
 export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile } = useAuthStore();

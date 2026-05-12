@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { Lead, StaffUser, LeadNote } from '@/types';
 import toast from 'react-hot-toast';
-import { useDialer } from '@/components/DialerProvider';
+import { useDialer } from '@/contexts/DialerContext';
 
 import { 
   LayoutDashboard, 

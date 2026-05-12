@@ -8,7 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { Contractor, StaffUser } from '@/types';
 export interface ContractorNote { id: string; contractor_id: string; user_id: string; author_name: string; content: string; is_pinned: boolean; created_at: string; }
 import toast from 'react-hot-toast';
-import { useDialer } from '@/components/DialerProvider';
+import { useDialer } from '@/contexts/DialerContext';
 
 import { 
   LayoutDashboard, 

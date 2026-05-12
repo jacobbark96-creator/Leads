@@ -1099,36 +1099,39 @@ function LeadDetailsV2Content() {
               {lead.website && <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs mt-1">{lead.website}</a>}
               
               <div className="flex gap-2 mt-4 w-full">
-                {lead.email && (
-                  <a href={`mailto:${lead.email}`} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title={lead.email}>
-                    <Mail className="w-3.5 h-3.5" /> Email
-                  </a>
-                )}
-                {lead.linkedin_url && (
-                  <a href={lead.linkedin_url.startsWith('http') ? lead.linkedin_url : `https://${lead.linkedin_url}`} target="_blank" rel="noopener noreferrer" className="flex-none px-3 py-1.5 bg-white border border-gray-300 text-[#0077b5] rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm" title="LinkedIn Profile">
-                    <Linkedin className="w-3.5 h-3.5" />
-                  </a>
-                )}
-                <div className="relative">
-                  <button onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)} className="flex-none px-2 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm h-full" title="More Options">
-                    <MoreHorizontal className="w-3.5 h-3.5" />
-                  </button>
-                  {isMoreMenuOpen && (
-                    <div className="absolute top-full mt-1 right-0 w-48 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
-                      <button 
-                            onClick={() => {
-                              setEditForm(lead || {});
-                              setIsPrimaryContactModalOpen(true);
-                              setIsMoreMenuOpen(false);
-                            }}
-                            className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
-                          >
-                            <Pencil className="w-4 h-4" /> Edit Details
-                          </button>
-                    </div>
+                  {lead.linkedin_url && (
+                    <a href={lead.linkedin_url.startsWith('http') ? lead.linkedin_url : `https://${lead.linkedin_url}`} target="_blank" rel="noopener noreferrer" className="group relative p-2 bg-white border border-gray-300 text-[#0077b5] rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm">
+                      <Linkedin className="w-4 h-4" />
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none z-[100] transition-opacity shadow-lg">
+                        LinkedIn Profile
+                        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                      </span>
+                    </a>
                   )}
+                  <div className="relative">
+                    <button onClick={() => setIsMoreMenuOpen(!isMoreMenuOpen)} className="group relative p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm h-full">
+                      <MoreHorizontal className="w-4 h-4" />
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none z-[100] transition-opacity shadow-lg">
+                        More Options
+                        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                      </span>
+                    </button>
+                    {isMoreMenuOpen && (
+                      <div className="absolute top-full mt-1 right-0 w-48 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
+                        <button 
+                              onClick={() => {
+                                setEditForm(lead || {});
+                                setIsPrimaryContactModalOpen(true);
+                                setIsMoreMenuOpen(false);
+                              }}
+                              className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 flex items-center gap-2"
+                            >
+                              <Pencil className="w-4 h-4" /> Edit Details
+                            </button>
+                      </div>
+                    )}
+                  </div>
                 </div>
-              </div>
               <div className="flex flex-wrap justify-center gap-1.5 mt-4">
                 <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
                   lead.status === 'qualified' ? 'bg-blue-100 text-blue-700' :
@@ -1312,12 +1315,12 @@ function LeadDetailsV2Content() {
           <div className="flex-1 flex flex-col min-w-0 h-full gap-4">
             
             {/* PRIMARY CONTACT HEADER CARD */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex items-center justify-between shrink-0">
-              <div className="flex items-center gap-4">
-                <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg flex-shrink-0 relative overflow-hidden">
-                  <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name || 'Unknown')}&background=0D8ABC&color=fff`} alt="Contact Avatar" className="w-full h-full object-cover" />
-                  <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white" title="Online"></span>
-                </div>
+              <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex items-center justify-between shrink-0 overflow-visible relative">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg flex-shrink-0 relative overflow-hidden">
+                    <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name || 'Unknown')}&background=0D8ABC&color=fff`} alt="Contact Avatar" className="w-full h-full object-cover" />
+                    <span className="absolute bottom-0 right-0 w-3.5 h-3.5 rounded-full bg-green-500 border-2 border-white" title="Online"></span>
+                  </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-2">
                     <h2 className="text-xl font-bold text-gray-900 tracking-tight leading-none">{lead.name || 'Unknown Contact'}</h2>
@@ -1336,12 +1339,31 @@ function LeadDetailsV2Content() {
               
               <div className="flex flex-col items-end gap-3">
                 <div className="flex items-center gap-2">
-                  <button onClick={() => onCallClick(lead.phone || '')} className="flex-1 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title={lead.phone || 'No phone number'}>
-                  <Phone className="w-3.5 h-3.5" /> Call
-                </button>
-                <a href={`sms:${lead.phone || ''}`} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title={lead.phone || 'No phone number'}>
-                  <MessageSquare className="w-3.5 h-3.5" /> SMS
-                </a>
+                    <button onClick={() => onCallClick(lead.phone || '')} className="group relative p-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center transition-colors shadow-sm">
+                      <Phone className="w-4 h-4" />
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none z-[100] transition-opacity shadow-lg">
+                        {lead.phone || 'No phone number'}
+                        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                      </span>
+                    </button>
+                    
+                    <a href={`sms:${lead.phone || ''}`} className="group relative p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm">
+                      <MessageSquare className="w-4 h-4" />
+                      <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none z-[100] transition-opacity shadow-lg">
+                        {lead.phone || 'No phone number'}
+                        <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                      </span>
+                    </a>
+
+                    {lead.email && (
+                      <a href={`mailto:${lead.email}`} className="group relative p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm">
+                        <Mail className="w-4 h-4" />
+                        <span className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2.5 py-1.5 bg-gray-900 text-white text-xs font-medium rounded opacity-0 group-hover:opacity-100 whitespace-nowrap pointer-events-none z-[100] transition-opacity shadow-lg">
+                          {lead.email}
+                          <span className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></span>
+                        </span>
+                      </a>
+                    )}
                   {/* @ts-ignore */}
                   {lead.linkedin ? (
                     /* @ts-ignore */

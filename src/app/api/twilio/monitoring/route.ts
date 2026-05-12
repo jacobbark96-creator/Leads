@@ -23,7 +23,8 @@ export async function GET(request: Request) {
     const { data: users, error: usersError } = await supabaseAdmin
       .from('users')
       .select('id, name, twilio_number, role')
-      .not('twilio_number', 'is', null);
+      .not('twilio_number', 'is', null)
+      .neq('twilio_number', '');
 
     if (usersError) {
       console.error('Failed to fetch users:', usersError);

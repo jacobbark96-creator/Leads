@@ -23,6 +23,7 @@ import {
   Plus,
   ArrowRight,
   ArrowLeft,
+  MessageSquare,
   Pin,
   Pencil,
   X,
@@ -1101,6 +1102,9 @@ function LeadDetailsV2Content() {
                 <button onClick={() => onCallClick(lead.phone || '')} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title="Primary Phone">
                   <Phone className="w-3.5 h-3.5" /> Call
                 </button>
+                <a href={`sms:${lead.phone || ''}`} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title="Send SMS">
+                  <MessageSquare className="w-3.5 h-3.5" /> SMS
+                </a>
                 {lead.secondary_phone && (
                   <button onClick={() => onCallClick(lead.secondary_phone || '')} className="flex-none px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm" title="Secondary Phone">
                     <Phone className="w-3.5 h-3.5" />
@@ -1381,7 +1385,8 @@ function LeadDetailsV2Content() {
                       <select value={editForm.status || 'fresh'} onChange={e => setEditForm({...editForm, status: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs w-32 focus:ring-1 focus:ring-blue-500">
                         <option value="fresh">Fresh</option>
                         <option value="qualified">Qualified</option>
-                        <option value="no pitch">No Pitch</option>
+                        <option value="rest">Rest</option>
+                        <option value="long-term">Long-Term</option>
                         <option value="dnc">DNC</option>
                         <option value="call back">Call Back</option>
                       </select>
@@ -1765,6 +1770,22 @@ function LeadDetailsV2Content() {
               </div>
             </div>
 
+            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col flex-1 min-h-0">
+              <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Available Grants</h3>
+              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
+                <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
+                  <span className="text-xs font-bold text-gray-900">Green Business Fund</span>
+                  <span className="text-[10px] text-gray-500 mt-0.5">Up to £25,000 for energy efficiency</span>
+                  <button className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">Apply Now</button>
+                </div>
+                <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
+                  <span className="text-xs font-bold text-gray-900">Low Carbon Grant</span>
+                  <span className="text-[10px] text-gray-500 mt-0.5">Match funding for solar PV installation</span>
+                  <button className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">Check Eligibility</button>
+                </div>
+              </div>
+            </div>
+
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col" style={{ flex: '0 0 50%' }}>
               <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Activity Timeline</h3>
               <div className="flex-1 flex flex-col gap-6 relative overflow-y-auto pr-2">
@@ -1802,22 +1823,6 @@ function LeadDetailsV2Content() {
                     </div>
                   );
                 })}
-              </div>
-            </div>
-
-            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col flex-1 min-h-0">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Available Grants</h3>
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
-                <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
-                  <span className="text-xs font-bold text-gray-900">Green Business Fund</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">Up to £25,000 for energy efficiency</span>
-                  <button className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">Apply Now</button>
-                </div>
-                <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
-                  <span className="text-xs font-bold text-gray-900">Low Carbon Grant</span>
-                  <span className="text-[10px] text-gray-500 mt-0.5">Match funding for solar PV installation</span>
-                  <button className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">Check Eligibility</button>
-                </div>
               </div>
             </div>
           </aside>

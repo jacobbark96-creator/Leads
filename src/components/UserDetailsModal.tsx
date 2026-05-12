@@ -603,7 +603,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                         subTabs: [
                           { id: 'sales-crm/fresh', label: 'Fresh Leads' },
                           { id: 'sales-crm/qualified', label: 'Qualified Leads' },
-                          { id: 'sales-crm/import', label: 'Import Leads' }
+                          { id: 'sales-crm/import', label: 'Import Leads' },
+                          { id: 'can_add_leads', label: 'Allow Add Lead Button' }
                         ]
                       },
                       { 
@@ -622,7 +623,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                         subTabs: [
                           { id: 'admin-crm/users', label: 'Users' },
                           { id: 'admin-crm/categories', label: 'Categories' },
-                          { id: 'admin-crm/discounts', label: 'Discounts' }
+                          { id: 'admin-crm/discounts', label: 'Discounts' },
+                          { id: 'admin-crm/monitoring', label: 'Monitoring' }
                         ]
                       },
                       { 

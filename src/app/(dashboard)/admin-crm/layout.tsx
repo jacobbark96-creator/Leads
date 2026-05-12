@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { Users, Tags, Ticket, Menu, X, TrendingUp } from 'lucide-react';
+import { Users, Tags, Ticket, Menu, X, TrendingUp, Activity } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 
@@ -16,6 +16,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Categories', path: '/admin-crm/categories', icon: Tags, id: 'admin-crm/categories' },
     { name: 'Discount Codes', path: '/admin-crm/discounts', icon: Ticket, id: 'admin-crm/discounts' },
     { name: 'Sales Tracker', path: '/admin-crm/tracker', icon: TrendingUp, id: 'admin-crm/tracker' },
+    { name: 'Monitoring', path: '/admin-crm/monitoring', icon: Activity, id: 'admin-crm/monitoring' },
   ].filter(tab => profile?.role !== 'rep' || profile?.permissions?.includes(tab.id));
 
   return (

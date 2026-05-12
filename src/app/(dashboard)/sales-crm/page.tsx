@@ -42,6 +42,7 @@ function LeadProcessingContent() {
   const [searchQuery, setSearchQuery] = useState('');
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'commercial' | 'residential'>('all');
+  const [mobileFilter, setMobileFilter] = useState<'all'|'mobile'>('all');
   const [assignedUserFilter, setAssignedUserFilter] = useState<string>('me');
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
@@ -49,7 +50,7 @@ function LeadProcessingContent() {
   // Pagination & Counts
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
-  const [kpiCounts, setKpiCounts] = useState({ total: 0, fresh: 0, contacted: 0, hot: 0, dnc: 0 });
+  const [kpiCounts, setKpiCounts] = useState({ total: 0, fresh: 0, contacted: 0, myleads: 0, dnc: 0 });
   const PAGE_SIZE = 25;
 
   // Selections & Modals
@@ -93,6 +94,11 @@ function LeadProcessingContent() {
         } else if (propertyTypeFilter === 'residential') {
           filtered = filtered.or('company.eq.,company.is.null');
         }
+
+        if (mobileFilter === 'mobile') {
+          filtered = filtered.or('phone.ilike.07%,phone.ilike.+447%,phone.ilike.447%,secondary_phone.ilike.07%,secondary_phone.ilike.+447%,secondary_phone.ilike.447%');
+        }
+
         return filtered;
       };
 
@@ -103,13 +109,13 @@ function LeadProcessingContent() {
         { count: dncCount },
         { count: freshCount },
         { count: contactedCount },
-        { count: hotCount },
+        { count: myleadsCount },
         { count: totalCount }
       ] = await Promise.all([
         getBaseQuery().eq('status', 'dnc'),
         getBaseQuery().eq('status', 'fresh'),
         getBaseQuery().neq('status', 'dnc').not('last_dialed_at', 'is', null),
-        getBaseQuery().neq('status', 'dnc').gte('score', 80),
+        getBaseQuery().eq('assigned_to', profile?.id || 'none'),
         getBaseQuery().neq('status', 'dnc') // Total excludes DNC
       ]);
 
@@ -117,7 +123,7 @@ function LeadProcessingContent() {
         total: totalCount || 0,
         fresh: freshCount || 0,
         contacted: contactedCount || 0,
-        hot: hotCount || 0,
+        myleads: myleadsCount || 0,
         dnc: dncCount || 0
       });
     } catch (err) {
@@ -162,8 +168,8 @@ function LeadProcessingContent() {
         query = query.eq('status', 'fresh');
       } else if (statusFilter === 'contacted') {
         query = query.neq('status', 'dnc').not('last_dialed_at', 'is', null);
-      } else if (statusFilter === 'hot') {
-        query = query.neq('status', 'dnc').gte('score', 80);
+      } else if (statusFilter === 'myleads') {
+        query = query.eq('assigned_to', profile?.id || 'none');
       } else {
         query = query.eq('status', statusFilter);
       }
@@ -172,6 +178,10 @@ function LeadProcessingContent() {
         query = query.neq('company', '').not('company', 'is', null);
       } else if (propertyTypeFilter === 'residential') {
         query = query.or('company.eq.,company.is.null');
+      }
+
+      if (mobileFilter === 'mobile') {
+        query = query.or('phone.ilike.07%,phone.ilike.+447%,phone.ilike.447%,secondary_phone.ilike.07%,secondary_phone.ilike.+447%,secondary_phone.ilike.447%');
       }
 
       const { data, error } = await query;
@@ -209,8 +219,9 @@ function LeadProcessingContent() {
       fetchLeads(0, true);
     }, 50);
 
+    const channelId = `leads-realtime-${Date.now()}`;
     const channel = supabase
-      .channel('leads-realtime')
+      .channel(channelId)
       .on('postgres_changes', { event: '*', table: 'leads', schema: 'public' }, (payload) => {
         fetchLeads(0, true);
         fetchKpis();
@@ -281,7 +292,7 @@ function LeadProcessingContent() {
           { id: 'all', label: 'Total Leads', value: kpiCounts.total, color: 'bg-blue-500', textColor: 'text-blue-500', icon: Hash, bgClass: 'bg-white hover:bg-gray-50', borderClass: 'border-gray-200' },
           { id: 'fresh', label: 'Fresh', value: kpiCounts.fresh, color: 'bg-emerald-500', textColor: 'text-emerald-500', icon: Leaf, bgClass: 'bg-emerald-50/50 hover:bg-emerald-50', borderClass: 'border-emerald-100' },
           { id: 'contacted', label: 'Contacted', value: kpiCounts.contacted, color: 'bg-amber-500', textColor: 'text-amber-500', icon: PhoneForwarded, bgClass: 'bg-amber-50/30 hover:bg-amber-50/50', borderClass: 'border-amber-100' },
-          { id: 'hot', label: 'Hot', value: kpiCounts.hot, color: 'bg-orange-500', textColor: 'text-orange-500', icon: Flame, bgClass: 'bg-orange-50/50 hover:bg-orange-50', borderClass: 'border-orange-100' },
+          { id: 'myleads', label: 'My Leads', value: kpiCounts.myleads, color: 'bg-purple-500', textColor: 'text-purple-500', icon: User, bgClass: 'bg-purple-50/50 hover:bg-purple-50', borderClass: 'border-purple-100' },
           { id: 'dnc', label: 'DNC', value: kpiCounts.dnc, color: 'bg-red-500', textColor: 'text-red-500', icon: Ban, bgClass: 'bg-red-50/80 hover:bg-red-100/80', borderClass: 'border-red-200' },
         ].map((kpi, idx) => (
           <div 
@@ -324,7 +335,7 @@ function LeadProcessingContent() {
             <LayoutGrid className="w-3.5 h-3.5 mr-1.5" />
             Columns
           </button>
-          {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
+          {profile?.role && (['admin', 'super_admin'].includes(profile.role) || profile.permissions?.includes('can_add_leads')) && (
             <button
               onClick={() => setIsAddModalOpen(true)}
               className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-medium rounded-lg shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-all"
@@ -348,7 +359,8 @@ function LeadProcessingContent() {
             >
               <option value="all">All Statuses</option>
               <option value="fresh">Fresh</option>
-              <option value="no pitch">No Pitch</option>
+              <option value="rest">Rest</option>
+              <option value="long-term">Long-Term</option>
               <option value="dnc">DNC</option>
               <option value="call back">Call Back</option>
             </select>
@@ -364,6 +376,18 @@ function LeadProcessingContent() {
               <option value="all">All Types</option>
               <option value="commercial">Commercial</option>
               <option value="residential">Residential</option>
+            </select>
+          </div>
+
+          <div className="flex flex-col gap-1">
+            <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Mobile</label>
+            <select
+              value={mobileFilter}
+              onChange={(e) => setMobileFilter(e.target.value as any)}
+              className="border-gray-200 rounded-md shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1 pl-2 pr-6 bg-gray-50"
+            >
+              <option value="all">All Numbers</option>
+              <option value="mobile">Has Mobile</option>
             </select>
           </div>
 
@@ -620,7 +644,7 @@ function LeadProcessingContent() {
 
 export default function LeadProcessing() {
   return (
-    <Suspense fallback={<div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+    <Suspense key={Date.now()} fallback={<div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
       <LeadProcessingContent />
     </Suspense>
   );

@@ -85,8 +85,9 @@ function LeadProcessingContent() {
           } else {
             filtered = filtered.eq('assigned_to', profile.id);
           }
-        } else if (!assignedToMe) {
-          filtered = filtered.is('assigned_to', null);
+        } else if (!assignedToMe && q.statusFilter !== 'myleads') {
+          // Note: for the myleads count specifically, we don't want to enforce assigned_to=null
+          // but we apply it in the Promise.all array instead.
         }
 
         if (propertyTypeFilter === 'commercial') {
@@ -96,7 +97,7 @@ function LeadProcessingContent() {
         }
 
         if (mobileFilter === 'mobile') {
-          filtered = filtered.or('phone.ilike.07%,phone.ilike.+447%,phone.ilike.447%,secondary_phone.ilike.07%,secondary_phone.ilike.+447%,secondary_phone.ilike.447%');
+          filtered = filtered.or('phone.like.%07%,phone.like.%447%,secondary_phone.like.%07%,secondary_phone.like.%447%');
         }
 
         return filtered;
@@ -112,11 +113,11 @@ function LeadProcessingContent() {
         { count: myleadsCount },
         { count: totalCount }
       ] = await Promise.all([
-        getBaseQuery().eq('status', 'dnc'),
-        getBaseQuery().eq('status', 'fresh'),
-        getBaseQuery().neq('status', 'dnc').not('last_dialed_at', 'is', null),
+        (!assignedToMe ? getBaseQuery().is('assigned_to', null) : getBaseQuery()).eq('status', 'dnc'),
+        (!assignedToMe ? getBaseQuery().is('assigned_to', null) : getBaseQuery()).eq('status', 'fresh'),
+        (!assignedToMe ? getBaseQuery().is('assigned_to', null) : getBaseQuery()).neq('status', 'dnc').not('last_dialed_at', 'is', null),
         getBaseQuery().eq('assigned_to', profile?.id || 'none'),
-        getBaseQuery().neq('status', 'dnc') // Total excludes DNC
+        (!assignedToMe ? getBaseQuery().is('assigned_to', null) : getBaseQuery()).neq('status', 'dnc') // Total excludes DNC
       ]);
 
       setKpiCounts({
@@ -156,7 +157,7 @@ function LeadProcessingContent() {
         } else {
           query = query.eq('assigned_to', profile.id);
         }
-      } else if (!assignedToMe) {
+      } else if (!assignedToMe && statusFilter !== 'myleads') {
         query = query.is('assigned_to', null);
       }
 
@@ -181,7 +182,7 @@ function LeadProcessingContent() {
       }
 
       if (mobileFilter === 'mobile') {
-        query = query.or('phone.ilike.07%,phone.ilike.+447%,phone.ilike.447%,secondary_phone.ilike.07%,secondary_phone.ilike.+447%,secondary_phone.ilike.447%');
+        query = query.or('phone.like.%07%,phone.like.%447%,secondary_phone.like.%07%,secondary_phone.like.%447%');
       }
 
       const { data, error } = await query;

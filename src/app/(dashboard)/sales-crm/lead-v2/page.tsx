@@ -667,7 +667,7 @@ function LeadDetailsV2Content() {
           lead_id: lead.id,
           user_id: profile.id,
           reminder_date: reminderAt,
-          note: content
+          description: content
         }]);
 
       if (reminderError) throw reminderError;
@@ -1099,19 +1099,8 @@ function LeadDetailsV2Content() {
               {lead.website && <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs mt-1">{lead.website}</a>}
               
               <div className="flex gap-2 mt-4 w-full">
-                <button onClick={() => onCallClick(lead.phone || '')} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title="Primary Phone">
-                  <Phone className="w-3.5 h-3.5" /> Call
-                </button>
-                <a href={`sms:${lead.phone || ''}`} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title="Send SMS">
-                  <MessageSquare className="w-3.5 h-3.5" /> SMS
-                </a>
-                {lead.secondary_phone && (
-                  <button onClick={() => onCallClick(lead.secondary_phone || '')} className="flex-none px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm" title="Secondary Phone">
-                    <Phone className="w-3.5 h-3.5" />
-                  </button>
-                )}
                 {lead.email && (
-                  <a href={`mailto:${lead.email}`} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title="Email">
+                  <a href={`mailto:${lead.email}`} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title={lead.email}>
                     <Mail className="w-3.5 h-3.5" /> Email
                   </a>
                 )}
@@ -1347,14 +1336,12 @@ function LeadDetailsV2Content() {
               
               <div className="flex flex-col items-end gap-3">
                 <div className="flex items-center gap-2">
-                  <button onClick={() => onCallClick(lead.phone || '')} className="p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm" title="Call">
-                    <Phone className="w-4 h-4" />
-                  </button>
-                  {lead.email && (
-                    <a href={`mailto:${lead.email}`} className="p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm" title="Email">
-                      <Mail className="w-4 h-4" />
-                    </a>
-                  )}
+                  <button onClick={() => onCallClick(lead.phone || '')} className="flex-1 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title={lead.phone || 'No phone number'}>
+                  <Phone className="w-3.5 h-3.5" /> Call
+                </button>
+                <a href={`sms:${lead.phone || ''}`} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title={lead.phone || 'No phone number'}>
+                  <MessageSquare className="w-3.5 h-3.5" /> SMS
+                </a>
                   {/* @ts-ignore */}
                   {lead.linkedin ? (
                     /* @ts-ignore */

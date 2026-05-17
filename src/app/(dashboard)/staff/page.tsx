@@ -3,7 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../../store/authStore';
 import { supabase } from '../../../lib/supabase';
 import { motion } from 'framer-motion';
-import { Users, UserPlus, Trophy, PoundSterling } from 'lucide-react';
+import { Users, UserPlus, Trophy, PoundSterling, Calendar, Clock } from 'lucide-react';
 
 import { TopNav } from './components/TopNav';
 import { KpiCard } from './components/KpiCard';
@@ -23,6 +23,35 @@ export default function StaffPortal() {
     sales: 0,
     revenue: 0
   });
+  
+  const [currentTime, setCurrentTime] = useState('');
+  const [currentDate, setCurrentDate] = useState('');
+
+  useEffect(() => {
+    const updateTime = () => {
+      const now = new Date();
+      
+      const timeFormatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'GMT',
+        hour: '2-digit',
+        minute: '2-digit',
+      });
+      
+      const dateFormatter = new Intl.DateTimeFormat('en-GB', {
+        timeZone: 'GMT',
+        weekday: 'short',
+        day: 'numeric',
+        month: 'short'
+      });
+      
+      setCurrentTime(timeFormatter.format(now));
+      setCurrentDate(dateFormatter.format(now));
+    };
+
+    updateTime();
+    const interval = setInterval(updateTime, 10000); // update every 10 seconds
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (!profile) return;
@@ -157,7 +186,7 @@ export default function StaffPortal() {
 
             {/* Top KPI Cards (Only for Admins/Super Admins) */}
             {isAdmin && (
-              <div className="xl:col-span-3 grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="xl:col-span-3 grid grid-cols-2 md:grid-cols-6 gap-4">
                 <KpiCard 
                   title="New Leads" 
                   value={stats.newLeads.toString()} 
@@ -193,6 +222,24 @@ export default function StaffPortal() {
                   icon={PoundSterling} 
                   iconColor="text-blue-400" 
                   delay={0.4} 
+                />
+                <KpiCard 
+                  title="Date" 
+                  value={currentDate || '-'} 
+                  trend="Today" 
+                  isPositive={true} 
+                  icon={Calendar} 
+                  iconColor="text-blue-400" 
+                  delay={0.5} 
+                />
+                <KpiCard 
+                  title="GMT Time" 
+                  value={currentTime || '-'} 
+                  trend="Live" 
+                  isPositive={true} 
+                  icon={Clock} 
+                  iconColor="text-emerald-400" 
+                  delay={0.6} 
                 />
               </div>
             )}

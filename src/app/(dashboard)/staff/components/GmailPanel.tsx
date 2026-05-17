@@ -18,7 +18,7 @@ const GmailPanelContent = () => {
   }, []);
 
   const login = useGoogleLogin({
-    scope: 'https://www.googleapis.com/auth/gmail.readonly',
+    scope: 'https://mail.google.com/ https://www.googleapis.com/auth/gmail.readonly',
     onSuccess: (tokenResponse) => {
       const token = tokenResponse.access_token;
       setAccessToken(token);

@@ -185,9 +185,9 @@ export default function MapTab() {
       path: 'M 125,5 155,90 245,90 175,145 200,230 125,180 50,230 75,145 5,90 95,90 z',
       fillColor: color,
       fillOpacity: 1,
-      scale: 0.035,
+      scale: 0.12,
       strokeColor: '#FFFFFF',
-      strokeWeight: 1,
+      strokeWeight: 1.5,
       anchor: new window.google.maps.Point(125, 125),
     };
   };
@@ -235,13 +235,13 @@ export default function MapTab() {
     const pathLeft = 'M-4 2v20h-2v-8h-14l2.5-4.5L-20 5H-6V2H-4z';
     
     return {
-      path: direction === 'left' ? pathLeft : pathRight,
+      path: direction === 'right' ? pathRight : pathLeft,
       fillColor: color,
       fillOpacity: 1,
-      scale: 0.35,
+      scale: 1.4,
       strokeColor: '#FFFFFF',
       strokeWeight: 1.5,
-      anchor: new window.google.maps.Point(direction === 'left' ? -5 : 5, 22),
+      anchor: direction === 'right' ? new window.google.maps.Point(4, 22) : new window.google.maps.Point(-4, 22),
     };
   };
 

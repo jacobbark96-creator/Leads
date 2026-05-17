@@ -429,12 +429,14 @@ async function handleSmsWebhook(req: Request) {
     const { data: users } = await supabase.from('users').select('id, twilio_number').not('twilio_number', 'is', null);
     const user = users?.find(u => u.twilio_number && u.twilio_number.replace(/[^\d]/g, '').endsWith(numberToMatch));
 
-    if (user) {
-      await supabase.from('sms_messages').insert([{
-        user_id: user.id, contact_number: fromNumber, direction: 'inbound',
-        body: body, media_url: mediaUrl, is_read: false
-      }]);
-    }
+    await supabase.from('sms_messages').insert([{
+      user_id: user ? user.id : null,
+      contact_number: fromNumber, 
+      direction: 'inbound',
+      body: body, 
+      media_url: mediaUrl, 
+      is_read: false
+    }]);
 
     return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`, { headers: { 'Content-Type': 'text/xml' } });
   } catch (error) {

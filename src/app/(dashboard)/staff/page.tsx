@@ -3,10 +3,11 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../../store/authStore';
 import { supabase } from '../../../lib/supabase';
 import { motion } from 'framer-motion';
-import { Users, UserPlus, Trophy, PoundSterling, Calendar, Clock } from 'lucide-react';
+import { Users, UserPlus, Trophy, PoundSterling } from 'lucide-react';
 
 import { TopNav } from './components/TopNav';
 import { KpiCard } from './components/KpiCard';
+import { GlassCard } from './components/GlassCard';
 import { TasksPanel } from './components/TasksPanel';
 import { NewsPanel } from './components/NewsPanel';
 import { WhatsAppMonitor } from './components/WhatsAppMonitor';
@@ -223,24 +224,14 @@ export default function StaffPortal() {
                   iconColor="text-blue-400" 
                   delay={0.4} 
                 />
-                <KpiCard 
-                  title="Date" 
-                  value={currentDate || '-'} 
-                  trend="Today" 
-                  isPositive={true} 
-                  icon={Calendar} 
-                  iconColor="text-blue-400" 
-                  delay={0.5} 
-                />
-                <KpiCard 
-                  title="Local Time" 
-                  value={currentTime || '-'} 
-                  trend="Live" 
-                  isPositive={true} 
-                  icon={Clock} 
-                  iconColor="text-emerald-400" 
-                  delay={0.6} 
-                />
+                <GlassCard delay={0.5} className="flex flex-col items-center justify-center h-full p-4">
+                  <h3 className="text-2xl font-bold text-white mb-1 tracking-tight text-center">{currentDate || '-'}</h3>
+                </GlassCard>
+                <GlassCard delay={0.6} className="flex flex-col items-center justify-center h-full p-4">
+                  <h3 className="text-3xl font-bold text-emerald-400 tracking-widest" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {currentTime || '-'}
+                  </h3>
+                </GlassCard>
               </div>
             )}
           </div>

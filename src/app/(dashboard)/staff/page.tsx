@@ -201,34 +201,34 @@ export default function StaffPortal() {
           {/* Main Content Grid: 4 Columns */}
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 h-[640px]">
             {/* Column 1: Tasks & Feed/Performance */}
-            <div className="flex flex-col gap-4 h-full">
-              <div className="h-1/2">
+            <div className="flex flex-col gap-4 h-full min-h-0">
+              <div className="h-1/2 overflow-hidden">
                 <TasksPanel />
               </div>
-              <div className="h-1/2">
+              <div className="h-1/2 overflow-hidden">
                 {isAdmin ? <LiveFeed /> : <RepPerformanceCard />}
               </div>
             </div>
 
             {/* Column 2: News & Conditional Component */}
-            <div className="flex flex-col gap-4 h-full">
-              <div className={isAdmin ? "h-1/2" : "h-full"}>
+            <div className="flex flex-col gap-4 h-full min-h-0">
+              <div className={`${isAdmin ? "h-1/2" : "h-full"} overflow-hidden`}>
                 <NewsPanel />
               </div>
               {isAdmin && (
-                <div className="h-1/2">
+                <div className="h-1/2 overflow-hidden">
                   <GmailPanel />
                 </div>
               )}
             </div>
 
             {/* Column 3: WhatsApp/Gmail Monitor (Double Height) */}
-            <div className="h-full">
+            <div className="h-full overflow-hidden">
               {isAdmin ? <WhatsAppMonitor /> : <GmailPanel />}
             </div>
 
             {/* Column 4: Team Messages (Double Height) */}
-            <div className="h-full">
+            <div className="h-full overflow-hidden">
               <TeamMessages />
             </div>
           </div>

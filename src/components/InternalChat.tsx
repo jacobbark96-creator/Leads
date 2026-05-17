@@ -481,8 +481,8 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   return (
     <div className={containerClasses}>
       {/* Left Sidebar - Users List */}
-      <div className="w-1/3 border-r border-gray-700/50 flex flex-col bg-gray-900/30">
-        <div className="p-3 border-b border-gray-700/50 flex items-center justify-between bg-white/[0.02]">
+      <div className="w-1/3 border-r border-gray-700/50 flex flex-col bg-gray-900/30 min-h-0">
+        <div className="p-3 border-b border-gray-700/50 flex items-center justify-between bg-white/[0.02] shrink-0">
           <h2 className="text-white text-sm font-bold flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-blue-400" /> Team Messages
           </h2>
@@ -493,7 +493,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
           )}
         </div>
         
-        <div className="p-2 border-b border-gray-700/50 bg-white/[0.01]">
+        <div className="p-2 border-b border-gray-700/50 bg-white/[0.01] shrink-0">
           <div className="relative">
             <Search className="w-3.5 h-3.5 text-gray-500 absolute left-3 top-1/2 transform -translate-y-1/2" />
             <input 
@@ -506,7 +506,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto custom-scrollbar relative">
+        <div className="flex-1 overflow-y-auto custom-scrollbar relative min-h-0">
           {isCreateGroupOpen ? (
             <div className="p-3 absolute inset-0 bg-gray-900/95 z-10 flex flex-col animate-in fade-in">
               <div className="flex justify-between items-center mb-3">
@@ -624,19 +624,19 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
       </div>
 
       {/* Right Side - Active Chat */}
-      <div className="w-2/3 flex flex-col bg-white/[0.01]">
+      <div className="w-2/3 flex flex-col bg-white/[0.01] min-h-0">
         {activeChatUser ? (
           <>
             {/* Chat Header */}
-            <div className="p-3 border-b border-gray-700/50 flex items-center justify-between bg-white/[0.02]">
+            <div className="p-3 border-b border-gray-700/50 flex items-center justify-between bg-white/[0.02] shrink-0">
               <div className="flex items-center gap-2">
                 <div className="relative">
                   {activeChatUser.isGroup ? (
-                    <div className="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400">
+                    <div className="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400 shrink-0">
                       <Users className="w-4 h-4" />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-[10px] uppercase">
+                    <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-[10px] uppercase shrink-0">
                       {activeChatUser.name.substring(0, 2)}
                     </div>
                   )}
@@ -656,7 +656,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar">
+            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar min-h-0">
               {messages.map((msg, idx) => {
                 const isMine = msg.sender_id === profile?.id;
                 const showDate = idx === 0 || new Date(messages[idx-1].created_at).getDate() !== new Date(msg.created_at).getDate();
@@ -711,7 +711,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
             </div>
 
             {/* Input Area */}
-            <div className="p-2 border-t border-gray-700/50 bg-black/20">
+            <div className="p-2 border-t border-gray-700/50 bg-black/20 shrink-0">
               <form onSubmit={handleSend} className="flex items-center gap-2 bg-white/5 rounded-full px-2 py-1 border border-white/10">
                 <button type="button" className="text-gray-400 hover:text-white p-1">
                   <Smile className="w-4 h-4" />

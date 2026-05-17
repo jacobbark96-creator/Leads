@@ -25,7 +25,9 @@ export const WhatsAppMonitor = () => {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!isAdmin) {
+      if (isAdmin) {
+        query = query.or(`user_id.eq.${profile.id},contact_number.ilike.whatsapp:%`);
+      } else {
         query = query.eq('user_id', profile.id);
       }
 
@@ -80,7 +82,9 @@ export const WhatsAppMonitor = () => {
         const isAdmin = ['admin', 'super_admin'].includes(profile.role);
         
         let query = supabase.from('sms_messages').update({ is_read: true }).in('id', ids);
-        if (!isAdmin) {
+        if (isAdmin) {
+          query = query.or(`user_id.eq.${profile.id},contact_number.ilike.whatsapp:%`);
+        } else {
           query = query.eq('user_id', profile.id);
         }
 

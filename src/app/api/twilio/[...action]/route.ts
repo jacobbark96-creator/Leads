@@ -494,8 +494,9 @@ async function handleSendSms(req: Request) {
     formattedTo = normalizeNumber(formattedTo);
     formattedFrom = normalizeNumber(formattedFrom);
 
-    if (formattedTo.startsWith('whatsapp:') && !formattedFrom.startsWith('whatsapp:')) {
-      formattedFrom = `whatsapp:${formattedFrom}`;
+    if (formattedTo.startsWith('whatsapp:')) {
+      // Always use the company WhatsApp number for outbound WhatsApp messages
+      formattedFrom = 'whatsapp:+15559601534';
     } else if (!formattedTo.startsWith('whatsapp:') && formattedFrom.startsWith('whatsapp:')) {
       formattedFrom = formattedFrom.replace('whatsapp:', '');
     }

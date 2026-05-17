@@ -59,7 +59,9 @@ export function SmsNotifications() {
         .select('*')
         .order('created_at', { ascending: false });
 
-      if (!isAdmin) {
+      if (isAdmin) {
+        query = query.or(`user_id.eq.${profile.id},contact_number.ilike.whatsapp:%`);
+      } else {
         query = query.eq('user_id', profile.id);
       }
 
@@ -116,7 +118,9 @@ export function SmsNotifications() {
         .eq('direction', 'inbound')
         .eq('is_read', false);
 
-      if (!isAdmin) {
+      if (isAdmin) {
+        query = query.or(`user_id.eq.${profile.id},contact_number.ilike.whatsapp:%`);
+      } else {
         query = query.eq('user_id', profile.id);
       }
 

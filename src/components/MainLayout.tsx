@@ -34,7 +34,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
     }
   }, [profile]);
 
-  const isFullScreenPage = pathname?.startsWith('/sales-crm') || pathname === '/contractor-crm/contractor-v2';
+  const isFullScreenPage = pathname?.startsWith('/sales-crm') || pathname?.startsWith('/staff') || pathname?.startsWith('/contractor-crm') || pathname?.startsWith('/admin-crm') || pathname?.startsWith('/intranet');
   const isDetailsPage = pathname === '/contractor-crm/contractor-v2';
 
   if (!profile) return <>{children}</>;
@@ -349,8 +349,6 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
       <main className={`flex-1 w-full mx-auto ${pathname?.startsWith('/staff') ? 'px-0 pt-0 pb-0' : 'max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-8'}`}>
         {children}
       </main>
-
-      <Footer />
     </div>
   );
 };

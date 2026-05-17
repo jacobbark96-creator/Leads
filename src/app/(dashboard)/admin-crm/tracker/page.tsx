@@ -5,6 +5,7 @@ import { Lead } from '../../../../types';
 import toast from 'react-hot-toast';
 import { format, startOfWeek, endOfWeek, subDays, addDays } from 'date-fns';
 import { TrendingUp, Calendar, DollarSign } from 'lucide-react';
+import Link from 'next/link';
 
 export default function SalesTracker() {
   const [soldLeads, setSoldLeads] = useState<Lead[]>([]);
@@ -31,7 +32,7 @@ export default function SalesTracker() {
         setLoading(true);
         let query = supabase
         .from('leads')
-        .select('id, name, location, price, purchase_date, is_marketed, status, client_id, clients(company_name, contact_name)')
+        .select('id, name, company, location, price, purchase_date, created_at, is_marketed, status, client_id, clients(company_name, contact_name)')
         .eq('status', 'sold')
         .order('purchase_date', { ascending: false });
 
@@ -114,10 +115,16 @@ export default function SalesTracker() {
                 soldLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-gray-50 transition-colors">
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                      {lead.purchase_date ? format(new Date(lead.purchase_date), 'MMM d, HH:mm') : 'N/A'}
+                      {lead.purchase_date ? format(new Date(lead.purchase_date), 'MMM d, HH:mm') : 
+                       lead.created_at ? format(new Date(lead.created_at), 'MMM d, HH:mm') : <span className="text-gray-400">N/A</span>}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-mono text-gray-500">
-                      #{lead.id.split('-')[0]}
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                      <Link 
+                        href={`/sales-crm/lead-v2?id=${lead.id}`}
+                        className="text-blue-600 hover:text-blue-800 font-bold"
+                      >
+                        {lead.company || lead.name || `Lead #${lead.id.split('-')[0]}`}
+                      </Link>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {(lead as any).clients?.company_name || (lead as any).clients?.contact_name || <span className="text-gray-400 italic">Unknown Client</span>}

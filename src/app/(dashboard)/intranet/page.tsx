@@ -146,201 +146,149 @@ export default function PricingMatrix() {
   };
 
   return (
-    <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-6">
+    <div className="flex flex-col h-full">
+      <div className="flex justify-between items-start mb-6">
         <div>
-          <h2 className="text-xl font-medium text-gray-900">Pricing Matrix</h2>
-          <p className="text-sm text-gray-500">Current lead pricing and volume discounts</p>
+          <h2 className="text-lg font-bold text-gray-900">Pricing Matrix</h2>
+          <p className="text-sm text-gray-500 mt-1">Current lead pricing and volume discounts</p>
         </div>
         
-        {isAdmin && !isEditing && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="mt-3 sm:mt-0 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors shadow-sm"
-          >
-            <LinkIcon className="w-4 h-4" />
-            Link Google Sheet
-          </button>
+        {isAdmin && (
+          <div className="flex items-center gap-2">
+            {isEditing ? (
+              <>
+                <input
+                  type="text"
+                  value={sheetUrl}
+                  onChange={(e) => setSheetUrl(e.target.value)}
+                  placeholder="Paste Google Sheets CSV link..."
+                  className="px-3 py-1.5 border border-gray-200 rounded-lg text-sm w-64 focus:outline-none focus:border-emerald-500"
+                />
+                <button
+                  onClick={handleSaveUrl}
+                  disabled={saving}
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 text-white rounded-lg text-sm font-medium hover:bg-emerald-700 transition-colors disabled:opacity-50"
+                >
+                  <Save className="w-4 h-4" />
+                  {saving ? 'Saving...' : 'Save'}
+                </button>
+                <button
+                  onClick={() => setIsEditing(false)}
+                  className="px-3 py-1.5 text-gray-500 hover:text-gray-700 text-sm font-medium"
+                >
+                  Cancel
+                </button>
+              </>
+            ) : (
+              <>
+                <button
+                  onClick={fetchSettings}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 rounded-lg transition-colors"
+                  title="Refresh Data"
+                >
+                  <RefreshCw className="w-4 h-4" />
+                </button>
+                <button
+                  onClick={() => setIsEditing(true)}
+                  className="flex items-center gap-1.5 px-3 py-1.5 border border-emerald-200 text-emerald-700 rounded-lg text-sm font-medium hover:bg-emerald-50 transition-colors"
+                >
+                  <LinkIcon className="w-4 h-4" />
+                  Link Google Sheet
+                </button>
+              </>
+            )}
+          </div>
         )}
       </div>
 
-      {isEditing && isAdmin && (
-        <div className="mb-8 bg-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm">
-          <h3 className="text-sm font-bold text-blue-900 mb-2">Sync with Google Sheets</h3>
-          <p className="text-xs text-blue-700 mb-4">
-            To sync this table automatically, go to your Google Sheet &rarr; <strong>File</strong> &rarr; <strong>Share</strong> &rarr; <strong>Publish to web</strong>. 
-            Select the specific sheet, change "Web page" to <strong>"Comma-separated values (.csv)"</strong>, and click Publish. Paste that exact link below.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="url"
-              value={sheetUrl}
-              onChange={(e) => setSheetUrl(e.target.value)}
-              placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?output=csv"
-              className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleSaveUrl}
-                disabled={saving}
-                className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors disabled:opacity-50"
-              >
-                {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save
-              </button>
-              <button
-                onClick={() => setIsEditing(false)}
-                disabled={saving}
-                className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              {sheetUrl && (
-                <button
-                  onClick={handleClearUrl}
-                  disabled={saving}
-                  className="flex items-center justify-center px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 font-medium text-sm transition-colors disabled:opacity-50"
-                >
-                  Clear
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
       {fetchError && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+        <div className="mb-6 p-4 bg-red-50 text-red-700 rounded-xl flex items-start gap-3 border border-red-100">
+          <AlertTriangle className="w-5 h-5 shrink-0 mt-0.5" />
           <div>
-            <h4 className="text-sm font-bold text-red-900">Error Loading Pricing Data</h4>
-            <p className="text-sm text-red-700 mt-1">{fetchError}</p>
+            <h4 className="font-bold text-sm">Failed to load data</h4>
+            <p className="text-xs mt-1 opacity-90">{fetchError}</p>
           </div>
         </div>
       )}
 
-      <div className="flex flex-col space-y-8">
-        {loading ? (
-          <div className="bg-white p-12 flex justify-center items-center shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : (
-          (() => {
-            // Find the category column (case-insensitive)
-            const categoryHeader = headers.find(h => h.toLowerCase() === 'category');
-            
-            if (!categoryHeader || rows.length === 0) {
-              // Fallback to single table if no category column exists
-              return (
-                <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                  <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            {headers.map((header, idx) => (
-                              <th key={idx} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {header}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {rows.length > 0 ? (
-                            rows.map((row, rowIdx) => (
-                              <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-blue-50/50 transition-colors'}>
-                                {headers.map((header, colIdx) => {
-                                  const isPrice = header.toLowerCase().includes('price');
-                                  const isDiscount = header.toLowerCase().includes('discount');
-                                  return (
-                                    <td 
-                                      key={colIdx} 
-                                      className={`px-6 py-4 whitespace-nowrap text-sm ${
-                                        colIdx === 0 ? 'font-medium text-gray-900' :
-                                        isPrice ? 'text-gray-900 font-semibold' :
-                                        isDiscount ? 'text-green-600 font-medium' :
-                                        'text-gray-500'
-                                      }`}
-                                    >
-                                      {row[header] || '-'}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            ))
-                          ) : (
-                            <tr>
-                              <td colSpan={headers.length || 1} className="px-6 py-8 text-center text-sm text-gray-500">
-                                No pricing data available.
-                              </td>
-                            </tr>
+      {/* Tabs Placeholder (Visual Only for now based on categories) */}
+      <div className="flex items-center gap-2 mb-6">
+        {Array.from(new Set(rows.map(r => r.Category || r.category || 'General'))).map((cat, i) => (
+          <button 
+            key={i}
+            className={`px-4 py-1.5 rounded-full text-xs font-bold transition-colors ${
+              i === 0 
+                ? 'bg-emerald-50 text-emerald-700 border border-emerald-100' 
+                : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
+            }`}
+          >
+            {i === 0 && <span className="inline-block w-3 h-3 mr-1.5 text-emerald-500">☼</span>}
+            {String(cat)}
+          </button>
+        ))}
+      </div>
+
+      <div className="overflow-x-auto">
+        <table className="w-full text-left text-sm">
+          <thead>
+            <tr className="border-b border-gray-100">
+              {headers.filter(h => h.toLowerCase() !== 'category').map((header, idx) => (
+                <th key={idx} className="pb-3 font-bold text-gray-400 text-[10px] uppercase tracking-wider">
+                  {header}
+                </th>
+              ))}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-50">
+            {loading ? (
+              <tr>
+                <td colSpan={headers.length} className="py-8 text-center text-gray-400">
+                  <RefreshCw className="w-6 h-6 animate-spin mx-auto mb-2 opacity-50" />
+                  Loading pricing data...
+                </td>
+              </tr>
+            ) : rows.length === 0 ? (
+              <tr>
+                <td colSpan={headers.length} className="py-8 text-center text-gray-400">
+                  No pricing data available
+                </td>
+              </tr>
+            ) : (
+              rows.map((row, rowIndex) => (
+                <tr key={rowIndex} className="group hover:bg-gray-50/50 transition-colors">
+                  {headers.filter(h => h.toLowerCase() !== 'category').map((header, colIndex) => {
+                    // Just to add an icon to the first column like the image
+                    const isFirstCol = colIndex === 0;
+                    return (
+                      <td key={colIndex} className="py-4 text-gray-900 font-medium">
+                        <div className="flex items-center gap-3">
+                          {isFirstCol && (
+                            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-600">
+                              <span className="font-bold">£</span>
+                            </div>
                           )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
+                          {row[header] || '-'}
+                        </div>
+                      </td>
+                    );
+                  })}
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
 
-            // Group by category
-            const groupedRows = rows.reduce((acc: Record<string, any[]>, row) => {
-              const cat = row[categoryHeader] || 'Other';
-              if (!acc[cat]) acc[cat] = [];
-              acc[cat].push(row);
-              return acc;
-            }, {});
-
-            // Headers excluding the category column
-            const displayHeaders = headers.filter(h => h !== categoryHeader);
-
-            return Object.entries(groupedRows).map(([category, catRows]: [string, any[]]) => (
-              <div key={category} className="mb-2">
-                <h3 className="text-lg font-bold text-gray-900 mb-3 px-1">{category}</h3>
-                <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                  <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            {displayHeaders.map((header, idx) => (
-                              <th key={idx} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {header}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {catRows.map((row, rowIdx) => (
-                            <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-blue-50/50 transition-colors'}>
-                              {displayHeaders.map((header, colIdx) => {
-                                const isPrice = header.toLowerCase().includes('price');
-                                const isDiscount = header.toLowerCase().includes('discount');
-                                return (
-                                  <td 
-                                    key={colIdx} 
-                                    className={`px-6 py-4 whitespace-nowrap text-sm ${
-                                      colIdx === 0 ? 'font-medium text-gray-900' :
-                                      isPrice ? 'text-gray-900 font-semibold' :
-                                      isDiscount ? 'text-green-600 font-medium' :
-                                      'text-gray-500'
-                                    }`}
-                                  >
-                                    {row[header] || '-'}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ));
-          })()
-        )}
+      <div className="mt-6 bg-emerald-50/50 border border-emerald-100/50 rounded-2xl p-4 flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-8 h-8 bg-white rounded-lg shadow-sm border border-emerald-100 flex items-center justify-center text-emerald-600 font-bold text-sm">
+            %
+          </div>
+          <span className="text-xs text-gray-600">Volume discounts are applied automatically at checkout based on monthly spend.</span>
+        </div>
+        <button className="px-4 py-2 bg-white border border-emerald-200 text-emerald-700 text-xs font-bold rounded-xl shadow-sm hover:bg-emerald-50 transition-colors">
+          View Discount Tiers
+        </button>
       </div>
     </div>
   );

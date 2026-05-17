@@ -1104,13 +1104,13 @@ function ContractorDetailsV2Content() {
 
   const goToNextContractor = () => {
     if (nextContractorId) {
-      window.location.href = `/contractor-crm/contractor-v2?id=${nextContractorId}&tab=${tab}`;
+      router.push(`/contractor-crm/contractor-v2?id=${nextContractorId}&tab=${tab}`);
     }
   };
 
   const goToPrevContractor = () => {
     if (prevContractorId) {
-      window.location.href = `/contractor-crm/contractor-v2?id=${prevContractorId}&tab=${tab}`;
+      router.push(`/contractor-crm/contractor-v2?id=${prevContractorId}&tab=${tab}`);
     }
   };
 
@@ -1130,7 +1130,7 @@ function ContractorDetailsV2Content() {
     return <div className="h-screen w-full flex justify-center items-center bg-[#f5f7fb]">Contractor not found.</div>;
   }
   return (
-    <div style={{ width: '142.85vw', height: '142.85vh', transform: 'scale(0.7)', transformOrigin: 'top left', position: 'fixed', top: 0, left: 0 }} className="overflow-hidden bg-[#f5f7fb] font-sans text-[#111827]">
+    <div className="overflow-hidden bg-[#f5f7fb] font-sans text-[#111827]">
       <div className="flex w-full h-full">
         {/* LEFT SIDEBAR (84px) */}
         <aside className="w-[84px] bg-[#111827] flex-shrink-0 h-full z-10 flex flex-col items-center py-6 shadow-xl relative">

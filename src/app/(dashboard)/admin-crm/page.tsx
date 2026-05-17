@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
-import { Plus, Edit, Trash2, Ban } from 'lucide-react';
+import { Plus, Edit, Trash2, Ban, Shield, Users, Briefcase, X } from 'lucide-react';
 import { UserDetailsModal } from '@/components/UserDetailsModal';
 
 export default function UserManagement() {
@@ -12,6 +12,8 @@ export default function UserManagement() {
   const [loading, setLoading] = useState(true);
   const { profile } = useAuthStore();
   const [isCreatingUser, setIsCreatingUser] = useState(false);
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [roleFilter, setRoleFilter] = useState('all');
   const [newUser, setNewUser] = useState({ email: '', name: '', role: 'client', password: '' });
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
 
@@ -107,6 +109,7 @@ export default function UserManagement() {
       
       toast.success('User created successfully. They will need to verify their email.');
       setNewUser({ email: '', name: '', role: 'client', password: '' });
+      setShowCreateModal(false);
       fetchUsers();
     } catch (error: any) {
       toast.error('Failed to create user: ' + error.message);
@@ -119,138 +122,208 @@ export default function UserManagement() {
     return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
   }
 
+  const adminCount = users.filter(u => u.role === 'admin' || u.role === 'super_admin').length;
+  const repCount = users.filter(u => u.role === 'rep').length;
+  const clientCount = users.filter(u => u.role === 'client').length;
+
+  const filteredUsers = users.filter(u => {
+    if (roleFilter === 'all') return true;
+    if (roleFilter === 'admin') return u.role === 'admin' || u.role === 'super_admin';
+    return u.role === roleFilter;
+  });
+
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h2 className="text-xl font-medium text-gray-900">System Users</h2>
-          <p className="text-sm text-gray-500 mt-1">Manage user roles and access</p>
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex-1 grid grid-cols-3 gap-4">
+          <button 
+            onClick={() => setRoleFilter(roleFilter === 'admin' ? 'all' : 'admin')}
+            className={`bg-white shadow-sm border rounded-lg p-4 flex items-center justify-between text-left transition-all ${roleFilter === 'admin' ? 'border-purple-500 ring-1 ring-purple-500 bg-purple-50/30' : 'border-gray-200 hover:border-purple-300'}`}
+          >
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Admins</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{adminCount}</p>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-purple-50 flex items-center justify-center text-purple-600">
+               <Shield className="w-4 h-4" />
+            </div>
+          </button>
+          
+          <button 
+            onClick={() => setRoleFilter(roleFilter === 'rep' ? 'all' : 'rep')}
+            className={`bg-white shadow-sm border rounded-lg p-4 flex items-center justify-between text-left transition-all ${roleFilter === 'rep' ? 'border-amber-500 ring-1 ring-amber-500 bg-amber-50/30' : 'border-gray-200 hover:border-amber-300'}`}
+          >
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Reps</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{repCount}</p>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+               <Briefcase className="w-4 h-4" />
+            </div>
+          </button>
+          
+          <button 
+            onClick={() => setRoleFilter(roleFilter === 'client' ? 'all' : 'client')}
+            className={`bg-white shadow-sm border rounded-lg p-4 flex items-center justify-between text-left transition-all ${roleFilter === 'client' ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/30' : 'border-gray-200 hover:border-blue-300'}`}
+          >
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Clients</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{clientCount}</p>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+               <Users className="w-4 h-4" />
+            </div>
+          </button>
         </div>
+
+        {profile?.role === 'super_admin' && (
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="md:w-48 bg-white border border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm shrink-0"
+          >
+            <Plus className="w-6 h-6 mb-1" />
+            <span className="text-xs font-bold uppercase tracking-wider">Create User</span>
+          </button>
+        )}
       </div>
 
-      {profile?.role === 'super_admin' && (
-        <div className="bg-white shadow rounded-lg border border-gray-200 mb-8 overflow-hidden">
-          <div className="px-6 py-4 border-b border-gray-200 bg-slate-50">
-            <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-              <Plus className="w-5 h-5 text-blue-600" /> Create New User
-            </h3>
-          </div>
-          <div className="p-6">
-            <form onSubmit={handleCreateUser} className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-5 items-end">
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
-                <input type="text" required value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="John Doe" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                <input type="email" required value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="john@example.com" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Temporary Password</label>
-                <input type="text" required value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Password123!" />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
-                <select value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                  <option value="client">Client / Contractor</option>
-                  <option value="rep">Representative</option>
-                  <option value="sales">Sales Staff</option>
-                  <option value="admin">Admin</option>
-                </select>
-              </div>
-              <div>
-                <button type="submit" disabled={isCreatingUser} className="w-full bg-blue-600 text-white py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50">
-                  {isCreatingUser ? 'Creating...' : 'Create User'}
-                </button>
-              </div>
-            </form>
+      {showCreateModal && profile?.role === 'super_admin' && (
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Plus className="w-5 h-5 text-blue-600" /> Create New User
+              </h3>
+              <button onClick={() => setShowCreateModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6">
+              <form onSubmit={handleCreateUser} className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Full Name</label>
+                  <input type="text" required value={newUser.name} onChange={e => setNewUser({...newUser, name: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="John Doe" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                  <input type="email" required value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="john@example.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Temporary Password</label>
+                  <input type="text" required value={newUser.password} onChange={e => setNewUser({...newUser, password: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="Password123!" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                  <select value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    <option value="client">Client / Contractor</option>
+                    <option value="rep">Representative</option>
+                    <option value="sales">Sales Staff</option>
+                    <option value="admin">Admin</option>
+                  </select>
+                </div>
+                <div className="sm:col-span-2 pt-2">
+                  <button type="submit" disabled={isCreatingUser} className="w-full bg-blue-600 text-white py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors">
+                    {isCreatingUser ? 'Creating...' : 'Create User'}
+                  </button>
+                </div>
+              </form>
+            </div>
           </div>
         </div>
       )}
 
-      <div className="flex flex-col">
-        <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-          <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-            <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-              <table className="min-w-full divide-y divide-gray-200">
-                <thead className="bg-gray-50">
-                  <tr>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      User
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Role
-                    </th>
-                    <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                      Joined
-                    </th>
-                    <th scope="col" className="relative px-6 py-3">
-                      <span className="sr-only">Edit</span>
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white divide-y divide-gray-200">
-                  {users.map((user) => (
-                    <tr key={user.id}>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="ml-4">
-                            <div className="text-sm font-medium text-gray-900">{user.name}</div>
-                            <div className="text-sm text-gray-500">{user.email}</div>
-                          </div>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap">
-                        <select
-                          disabled={user.id === profile?.id}
-                          value={user.role}
-                          onChange={(e) => handleRoleChange(user.id, e.target.value)}
-                          className="mt-1 block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
-                        >
-                          <option value="client">Contractor / Client</option>
-                          <option value="rep">Representative</option>
-                          <option value="sales">Sales Staff</option>
-                          <option value="admin">Admin</option>
-                          {profile?.role === 'super_admin' && <option value="super_admin">Super Admin</option>}
-                        </select>
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        {new Date(user.created_at).toLocaleDateString()}
-                      </td>
-                      <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-3">
+      <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50/80">
+              <tr>
+                <th className="w-12 py-2.5 px-4 text-center"></th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">User</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Role</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Joined</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {filteredUsers.map((user) => (
+                <tr key={user.id} className="transition-colors group hover:bg-gray-50/80 bg-white">
+                  <td className="py-3 px-4 text-center">
+                    {/* Checkbox placeholder for alignment */}
+                  </td>
+                  
+                  <td className="py-3 px-4">
+                    <div className="flex items-center gap-2.5">
+                      <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-[10px] shrink-0 border border-blue-200">
+                        {user.name?.charAt(0).toUpperCase() || 'U'}
+                      </div>
+                      <div className="flex flex-col min-w-0">
+                        <span className="text-xs font-semibold text-gray-900 truncate">
+                          {user.name}
+                        </span>
+                        <span className="text-[10px] text-gray-500 truncate">{user.email}</span>
+                      </div>
+                    </div>
+                  </td>
+                  
+                  <td className="py-3 px-4">
+                    <select
+                      disabled={user.id === profile?.id}
+                      value={user.role}
+                      onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                      className={`text-[11px] font-bold rounded-full px-2 py-1 border shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500
+                        ${user.role === 'super_admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 
+                          user.role === 'admin' ? 'bg-red-50 text-red-700 border-red-200' : 
+                          user.role === 'sales' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                          user.role === 'rep' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                          'bg-gray-50 text-gray-700 border-gray-200'}`}
+                    >
+                      <option value="client">Contractor / Client</option>
+                      <option value="rep">Representative</option>
+                      <option value="sales">Sales Staff</option>
+                      <option value="admin">Admin</option>
+                      {profile?.role === 'super_admin' && <option value="super_admin">Super Admin</option>}
+                    </select>
+                  </td>
+                  
+                  <td className="py-3 px-4">
+                    <span className="text-xs text-gray-900 font-medium">
+                      {new Date(user.created_at).toLocaleDateString()}
+                    </span>
+                  </td>
+                  
+                  <td className="py-3 px-4 text-right">
+                    <div className="flex items-center justify-end gap-2">
+                      <button
+                        onClick={() => setSelectedUser(user)}
+                        className="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                        title="Edit User"
+                      >
+                        <Edit className="w-4 h-4" />
+                      </button>
+                      {profile?.role === 'super_admin' && user.id !== profile.id && (
+                        <>
                           <button
-                            onClick={() => setSelectedUser(user)}
-                            className="text-blue-600 hover:text-blue-900 inline-flex items-center gap-1"
+                            onClick={() => handleDeleteUser(user.id)}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-red-600 hover:bg-red-50 transition-colors"
+                            title="Delete user (can sign up again)"
                           >
-                            <Edit className="w-4 h-4" /> Edit User
+                            <Trash2 className="w-4 h-4" />
                           </button>
-                          {profile?.role === 'super_admin' && user.id !== profile.id && (
-                            <>
-                              <button
-                                onClick={() => handleDeleteUser(user.id)}
-                                className="text-red-500 hover:text-red-700 inline-flex items-center gap-1"
-                                title="Delete user (can sign up again)"
-                              >
-                                <Trash2 className="w-4 h-4" /> Delete
-                              </button>
-                              <button
-                                onClick={() => handleBanUser(user.id, user.email)}
-                                className="text-slate-500 hover:text-slate-800 inline-flex items-center gap-1"
-                                title="Ban user permanently"
-                              >
-                                <Ban className="w-4 h-4" /> Ban
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
+                          <button
+                            onClick={() => handleBanUser(user.id, user.email)}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-slate-800 hover:bg-slate-100 transition-colors"
+                            title="Ban user permanently"
+                          >
+                            <Ban className="w-4 h-4" />
+                          </button>
+                        </>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
       </div>
 

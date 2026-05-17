@@ -2,10 +2,11 @@
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown } from 'lucide-react';
+import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
+import { SmsNotifications } from '@/components/SmsNotifications';
 
 import toast from 'react-hot-toast';
 
@@ -18,12 +19,10 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
   const sidebarItems = [
+    { name: 'Home', path: '/staff', icon: Home, exact: true },
     { name: 'Unqualified Leads', path: '/sales-crm', icon: Users, exact: true },
     { name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle },
-    { name: 'Marketplace', path: '/sales-crm/marketplace', icon: Database },
     { name: 'Import Leads', path: '/sales-crm/import', icon: Upload },
-    { name: 'Reports', path: '/sales-crm/reports', icon: BarChart2 },
-    { name: 'Settings', path: '/sales-crm/settings', icon: Settings },
   ];
 
   // If on lead-v2, render exactly what was there (bypassing layout)
@@ -118,26 +117,17 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
                   <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1">
                     <Link href="/sales-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-blue-700 bg-blue-50 font-medium"><Database className="w-4 h-4" /> Sales CRM</Link>
                     <Link href="/contractor-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 font-medium"><Users className="w-4 h-4" /> Contractor CRM</Link>
-                    <Link href="/admin-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 font-medium"><Settings className="w-4 h-4" /> Admin CRM</Link>
+                    {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
+                      <Link href="/admin-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 font-medium"><Settings className="w-4 h-4" /> Admin CRM</Link>
+                    )}
                   </div>
                 )}
               </div>
             </div>
 
             <div className="flex items-center gap-3">
-              <button 
-                onClick={() => toast('Notifications are empty', { icon: '🔔' })}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors relative cursor-pointer"
-              >
-                <Bell className="w-4 h-4" />
-                <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border border-white"></span>
-              </button>
-              <button 
-                onClick={() => toast('Messages coming soon', { icon: '💬' })}
-                className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full transition-colors cursor-pointer"
-              >
-                <MessageSquare className="w-4 h-4" />
-              </button>
+              <AdminNotifications />
+              <SmsNotifications />
               <div className="h-4 w-px bg-gray-200 mx-1"></div>
               <div className="relative">
                 <button 

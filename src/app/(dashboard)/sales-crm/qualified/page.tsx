@@ -107,10 +107,16 @@ function QualifiedLeadsContent() {
       if (isInitial) {
         let countQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).in('status', ['qualified', 'sold']);
         
-        if (assignedUserFilter === 'me' && profile) {
-          countQuery = countQuery.eq('assigned_to', profile.id);
-        } else if (assignedUserFilter !== 'all' && profile?.role === 'super_admin') {
-          countQuery = countQuery.eq('assigned_to', assignedUserFilter);
+        if (['super_admin', 'admin'].includes(profile?.role || '')) {
+          if (assignedUserFilter === 'me') {
+            countQuery = countQuery.eq('assigned_to', profile?.id);
+          } else if (assignedUserFilter !== 'all') {
+            countQuery = countQuery.eq('assigned_to', assignedUserFilter);
+          }
+        } else {
+          if (assignedUserFilter === 'me' && profile) {
+            countQuery = countQuery.eq('assigned_to', profile.id);
+          }
         }
 
         if (phoneFilter === 'with_phone') countQuery = countQuery.neq('phone', '');
@@ -170,10 +176,16 @@ function QualifiedLeadsContent() {
         query = query.or(`name.ilike.${search},company.ilike.${search},location.ilike.${search}`);
       }
 
-      if (assignedUserFilter === 'me' && profile) {
-        query = query.eq('assigned_to', profile.id);
-      } else if (assignedUserFilter !== 'all' && profile?.role === 'super_admin') {
-        query = query.eq('assigned_to', assignedUserFilter);
+      if (['super_admin', 'admin'].includes(profile?.role || '')) {
+        if (assignedUserFilter === 'me') {
+          query = query.eq('assigned_to', profile?.id);
+        } else if (assignedUserFilter !== 'all') {
+          query = query.eq('assigned_to', assignedUserFilter);
+        }
+      } else {
+        if (assignedUserFilter === 'me' && profile) {
+          query = query.eq('assigned_to', profile.id);
+        }
       }
 
       if (phoneFilter === 'with_phone') {
@@ -391,7 +403,7 @@ function QualifiedLeadsContent() {
             >
               <option value="all">All Qualified</option>
               <option value="me">My Qualified</option>
-              {profile?.role === 'super_admin' && staffUsers.map(u => (
+              {['super_admin', 'admin'].includes(profile?.role || '') && staffUsers.map(u => (
                 <option key={u.id} value={u.id}>{u.name}</option>
               ))}
             </select>
@@ -463,123 +475,177 @@ function QualifiedLeadsContent() {
           </div>
         )}
 
-        {loading && leads.length === 0 ? (
-          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-        ) : leads.length > 0 ? (
-          <ul className="divide-y divide-gray-200">
-            {leads.map((lead) => (
-              <li key={lead.id} className={`flex items-center justify-between p-4 transition-colors ${selectedLeads.has(lead.id) ? 'bg-blue-50/50' : 'hover:bg-gray-50'}`}>
-                <div className="flex items-center gap-4 flex-1 min-w-0">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50/80">
+              <tr>
+                <th className="w-12 py-2.5 px-4 text-center">
                   {profile?.role === 'super_admin' && (
                     <input
                       type="checkbox"
-                      checked={selectedLeads.has(lead.id)}
-                      onChange={(e) => handleSelectLead(lead.id, e.target.checked)}
-                      className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                      checked={selectedLeads.size === leads.length && leads.length > 0}
+                      onChange={handleSelectAll}
+                      className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer transition-all"
                     />
                   )}
-                  <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-full flex items-center justify-center shrink-0 relative">
-                    <User className="w-5 h-5" />
-                    {lead.assigned_to && (
-                      <div 
-                        className="absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white border-2 border-white"
-                        style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === lead.assigned_to)?.name || '') }}
-                        title={`Assigned to ${staffUsers.find(u => u.id === lead.assigned_to)?.name || 'Unknown'}`}
-                      >
-                        {getInitials(staffUsers.find(u => u.id === lead.assigned_to)?.name || '')}
-                      </div>
-                    )}
-                  </div>
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2">
-                      <p className="text-sm font-bold text-gray-900 truncate">
-                        {lead.company || lead.name}
-                      </p>
-                      {!lead.company && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-blue-700 border border-blue-200 uppercase tracking-tight">
-                          Residential
-                        </span>
-                      )}
-                      {lead.company && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-purple-100 text-purple-700 border border-purple-200 uppercase tracking-tight">
-                          Commercial
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex flex-col gap-0.5 mt-0.5">
-                      <p className="text-xs text-gray-500 truncate font-medium">Contact: {lead.name}</p>
-                      {lead.phone && <p className="text-sm text-gray-500 truncate">{lead.phone}</p>}
-                      {lead.assigned_to && (
-                        <span className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-800 w-fit mt-1">
-                          Assigned to: {staffUsers.find(u => u.id === lead.assigned_to)?.name || 'Unknown'}
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                </div>
-                
-                <div className="flex items-center gap-4">
-                  {lead.status === 'sold' ? (
-                    <button
-                      onClick={() => setSoldLeadDetails(lead)}
-                      className="text-xs font-bold rounded-full px-4 py-2 border border-transparent shadow-sm text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                </th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Lead / Company</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Type</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Location</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Added</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Status</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {loading && leads.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-16 text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </td>
+                </tr>
+              ) : leads.length > 0 ? (
+                leads.map((lead) => {
+                  const isSelected = selectedLeads.has(lead.id);
+                  return (
+                    <tr 
+                      key={lead.id} 
+                      className={`transition-colors group hover:bg-gray-50/80 ${isSelected ? 'bg-blue-50/30' : 'bg-white'}`}
                     >
-                      Sold
-                    </button>
-                  ) : (
-                    <div className="flex items-center gap-2">
-                      {!lead.is_marketed && (
-                        <button
-                          onClick={() => setLeadForContractors(lead)}
-                          className="inline-flex items-center px-3 py-1.5 border border-transparent text-xs font-bold rounded-md shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500 transition-colors"
-                        >
-                          <ShieldCheck className="w-3 h-3 mr-1.5" />
-                          Contractors
-                        </button>
-                      )}
-                      <select
-                        value={lead.status}
-                        onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
-                        className="text-xs font-bold rounded-full px-3 py-1.5 border-0 shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500 bg-blue-100 text-blue-800"
-                      >
-                        <option value="qualified">Qualified</option>
-                        <option value="fresh">Move back to Fresh</option>
-                      </select>
+                      <td className="py-3 px-4 text-center">
+                        {profile?.role === 'super_admin' && (
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => handleSelectLead(lead.id, e.target.checked)}
+                            className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer transition-all"
+                          />
+                        )}
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${lead.building_type === 'Residential' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
+                            {lead.building_type === 'Residential' ? <User className="w-3.5 h-3.5" /> : <Building className="w-3.5 h-3.5" />}
+                          </div>
+                          <div className="flex flex-col">
+                            <a 
+                              href={`/sales-crm/lead-v2?id=${lead.id}&tab=qualified`}
+                              className="text-xs font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                            >
+                              {lead.company || lead.name || 'Unknown Lead'}
+                            </a>
+                            <span className="text-[10px] text-gray-500">{lead.name}</span>
+                          </div>
+                        </div>
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        {lead.building_type === 'Residential' ? (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 border border-blue-100 uppercase tracking-wider">
+                            Residential
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-purple-50 text-purple-700 border border-purple-100 uppercase tracking-wider">
+                            Commercial
+                          </span>
+                        )}
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                          <span className="truncate max-w-[130px]" title={lead.location || 'Unknown'}>
+                            {lead.location || 'Unknown'}
+                          </span>
+                        </div>
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-gray-900 font-medium">
+                            {new Date(lead.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        {lead.status === 'sold' ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-[11px] font-bold bg-green-100 text-green-800 border border-green-200">
+                            Sold
+                          </span>
+                        ) : (
+                          <select
+                            value={lead.status}
+                            onChange={(e) => updateLeadStatus(lead.id, e.target.value)}
+                            className="text-[11px] font-bold rounded-full px-2 py-1 border border-blue-200 shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500 bg-blue-50 text-blue-700"
+                          >
+                            <option value="qualified">Qualified</option>
+                            <option value="fresh">Revert to Fresh</option>
+                          </select>
+                        )}
+                      </td>
+                      
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          {lead.status === 'sold' ? (
+                            <button
+                              onClick={() => setSoldLeadDetails(lead)}
+                              className="text-[10px] font-bold rounded px-2.5 py-1.5 border border-transparent shadow-sm text-white bg-green-600 hover:bg-green-700 transition-colors"
+                            >
+                              Sold Details
+                            </button>
+                          ) : (
+                            <>
+                              {!lead.is_marketed && (
+                                <button
+                                  onClick={() => setLeadForContractors(lead)}
+                                  className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-[10px] font-bold rounded shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition-colors"
+                                >
+                                  <ShieldCheck className="w-3 h-3 mr-1" />
+                                  Contractors
+                                </button>
+                              )}
+                              
+                              {!lead.is_marketed ? (
+                                <button
+                                  onClick={() => setLeadToMarket(lead)}
+                                  className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-[10px] font-bold rounded shadow-sm text-white bg-blue-600 hover:bg-blue-700 transition-colors"
+                                >
+                                  Market
+                                </button>
+                              ) : (
+                                <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-green-50 text-green-700 border border-green-200">
+                                  Marketed
+                                </span>
+                              )}
+                            </>
+                          )}
+                          <a 
+                            href={`/sales-crm/lead-v2?id=${lead.id}&tab=qualified`}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 group-hover:bg-white"
+                            title="Open Lead"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={7} className="py-16 text-center">
+                    <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-50 mb-4">
+                      <Search className="w-6 h-6 text-gray-400" />
                     </div>
-                  )}
-                  
-                  <a
-                    href={`/sales-crm/lead-v2?id=${lead.id}&tab=qualified`}
-                    className="inline-flex items-center px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 shadow-sm transition-colors"
-                  >
-                    View Details
-                  </a>
-
-                  {lead.status !== 'sold' && (
-                    !lead.is_marketed ? (
-                      <button
-                        onClick={() => setLeadToMarket(lead)}
-                        className="inline-flex items-center px-4 py-2 border border-transparent text-sm font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                      >
-                        Market
-                      </button>
-                    ) : (
-                      <span className="inline-flex items-center px-3 py-1.5 rounded-md text-sm font-medium bg-green-100 text-green-800 border border-green-200">
-                        Marketed
-                      </span>
-                    )
-                  )}
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="col-span-full text-center py-12 bg-white rounded-lg border border-gray-200">
-            <Users className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No qualified leads</h3>
-            <p className="mt-1 text-sm text-gray-500">Change a lead's status to 'Qualified' to see them here.</p>
-          </div>
-        )}
+                    <h3 className="text-sm font-semibold text-gray-900">No qualified leads</h3>
+                    <p className="mt-1 text-sm text-gray-500">Change a lead's status to 'Qualified' to see them here.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {hasMore && leads.length > 0 && (
@@ -637,7 +703,7 @@ function QualifiedLeadsContent() {
 
 export default function QualifiedLeads() {
   return (
-    <Suspense key={Date.now()} fallback={<div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+    <Suspense fallback={<div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
       <QualifiedLeadsContent />
     </Suspense>
   );

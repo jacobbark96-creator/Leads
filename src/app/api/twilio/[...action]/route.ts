@@ -77,8 +77,12 @@ async function handleMonitoring(request: Request) {
       const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
       startTimeFilter = `&StartTime>=${weekAgo.toISOString().split('T')[0]}`;
     } else if (dateRange === 'month') {
-      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
-      startTimeFilter = `&StartTime>=${startOfMonth.toISOString().split('T')[0]}`;
+      const twentyNineDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
+      startTimeFilter = `&StartTime>=${twentyNineDaysAgo.toISOString().split('T')[0]}`;
+    } else if (dateRange === 'total') {
+      // Enforce 29-day retention policy as requested
+      const twentyNineDaysAgo = new Date(now.getTime() - 29 * 24 * 60 * 60 * 1000);
+      startTimeFilter = `&StartTime>=${twentyNineDaysAgo.toISOString().split('T')[0]}`;
     }
 
     const callsUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?PageSize=500${startTimeFilter}`;
@@ -250,7 +254,7 @@ async function handleVoice(req: Request) {
     const actionAttr = entityId ? ` action="${statusCallbackUrl}"` : '';
     const fallbackAttr = entityId ? ` statusCallback="${statusCallbackUrl}" statusCallbackEvent="completed"` : '';
 
-    const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Dial${callerIdAttr}${actionAttr}${fallbackAttr}><Number>${to}</Number></Dial></Response>`;
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Dial${callerIdAttr}${actionAttr}${fallbackAttr} record="record-from-answer"><Number>${to}</Number></Dial></Response>`;
     return new NextResponse(twiml, { headers: { 'Content-Type': 'text/xml' } });
   } catch (error: any) {
     return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response><Say>An error occurred while attempting to dial.</Say></Response>`, { headers: { 'Content-Type': 'text/xml' } });
@@ -280,7 +284,7 @@ async function handleVoiceInbound(req: Request) {
     }
 
     const twiml = targetUserId 
-      ? `<?xml version="1.0" encoding="UTF-8"?><Response><Dial timeout="25" action="${appUrl}/api/twilio/voice/inbound/fallback"><Client>${targetUserId}</Client></Dial></Response>`
+      ? `<?xml version="1.0" encoding="UTF-8"?><Response><Dial timeout="25" action="${appUrl}/api/twilio/voice/inbound/fallback" record="record-from-answer"><Client>${targetUserId}</Client></Dial></Response>`
       : `<?xml version="1.0" encoding="UTF-8"?><Response><Say voice="Polly.Amy">Hello. Please leave a message after the tone.</Say><Record action="${appUrl}/api/twilio/voice/recording" maxLength="120" playBeep="true" /></Response>`;
 
     return new NextResponse(twiml, { headers: { 'Content-Type': 'text/xml' } });
@@ -313,12 +317,21 @@ async function handleVoiceInboundFallback(req: Request) {
 
       if (user) {
         const callerMatch = fromNumber.replace(/[^\d]/g, '').slice(-10);
-        const { data: leads } = await supabase.from('leads').select('id, phone').not('phone', 'is', null);
-        const lead = leads?.find(l => l.phone && l.phone.replace(/[^\d]/g, '').endsWith(callerMatch));
+        // Direct query for lead matching by last 10 digits
+        const { data: matchedLeads } = await supabase
+          .from('leads')
+          .select('id, phone, name, company')
+          .ilike('phone', `%${callerMatch}`)
+          .limit(1);
+        
+        const lead = matchedLeads?.[0];
 
         await supabase.from('lead_reminders').insert([{
-          user_id: user.id, lead_id: lead?.id || null, reminder_at: new Date().toISOString(),
-          content: `Missed call from ${fromNumber}`, is_completed: false
+          user_id: user.id, 
+          lead_id: lead?.id || null, 
+          reminder_at: new Date().toISOString(),
+          content: `Missed call from ${fromNumber}${lead ? ` (${lead.company || lead.name})` : ''}`, 
+          is_completed: false
         }]);
       }
     }

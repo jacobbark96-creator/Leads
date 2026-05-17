@@ -217,7 +217,7 @@ function ContractorProcessingContent() {
       if (isInitial) {
         let countQuery = supabase.from('contractors').select('id', { count: 'exact', head: true }).neq('status', 'onboarded');
         if (assignedToMe && profile) {
-          if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+          if (['super_admin', 'admin'].includes(profile.role) && assignedUserFilter !== 'me') {
             countQuery = countQuery.eq('assigned_to', assignedUserFilter);
           } else {
             countQuery = countQuery.eq('assigned_to', profile.id);
@@ -231,7 +231,7 @@ function ContractorProcessingContent() {
       }
 
       if (assignedToMe && profile) {
-        if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+        if (['super_admin', 'admin'].includes(profile.role) && assignedUserFilter !== 'me') {
           query = query.eq('assigned_to', assignedUserFilter);
         } else {
           query = query.eq('assigned_to', profile.id);
@@ -438,7 +438,7 @@ function ContractorProcessingContent() {
               </select>
             </div>
 
-            {assignedToMe && profile?.role === 'super_admin' && (
+            {assignedToMe && ['super_admin', 'admin'].includes(profile?.role || '') && (
               <div className="flex items-center gap-2">
                 <label className="text-xs text-gray-600 font-medium">View User:</label>
                 <select
@@ -496,107 +496,166 @@ function ContractorProcessingContent() {
             </button>
           </div>
         )}
-        
-        {loading && contractors.length === 0 ? (
-          <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-        ) : contractors.length > 0 ? (
-          <ul className="divide-y divide-gray-200">
-              {contractors.map((contractor) => (
-                <li key={contractor.id} className={`flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-3 sm:p-4 hover:bg-gray-50 transition-colors ${selectedContractors.has(contractor.id) ? 'bg-blue-50' : ''}`}>
-                  <div className="flex items-center gap-3 flex-1 min-w-0">
-                    <input
-                      type="checkbox"
-                      checked={selectedContractors.has(contractor.id)}
-                      onChange={() => toggleSelectContractor(contractor.id)}
-                      className="focus:ring-blue-500 h-3.5 w-3.5 text-blue-600 border-gray-300 rounded cursor-pointer shrink-0"
-                    />
-                    <div className="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs shrink-0 border border-blue-200">
-                      {getInitials(contractor.company_name || contractor.company || contractor.name || 'UC')}
-                    </div>
+
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-gray-200">
+            <thead className="bg-gray-50/80">
+              <tr>
+                <th className="w-12 py-2.5 px-4 text-center">
+                  <input
+                    type="checkbox"
+                    checked={selectedContractors.size === contractors.length && contractors.length > 0}
+                    onChange={toggleSelectAll}
+                    className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer transition-all"
+                  />
+                </th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Contractor</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Location</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Added</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Status</th>
+                <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100 bg-white">
+              {loading && contractors.length === 0 ? (
+                <tr>
+                  <td colSpan={6} className="py-16 text-center">
+                    <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </td>
+                </tr>
+              ) : contractors.length > 0 ? (
+                contractors.map((contractor) => {
+                  const isSelected = selectedContractors.has(contractor.id);
                   
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-bold text-gray-900 truncate flex items-center gap-2">
-                        <a 
-                          href={`/contractor-crm/contractor-v2?id=${contractor.id}`}
-                          className="text-blue-600 hover:text-blue-800 hover:underline"
-                        >
-                          {contractor.company_name || contractor.company || contractor.contact_name || contractor.name || 'Unnamed Contractor'}
-                        </a>
-                        {contractor.assigned_to && (
-                          <span 
-                            className="inline-flex items-center justify-center w-5 h-5 rounded-full text-[9px] font-bold text-white shadow-sm"
-                            style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '') }}
-                            title={`Assigned to ${staffUsers.find(u => u.id === contractor.assigned_to)?.name || 'Unknown'}`}
-                          >
-                            {getInitials(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '')}
-                          </span>
-                        )}
-                      </p>
-                    </div>
-                  </div>
-                  
-                  <div className="flex items-center justify-between sm:justify-end gap-3 w-full sm:w-auto mt-2 sm:mt-0">
-                    {(() => {
-                    if (!contractor.latitude || !contractor.longitude) return null;
-                    const nearbyCount = marketedLeads.filter(lead => {
+                  // Calculate nearby leads
+                  let nearbyCount = 0;
+                  if (contractor.latitude && contractor.longitude) {
+                    nearbyCount = marketedLeads.filter(lead => {
                       if (!lead.latitude || !lead.longitude) return false;
                       const dist = getDistance(contractor.latitude!, contractor.longitude!, lead.latitude, lead.longitude);
                       return dist !== null && dist <= 30;
                     }).length;
-                    
-                    if (nearbyCount === 0) return null;
-                    
-                    return (
-                      <div className="flex items-center justify-center px-4">
-                        <button
-                          onClick={() => setNearbyLeadsModalContractor({
-                            contractor,
-                            leads: marketedLeads.filter(lead => {
-                              if (!lead.latitude || !lead.longitude) return false;
-                              const dist = getDistance(contractor.latitude!, contractor.longitude!, lead.latitude, lead.longitude);
-                              return dist !== null && dist <= 30;
-                            })
-                          })}
-                          className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-colors whitespace-nowrap"
-                        >
-                          🔥 {nearbyCount} Leads within 30mi
-                        </button>
-                      </div>
-                    );
-                  })()}
+                  }
                   
-                  <div className="flex items-center gap-3 shrink-0">
-                  <select
-                    value={contractor.status}
-                    onChange={(e) => updateContractorStatus(contractor.id, e.target.value)}
-                    className={`text-xs font-bold rounded-full px-3 py-1.5 border-0 shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500
-                      ${contractor.status === 'fresh' ? 'bg-green-100 text-green-800' : 
-                        contractor.status === 'no pitch' ? 'bg-yellow-100 text-yellow-800' : 
-                        contractor.status === 'onboarded' ? 'bg-blue-100 text-blue-800' : 
-                        contractor.status === 'dnc' ? 'bg-red-100 text-red-800' : 
-                        contractor.status === 'call back' ? 'bg-purple-100 text-purple-800' : 
-                        contractor.status === 'offboarded' ? 'bg-gray-100 text-gray-800' : 
-                        'bg-gray-100 text-gray-800'}`}
-                  >
-                    <option value="fresh">Fresh</option>
-                    <option value="no pitch">No Pitch</option>
-                    <option value="dnc">DNC</option>
-                    <option value="call back">Call Back</option>
-                    <option value="onboarded">Onboarded</option>
-                    <option value="offboarded">Offboarded</option>
-                  </select>
-                </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="text-center py-12">
-            <Users className="mx-auto h-12 w-12 text-gray-400" />
-            <h3 className="mt-2 text-sm font-medium text-gray-900">No contractors found</h3>
-            <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or import new contractors.</p>
-          </div>
-        )}
+                  return (
+                    <tr 
+                      key={contractor.id} 
+                      className={`transition-colors group hover:bg-gray-50/80 ${isSelected ? 'bg-blue-50/30' : 'bg-white'}`}
+                    >
+                      <td className="py-3 px-4 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelectContractor(contractor.id)}
+                          className="w-3.5 h-3.5 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer transition-all"
+                        />
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2.5">
+                          <div className="w-6 h-6 rounded-md bg-blue-100 flex items-center justify-center text-blue-600 font-bold text-xs shrink-0 border border-blue-200">
+                            {getInitials(contractor.company_name || contractor.company || contractor.name || 'UC')}
+                          </div>
+                          <div className="flex flex-col">
+                            <div className="flex items-center gap-2">
+                              <a 
+                                href={`/contractor-crm/contractor-v2?id=${contractor.id}`}
+                                className="text-xs font-semibold text-gray-900 hover:text-blue-600 transition-colors"
+                              >
+                                {contractor.company_name || contractor.company || contractor.contact_name || contractor.name || 'Unnamed Contractor'}
+                              </a>
+                              {contractor.assigned_to && (
+                                <span 
+                                  className="inline-flex items-center justify-center w-4 h-4 rounded-full text-[8px] font-bold text-white shadow-sm"
+                                  style={{ backgroundColor: stringToColor(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '') }}
+                                  title={`Assigned to ${staffUsers.find(u => u.id === contractor.assigned_to)?.name || 'Unknown'}`}
+                                >
+                                  {getInitials(staffUsers.find(u => u.id === contractor.assigned_to)?.name || '')}
+                                </span>
+                              )}
+                            </div>
+                            {nearbyCount > 0 && (
+                              <button
+                                onClick={() => setNearbyLeadsModalContractor({
+                                  contractor,
+                                  leads: marketedLeads.filter(lead => {
+                                    if (!lead.latitude || !lead.longitude) return false;
+                                    const dist = getDistance(contractor.latitude!, contractor.longitude!, lead.latitude, lead.longitude);
+                                    return dist !== null && dist <= 30;
+                                  })
+                                })}
+                                className="inline-flex items-center w-fit px-1.5 py-0.5 mt-1 rounded text-[9px] font-bold bg-amber-100 text-amber-800 border border-amber-200 hover:bg-amber-200 transition-colors whitespace-nowrap"
+                              >
+                                🔥 {nearbyCount} Leads within 30mi
+                              </button>
+                            )}
+                          </div>
+                        </div>
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-1 text-xs text-gray-600">
+                          <span className="truncate max-w-[130px]" title={getAddressText(contractor) || 'Unknown'}>
+                            {getAddressText(contractor) || 'Unknown'}
+                          </span>
+                        </div>
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col">
+                          <span className="text-xs text-gray-900 font-medium">
+                            {new Date(contractor.created_at).toLocaleDateString()}
+                          </span>
+                        </div>
+                      </td>
+                      
+                      <td className="py-3 px-4">
+                        <select
+                          value={contractor.status}
+                          onChange={(e) => updateContractorStatus(contractor.id, e.target.value)}
+                          className={`text-[11px] font-bold rounded-full px-2 py-1 border shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500
+                            ${contractor.status === 'fresh' ? 'bg-green-50 text-green-700 border-green-200' : 
+                              contractor.status === 'no pitch' ? 'bg-yellow-50 text-yellow-700 border-yellow-200' : 
+                              contractor.status === 'onboarded' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
+                              contractor.status === 'dnc' ? 'bg-red-50 text-red-700 border-red-200' : 
+                              contractor.status === 'call back' ? 'bg-purple-50 text-purple-700 border-purple-200' : 
+                              'bg-gray-50 text-gray-700 border-gray-200'}`}
+                        >
+                          <option value="fresh">Fresh</option>
+                          <option value="no pitch">No Pitch</option>
+                          <option value="dnc">DNC</option>
+                          <option value="call back">Call Back</option>
+                          <option value="onboarded">Onboarded</option>
+                          <option value="offboarded">Offboarded</option>
+                        </select>
+                      </td>
+                      
+                      <td className="py-3 px-4 text-right">
+                        <div className="flex items-center justify-end gap-2">
+                          <a 
+                            href={`/contractor-crm/contractor-v2?id=${contractor.id}`}
+                            className="inline-flex items-center justify-center w-7 h-7 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                            title="Open Contractor"
+                          >
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                          </a>
+                        </div>
+                      </td>
+                    </tr>
+                  );
+                })
+              ) : (
+                <tr>
+                  <td colSpan={6} className="py-16 text-center">
+                    <Users className="mx-auto h-12 w-12 text-gray-400" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900">No contractors found</h3>
+                    <p className="mt-1 text-sm text-gray-500">Try adjusting your filters or import new contractors.</p>
+                  </td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {hasMore && contractors.length > 0 && (
@@ -648,7 +707,7 @@ function ContractorProcessingContent() {
 
 export default function ContractorProcessing() {
   return (
-    <Suspense key={Date.now()} fallback={<div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+    <Suspense fallback={<div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
       <ContractorProcessingContent />
     </Suspense>
   );

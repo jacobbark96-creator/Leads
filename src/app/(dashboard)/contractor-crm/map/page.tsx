@@ -1,19 +1,21 @@
 "use client";
 import React, { useEffect, useState, useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow, Circle } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, Circle, MarkerClusterer } from '@react-google-maps/api';
 import { supabase } from '../../../../lib/supabase';
 import { Client, Lead } from '../../../../types';
-import { MapPin, Star, Briefcase, Filter, Info } from 'lucide-react';
+import { MapPin, Star, Briefcase, Filter, Info, Home } from 'lucide-react';
 import toast from 'react-hot-toast';
+
+import { useRouter } from 'next/navigation';
 
 const containerStyle = {
   width: '100%',
-  height: '70vh'
+  height: '100vh'
 };
 
 const defaultCenter = {
-  lat: 54.5,
-  lng: -2.5
+  lat: 54.3781,
+  lng: -2.4360
 };
 
 // Fixed bright colors for categories
@@ -62,6 +64,7 @@ const darkenHex = (hex: string, percent: number = 30) => {
 };
 
 export default function MapTab() {
+  const router = useRouter();
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
@@ -85,33 +88,6 @@ export default function MapTab() {
   const onUnmount = React.useCallback(function callback(m: google.maps.Map) {
     setMap(null);
   }, []);
-
-  useEffect(() => {
-    if (map && (clients.length > 0 || leads.length > 0)) {
-      const bounds = new window.google.maps.LatLngBounds();
-      let hasPoints = false;
-
-      clients.forEach((client: any) => {
-        if (client.primary_map_area?.lat && client.primary_map_area?.lng) {
-          bounds.extend({ lat: Number(client.primary_map_area.lat), lng: Number(client.primary_map_area.lng) });
-          hasPoints = true;
-        }
-      });
-
-      leads.forEach((lead) => {
-        if (lead.latitude && lead.longitude) {
-          bounds.extend({ lat: Number(lead.latitude), lng: Number(lead.longitude) });
-          hasPoints = true;
-        }
-      });
-
-      if (hasPoints) {
-        map.fitBounds(bounds);
-        // Don't zoom in too far if there's only one point
-        if (map.getZoom()! > 12) map.setZoom(12);
-      }
-    }
-  }, [map, clients, leads]);
 
   useEffect(() => {
     fetchMapData();
@@ -209,7 +185,7 @@ export default function MapTab() {
       path: 'M 125,5 155,90 245,90 175,145 200,230 125,180 50,230 75,145 5,90 95,90 z',
       fillColor: color,
       fillOpacity: 1,
-      scale: 0.12,
+      scale: 0.035,
       strokeColor: '#FFFFFF',
       strokeWeight: 1,
       anchor: new window.google.maps.Point(125, 125),
@@ -262,7 +238,7 @@ export default function MapTab() {
       path: direction === 'left' ? pathLeft : pathRight,
       fillColor: color,
       fillOpacity: 1,
-      scale: 1.2,
+      scale: 0.35,
       strokeColor: '#FFFFFF',
       strokeWeight: 1.5,
       anchor: new window.google.maps.Point(direction === 'left' ? -5 : 5, 22),
@@ -311,57 +287,102 @@ export default function MapTab() {
 
 
   return (
-    <div className="space-y-4">
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-3">
-            <h2 className="text-lg font-bold text-gray-900">Contractor & Lead Map</h2>
-            {missingCoordsCount > 0 && (
-              <div className="flex items-center gap-1.5 px-2.5 py-0.5 bg-amber-50 border border-amber-200 rounded-full text-amber-700 text-[10px] font-medium">
-                <Info className="w-3.5 h-3.5" />
-                <span>{missingCoordsCount} leads missing coordinates</span>
-              </div>
-            )}
+    <div className="relative h-screen w-screen overflow-hidden bg-white">
+      {/* Thin Left Sidebar - Absolute to overlay map */}
+      <div className="absolute left-4 top-4 bottom-4 w-14 hover:w-64 group transition-all duration-300 bg-white/90 backdrop-blur-md border border-gray-200 flex flex-col z-[100] shadow-2xl rounded-2xl overflow-hidden">
+        <div className="p-4 border-b border-gray-100 flex items-center gap-3">
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center flex-shrink-0">
+            <MapPin className="w-5 h-5 text-white" />
           </div>
-          <p className="text-sm text-gray-500">View onboarded contractors and unpurchased leads</p>
+          <span className="font-bold text-gray-900 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Map Explorer</span>
         </div>
-        
-        <div className="flex flex-col sm:flex-row items-center gap-4 w-full md:w-auto">
-          <div className="relative w-full sm:w-64">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <Filter className="h-4 w-4 text-gray-400" />
+
+        <div className="flex-1 overflow-y-auto overflow-x-hidden py-4">
+          {/* Menu Options */}
+          <div className="px-3 mb-6">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 px-1 opacity-0 group-hover:opacity-100 transition-opacity">Menu</h3>
+            <div className="space-y-1">
+              <button 
+                onClick={() => router.push('/staff')}
+                className="w-full flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                title="Staff Hub"
+              >
+                <Home className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Staff Hub</span>
+              </button>
+              <button 
+                onClick={() => router.push('/contractor-crm')}
+                className="w-full flex items-center gap-3 p-2 rounded-lg text-gray-600 hover:bg-gray-50 transition-colors"
+                title="Contractor CRM"
+              >
+                <Briefcase className="w-5 h-5 flex-shrink-0" />
+                <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Contractor CRM</span>
+              </button>
             </div>
-            <select
-              value={selectedCategory}
-              onChange={(e) => setSelectedCategory(e.target.value)}
-              className="block w-full pl-10 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-lg"
-            >
-              <option value="all">All Categories</option>
-              {categories.map((category) => (
-                <option key={category.id} value={category.id}>
-                  {category.name}
-                </option>
-              ))}
-            </select>
           </div>
 
-          <div className="flex gap-4 text-sm text-gray-600 bg-gray-50 px-4 py-2 rounded-lg border border-gray-200 whitespace-nowrap">
-            <div className="flex items-center gap-2">
-              <Star className="w-4 h-4 fill-gray-400 text-gray-400" />
-              <span>Contractors</span>
+          {/* Filters */}
+          <div className="px-3 mb-6">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 px-1 opacity-0 group-hover:opacity-100 transition-opacity">Filters</h3>
+            <div className="relative mb-4">
+              <div className="flex items-center gap-3 p-2 rounded-lg text-gray-600">
+                <Filter className="w-5 h-5 flex-shrink-0" />
+                <div className="opacity-0 group-hover:opacity-100 transition-opacity flex-1">
+                  <select
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                    className="w-full text-sm border-gray-200 focus:ring-blue-500 focus:border-blue-500 rounded-md py-1"
+                  >
+                    <option value="all">All Categories</option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.name}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
             </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-gray-400" />
-              <span>Marketed Leads</span>
+          </div>
+
+          {/* Legend */}
+          <div className="px-3">
+            <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3 px-1 opacity-0 group-hover:opacity-100 transition-opacity">Legend</h3>
+            <div className="space-y-3">
+              <div className="flex items-center gap-3 p-2 rounded-lg text-gray-600">
+                <Star className="w-5 h-5 fill-yellow-400 text-yellow-400 flex-shrink-0" />
+                <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Contractors</span>
+              </div>
+              <div className="flex items-center gap-3 p-2 rounded-lg text-gray-600">
+                <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
+                  <div className="w-2.5 h-2.5 bg-blue-500 rounded-sm transform rotate-45 border border-white shadow-sm" />
+                </div>
+                <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Marketed Leads</span>
+              </div>
             </div>
           </div>
         </div>
+
+        {missingCoordsCount > 0 && (
+          <div className="p-4 border-t border-gray-100">
+            <div className="flex items-center gap-3 text-amber-600">
+              <Info className="w-5 h-5 flex-shrink-0" />
+              <div className="opacity-0 group-hover:opacity-100 transition-opacity">
+                <p className="text-[10px] font-bold uppercase tracking-wider leading-none mb-1">Warning</p>
+                <p className="text-[10px] font-medium leading-tight">{missingCoordsCount} leads missing coords</p>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
 
-      {!isLoaded || loading ? (
-        <div className="flex justify-center py-12"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>
-      ) : (
-        <div className="border border-gray-200 rounded-xl overflow-hidden shadow-sm">
+      {/* Main Map Content */}
+      <div className="flex-1 relative">
+        {!isLoaded || loading ? (
+          <div className="absolute inset-0 flex items-center justify-center bg-white z-50">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+          </div>
+        ) : (
           <GoogleMap
             mapContainerStyle={containerStyle}
             center={defaultCenter}
@@ -371,171 +392,193 @@ export default function MapTab() {
             options={{
               streetViewControl: false,
               mapTypeControl: false,
+              fullscreenControl: false,
+              zoomControlOptions: {
+                position: window.google.maps.ControlPosition.RIGHT_BOTTOM
+              }
             }}
           >
-          {/* Render Clients (Contractors) */}
-          {filteredClients.map((client: any) => {
-            const mapArea = client.primary_map_area;
-            if (!mapArea) return null;
-            const isSelected = (selectedClient as any)?.pin_id === client.pin_id;
-            
-            // Only render the contractor pin if NO client is selected, OR if THIS specific client is selected
-            // This prevents a sea of contractor stars from hiding the leads when you are trying to view a specific catchment area
-            if (selectedClient && !isSelected) {
-              return null;
-            }
-
-            const color = selectedCategory === 'all' 
-              ? getClientColor(client.services_offered) 
-              : getServiceColor(categories.find(c => c.id === selectedCategory)?.name);
-            
-            // If the radius is set to National (99999), cap the visual circle at 500 miles so it covers the whole UK without glitching the Google Map
-            const radiusInMiles = mapArea.radius === 99999 ? 500 : (mapArea.radius || 30);
-              
-            return (
-              <React.Fragment key={client.pin_id || client.id}>
-                {isSelected && (
-                  <Circle
-                    center={{ lat: Number(mapArea.lat), lng: Number(mapArea.lng) }}
-                    radius={radiusInMiles * 1609.34} // Convert miles to meters
-                    options={{
-                      fillColor: color,
-                      fillOpacity: 0.15,
-                      strokeColor: color,
-                      strokeOpacity: 0.5,
-                      strokeWeight: 2,
-                      clickable: false,
-                      zIndex: 1
-                    }}
-                  />
-                )}
-                <Marker
-                  position={{ lat: Number(mapArea.lat), lng: Number(mapArea.lng) }}
-                  title={client.company_name || client.contact_name || 'Contractor'}
-                  icon={createStarIcon(color)}
-                  onClick={() => {
-                    setSelectedClient(client);
-                    setSelectedLead(null);
-                  }}
-                  zIndex={isSelected ? 100 : 2}
-                />
-              </React.Fragment>
-            );
-          })}
-
-          {/* Render Marketed Leads */}
-          {filteredLeads.map((lead: any) => {
-            const direction = lead.overlapIndex % 2 === 1 ? 'left' : 'right';
-            const color = getLeadColor(lead.category_id);
-            
-            // If a client is selected, ONLY render leads that actually fall within their radius mathematically
-            if (selectedClient && (selectedClient as any).primary_map_area) {
-              const mapArea = (selectedClient as any).primary_map_area;
-              const radiusInMiles = mapArea.radius === 99999 ? 500 : (mapArea.radius || 30);
-              
-              const distance = calculateDistance(
-                Number(mapArea.lat), 
-                Number(mapArea.lng), 
-                Number(lead.latitude), 
-                Number(lead.longitude)
-              );
-              
-              // If the lead is further away than the radius, don't render it at all
-              if (distance > radiusInMiles) {
-                return null;
-              }
-            }
-
-            return (
-              <Marker
-                key={lead.id}
-                position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
-                title={lead.company || lead.name || 'Lead'}
-                icon={createFlagIcon(color, direction)}
-                onClick={() => {
-                  setSelectedLead(lead);
-                  setSelectedClient(null);
-                }}
-              />
-            );
-          })}
-
-          {/* InfoWindow for Client */}
-          {selectedClient && (selectedClient as any).primary_map_area && (
-            <InfoWindow
-              position={{ lat: Number((selectedClient as any).primary_map_area.lat), lng: Number((selectedClient as any).primary_map_area.lng) }}
-              onCloseClick={() => setSelectedClient(null)}
+            {/* Render Clients (Contractors) */}
+            <MarkerClusterer
+              options={{
+                gridSize: 40,
+                maxZoom: 15,
+              }}
             >
-              <div className="p-2 max-w-[250px]">
-                <span className="font-bold text-lg text-gray-900 block mb-1">
-                  {(selectedClient as any).company_name || 'Unknown Company'}
-                </span>
-                <p className="text-sm font-semibold text-blue-600 mb-2">{(selectedClient as any).contact_name}</p>
-                <div className="space-y-1 text-xs">
-                  <div className="flex items-start gap-2">
-                    <MapPin className="w-3 h-3 text-gray-400 mt-0.5" />
-                    <span>{(selectedClient as any).primary_map_area.address || 'No address provided'}</span>
-                  </div>
-                  <div className="flex items-start gap-2">
-                    <Briefcase className="w-3 h-3 text-gray-400 mt-0.5" />
-                    <span>{selectedClient.services_offered || 'No services specified'}</span>
-                  </div>
-                </div>
-              </div>
-            </InfoWindow>
-          )}
+              {(clusterer) => (
+                <>
+                  {filteredClients.map((client: any) => {
+                    const mapArea = client.primary_map_area;
+                    if (!mapArea) return null;
+                    const isSelected = (selectedClient as any)?.pin_id === client.pin_id;
+                    
+                    if (selectedClient && !isSelected) {
+                      return null;
+                    }
 
-          {/* InfoWindow for Lead */}
-          {selectedLead && selectedLead.latitude && selectedLead.longitude && (
-            <InfoWindow
-              position={{ lat: Number(selectedLead.latitude), lng: Number(selectedLead.longitude) }}
-              onCloseClick={() => setSelectedLead(null)}
+                    const color = selectedCategory === 'all' 
+                      ? getClientColor(client.services_offered) 
+                      : getServiceColor(categories.find(c => c.id === selectedCategory)?.name);
+                    
+                    const radiusInMiles = mapArea.radius === 99999 ? 500 : (mapArea.radius || 30);
+                      
+                    return (
+                      <React.Fragment key={client.pin_id || client.id}>
+                        {isSelected && (
+                          <Circle
+                            center={{ lat: Number(mapArea.lat), lng: Number(mapArea.lng) }}
+                            radius={radiusInMiles * 1609.34}
+                            options={{
+                              fillColor: color,
+                              fillOpacity: 0.15,
+                              strokeColor: color,
+                              strokeOpacity: 0.5,
+                              strokeWeight: 2,
+                              clickable: false,
+                              zIndex: 1
+                            }}
+                          />
+                        )}
+                        <Marker
+                          position={{ lat: Number(mapArea.lat), lng: Number(mapArea.lng) }}
+                          title={client.company_name || client.contact_name || 'Contractor'}
+                          icon={createStarIcon(color)}
+                          clusterer={clusterer}
+                          onClick={() => {
+                            setSelectedClient(client);
+                            setSelectedLead(null);
+                          }}
+                          zIndex={isSelected ? 100 : 2}
+                        />
+                      </React.Fragment>
+                    );
+                  })}
+                </>
+              )}
+            </MarkerClusterer>
+
+            {/* Render Marketed Leads */}
+            <MarkerClusterer
+              options={{
+                gridSize: 50,
+                maxZoom: 15,
+              }}
             >
-              <div className="p-2 max-w-[250px]">
-                <div className="flex justify-between items-start mb-2">
-                  <div className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block">
-                    MARKETED LEAD
-                  </div>
-                  <h3 className="font-bold text-lg text-gray-900">£{selectedLead.price || '135.00'}</h3>
-                </div>
+              {(clusterer) => (
+                <>
+                  {filteredLeads.map((lead: any) => {
+                    const direction = lead.overlapIndex % 2 === 1 ? 'left' : 'right';
+                    const color = getLeadColor(lead.category_id);
+                    
+                    if (selectedClient && (selectedClient as any).primary_map_area) {
+                      const mapArea = (selectedClient as any).primary_map_area;
+                      const radiusInMiles = mapArea.radius === 99999 ? 500 : (mapArea.radius || 30);
+                      
+                      const distance = calculateDistance(
+                        Number(mapArea.lat), 
+                        Number(mapArea.lng), 
+                        Number(lead.latitude), 
+                        Number(lead.longitude)
+                      );
+                      
+                      if (distance > radiusInMiles) {
+                        return null;
+                      }
+                    }
 
-                <div className="mb-3">
-                  <span className="font-bold text-lg text-gray-900 block leading-tight mb-0.5">
-                    {selectedLead.company || selectedLead.name || 'Unknown Lead'}
+                    return (
+                      <Marker
+                        key={lead.id}
+                        position={{ lat: Number(lead.latitude), lng: Number(lead.longitude) }}
+                        title={lead.company || lead.name || 'Lead'}
+                        icon={createFlagIcon(color, direction)}
+                        clusterer={clusterer}
+                        onClick={() => {
+                          setSelectedLead(lead);
+                          setSelectedClient(null);
+                        }}
+                      />
+                    );
+                  })}
+                </>
+              )}
+            </MarkerClusterer>
+
+            {/* InfoWindows (same as before) */}
+            {selectedClient && (selectedClient as any).primary_map_area && (
+              <InfoWindow
+                position={{ lat: Number((selectedClient as any).primary_map_area.lat), lng: Number((selectedClient as any).primary_map_area.lng) }}
+                onCloseClick={() => setSelectedClient(null)}
+              >
+                <div className="p-2 max-w-[250px]">
+                  <span className="font-bold text-lg text-gray-900 block mb-1">
+                    {(selectedClient as any).company_name || 'Unknown Company'}
                   </span>
-                  {selectedLead.company && selectedLead.name && (
-                    <span className="text-sm font-semibold text-blue-600">{selectedLead.name}</span>
-                  )}
-                </div>
-                
-                {selectedLead.photos && selectedLead.photos.length > 0 && (
-                  <div className="mb-2 rounded-md overflow-hidden border border-gray-200">
-                    <img 
-                      src={selectedLead.photos[0]} 
-                      alt="Lead" 
-                      className="w-full h-24 object-cover"
-                    />
+                  <p className="text-sm font-semibold text-blue-600 mb-2">{(selectedClient as any).contact_name}</p>
+                  <div className="space-y-1 text-xs">
+                    <div className="flex items-start gap-2">
+                      <MapPin className="w-3 h-3 text-gray-400 mt-0.5" />
+                      <span>{(selectedClient as any).primary_map_area.address || 'No address provided'}</span>
+                    </div>
+                    <div className="flex items-start gap-2">
+                      <Briefcase className="w-3 h-3 text-gray-400 mt-0.5" />
+                      <span>{selectedClient.services_offered || 'No services specified'}</span>
+                    </div>
                   </div>
-                )}
-
-                <p className="text-sm text-gray-600 mb-2">{selectedLead.location}</p>
-                <div className="space-y-1 text-xs text-gray-500 mb-3">
-                  <p>Est. Spend: £{selectedLead.monthly_spend ? Number(selectedLead.monthly_spend).toLocaleString() : 'N/A'}/mo</p>
-                  <p>System Size: {selectedLead.est_system_size || 'N/A'}</p>
                 </div>
-                
-                <a
-                  href={`/sales-crm/lead-v2?id=${selectedLead.id}`}
-                  className="block w-full text-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md transition-colors"
-                >
-                  View Details
-                </a>
-              </div>
-            </InfoWindow>
-          )}
-        </GoogleMap>
+              </InfoWindow>
+            )}
+
+            {selectedLead && selectedLead.latitude && selectedLead.longitude && (
+              <InfoWindow
+                position={{ lat: Number(selectedLead.latitude), lng: Number(selectedLead.longitude) }}
+                onCloseClick={() => setSelectedLead(null)}
+              >
+                <div className="p-2 max-w-[250px]">
+                  <div className="flex justify-between items-start mb-2">
+                    <div className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block">
+                      MARKETED LEAD
+                    </div>
+                    <h3 className="font-bold text-lg text-gray-900">£{selectedLead.price || '135.00'}</h3>
+                  </div>
+
+                  <div className="mb-3">
+                    <span className="font-bold text-lg text-gray-900 block leading-tight mb-0.5">
+                      {selectedLead.company || selectedLead.name || 'Unknown Lead'}
+                    </span>
+                    {selectedLead.company && selectedLead.name && (
+                      <span className="text-sm font-semibold text-blue-600">{selectedLead.name}</span>
+                    )}
+                  </div>
+                  
+                  {selectedLead.photos && selectedLead.photos.length > 0 && (
+                    <div className="mb-2 rounded-md overflow-hidden border border-gray-200">
+                      <img 
+                        src={selectedLead.photos[0]} 
+                        alt="Lead" 
+                        className="w-full h-24 object-cover"
+                      />
+                    </div>
+                  )}
+
+                  <p className="text-sm text-gray-600 mb-2">{selectedLead.location}</p>
+                  <div className="space-y-1 text-xs text-gray-500 mb-3">
+                    <p>Est. Spend: £{selectedLead.monthly_spend ? Number(selectedLead.monthly_spend).toLocaleString() : 'N/A'}/mo</p>
+                    <p>System Size: {selectedLead.est_system_size || 'N/A'}</p>
+                  </div>
+                  
+                  <a
+                    href={`/sales-crm/lead-v2?id=${selectedLead.id}`}
+                    className="block w-full text-center px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-md transition-colors"
+                  >
+                    View Details
+                  </a>
+                </div>
+              </InfoWindow>
+            )}
+          </GoogleMap>
+        )}
       </div>
-      )}
     </div>
   );
 }

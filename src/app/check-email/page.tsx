@@ -4,8 +4,10 @@ import { supabase } from '@/lib/supabase';
 import { Mail, Send, ArrowLeft, Quote, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
+import { useRouter } from 'next/navigation';
 
 export default function CheckEmail() {
+  const router = useRouter();
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -89,9 +91,9 @@ export default function CheckEmail() {
           .single();
 
         if (profile?.is_approved === false) {
-          window.location.href = '/pending-approval';
+          router.replace('/pending-approval');
         } else {
-          window.location.href = '/my-openlead';
+          router.replace('/my-openlead');
         }
       }
     } catch (error: any) {
@@ -112,7 +114,7 @@ export default function CheckEmail() {
 
       if (!targetEmail) {
         toast.error("Session expired. Please try signing in again to trigger a new email.");
-        window.location.href = '/login';
+        router.replace('/login');
         return;
       }
 

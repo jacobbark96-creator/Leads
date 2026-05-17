@@ -13,9 +13,9 @@ export default function DashboardRedirect() {
         router.replace('/login');
       } else {
         if (profile.role === 'client') {
-          window.location.href = '/client-portal';
+          router.replace('/my-openlead');
         } else {
-          window.location.href = '/staff';
+          router.replace('/staff');
         }
       }
     }

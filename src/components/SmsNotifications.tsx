@@ -28,11 +28,18 @@ export function SmsNotifications() {
     fetchMessages();
 
     // Realtime subscription for SMS
+    const isAdmin = ['admin', 'super_admin'].includes(profile.role);
+    const channelId = `sms_messages-${profile.id}-${Date.now()}-${Math.random()}`;
     const channel = supabase
-      .channel('public:sms_messages')
+      .channel(channelId)
       .on(
         'postgres_changes',
-        { event: '*', schema: 'public', table: 'sms_messages', filter: `user_id=eq.${profile.id}` },
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'sms_messages', 
+          ...(isAdmin ? {} : { filter: `user_id=eq.${profile.id}` })
+        },
         () => fetchMessages()
       )
       .subscribe();
@@ -46,11 +53,17 @@ export function SmsNotifications() {
     if (!profile) return;
     
     try {
-      const { data, error } = await supabase
+      const isAdmin = ['admin', 'super_admin'].includes(profile.role);
+      let query = supabase
         .from('sms_messages')
         .select('*')
-        .eq('user_id', profile.id)
         .order('created_at', { ascending: false });
+
+      if (!isAdmin) {
+        query = query.eq('user_id', profile.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       

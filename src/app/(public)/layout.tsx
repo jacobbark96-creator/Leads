@@ -84,7 +84,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         {children}
       </main>
 
-      <Footer />
+      {!(user && mounted) && <Footer />}
     </div>
   );
 }

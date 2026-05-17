@@ -34,6 +34,14 @@ export const useAuthStore = create<AuthState>()(
         
         set({ isInitializing: true });
 
+        // Add a safety timeout to ensure we don't stay in loading state forever
+        const timeout = setTimeout(() => {
+          if (get().loading || !get().initialized) {
+            console.warn('Auth initialization timed out, forcing loading to false');
+            set({ loading: false, initialized: true, isInitializing: false });
+          }
+        }, 8000); // 8 second safety timeout
+
         // If we already have a cached profile, we can consider ourselves "initialized" 
         // enough to show the UI while we refresh data in the background.
         if (get().profile) {
@@ -88,6 +96,7 @@ export const useAuthStore = create<AuthState>()(
             set({ user: null, profile: null });
           }
         } finally {
+          clearTimeout(timeout);
           set({ loading: false, initialized: true, isInitializing: false });
         }
 

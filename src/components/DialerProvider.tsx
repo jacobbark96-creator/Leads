@@ -5,8 +5,9 @@ import { Device, Call } from '@twilio/voice-sdk';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
-import { Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
+import { MessageSquare, Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
 import { DialerContext } from '@/contexts/DialerContext';
+import { InternalChat } from './InternalChat';
 
 export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile } = useAuthStore();
@@ -20,8 +21,16 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [duration, setDuration] = useState(0);
 
   const [isDialpadOpen, setIsDialpadOpen] = useState(false);
+  const [isInternalChatOpen, setIsInternalChatOpen] = useState(false);
+
+  useEffect(() => {
+    const handleToggleChat = () => setIsInternalChatOpen(prev => !prev);
+    window.addEventListener('toggle-internal-chat', handleToggleChat);
+    return () => window.removeEventListener('toggle-internal-chat', handleToggleChat);
+  }, []);
   const [manualNumber, setManualNumber] = useState('');
   const [currentEntityId, setCurrentEntityId] = useState<string | null>(null);
+  const initPromise = useRef<Promise<Device | null> | null>(null);
 
   // Cleanup on unmount - Only destroy device when provider unmounts
   useEffect(() => {
@@ -66,108 +75,117 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const initDevice = async (): Promise<Device | null> => {
     if (device && device.state !== 'destroyed') return device;
+    if (initPromise.current) return initPromise.current;
 
-    try {
-      setCallStatus('Initializing dialer...');
-      const res = await fetch('/api/twilio/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ identity: profile?.id || 'unknown' })
-      });
-      
-      if (!res.ok) {
-        toast.error('Twilio configuration error');
+    initPromise.current = (async () => {
+      try {
+        setCallStatus('Initializing dialer...');
+        const res = await fetch('/api/twilio/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identity: profile?.id || 'unknown' })
+        });
+        
+        if (!res.ok) {
+          toast.error('Twilio configuration error');
+          setCallStatus('');
+          return null;
+        }
+        
+        const { token } = await res.json();
+        if (!token) return null;
+
+        const newDevice = new Device(token, {
+          codecPreferences: ['opus', 'pcmu'] as any,
+          enableRingingState: true,
+        } as any);
+
+        newDevice.on('error', (twilioError: any) => {
+          console.error('Twilio Error:', twilioError);
+          
+          // Suppress noisy token and connection errors from popping up toasts
+          const ignoredCodes = [20104, 20101, 31009, 31005];
+          if (ignoredCodes.includes(twilioError.code)) {
+            // If token expired, clear device to force re-init next time
+            if (twilioError.code === 20104 || twilioError.code === 20101) {
+              setDevice(null);
+            }
+            return;
+          }
+          
+          toast.error('Dialer error: ' + twilioError.message);
+        });
+
+        newDevice.on('tokenWillExpire', async () => {
+          try {
+            console.log('Renewing Twilio token...');
+            const res = await fetch('/api/twilio/token', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ identity: profile?.id || 'unknown' })
+            });
+            const { token: newToken } = await res.json();
+            if (newToken) {
+              newDevice.updateToken(newToken);
+              console.log('Twilio token renewed.');
+            }
+          } catch (e) {
+            console.error('Failed to renew Twilio token:', e);
+          }
+        });
+
+        newDevice.on('incoming', (call: Call) => {
+          setCallStatus('Incoming Call');
+          setCurrentNumber(call.parameters.From || 'Unknown Caller');
+          setActiveCall(call);
+
+          call.on('accept', () => {
+            setCallStatus('Connected');
+            callDurationRef.current = setInterval(() => setDuration(d => d + 1), 1000);
+          });
+
+          call.on('disconnect', () => {
+            setCallStatus('Disconnected');
+            setTimeout(() => {
+              setActiveCall(null);
+              setCallStatus('');
+              setCurrentNumber('');
+            }, 2000);
+          });
+
+          call.on('cancel', () => {
+            setCallStatus('Missed Call');
+            setTimeout(() => {
+              setActiveCall(null);
+              setCallStatus('');
+              setCurrentNumber('');
+            }, 2000);
+          });
+
+          call.on('reject', () => {
+            setCallStatus('Rejected');
+            setTimeout(() => {
+              setActiveCall(null);
+              setCallStatus('');
+              setCurrentNumber('');
+            }, 2000);
+          });
+        });
+
+        await newDevice.register();
+        setDevice(newDevice);
+        return newDevice;
+      } catch (error: any) {
+        console.error('Failed to setup Twilio device:', error);
+        toast.error('Failed to connect to dialer');
         setCallStatus('');
         return null;
       }
-      
-      const { token } = await res.json();
-      if (!token) return null;
+    })();
 
-      const newDevice = new Device(token, {
-        codecPreferences: ['opus', 'pcmu'] as any,
-        enableRingingState: true,
-      } as any);
-
-      newDevice.on('error', (twilioError: any) => {
-        console.error('Twilio Error:', twilioError);
-        
-        // Suppress noisy token and connection errors from popping up toasts
-        // 20104: AccessTokenExpired, 20101: AccessTokenInvalid
-        // 31009: TransportError, 31005: ConnectionError
-        const ignoredCodes = [20104, 20101, 31009, 31005];
-        if (ignoredCodes.includes(twilioError.code)) {
-          return;
-        }
-        
-        toast.error('Dialer error: ' + twilioError.message);
-      });
-
-      newDevice.on('tokenWillExpire', async () => {
-        try {
-          console.log('Renewing Twilio token...');
-          const res = await fetch('/api/twilio/token', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ identity: profile?.id || 'unknown' })
-          });
-          const { token: newToken } = await res.json();
-          if (newToken) {
-            newDevice.updateToken(newToken);
-            console.log('Twilio token renewed.');
-          }
-        } catch (e) {
-          console.error('Failed to renew Twilio token:', e);
-        }
-      });
-
-      newDevice.on('incoming', (call: Call) => {
-        setCallStatus('Incoming Call');
-        setCurrentNumber(call.parameters.From || 'Unknown Caller');
-        setActiveCall(call);
-
-        call.on('accept', () => {
-          setCallStatus('Connected');
-          callDurationRef.current = setInterval(() => setDuration(d => d + 1), 1000);
-        });
-
-        call.on('disconnect', () => {
-          setCallStatus('Disconnected');
-          setTimeout(() => {
-            setActiveCall(null);
-            setCallStatus('');
-            setCurrentNumber('');
-          }, 2000);
-        });
-
-        call.on('cancel', () => {
-          setCallStatus('Missed Call');
-          setTimeout(() => {
-            setActiveCall(null);
-            setCallStatus('');
-            setCurrentNumber('');
-          }, 2000);
-        });
-
-        call.on('reject', () => {
-          setCallStatus('Rejected');
-          setTimeout(() => {
-            setActiveCall(null);
-            setCallStatus('');
-            setCurrentNumber('');
-          }, 2000);
-        });
-      });
-
-      await newDevice.register();
-      setDevice(newDevice);
-      return newDevice;
-    } catch (error: any) {
-      console.error('Failed to setup Twilio device:', error);
-      toast.error('Failed to connect to dialer');
-      setCallStatus('');
-      return null;
-    }
+    const result = await initPromise.current;
+    initPromise.current = null;
+    return result;
   };
 
   const makeCall = async (number: string, entityId?: string, userName?: string, entityType: string = 'lead') => {
@@ -350,8 +368,13 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       
       {/* Floating Dialer Button & Manual Dialpad */}
       {showFloatingDialer && !activeCall && callStatus !== 'Connecting...' && (
-        <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-4">
-          {isDialpadOpen && (
+        <>
+          <InternalChat isOpen={isInternalChatOpen} onClose={() => setIsInternalChatOpen(false)} isModal={true} />
+          
+          <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-4">
+            {/* Internal Chat UI will go here */}
+            
+            {isDialpadOpen && (
             <div className="bg-white rounded-2xl shadow-2xl overflow-hidden w-72 border border-gray-200 animate-in slide-in-from-bottom-5">
               <div className="bg-gray-900 p-4 text-white flex justify-between items-center">
                 <h3 className="font-bold">Manual Dial</h3>
@@ -383,14 +406,31 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             </div>
           )}
 
-          <button
-            onClick={() => setIsDialpadOpen(!isDialpadOpen)}
-            className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition-transform hover:scale-105 active:scale-95"
-            title="Open Dialer"
-          >
-            <Phone className="w-6 h-6" />
-          </button>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => {
+                // Toggle internal chat, you could create a context for this or dispatch an event
+                // For now we will just dispatch a custom event
+                window.dispatchEvent(new CustomEvent('toggle-internal-chat'));
+              }}
+              className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-transform hover:scale-105 active:scale-95 relative"
+              title="Internal Chat"
+            >
+              <MessageSquare className="w-6 h-6" />
+              {/* Unread badge can go here */}
+              <span id="global-unread-badge" className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full hidden"></span>
+            </button>
+
+            <button
+              onClick={() => setIsDialpadOpen(!isDialpadOpen)}
+              className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition-transform hover:scale-105 active:scale-95"
+              title="Open Dialer"
+            >
+              <Phone className="w-6 h-6" />
+            </button>
+          </div>
         </div>
+        </>
       )}
 
       {/* Dialer UI Overlay (Active Call) */}

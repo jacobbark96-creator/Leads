@@ -1,5 +1,6 @@
 "use client";
 import React, { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,20 +38,22 @@ export default function Login() {
     resolver: zodResolver(loginSchema),
   });
 
+  const router = useRouter();
+
   // Redirect if already logged in
   useEffect(() => {
     if (user && profile) {
       if (profile.role === 'client') {
         if (profile.is_approved === false) {
-          window.location.href = '/pending-approval';
+          router.replace('/pending-approval');
         } else {
-          window.location.href = '/my-openlead';
+          router.replace('/my-openlead');
         }
       } else {
-        window.location.href = '/staff';
+        router.replace('/staff');
       }
     }
-  }, [user, profile]);
+  }, [user, profile, router]);
 
   const handlePasswordReset = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -105,7 +108,7 @@ export default function Login() {
         
         // Redirect to the check-email page instead of staying on login
         if (signUpData.user) {
-          window.location.href = `/check-email?email=${encodeURIComponent(data.email)}`;
+          router.replace(`/check-email?email=${encodeURIComponent(data.email)}`);
         }
       } else {
         const { data: authData, error } = await supabase.auth.signInWithPassword({
@@ -116,7 +119,6 @@ export default function Login() {
         // Successful login
         toast.success('Successfully logged in!');
         
-        // Force a full page reload to the dashboard to clear all state
         if (authData.user) {
           const { data: profileData } = await supabase
             .from('users')
@@ -128,15 +130,15 @@ export default function Login() {
             useAuthStore.getState().setProfile(profileData);
             if (profileData.role === 'client') {
               if (profileData.is_approved === false) {
-                window.location.href = '/pending-approval';
+                router.replace('/pending-approval');
               } else {
-                window.location.href = '/my-openlead';
+                router.replace('/my-openlead');
               }
             } else {
-              window.location.href = '/staff';
+              router.replace('/staff');
             }
           } else {
-            window.location.href = '/pending-approval';
+            router.replace('/pending-approval');
           }
         }
       }

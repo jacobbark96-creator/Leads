@@ -8,6 +8,9 @@ import { useAuthStore } from '@/store/authStore';
 import { Lead, StaffUser, LeadNote } from '@/types';
 import toast from 'react-hot-toast';
 import { useDialer } from '@/contexts/DialerContext';
+import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+
+const libraries: "places"[] = ['places'];
 
 import { 
   LayoutDashboard, 
@@ -30,13 +33,28 @@ import {
   Bell,
   Save,
   Trash2,
-  Linkedin
+  Linkedin,
+  AlertTriangle
 } from 'lucide-react';
+
+import { AdminNotifications } from '@/components/AdminNotifications';
+import { SmsNotifications } from '@/components/SmsNotifications';
 
 const CalendarModal = ({ isOpen, onClose, onSetReminder }: any) => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
   const [content, setContent] = useState('Follow up call');
+
+  React.useEffect(() => {
+    if (isOpen) {
+      // Reset to current date and a default time (e.g., next hour)
+      const now = new Date();
+      const dateStr = now.toISOString().split('T')[0];
+      setDate(dateStr);
+      setTime('10:00');
+      setContent('Follow up call');
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -81,7 +99,19 @@ const CalendarModal = ({ isOpen, onClose, onSetReminder }: any) => {
             />
           </div>
           <button
-            onClick={() => onSetReminder(`${date}T${time}`, content)}
+            onClick={() => {
+              try {
+                const combined = `${date}T${time}`;
+                const reminderDate = new Date(combined);
+                if (isNaN(reminderDate.getTime())) {
+                  toast.error('Please select a valid date and time');
+                  return;
+                }
+                onSetReminder(reminderDate.toISOString(), content);
+              } catch (err) {
+                toast.error('Error creating reminder date');
+              }
+            }}
             disabled={!date || !time}
             className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2"
           >
@@ -291,6 +321,67 @@ function LeadDetailsV2Content() {
   const [isPrimaryContactModalOpen, setIsPrimaryContactModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
+  const [isMarketConfirmOpen, setIsMarketConfirmOpen] = useState(false);
+  const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
+  const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null);
+
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
+
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  const onLoadAutocomplete = (autoC: google.maps.places.Autocomplete) => setAutocomplete(autoC);
+  
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
+      const place = autocomplete.getPlace();
+      if (place) {
+        const lat = place.geometry?.location?.lat() || null;
+        const lng = place.geometry?.location?.lng() || null;
+
+        let finalAddress = place.formatted_address || place.name || '';
+        if (place.name && place.formatted_address && !place.formatted_address.includes(place.name)) {
+          finalAddress = `${place.name}, ${place.formatted_address}`;
+        }
+
+        setEditForm(prev => ({ 
+          ...prev, 
+          location: finalAddress || prev.location,
+          latitude: lat,
+          longitude: lng
+        }));
+      }
+    }
+  };
+
+  useEffect(() => {
+    const calculateSystemSize = () => {
+      const sizeStr = editForm.roof_size || '';
+      const sizeNum = parseFloat(String(sizeStr).replace(/[^0-9.]/g, ''));
+      
+      if (isNaN(sizeNum) || sizeNum <= 0) {
+        return;
+      }
+
+      const usablePercentage = editForm.cover_skylights === false ? 0.60 : 0.80;
+      const usableArea = sizeNum * usablePercentage;
+      const numberOfPanels = Math.floor(usableArea / 2);
+      const systemSizeKw = (numberOfPanels * 420) / 1000;
+
+      if (systemSizeKw > 0) {
+         setEditForm(prev => {
+            if (prev.est_system_size === `${systemSizeKw.toFixed(1)} kW`) return prev;
+            return { ...prev, est_system_size: `${systemSizeKw.toFixed(1)} kW` };
+         });
+      }
+    };
+
+    if (editingCard === 'building' || editingCard === 'opportunity') {
+      calculateSystemSize();
+    }
+  }, [editForm.roof_size, editForm.cover_skylights, editingCard]);
+
   const { makeCall, activeCall } = useDialer();
   
   const notesEndRef = useRef<HTMLDivElement>(null);
@@ -313,6 +404,7 @@ function LeadDetailsV2Content() {
       fetchLeadAndNotes();
       fetchStaffUsers();
       fetchTasks();
+      fetchCategories();
 
       // Real-time notes subscription
       const notesChannel = supabase
@@ -397,10 +489,23 @@ function LeadDetailsV2Content() {
     }
   }, [id, tab, profile?.id]);
 
+  const [categories, setCategories] = useState<any[]>([]);
+
   useEffect(() => {
     // Scroll to bottom of notes when they load or update
     notesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [notes]);
+
+  const fetchCategories = async () => {
+    try {
+      const { data, error } = await supabase.from('categories').select('id, name').order('name');
+      if (!error && data) {
+        setCategories(data);
+      }
+    } catch (e) {
+      console.error(e);
+    }
+  };
 
   const fetchTasks = async () => {
     if (!id) return;
@@ -439,6 +544,9 @@ function LeadDetailsV2Content() {
         .from('leads')
         .select(`
           *,
+          categories!leads_category_id_fkey (
+            name
+          ),
           companies!companies_lead_id_fkey (
             id, normalized_name, company_number, incorporation_date, sic_code, industry, employee_count, estimated_revenue, description,
             contacts (
@@ -608,7 +716,7 @@ function LeadDetailsV2Content() {
     }
   };
 
-  const handlePrimaryContactSave = async () => {
+  const confirmPrimaryContactSave = async () => {
     if (!lead) return;
     try {
       const { id, created_at, clients, lead_notes, other_contacts, csv_data, companies, buildings, ...updatePayload } = editForm as any;
@@ -629,7 +737,21 @@ function LeadDetailsV2Content() {
       
       const { data: freshLead } = await supabase
         .from('leads')
-        .select('*')
+        .select(`
+          *,
+          categories!leads_category_id_fkey (
+            name
+          ),
+          companies!companies_lead_id_fkey (
+            id, normalized_name, company_number, incorporation_date, sic_code, industry, employee_count, estimated_revenue, description,
+            contacts (
+              id, full_name, role, email, mobile, linkedin_url, confidence_score, source
+            )
+          ),
+          buildings!buildings_lead_id_fkey (
+            id, property_type, roof_type, roof_area_estimate, solar_potential_score, epc_rating, orientation, estimated_energy_usage, installation_complexity, max_array_panels_count, max_sunshine_hours_per_year, satellite_image_url, latitude, longitude
+          )
+        `)
         .eq('id', lead.id)
         .single();
         
@@ -643,10 +765,19 @@ function LeadDetailsV2Content() {
     }
   };
 
-  const saveEdit = async () => {
+  const handlePrimaryContactSave = async () => {
+    if (lead?.is_marketed) {
+      setPendingEditAction(() => confirmPrimaryContactSave);
+      setIsEditConfirmOpen(true);
+    } else {
+      await confirmPrimaryContactSave();
+    }
+  };
+
+  const confirmSaveEdit = async () => {
     if (!lead) return;
     try {
-      const { id, created_at, clients, lead_notes, other_contacts, csv_data, companies, buildings, ...updatePayload } = editForm as any;
+      const { id, created_at, clients, lead_notes, other_contacts, csv_data, companies, buildings, categories, ...updatePayload } = editForm as any;
       const { error } = await supabase
         .from('leads')
         .update(updatePayload)
@@ -657,7 +788,21 @@ function LeadDetailsV2Content() {
       // Force a fresh fetch to ensure all data is in sync
       const { data: freshLead } = await supabase
         .from('leads')
-        .select('*')
+        .select(`
+          *,
+          categories!leads_category_id_fkey (
+            name
+          ),
+          companies!companies_lead_id_fkey (
+            id, normalized_name, company_number, incorporation_date, sic_code, industry, employee_count, estimated_revenue, description,
+            contacts (
+              id, full_name, role, email, mobile, linkedin_url, confidence_score, source
+            )
+          ),
+          buildings!buildings_lead_id_fkey (
+            id, property_type, roof_type, roof_area_estimate, solar_potential_score, epc_rating, orientation, estimated_energy_usage, installation_complexity, max_array_panels_count, max_sunshine_hours_per_year, satellite_image_url, latitude, longitude
+          )
+        `)
         .eq('id', lead.id)
         .single();
         
@@ -670,6 +815,36 @@ function LeadDetailsV2Content() {
     }
   };
 
+  const saveEdit = async () => {
+    if (lead?.is_marketed) {
+      setPendingEditAction(() => confirmSaveEdit);
+      setIsEditConfirmOpen(true);
+    } else {
+      await confirmSaveEdit();
+    }
+  };
+
+  const handleMarketLead = async () => {
+    if (!lead) return;
+    try {
+      setLoading(true);
+      const { error } = await supabase
+        .from('leads')
+        .update({ is_marketed: true, status: 'marketplace' })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+      setLead({ ...lead, is_marketed: true, status: 'marketplace' });
+      setIsMarketConfirmOpen(false);
+      toast.success('Lead has been pushed to the marketplace!');
+      router.refresh();
+    } catch (err: any) {
+      toast.error('Failed to market lead: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const setReminder = async (reminderAt: string, content: string) => {
     if (!lead || !profile) return;
     try {
@@ -678,8 +853,8 @@ function LeadDetailsV2Content() {
         .insert([{
           lead_id: lead.id,
           user_id: profile.id,
-          reminder_date: reminderAt,
-          description: content
+          reminder_at: reminderAt,
+          content: content
         }]);
 
       if (reminderError) throw reminderError;
@@ -993,13 +1168,13 @@ function LeadDetailsV2Content() {
 
   const goToNextLead = () => {
     if (nextLeadId) {
-      window.location.href = `/sales-crm/lead-v2?id=${nextLeadId}&tab=${tab}`;
+      router.push(`/sales-crm/lead-v2?id=${nextLeadId}&tab=${tab}`);
     }
   };
 
   const goToPrevLead = () => {
     if (prevLeadId) {
-      window.location.href = `/sales-crm/lead-v2?id=${prevLeadId}&tab=${tab}`;
+      router.push(`/sales-crm/lead-v2?id=${prevLeadId}&tab=${tab}`);
     }
   };
 
@@ -1025,7 +1200,7 @@ function LeadDetailsV2Content() {
   const additionalContacts = companyEnrichment?.contacts || [];
 
   return (
-    <div style={{ width: '142.85vw', height: '142.85vh', transform: 'scale(0.7)', transformOrigin: 'top left', position: 'fixed', top: 0, left: 0 }} className="overflow-hidden bg-[#f5f7fb] font-sans text-[#111827]">
+    <div className="overflow-hidden bg-[#f5f7fb] font-sans text-[#111827]" style={{ zoom: 0.6, height: '166.6vh' }}>
       <div className="flex w-full h-full">
         {/* LEFT SIDEBAR (84px) */}
         <aside className="w-[84px] bg-[#111827] flex-shrink-0 h-full z-10 flex flex-col items-center py-6 shadow-xl relative">
@@ -1053,9 +1228,6 @@ function LeadDetailsV2Content() {
           </Link>
         </nav>
         <div className="mt-auto flex flex-col gap-6 items-center">
-          <button className="text-gray-400 hover:text-white transition-colors">
-            <Settings className="w-6 h-6" />
-          </button>
           <div className="w-10 h-10 rounded-full bg-gray-600 border-2 border-gray-700 cursor-pointer"></div>
         </div>
       </aside>
@@ -1074,23 +1246,40 @@ function LeadDetailsV2Content() {
               <span className="mx-2">/</span>
               <span className="text-gray-900">{lead.company || lead.name}</span>
             </div>
-            <div className="flex items-center gap-2">
-              <button 
-                onClick={goToPrevLead} 
-                disabled={!prevLeadId} 
-                className="p-1.5 rounded-lg border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-30 transition-colors shadow-sm"
-                title="Previous Lead"
-              >
-                <ArrowLeft className="w-4 h-4" />
-              </button>
-              <button 
-                onClick={goToNextLead} 
-                disabled={!nextLeadId} 
-                className="p-1.5 rounded-lg border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-30 transition-colors shadow-sm"
-                title="Next Lead"
-              >
-                <ArrowRight className="w-4 h-4" />
-              </button>
+            <div className="flex items-center gap-4">
+              <AdminNotifications />
+              <SmsNotifications />
+              {profile?.role === 'super_admin' && lead.status === 'qualified' && !lead.is_marketed && (
+                <button 
+                  onClick={() => setIsMarketConfirmOpen(true)}
+                  className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors ml-2 whitespace-nowrap"
+                >
+                  Market Lead
+                </button>
+              )}
+              {lead.is_marketed && (
+                <span className="bg-green-100 text-green-700 border border-green-200 text-xs font-bold px-3 py-1.5 rounded-lg ml-2 shadow-sm whitespace-nowrap">
+                  On Marketplace
+                </span>
+              )}
+              <div className="flex items-center gap-2 ml-2">
+                <button 
+                  onClick={goToPrevLead} 
+                  disabled={!prevLeadId} 
+                  className="p-1.5 rounded-lg border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-30 transition-colors shadow-sm"
+                  title="Previous Lead"
+                >
+                  <ArrowLeft className="w-4 h-4" />
+                </button>
+                <button 
+                  onClick={goToNextLead} 
+                  disabled={!nextLeadId} 
+                  className="p-1.5 rounded-lg border border-gray-300 text-gray-600 bg-white hover:bg-gray-50 hover:text-gray-900 disabled:opacity-30 transition-colors shadow-sm"
+                  title="Next Lead"
+                >
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -1187,7 +1376,21 @@ function LeadDetailsV2Content() {
                 <div className="flex justify-between items-center py-0.5">
                   <span className="text-gray-500 text-xs">Location</span>
                   {editingCard === 'snapshot' ? (
-                    <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                    isLoaded ? (
+                      <Autocomplete
+                        onLoad={onLoadAutocomplete}
+                        onPlaceChanged={onPlaceChanged}
+                        options={{
+                          types: [],
+                          componentRestrictions: { country: "gb" },
+                          fields: ['formatted_address', 'geometry', 'name']
+                        }}
+                      >
+                        <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                      </Autocomplete>
+                    ) : (
+                      <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                    )
                   ) : (
                     <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.location || 'N/A'}</span>
                   )}
@@ -1317,7 +1520,15 @@ function LeadDetailsV2Content() {
                     </div>
                   );
                 }) : (
-                  <div className="text-xs text-gray-500 text-center py-4">No files uploaded yet.</div>
+                  <div className="flex flex-col items-center justify-center py-6 border-2 border-dashed border-gray-100 rounded-xl">
+                    <p className="text-xs text-gray-400 mb-3">No files uploaded yet.</p>
+                    <button 
+                      onClick={() => toast('Requesting bills via WhatsApp...', { icon: '💬' })}
+                      className="px-4 py-1.5 bg-green-50 text-green-700 text-xs font-bold rounded-lg border border-green-100 hover:bg-green-100 transition-colors flex items-center gap-1.5"
+                    >
+                      <MessageSquare className="w-3.5 h-3.5" /> Request bills
+                    </button>
+                  </div>
                 )}
               </div>
               </div>
@@ -1400,6 +1611,19 @@ function LeadDetailsV2Content() {
                   </button>
                 </div>
                 <div className="flex flex-col gap-3">
+                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                    <span className="text-gray-500 text-xs">Category</span>
+                    {editingCard === 'overview' ? (
+                      <select value={editForm.category_id || ''} onChange={e => setEditForm({...editForm, category_id: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs w-32 focus:ring-1 focus:ring-blue-500">
+                        <option value="">Uncategorized</option>
+                        {categories.map(c => <option key={c.id} value={c.id}>{c.name}</option>)}
+                      </select>
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">
+                        {lead.category_id ? categories.find(c => c.id === lead.category_id)?.name || (lead as any).categories?.name || 'Unknown' : 'Uncategorized'}
+                      </span>
+                    )}
+                  </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
                     <span className="text-gray-500 text-xs">Status</span>
                     {editingCard === 'overview' ? (
@@ -1486,6 +1710,22 @@ function LeadDetailsV2Content() {
                     )}
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                    <span className="text-gray-500 text-xs">Exclusive Price</span>
+                    {editingCard === 'opportunity' ? (
+                      <input type="number" value={editForm.exclusive_price || ''} onChange={e => setEditForm({...editForm, exclusive_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 135" />
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">{lead.exclusive_price ? `£${lead.exclusive_price}` : 'N/A'}</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                    <span className="text-gray-500 text-xs">Share Price</span>
+                    {editingCard === 'opportunity' ? (
+                      <input type="number" value={editForm.share_price || ''} onChange={e => setEditForm({...editForm, share_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 45" />
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">{lead.share_price ? `£${lead.share_price}` : 'N/A'}</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
                     <span className="text-gray-500 text-xs">Payback Period</span>
                     {editingCard === 'opportunity' ? (
                       <input type="text" value={(editForm as any).est_payback || ''} onChange={e => setEditForm({...editForm, est_payback: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
@@ -1548,7 +1788,8 @@ function LeadDetailsV2Content() {
                     {editingCard === 'building' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                <div className="w-full h-40 shrink-0 bg-gray-200 rounded-lg mb-4 overflow-hidden relative group cursor-pointer">
+                <div className="flex gap-4 flex-1 min-h-0">
+                  <div className="w-[45%] h-full shrink-0 bg-gray-200 rounded-lg overflow-hidden relative group cursor-pointer">
                   <img src={buildingEnrichment?.satellite_image_url || (lead.photos && lead.photos.length > 0 ? lead.photos[currentImageIndex] : "https://images.unsplash.com/photo-1613545325278-f24b0cae1224?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")} alt="Building Aerial" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   
                   {/* Left/Right Controls */}
@@ -1597,11 +1838,25 @@ function LeadDetailsV2Content() {
                     </div>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3 flex-1 overflow-y-auto pr-2">
+                <div className="w-[55%] grid grid-cols-2 gap-x-3 gap-y-2 flex-1 overflow-y-auto pr-2 custom-scrollbar">
                   <div className="flex flex-col col-span-2">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Address</span>
                     {editingCard === 'building' ? (
-                      <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 w-full mt-1" />
+                      isLoaded ? (
+                        <Autocomplete
+                          onLoad={onLoadAutocomplete}
+                          onPlaceChanged={onPlaceChanged}
+                          options={{
+                            types: [],
+                            componentRestrictions: { country: "gb" },
+                            fields: ['formatted_address', 'geometry', 'name']
+                          }}
+                        >
+                          <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 w-full mt-1" />
+                        </Autocomplete>
+                      ) : (
+                        <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 w-full mt-1" />
+                      )
                     ) : (
                       <span className="text-gray-900 text-sm font-medium">{lead.location || 'N/A'}</span>
                     )}
@@ -1636,6 +1891,14 @@ function LeadDetailsV2Content() {
                       <input type="text" value={(editForm as any).electrical_supply || ''} onChange={e => setEditForm({...editForm, electrical_supply: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
                     ) : (
                       <span className="text-gray-900 text-sm font-medium">{(lead as any).electrical_supply || 'N/A'}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Cover Skylights</span>
+                    {editingCard === 'building' ? (
+                      <input type="checkbox" checked={!!editForm.cover_skylights} onChange={e => setEditForm({...editForm, cover_skylights: e.target.checked})} className="mt-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4" />
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">{lead.cover_skylights ? 'Yes' : 'No'}</span>
                     )}
                   </div>
                   <div className="flex flex-col">
@@ -1686,6 +1949,7 @@ function LeadDetailsV2Content() {
                       <span className="text-gray-900 text-sm font-medium flex items-center gap-1">{(buildingEnrichment?.epc_rating || (lead as any).epc_rating) ? <><span className="w-4 h-4 bg-green-500 text-white rounded-sm flex items-center justify-center text-[10px] font-bold">{(buildingEnrichment?.epc_rating || (lead as any).epc_rating)[0]}</span> {(buildingEnrichment?.epc_rating || (lead as any).epc_rating)}</> : 'N/A'}</span>
                     )}
                   </div>
+                </div>
                 </div>
                 <div className="mt-4 pt-4 border-t border-gray-100 flex flex-wrap gap-2 shrink-0">
                   <span className="px-2.5 py-1 bg-gray-100 text-gray-600 text-[11px] font-semibold rounded-md">Technical Survey</span>
@@ -1876,13 +2140,41 @@ function LeadDetailsV2Content() {
         phone={newContactPhone}
         setPhone={setNewContactPhone}
       />
-        <EditPrimaryContactModal
-          isOpen={isPrimaryContactModalOpen}
-          onClose={() => setIsPrimaryContactModalOpen(false)}
-          onSave={handlePrimaryContactSave}
-          form={editForm}
-          setForm={setEditForm}
-        />
+      <EditPrimaryContactModal
+        isOpen={isPrimaryContactModalOpen}
+        onClose={() => setIsPrimaryContactModalOpen(false)}
+        onSave={handlePrimaryContactSave}
+        form={editForm}
+        setForm={setEditForm}
+      />
+
+      {isMarketConfirmOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Market Lead?</h3>
+            <p className="text-sm text-gray-500 mb-6">Are you sure you want to push this lead to the marketplace? All eligible contractors will be notified instantly.</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => setIsMarketConfirmOpen(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">Cancel</button>
+              <button onClick={handleMarketLead} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700">Yes, Market Lead</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isEditConfirmOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
+            <h3 className="text-lg font-bold text-red-600 mb-2 flex justify-center items-center gap-2">
+              <AlertTriangle className="w-5 h-5" /> Warning
+            </h3>
+            <p className="text-sm text-gray-500 mb-6">This lead is currently on the marketplace. Any edits you save will be instantly reflected to all contractors viewing it. Are you sure you want to save?</p>
+            <div className="flex gap-3 justify-center">
+              <button onClick={() => { setIsEditConfirmOpen(false); setPendingEditAction(null); }} className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">Cancel</button>
+              <button onClick={() => { if (pendingEditAction) pendingEditAction(); setIsEditConfirmOpen(false); setPendingEditAction(null); }} className="px-4 py-2 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700">Yes, Save Edits</button>
+            </div>
+          </div>
+        </div>
+      )}
       </div>
     </div>
   );

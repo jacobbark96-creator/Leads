@@ -43,7 +43,7 @@ function LeadProcessingContent() {
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
   const [propertyTypeFilter, setPropertyTypeFilter] = useState<'all' | 'commercial' | 'residential'>('all');
   const [mobileFilter, setMobileFilter] = useState<'all'|'mobile'>('all');
-  const [assignedUserFilter, setAssignedUserFilter] = useState<string>('me');
+  const [assignedUserFilter, setAssignedUserFilter] = useState<string>(assignedToMe ? 'me' : 'all');
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
 
@@ -79,15 +79,14 @@ function LeadProcessingContent() {
       // Helper to apply current active filters to all KPI counts
       const applyFilters = (q: any) => {
         let filtered = q;
-        if (assignedToMe && profile) {
-          if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+        if (['super_admin', 'admin'].includes(profile?.role || '')) {
+          if (assignedUserFilter === 'me') {
+            filtered = filtered.eq('assigned_to', profile?.id);
+          } else if (assignedUserFilter !== 'all') {
             filtered = filtered.eq('assigned_to', assignedUserFilter);
-          } else {
-            filtered = filtered.eq('assigned_to', profile.id);
           }
-        } else if (!assignedToMe && q.statusFilter !== 'myleads') {
-          // Note: for the myleads count specifically, we don't want to enforce assigned_to=null
-          // but we apply it in the Promise.all array instead.
+        } else if (assignedToMe && profile) {
+          filtered = filtered.eq('assigned_to', profile.id);
         }
 
         if (propertyTypeFilter === 'commercial') {
@@ -106,6 +105,10 @@ function LeadProcessingContent() {
       const getBaseQuery = () => applyFilters(supabase.from('leads').select('id', { count: 'exact', head: true }).neq('status', 'qualified'));
 
       // Run precise count queries to bypass the 1000 row limit and respect active filters
+      const currentTargetUser = (['super_admin', 'admin'].includes(profile?.role || '') && assignedUserFilter !== 'all') 
+        ? (assignedUserFilter === 'me' ? profile?.id : assignedUserFilter)
+        : profile?.id;
+
       const [
         { count: dncCount },
         { count: freshCount },
@@ -113,11 +116,11 @@ function LeadProcessingContent() {
         { count: myleadsCount },
         { count: totalCount }
       ] = await Promise.all([
-        (!assignedToMe ? getBaseQuery().is('assigned_to', null) : getBaseQuery()).eq('status', 'dnc'),
-        (!assignedToMe ? getBaseQuery().is('assigned_to', null) : getBaseQuery()).eq('status', 'fresh'),
-        (!assignedToMe ? getBaseQuery().is('assigned_to', null) : getBaseQuery()).neq('status', 'dnc').not('last_dialed_at', 'is', null),
-        getBaseQuery().eq('assigned_to', profile?.id || 'none'),
-        (!assignedToMe ? getBaseQuery().is('assigned_to', null) : getBaseQuery()).neq('status', 'dnc') // Total excludes DNC
+        getBaseQuery().eq('status', 'dnc'),
+        getBaseQuery().eq('status', 'fresh'),
+        getBaseQuery().neq('status', 'dnc').not('last_dialed_at', 'is', null),
+        getBaseQuery().eq('assigned_to', currentTargetUser || 'none'),
+        getBaseQuery().neq('status', 'dnc') // Total excludes DNC
       ]);
 
       setKpiCounts({
@@ -151,14 +154,16 @@ function LeadProcessingContent() {
         query = query.or(`name.ilike.${search},company.ilike.${search},location.ilike.${search}`);
       }
 
-      if (assignedToMe && profile) {
-        if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
+      if (['super_admin', 'admin'].includes(profile?.role || '')) {
+        if (assignedUserFilter === 'me') {
+          query = query.eq('assigned_to', profile?.id);
+        } else if (assignedUserFilter !== 'all') {
           query = query.eq('assigned_to', assignedUserFilter);
-        } else {
+        }
+      } else {
+        if (assignedToMe && profile) {
           query = query.eq('assigned_to', profile.id);
         }
-      } else if (!assignedToMe && statusFilter !== 'myleads') {
-        query = query.is('assigned_to', null);
       }
 
       if (statusFilter === 'all') {
@@ -392,7 +397,7 @@ function LeadProcessingContent() {
             </select>
           </div>
 
-          {assignedToMe && profile?.role === 'super_admin' && (
+          {['super_admin', 'admin'].includes(profile?.role || '') && (
             <div className="flex flex-col gap-1">
               <label className="text-[9px] font-bold text-gray-500 uppercase tracking-wider">Assigned To</label>
               <select
@@ -400,6 +405,7 @@ function LeadProcessingContent() {
                 onChange={(e) => setAssignedUserFilter(e.target.value)}
                 className="border-gray-200 rounded-md shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1 pl-2 pr-6 bg-gray-50 max-w-[140px] truncate"
               >
+                <option value="all">All Leads</option>
                 <option value="me">My Leads</option>
                 {staffUsers.map(u => (
                   <option key={u.id} value={u.id}>{u.name}</option>
@@ -645,7 +651,7 @@ function LeadProcessingContent() {
 
 export default function LeadProcessing() {
   return (
-    <Suspense key={Date.now()} fallback={<div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
+    <Suspense fallback={<div className="flex justify-center py-16"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>}>
       <LeadProcessingContent />
     </Suspense>
   );

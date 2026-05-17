@@ -20,11 +20,18 @@ export function AdminNotifications() {
     fetchData();
 
     // Setup realtime subscription
+    const isAdmin = ['admin', 'super_admin'].includes(profile.role);
+    const channelId = `notifications-${profile.id}-${Date.now()}-${Math.random()}`;
     const channel = supabase
-      .channel('notifications-realtime')
+      .channel(channelId)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, () => fetchData())
       .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => fetchData())
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_reminders', filter: `user_id=eq.${profile.id}` }, () => fetchData())
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'lead_reminders', 
+        ...(isAdmin ? {} : { filter: `user_id=eq.${profile.id}` })
+      }, () => fetchData())
       .subscribe();
 
     return () => {
@@ -71,14 +78,20 @@ export function AdminNotifications() {
         setAdmins(staff || []);
       }
 
-      // 2. Fetch due reminders for the current user
-      const { data: rems } = await supabase
+      // 2. Fetch due reminders
+      const isAdmin = ['admin', 'super_admin'].includes(profile.role);
+      let query = supabase
         .from('lead_reminders')
         .select('*, leads(name, company)')
-        .eq('user_id', profile.id)
         .eq('is_completed', false)
         .lte('reminder_at', new Date().toISOString())
         .order('reminder_at', { ascending: true });
+      
+      if (!isAdmin) {
+        query = query.eq('user_id', profile.id);
+      }
+      
+      const { data: rems } = await query;
       
       setReminders(rems || []);
 

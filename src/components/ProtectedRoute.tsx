@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useAuthStore } from '../store/authStore';
 import { UserRole } from '../types';
 import { supabase } from '../lib/supabase';
@@ -17,8 +17,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
   const [profileCheckLoading, setProfileCheckLoading] = useState(true);
   const [isProfileComplete, setIsProfileComplete] = useState(true);
 
+  const [showRefreshButton, setShowRefreshButton] = useState(false);
+
   useEffect(() => {
     setMounted(true);
+    const timer = setTimeout(() => {
+      setShowRefreshButton(true);
+    }, 5000); // Show refresh button after 5 seconds
+    return () => clearTimeout(timer);
   }, []);
 
   useEffect(() => {
@@ -29,6 +35,14 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         return;
       }
 
+      let timeoutFired = false;
+      const timeoutId = setTimeout(() => {
+        timeoutFired = true;
+        console.warn("checkClientProfile timed out");
+        setIsProfileComplete(true);
+        setProfileCheckLoading(false);
+      }, 5000);
+
       if (profile.role === 'client') {
         try {
           const { data, error } = await supabase
@@ -37,13 +51,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
             .eq('user_id', profile.id)
             .single();
             
+          if (timeoutFired) return;
+          clearTimeout(timeoutId);
+          
           if (error) {
-            // If the row doesn't exist (PGRST116 means zero rows returned)
             if (error.code === 'PGRST116') {
               setIsProfileComplete(false);
-              if (pathname !== '/my-openlead') {
-                window.location.href = '/my-openlead';
-              }
               setProfileCheckLoading(false);
               return;
             }
@@ -52,34 +65,41 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
           if (data && !data.is_profile_complete) {
             setIsProfileComplete(false);
-            if (pathname !== '/my-openlead') {
-              window.location.href = '/my-openlead';
-            }
           } else {
             setIsProfileComplete(true);
           }
         } catch (error) {
+          if (timeoutFired) return;
+          clearTimeout(timeoutId);
           console.error("Error checking client profile completion:", error);
-          // Default to true on error to avoid blocking the user
           setIsProfileComplete(true);
         }
       } else {
+        if (timeoutFired) return;
+        clearTimeout(timeoutId);
         setIsProfileComplete(true);
       }
-      setProfileCheckLoading(false);
+      
+      if (!timeoutFired) {
+        setProfileCheckLoading(false);
+      }
     };
 
     if (mounted && initialized && !loading) {
       checkClientProfile();
     }
-  }, [mounted, initialized, loading, profile?.id, pathname]);
+  }, [mounted, initialized, loading, profile?.id]);
+
+  const router = useRouter();
 
   useEffect(() => {
     if (mounted && initialized && !loading && !profileCheckLoading) {
       if (!user || !profile) {
-        window.location.href = '/login';
+        router.replace('/login');
       } else if (profile.role === 'client' && profile.is_approved === false) {
-        window.location.href = '/pending-approval';
+        router.replace('/pending-approval');
+      } else if (profile.role === 'client' && !isProfileComplete && pathname !== '/my-openlead') {
+        router.replace('/my-openlead');
       } else if (profile.role === 'rep') {
         const perms = profile.permissions || [];
         const path = pathname || '';
@@ -96,8 +116,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           if (perms.includes('sales-crm/fresh')) {
             hasAccess = true;
           } else if (perms.includes('sales-crm')) {
-            if (perms.includes('sales-crm/qualified')) window.location.href = '/sales-crm/qualified';
-            else if (perms.includes('sales-crm/import')) window.location.href = '/sales-crm/import';
+            if (perms.includes('sales-crm/qualified')) router.replace('/sales-crm/qualified');
+            else if (perms.includes('sales-crm/import')) router.replace('/sales-crm/import');
             return;
           }
         }
@@ -110,9 +130,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           if (perms.includes('contractor-crm/potential')) {
             hasAccess = true;
           } else if (perms.includes('contractor-crm')) {
-            if (perms.includes('contractor-crm/onboarded')) window.location.href = '/contractor-crm/onboarded';
-            else if (perms.includes('contractor-crm/marketplace')) window.location.href = '/contractor-crm/marketplace';
-            else if (perms.includes('contractor-crm/import')) window.location.href = '/contractor-crm/import';
+            if (perms.includes('contractor-crm/onboarded')) router.replace('/contractor-crm/onboarded');
+            else if (perms.includes('contractor-crm/marketplace')) router.replace('/contractor-crm/marketplace');
+            else if (perms.includes('contractor-crm/import')) router.replace('/contractor-crm/import');
             return;
           }
         }
@@ -126,9 +146,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           if (perms.includes('admin-crm/users')) {
             hasAccess = true;
           } else if (perms.includes('admin-crm')) {
-            if (perms.includes('admin-crm/categories')) window.location.href = '/admin-crm/categories';
-            else if (perms.includes('admin-crm/discounts')) window.location.href = '/admin-crm/discounts';
-            else if (perms.includes('admin-crm/tracker')) window.location.href = '/admin-crm/tracker';
+            if (perms.includes('admin-crm/categories')) router.replace('/admin-crm/categories');
+            else if (perms.includes('admin-crm/discounts')) router.replace('/admin-crm/discounts');
+            else if (perms.includes('admin-crm/tracker')) router.replace('/admin-crm/tracker');
             return;
           }
         }
@@ -141,10 +161,10 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           if (perms.includes('intranet/pricing')) {
             hasAccess = true;
           } else if (perms.includes('intranet')) {
-            if (perms.includes('intranet/commission')) window.location.href = '/intranet/commission';
-            else if (perms.includes('intranet/grants')) window.location.href = '/intranet/grants';
-            else if (perms.includes('intranet/tracker')) window.location.href = '/intranet/tracker';
-            else if (perms.includes('intranet/resources')) window.location.href = '/intranet/resources';
+            if (perms.includes('intranet/commission')) router.replace('/intranet/commission');
+            else if (perms.includes('intranet/grants')) router.replace('/intranet/grants');
+            else if (perms.includes('intranet/tracker')) router.replace('/intranet/tracker');
+            else if (perms.includes('intranet/resources')) router.replace('/intranet/resources');
             return;
           }
         }
@@ -154,31 +174,36 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         if (path.startsWith('/intranet/resources') && perms.includes('intranet/resources')) hasAccess = true;
         
         if (!hasAccess && path !== '/staff' && path !== '/') {
-          window.location.href = '/staff';
+          router.replace('/staff');
         }
       } else if (allowedRoles && !allowedRoles.includes(profile.role)) {
         // Redirect based on user's role if they try to access an unauthorized page
         if (profile.role === 'client') {
-          window.location.href = '/my-openlead';
+          router.replace('/my-openlead');
         } else {
-          window.location.href = '/staff';
+          router.replace('/staff');
         }
       }
     }
-  }, [mounted, initialized, loading, profileCheckLoading, user, profile, allowedRoles]);
+  }, [mounted, initialized, loading, profileCheckLoading, user, profile, allowedRoles, pathname, router]);
 
   // Show loading spinner only during initial initialization
   if (!mounted || (!initialized && loading) || (initialized && loading && !profile) || profileCheckLoading) {
-    // If we've been loading for more than 5 seconds after mount, something is wrong
-    // Let's try to force an initialization check
     return (
       <div className="min-h-screen flex items-center justify-center bg-gray-50">
         <div className="flex flex-col items-center">
           <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
           <p className="text-gray-500 text-sm animate-pulse">Loading your dashboard...</p>
-          {mounted && initialized && (
+          {showRefreshButton && (
             <button 
-              onClick={() => window.location.reload()}
+              onClick={() => {
+                if (window.confirm('Still loading? Would you like to reset your session and refresh?')) {
+                  localStorage.removeItem('auth-storage');
+                  window.location.reload();
+                } else {
+                  window.location.reload();
+                }
+              }}
               className="mt-4 text-xs text-blue-500 underline"
             >
               Taking too long? Click to refresh
@@ -191,11 +216,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
   // If we're initialized but have no user/profile, we're about to redirect
   if (!user || !profile) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
-      </div>
-    );
+    return null; // Don't show spinner here to prevent flash before redirect
   }
 
   if (profile.role === 'client' && !isProfileComplete && pathname !== '/my-openlead') {

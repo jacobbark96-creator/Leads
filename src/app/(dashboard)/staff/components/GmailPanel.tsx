@@ -51,7 +51,9 @@ const GmailPanelContent = () => {
           handleLogout();
           throw new Error('Session expired, please reconnect');
         }
-        throw new Error('Failed to fetch emails');
+        const errorData = await res.text();
+        console.error('Gmail API Error Response:', errorData);
+        throw new Error('Failed to fetch emails. Check console for details.');
       }
 
       const data = await res.json();

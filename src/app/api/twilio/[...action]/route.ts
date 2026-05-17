@@ -426,6 +426,9 @@ async function handleSmsWebhook(req: Request) {
 
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
     const numberToMatch = toNumber.replace(/[^\d]/g, '').slice(-10);
+    
+    // Find the user whose Twilio number matches the incoming message's destination (To)
+    // If it's a WhatsApp message, the To number will have a 'whatsapp:' prefix, but the slice(-10) will still match the base number
     const { data: users } = await supabase.from('users').select('id, twilio_number').not('twilio_number', 'is', null);
     const user = users?.find(u => u.twilio_number && u.twilio_number.replace(/[^\d]/g, '').endsWith(numberToMatch));
 
@@ -458,15 +461,48 @@ async function handleSendSms(req: Request) {
     if (!twilioSid || !twilioToken) return NextResponse.json({ error: 'Twilio credentials missing' }, { status: 500 });
 
     let fromNumber = user.twilio_number;
-    if (to.startsWith('whatsapp:') && !fromNumber.startsWith('whatsapp:')) {
-      fromNumber = `whatsapp:${fromNumber}`;
-    } else if (!to.startsWith('whatsapp:') && fromNumber.startsWith('whatsapp:')) {
-      fromNumber = fromNumber.replace('whatsapp:', '');
+    
+    // Format numbers correctly to include country code if missing
+    let formattedTo = to;
+    let formattedFrom = fromNumber;
+    
+    const normalizeNumber = (num: string) => {
+      // Remove any non-digit characters except + and whatsapp:
+      let cleaned = num.replace(/[^\d+a-z:]/g, '');
+      
+      // If it doesn't have a +, assume it needs country code. Defaulting to UK (+44) for standard numbers
+      if (!cleaned.includes('+')) {
+        const isWhatsapp = cleaned.startsWith('whatsapp:');
+        const numPart = isWhatsapp ? cleaned.replace('whatsapp:', '') : cleaned;
+        
+        if (numPart.startsWith('0')) {
+          // Replace leading 0 with +44
+          const withCode = '+44' + numPart.substring(1);
+          cleaned = isWhatsapp ? `whatsapp:${withCode}` : withCode;
+        } else if (!numPart.startsWith('44')) {
+          // Doesn't start with 0 or 44, assume + needs to be prepended
+          const withCode = '+' + numPart;
+          cleaned = isWhatsapp ? `whatsapp:${withCode}` : withCode;
+        } else {
+          const withCode = '+' + numPart;
+          cleaned = isWhatsapp ? `whatsapp:${withCode}` : withCode;
+        }
+      }
+      return cleaned;
+    };
+
+    formattedTo = normalizeNumber(formattedTo);
+    formattedFrom = normalizeNumber(formattedFrom);
+
+    if (formattedTo.startsWith('whatsapp:') && !formattedFrom.startsWith('whatsapp:')) {
+      formattedFrom = `whatsapp:${formattedFrom}`;
+    } else if (!formattedTo.startsWith('whatsapp:') && formattedFrom.startsWith('whatsapp:')) {
+      formattedFrom = formattedFrom.replace('whatsapp:', '');
     }
 
     const params = new URLSearchParams();
-    params.append('To', to);
-    params.append('From', fromNumber);
+    params.append('To', formattedTo);
+    params.append('From', formattedFrom);
     params.append('Body', body);
 
     const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {

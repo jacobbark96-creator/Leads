@@ -120,17 +120,17 @@ export default function StaffPortal() {
 
   return (
     <div className="min-h-screen bg-black overflow-x-hidden font-sans selection:bg-blue-500/30">
-      {/* Cinematic Background */}
+      {/* Dynamic Background */}
       <div className="fixed inset-0 z-0">
         <div 
           className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
           style={{ 
             backgroundImage: 'url("https://images.unsplash.com/photo-1501854140801-50d01698950b?q=100&w=3000&auto=format&fit=crop")',
-            filter: 'blur(3px)'
+            filter: 'blur(1px)'
           }}
         />
         {/* Dark Navy/Black Gradient Overlay - Adjusted for better visibility */}
-        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a14]/30 via-[#0a0a14]/50 to-[#05050a]/80" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0a14]/10 via-[#0a0a14]/30 to-[#05050a]/60" />
       </div>
 
       {/* Global Structure */}

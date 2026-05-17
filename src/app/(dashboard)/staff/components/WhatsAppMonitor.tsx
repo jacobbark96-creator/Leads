@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { GlassCard } from './GlassCard';
-import { MessageCircle, User, ArrowLeft, Send } from 'lucide-react';
+import { MessageCircle, User, ArrowLeft, Send, Check, CheckCheck } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { format } from 'date-fns';
@@ -230,6 +230,17 @@ export const WhatsAppMonitor = () => {
                       </div>
                       <div className="flex items-center gap-1 mt-1">
                         <span className="text-[9px] text-gray-500">{format(new Date(msg.created_at), 'HH:mm')}</span>
+                        {isOutbound && (
+                          <span className="ml-0.5">
+                            {msg.delivery_status === 'read' || msg.is_read ? (
+                              <CheckCheck className="w-3 h-3 text-blue-400" />
+                            ) : msg.delivery_status === 'delivered' ? (
+                              <CheckCheck className="w-3 h-3 text-gray-500" />
+                            ) : (
+                              <Check className="w-3 h-3 text-gray-500" />
+                            )}
+                          </span>
+                        )}
                       </div>
                     </div>
                   </React.Fragment>

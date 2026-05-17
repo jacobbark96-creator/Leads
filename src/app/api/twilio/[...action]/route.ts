@@ -36,6 +36,8 @@ export async function POST(req: Request, { params }: { params: Promise<{ action:
     return handleStatus(req);
   } else if (actionPath === 'sms') {
     return handleSmsWebhook(req);
+  } else if (actionPath === 'sms-status') {
+    return handleSmsStatus(req);
   } else if (actionPath === 'send-sms') {
     return handleSendSms(req);
   }
@@ -501,10 +503,15 @@ async function handleSendSms(req: Request) {
       formattedFrom = formattedFrom.replace('whatsapp:', '');
     }
 
+    const host = req.headers.get('host') || 'openlead.co.uk';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const statusCallbackUrl = `${protocol}://${host}/api/twilio/sms-status`;
+
     const params = new URLSearchParams();
     params.append('To', formattedTo);
     params.append('From', formattedFrom);
     params.append('Body', body);
+    params.append('StatusCallback', statusCallbackUrl);
 
     const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
       method: 'POST',
@@ -516,14 +523,43 @@ async function handleSendSms(req: Request) {
       const err = await response.text();
       throw new Error(err);
     }
+    
+    const data = await response.json();
 
     await supabase.from('sms_messages').insert([{
       user_id: userId, contact_number: to, direction: 'outbound',
-      body: body, is_read: true
+      body: body, is_read: true, twilio_sid: data.sid, delivery_status: data.status || 'sent'
     }]);
 
-    return NextResponse.json({ success: true });
+    return NextResponse.json({ success: true, sid: data.sid });
   } catch (error: any) {
     return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
+async function handleSmsStatus(req: Request) {
+  try {
+    const bodyText = await req.text();
+    const params = new URLSearchParams(bodyText);
+    const messageSid = params.get('MessageSid');
+    const messageStatus = params.get('MessageStatus'); // e.g., sent, delivered, read, failed
+
+    if (messageSid && messageStatus) {
+      const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+      
+      const updateData: any = { delivery_status: messageStatus };
+      if (messageStatus === 'read') {
+        updateData.is_read = true;
+      }
+      
+      await supabase
+        .from('sms_messages')
+        .update(updateData)
+        .eq('twilio_sid', messageSid);
+    }
+
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`, { headers: { 'Content-Type': 'text/xml' } });
+  } catch (error) {
+    return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`, { headers: { 'Content-Type': 'text/xml' } });
   }
 }

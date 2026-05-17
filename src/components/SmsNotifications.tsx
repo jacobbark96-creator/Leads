@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Mail, X, Send, User } from 'lucide-react';
+import { Mail, X, Send, User, Check, CheckCheck } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
@@ -320,9 +320,20 @@ export function SmsNotifications() {
                               </div>
                             )}
 
-                            <span className={`text-[10px] block mt-1 ${isOutbound ? 'text-blue-200 text-right' : 'text-gray-500 text-left'}`}>
-                              {new Date(msg.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}
-                            </span>
+                            <div className={`text-[10px] flex items-center mt-1 gap-1 ${isOutbound ? 'justify-end text-blue-200' : 'justify-start text-gray-500'}`}>
+                              <span>{new Date(msg.created_at).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })}</span>
+                              {isOutbound && (
+                                <span>
+                                  {msg.delivery_status === 'read' || msg.is_read ? (
+                                    <CheckCheck className="w-3 h-3 text-blue-300" />
+                                  ) : msg.delivery_status === 'delivered' ? (
+                                    <CheckCheck className="w-3 h-3 opacity-70" />
+                                  ) : (
+                                    <Check className="w-3 h-3 opacity-70" />
+                                  )}
+                                </span>
+                              )}
+                            </div>
                           </div>
                         </div>
                       );

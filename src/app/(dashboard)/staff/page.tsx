@@ -32,13 +32,13 @@ export default function StaffPortal() {
       const now = new Date();
       
       const timeFormatter = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'GMT',
+        timeZone: 'Europe/London', // Europe/London handles GMT and GMT+1 (BST) automatically
         hour: '2-digit',
         minute: '2-digit',
       });
       
       const dateFormatter = new Intl.DateTimeFormat('en-GB', {
-        timeZone: 'GMT',
+        timeZone: 'Europe/London',
         weekday: 'short',
         day: 'numeric',
         month: 'short'
@@ -233,7 +233,7 @@ export default function StaffPortal() {
                   delay={0.5} 
                 />
                 <KpiCard 
-                  title="GMT Time" 
+                  title="Local Time" 
                   value={currentTime || '-'} 
                   trend="Live" 
                   isPositive={true} 

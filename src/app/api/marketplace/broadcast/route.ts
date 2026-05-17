@@ -111,7 +111,7 @@ export async function POST(req: NextRequest) {
     const finalImageUrl = ogImageUrl.toString();
 
     // 5. Send WhatsApp Messages
-    if (!twilioClient) {
+    if (!accountSid || !authToken) {
       console.warn('[Broadcast] Twilio credentials missing. Skipping actual SMS dispatch.');
       return NextResponse.json({ message: 'Matches found but Twilio not configured', matchedCount: matchedContractors.length, previewUrl: finalImageUrl });
     }

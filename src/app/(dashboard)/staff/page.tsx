@@ -64,23 +64,18 @@ export default function StaffPortal() {
         // 3. Sales & Revenue
         const { data: purchases } = await supabase
           .from('lead_purchases')
-          .select('amount, created_at')
-          .gte('created_at', todayIso);
+          .select('price_paid, purchased_at')
+          .gte('purchased_at', todayIso);
           
         let totalRevenue = 0;
         let totalSales = purchases?.length || 0;
         
         if (purchases) {
-          totalRevenue = purchases.reduce((sum, p) => sum + (Number(p.amount) || 0), 0);
+          totalRevenue = purchases.reduce((sum, p) => sum + (Number(p.price_paid) || 0), 0);
         }
         
-        // Also check transactions for additional revenue if applicable (e.g. topups)
-        const { data: transactions } = await supabase
-          .from('transactions')
-          .select('amount')
-          .eq('status', 'completed')
-          .in('type', ['topup', 'subscription'])
-          .gte('created_at', todayIso);
+        // transactions table doesn't exist, rely only on lead_purchases for revenue
+        const transactions: any[] = [];
           
         if (transactions) {
            totalRevenue += transactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);

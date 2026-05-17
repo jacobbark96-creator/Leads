@@ -13,7 +13,7 @@ export const LiveFeed = () => {
         .from('activities')
         .select(`
           *,
-          users:user_id (name)
+          lead_id
         `)
         .in('activity_type', ['qualified', 'marketed', 'sold'])
         .order('created_at', { ascending: false })

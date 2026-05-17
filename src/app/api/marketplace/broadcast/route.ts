@@ -1,8 +1,5 @@
-export const runtime = 'edge';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import twilio from 'twilio';
 
 // Initialize Supabase Client
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -13,7 +10,6 @@ const supabase = createClient(supabaseUrl, supabaseServiceKey);
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
 const twilioPhoneNumber = process.env.TWILIO_WHATSAPP_NUMBER || 'whatsapp:+15559601534'; // Official Openlead Number
-const twilioClient = accountSid && authToken ? twilio(accountSid, authToken) : null;
 
 // The base URL of your application (for the OG image)
 // Fallback to ngrok/localtunnel for local testing of Twilio Media URLs

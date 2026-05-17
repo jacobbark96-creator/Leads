@@ -457,9 +457,16 @@ async function handleSendSms(req: Request) {
     const twilioToken = process.env.TWILIO_AUTH_TOKEN;
     if (!twilioSid || !twilioToken) return NextResponse.json({ error: 'Twilio credentials missing' }, { status: 500 });
 
+    let fromNumber = user.twilio_number;
+    if (to.startsWith('whatsapp:') && !fromNumber.startsWith('whatsapp:')) {
+      fromNumber = `whatsapp:${fromNumber}`;
+    } else if (!to.startsWith('whatsapp:') && fromNumber.startsWith('whatsapp:')) {
+      fromNumber = fromNumber.replace('whatsapp:', '');
+    }
+
     const params = new URLSearchParams();
     params.append('To', to);
-    params.append('From', user.twilio_number);
+    params.append('From', fromNumber);
     params.append('Body', body);
 
     const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {

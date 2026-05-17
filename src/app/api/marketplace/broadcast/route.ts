@@ -19,6 +19,37 @@ const twilioClient = accountSid && authToken ? twilio(accountSid, authToken) : n
 // Fallback to ngrok/localtunnel for local testing of Twilio Media URLs
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://openlead.com';
 
+// Helper function to send Twilio message using native fetch (Edge compatible)
+async function sendTwilioMessage(to: string, from: string, body: string, mediaUrl?: string) {
+  if (!accountSid || !authToken) return null;
+  
+  const url = `https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Messages.json`;
+  const credentials = btoa(`${accountSid}:${authToken}`);
+  
+  const formData = new URLSearchParams();
+  formData.append('To', to);
+  formData.append('From', from);
+  formData.append('Body', body);
+  if (mediaUrl) {
+    formData.append('MediaUrl', mediaUrl);
+  }
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers: {
+      'Authorization': `Basic ${credentials}`,
+      'Content-Type': 'application/x-www-form-urlencoded',
+    },
+    body: formData.toString()
+  });
+
+  if (!response.ok) {
+    throw new Error(`Twilio API error: ${response.statusText}`);
+  }
+  
+  return await response.json();
+}
+
 export async function POST(req: NextRequest) {
   try {
     // 1. Verify Request Authorization (Basic security for internal webhook)
@@ -100,17 +131,13 @@ export async function POST(req: NextRequest) {
           formattedPhone = '+44' + formattedPhone.slice(1);
         }
 
-        // Send the message via Twilio
-        await twilioClient.messages.create({
-          from: twilioPhoneNumber,
-          to: `whatsapp:${formattedPhone}`,
-          body: `Hi ${contractor.company_name || contractor.name},\n\nWe've found a new lead that matches your preferences in ${lead.location || 'your area'}.\n\nInterested? You can view the details below.`,
-          mediaUrl: [finalImageUrl],
-          // Note: To use native interactive buttons (Buy/Ignore), you must submit a specific 
-          // WhatsApp Template in the Twilio Console. Once approved, you would pass the ContentSid here instead of body/mediaUrl directly.
-          // contentSid: 'HX...', 
-          // contentVariables: JSON.stringify({ '1': contractor.company_name, '2': finalImageUrl })
-        });
+        // Send the message via Twilio using native fetch instead of SDK
+        await sendTwilioMessage(
+          `whatsapp:${formattedPhone}`,
+          twilioPhoneNumber,
+          `Hi ${contractor.company_name || contractor.name},\n\nWe've found a new lead that matches your preferences in ${lead.location || 'your area'}.\n\nInterested? You can view the details below.`,
+          finalImageUrl
+        );
         
         sentCount++;
         console.log(`[Broadcast] Sent to ${contractor.name} (${formattedPhone})`);

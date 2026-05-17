@@ -107,13 +107,20 @@ export function SmsNotifications() {
   const markAsRead = async (contactNumber: string) => {
     if (!profile) return;
     try {
-      await supabase
+      const isAdmin = ['admin', 'super_admin'].includes(profile.role);
+      
+      let query = supabase
         .from('sms_messages')
         .update({ is_read: true })
-        .eq('user_id', profile.id)
         .eq('contact_number', contactNumber)
         .eq('direction', 'inbound')
         .eq('is_read', false);
+
+      if (!isAdmin) {
+        query = query.eq('user_id', profile.id);
+      }
+
+      await query;
         
       // Optimistically update
       setMessages(prev => prev.map(m => 

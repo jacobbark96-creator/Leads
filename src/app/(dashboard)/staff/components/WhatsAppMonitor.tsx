@@ -18,11 +18,18 @@ export const WhatsAppMonitor = () => {
     if (!profile) return;
 
     const fetchMessages = async () => {
-      const { data, error } = await supabase
+      const isAdmin = ['admin', 'super_admin'].includes(profile.role);
+      
+      let query = supabase
         .from('sms_messages')
         .select('*')
-        .eq('user_id', profile.id)
         .order('created_at', { ascending: false });
+
+      if (!isAdmin) {
+        query = query.eq('user_id', profile.id);
+      }
+
+      const { data, error } = await query;
 
       if (error) {
         console.error('Error fetching SMS:', error);
@@ -49,7 +56,12 @@ export const WhatsAppMonitor = () => {
 
     const channel = supabase
       .channel('whatsapp-monitor-realtime')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'sms_messages' }, () => fetchMessages())
+      .on('postgres_changes', { 
+        event: '*', 
+        schema: 'public', 
+        table: 'sms_messages',
+        ...(['admin', 'super_admin'].includes(profile.role) ? {} : { filter: `user_id=eq.${profile.id}` })
+      }, () => fetchMessages())
       .subscribe();
 
     return () => {
@@ -65,7 +77,14 @@ export const WhatsAppMonitor = () => {
       const unreadMsgs = messages.filter(m => m.contact_number === activeContact && !m.is_read && m.direction === 'inbound');
       if (unreadMsgs.length > 0) {
         const ids = unreadMsgs.map(m => m.id);
-        supabase.from('sms_messages').update({ is_read: true }).in('id', ids).then(() => {
+        const isAdmin = ['admin', 'super_admin'].includes(profile.role);
+        
+        let query = supabase.from('sms_messages').update({ is_read: true }).in('id', ids);
+        if (!isAdmin) {
+          query = query.eq('user_id', profile.id);
+        }
+
+        query.then(() => {
           setMessages(prev => prev.map(m => ids.includes(m.id) ? { ...m, is_read: true } : m));
         });
       }

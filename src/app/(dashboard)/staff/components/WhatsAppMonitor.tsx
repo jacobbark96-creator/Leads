@@ -100,24 +100,42 @@ export const WhatsAppMonitor = () => {
     if (!newMessage.trim() || !activeContact || !profile || isSending) return;
 
     setIsSending(true);
+    
+    // Optimistically insert message to UI to feel instant
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg = {
+      id: tempId,
+      user_id: profile.id,
+      contact_number: activeContact,
+      direction: 'outbound',
+      body: newMessage.trim(),
+      is_read: true,
+      created_at: new Date().toISOString()
+    };
+    
+    setMessages(prev => [optimisticMsg, ...prev]);
+    setNewMessage('');
+
     try {
       const response = await fetch('/api/twilio/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: activeContact,
-          body: newMessage.trim(),
+          body: optimisticMsg.body,
           userId: profile.id
         })
       });
 
-      if (response.ok) {
-        setNewMessage('');
-      } else {
+      if (!response.ok) {
         console.error('Failed to send message');
+        // Rollback optimistic update on failure
+        setMessages(prev => prev.filter(m => m.id !== tempId));
       }
     } catch (error) {
       console.error('Error sending message:', error);
+      // Rollback optimistic update on failure
+      setMessages(prev => prev.filter(m => m.id !== tempId));
     } finally {
       setIsSending(false);
     }

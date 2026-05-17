@@ -155,25 +155,44 @@ export function SmsNotifications() {
     e.preventDefault();
     if (!replyText.trim() || !selectedContact || !profile) return;
     
+    const textToSend = replyText.trim();
+    setReplyText('');
     setSending(true);
+
+    // Optimistically update
+    const tempId = `temp-${Date.now()}`;
+    const optimisticMsg = {
+      id: tempId,
+      user_id: profile.id,
+      contact_number: selectedContact,
+      direction: 'outbound',
+      body: textToSend,
+      is_read: true,
+      created_at: new Date().toISOString()
+    };
+    
+    setMessages(prev => [optimisticMsg, ...prev]);
+
     try {
       const res = await fetch('/api/twilio/send-sms', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           to: selectedContact,
-          body: replyText.trim(),
+          body: textToSend,
           userId: profile.id
         })
       });
       
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || 'Failed to send message');
+      if (!res.ok) {
+        setMessages(prev => prev.filter(m => m.id !== tempId));
+        throw new Error(data.error || 'Failed to send message');
+      }
       
-      setReplyText('');
       // It will auto-update via realtime subscription
-      fetchMessages(); 
     } catch (err: any) {
+      setMessages(prev => prev.filter(m => m.id !== tempId));
       toast.error(err.message);
     } finally {
       setSending(false);

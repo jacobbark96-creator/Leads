@@ -515,13 +515,17 @@ async function handleSendSms(req: Request) {
     params.append('From', formattedFrom);
     params.append('StatusCallback', statusCallbackUrl);
 
-    if (isWhatsApp && template) {
+    if (isWhatsApp && template && templateData && template.length > 0) {
       params.append('ContentSid', template);
-      if (templateData) {
-        const contentVariables: Record<string, string> = {};
-        templateData.forEach((val: string, idx: number) => {
-          contentVariables[`${idx + 1}`] = val;
-        });
+      const contentVariables: Record<string, string> = {};
+      let idx = 1;
+      for (const val of templateData) {
+        if (val !== undefined && val !== null) {
+          contentVariables[`${idx}`] = String(val);
+        }
+        idx++;
+      }
+      if (Object.keys(contentVariables).length > 0) {
         params.append('ContentVariables', JSON.stringify(contentVariables));
       }
     } else {

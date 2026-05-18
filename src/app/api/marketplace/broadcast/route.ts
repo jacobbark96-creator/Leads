@@ -133,12 +133,12 @@ export async function POST(req: NextRequest) {
         await sendTwilioMessage(
           `whatsapp:${formattedPhone}`,
           twilioPhoneNumber,
-          `Hi ${contractor.company_name || contractor.name},\n\nWe've found a new lead that matches your preferences in ${lead.location || 'your area'}.\n\nInterested? You can view the details below.`,
+          `Hi ${contractor.company_name || contractor.contact_name || 'there'},\n\nWe've found a new lead that matches your preferences in ${lead.location || 'your area'}.\n\nInterested? You can view the details below.`,
           finalImageUrl
         );
         
         sentCount++;
-        console.log(`[Broadcast] Sent to ${contractor.name} (${formattedPhone})`);
+        console.log(`[Broadcast] Sent to ${contractor.company_name || contractor.contact_name} (${formattedPhone})`);
         
       } catch (err: any) {
         console.error(`[Broadcast] Failed to send to ${contractor.phone}:`, err.message);

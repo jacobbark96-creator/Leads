@@ -2186,7 +2186,7 @@ function LeadDetailsV2Content() {
                     {matchedContractors.map(c => (
                       <li key={c.id} className="flex items-center gap-2">
                         <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                        <span className="truncate">{c.company_name || c.name}</span>
+                        <span className="truncate">{c.company_name || c.contact_name || 'Unknown Contractor'}</span>
                       </li>
                     ))}
                   </ul>

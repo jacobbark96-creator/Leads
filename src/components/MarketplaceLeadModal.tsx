@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Lead } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import { extractTown } from '../lib/utils';
 import { formatDistanceToNow } from 'date-fns';
+import { trackLeadEvent } from '../utils/tracking';
 
 interface MarketplaceLeadModalProps {
   isOpen: boolean;
@@ -30,6 +31,20 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [hasBills, setHasBills] = useState<boolean>(false);
   const { profile } = useAuthStore();
+  const hasTrackedView = useRef(false);
+
+  useEffect(() => {
+    if (isOpen && lead?.id && profile?.id && !hasTrackedView.current) {
+      trackLeadEvent(lead.id, profile.id, 'view');
+      hasTrackedView.current = true;
+    }
+  }, [isOpen, lead?.id, profile?.id]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      hasTrackedView.current = false;
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     const checkBills = async () => {

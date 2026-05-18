@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react';
 import { useAuthStore } from '../store/authStore';
+import { ActivityTracker } from './ActivityTracker';
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const { initialize } = useAuthStore();
@@ -10,5 +11,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     initialize();
   }, [initialize]);
 
-  return <>{children}</>;
+  return (
+    <>
+      <ActivityTracker />
+      {children}
+    </>
+  );
 }

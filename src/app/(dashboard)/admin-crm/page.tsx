@@ -4,10 +4,13 @@ import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
-import { Plus, Edit, Trash2, Ban, Shield, Users, Briefcase, X } from 'lucide-react';
+import { Plus, Edit, Trash2, Ban, Shield, Users, Briefcase, X, Activity, BarChart2 } from 'lucide-react';
 import { UserDetailsModal } from '@/components/UserDetailsModal';
+import { ClientMonitoringTab } from './components/ClientMonitoringTab';
+import { LeadMonitoringTab } from './components/LeadMonitoringTab';
 
 export default function UserManagement() {
+  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'lead_monitoring'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuthStore();
@@ -133,8 +136,42 @@ export default function UserManagement() {
   });
 
   return (
-    <div>
-      <div className="flex flex-col md:flex-row gap-4 mb-6">
+    <div className="max-w-7xl mx-auto space-y-6 animate-in fade-in duration-500 pb-12">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight flex items-center gap-2">
+            <Shield className="w-6 h-6 text-blue-600" />
+            Admin CRM
+          </h1>
+          <p className="text-sm text-gray-500 mt-1">Manage users, clients, and platform monitoring.</p>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div className="flex border-b border-gray-200 gap-6">
+        <button
+          onClick={() => setActiveTab('users')}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'users' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+        >
+          <div className="flex items-center gap-2"><Users className="w-4 h-4" /> Users</div>
+        </button>
+        <button
+          onClick={() => setActiveTab('client_monitoring')}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'client_monitoring' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+        >
+          <div className="flex items-center gap-2"><Activity className="w-4 h-4" /> Client Monitoring</div>
+        </button>
+        <button
+          onClick={() => setActiveTab('lead_monitoring')}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'lead_monitoring' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+        >
+          <div className="flex items-center gap-2"><BarChart2 className="w-4 h-4" /> Lead Monitoring</div>
+        </button>
+      </div>
+
+      {activeTab === 'users' && (
+        <>
+          <div className="flex flex-col md:flex-row gap-4 mb-6">
         <div className="flex-1 grid grid-cols-3 gap-4">
           <button 
             onClick={() => setRoleFilter(roleFilter === 'admin' ? 'all' : 'admin')}
@@ -338,6 +375,11 @@ export default function UserManagement() {
           }}
         />
       )}
+        </>
+      )}
+
+      {activeTab === 'client_monitoring' && <ClientMonitoringTab />}
+      {activeTab === 'lead_monitoring' && <LeadMonitoringTab />}
     </div>
   );
 };

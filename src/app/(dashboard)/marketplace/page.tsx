@@ -9,8 +9,9 @@ import { Search, MapPin, Building, Calendar, FileText, CheckCircle } from 'lucid
 import { MarketplaceLeadModal } from '../../../components/MarketplaceLeadModal';
 import { OrderSummaryModal } from '../../../components/OrderSummaryModal';
 import { extractTown } from '../../../lib/utils';
+import { trackLeadEvent } from '../../../utils/tracking';
 
-export default function Marketplace() {
+export default function MarketplacePage() {
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
@@ -254,6 +255,7 @@ export default function Marketplace() {
   const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive', discountedPrice?: number) => {
     if (!profile) return;
     try {
+      trackLeadEvent(leadId, profile.id, 'checkout');
       let clientId = null;
       
       // If client, get their ID
@@ -464,6 +466,7 @@ export default function Marketplace() {
           onClose={() => setSelectedLead(null)}
           lead={selectedLead}
           onPurchase={() => {
+            if (profile?.id) trackLeadEvent(selectedLead.id, profile.id, 'order_summary');
             setLeadToPurchase(selectedLead);
             setSelectedLead(null);
           }}

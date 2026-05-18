@@ -37,8 +37,7 @@ export function SmsNotifications() {
         { 
           event: '*', 
           schema: 'public', 
-          table: 'sms_messages', 
-          ...(isAdmin ? {} : { filter: `user_id=eq.${profile.id}` })
+          table: 'sms_messages'
         },
         () => fetchMessages()
       )
@@ -53,19 +52,11 @@ export function SmsNotifications() {
     if (!profile) return;
     
     try {
-      const isAdmin = ['admin', 'super_admin'].includes(profile.role);
-      let query = supabase
+      const { data, error } = await supabase
         .from('sms_messages')
         .select('*')
+        .eq('user_id', profile.id)
         .order('created_at', { ascending: false });
-
-      if (isAdmin) {
-        query = query.or(`user_id.eq.${profile.id},contact_number.ilike.whatsapp:%`);
-      } else {
-        query = query.eq('user_id', profile.id);
-      }
-
-      const { data, error } = await query;
 
       if (error) throw error;
       
@@ -109,24 +100,13 @@ export function SmsNotifications() {
   const markAsRead = async (contactNumber: string) => {
     if (!profile) return;
     try {
-      const isAdmin = ['admin', 'super_admin'].includes(profile.role);
-      
-      let query = supabase
+      await supabase
         .from('sms_messages')
         .update({ is_read: true })
         .eq('contact_number', contactNumber)
         .eq('direction', 'inbound')
         .eq('is_read', false);
-
-      if (isAdmin) {
-        query = query.or(`user_id.eq.${profile.id},contact_number.ilike.whatsapp:%`);
-      } else {
-        query = query.eq('user_id', profile.id);
-      }
-
-      await query;
         
-      // Optimistically update
       setMessages(prev => prev.map(m => 
         m.contact_number === contactNumber && m.direction === 'inbound' 
           ? { ...m, is_read: true } 

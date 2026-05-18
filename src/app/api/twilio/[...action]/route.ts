@@ -452,7 +452,7 @@ async function handleSmsWebhook(req: Request) {
 
 async function handleSendSms(req: Request) {
   try {
-    const { to, body, userId } = await req.json();
+    const { to, body, userId, template, templateData } = await req.json();
     if (!to || !body || !userId) return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
 
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
@@ -497,10 +497,12 @@ async function handleSendSms(req: Request) {
     formattedTo = normalizeNumber(formattedTo);
     formattedFrom = normalizeNumber(formattedFrom);
 
-    if (formattedTo.startsWith('whatsapp:')) {
+    const isWhatsApp = formattedTo.startsWith('whatsapp:');
+    
+    if (isWhatsApp) {
       // Always use the company WhatsApp number for outbound WhatsApp messages
       formattedFrom = 'whatsapp:+15559601534';
-    } else if (!formattedTo.startsWith('whatsapp:') && formattedFrom.startsWith('whatsapp:')) {
+    } else if (!isWhatsApp && formattedFrom.startsWith('whatsapp:')) {
       formattedFrom = formattedFrom.replace('whatsapp:', '');
     }
 
@@ -511,8 +513,20 @@ async function handleSendSms(req: Request) {
     const params = new URLSearchParams();
     params.append('To', formattedTo);
     params.append('From', formattedFrom);
-    params.append('Body', body);
     params.append('StatusCallback', statusCallbackUrl);
+
+    if (isWhatsApp && template) {
+      params.append('ContentSid', template);
+      if (templateData) {
+        const contentVariables: Record<string, string> = {};
+        templateData.forEach((val: string, idx: number) => {
+          contentVariables[`${idx + 1}`] = val;
+        });
+        params.append('ContentVariables', JSON.stringify(contentVariables));
+      }
+    } else {
+      params.append('Body', body);
+    }
 
     const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
       method: 'POST',
@@ -529,7 +543,8 @@ async function handleSendSms(req: Request) {
 
     await supabase.from('sms_messages').insert([{
       user_id: userId, contact_number: to, direction: 'outbound',
-      body: body, is_read: true, twilio_sid: data.sid, delivery_status: data.status || 'sent'
+      body: isWhatsApp && template ? `[Template: ${template}] ${body}` : body, 
+      is_read: true, twilio_sid: data.sid, delivery_status: data.status || 'sent'
     }]);
 
     return NextResponse.json({ success: true, sid: data.sid });

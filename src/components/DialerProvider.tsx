@@ -5,7 +5,7 @@ import { Device, Call } from '@twilio/voice-sdk';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
-import { MessageSquare, Phone, PhoneOff, Mic, MicOff, Volume2 } from 'lucide-react';
+import { MessageSquare, Phone, PhoneOff, Mic, MicOff, Volume2, Hash } from 'lucide-react';
 import { DialerContext } from '@/contexts/DialerContext';
 import { InternalChat } from './InternalChat';
 
@@ -22,6 +22,8 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const [isDialpadOpen, setIsDialpadOpen] = useState(false);
   const [isInternalChatOpen, setIsInternalChatOpen] = useState(false);
+  const [showKeypad, setShowKeypad] = useState(false);
+  const [dtmfDigits, setDtmfDigits] = useState('');
   const [toastMessage, setToastMessage] = useState<{ senderName: string, content: string } | null>(null);
 
   useEffect(() => {
@@ -151,8 +153,30 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         newDevice.on('incoming', (call: Call) => {
           setCallStatus('Incoming Call');
-          setCurrentNumber(call.parameters.From || 'Unknown Caller');
+          const fromNum = call.parameters.From || 'Unknown Caller';
+          setCurrentNumber(fromNum);
           setActiveCall(call);
+
+          // Attempt to resolve name from DB
+          if (fromNum !== 'Unknown Caller') {
+            const cleanNum = fromNum.replace(/[^\d]/g, '').slice(-10);
+            if (cleanNum.length >= 10) {
+              (async () => {
+                try {
+                  const { data: leads } = await supabase.from('leads').select('name, company').ilike('phone', `%${cleanNum}`).limit(1);
+                  if (leads && leads.length > 0) return setCurrentNumber(`${leads[0].name || leads[0].company} (${fromNum})`);
+                  
+                  const { data: clients } = await supabase.from('contractors').select('company_name, contact_name').ilike('phone', `%${cleanNum}`).limit(1);
+                  if (clients && clients.length > 0) return setCurrentNumber(`${clients[0].company_name || clients[0].contact_name} (${fromNum})`);
+                  
+                  const { data: users } = await supabase.from('users').select('name').ilike('twilio_number', `%${cleanNum}`).limit(1);
+                  if (users && users.length > 0) return setCurrentNumber(`${users[0].name} (${fromNum})`);
+                } catch (e) {
+                  console.error('Failed to resolve caller ID', e);
+                }
+              })();
+            }
+          }
 
           call.on('accept', () => {
             setCallStatus('Connected');
@@ -336,13 +360,13 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const answer = () => {
-    if (activeCall && activeCall.status() === 'pending') {
+    if (activeCall) {
       activeCall.accept();
     }
   };
 
   const reject = () => {
-    if (activeCall && activeCall.status() === 'pending') {
+    if (activeCall) {
       activeCall.reject();
     }
   };
@@ -359,6 +383,18 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       activeCall.mute(!muted);
       setIsMuted(!muted);
     }
+  };
+
+  const sendDigit = (digit: string) => {
+    if (activeCall && callStatus === 'Connected') {
+      activeCall.sendDigits(digit);
+      setDtmfDigits(prev => prev + digit);
+      setTimeout(() => setDtmfDigits(prev => prev.slice(0, -1)), 2000);
+    }
+  };
+
+  const clearDtmf = () => {
+    setDtmfDigits('');
   };
 
   const formatDuration = (sec: number) => {
@@ -509,6 +545,14 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                   </button>
                   
                   <button 
+                    onClick={() => setShowKeypad(!showKeypad)}
+                    className={`w-12 h-12 rounded-full flex items-center justify-center transition-colors ${showKeypad ? 'bg-blue-600 text-white' : 'bg-gray-800 text-white hover:bg-gray-700'}`}
+                    title="Keypad (IVR)"
+                  >
+                    <Hash className="w-5 h-5" />
+                  </button>
+                  
+                  <button 
                     onClick={hangup}
                     className="w-14 h-14 rounded-full bg-red-600 text-white flex items-center justify-center hover:bg-red-700 transition-colors shadow-lg shadow-red-600/20"
                   >
@@ -520,6 +564,61 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           </div>
           <div className="bg-gray-800 px-6 py-3 text-xs text-gray-400 text-center border-t border-gray-700">
             Using Caller ID: {profile?.twilio_number}
+          </div>
+        </div>
+      )}
+
+      {/* DTMF Keypad Modal */}
+      {showKeypad && activeCall && (
+        <div className="fixed bottom-24 right-6 z-[110] w-72 bg-gray-900 rounded-2xl shadow-2xl overflow-hidden text-white animate-in slide-in-from-bottom-5">
+          <div className="p-4 bg-gray-800 flex justify-between items-center border-b border-gray-700">
+            <h3 className="font-bold text-sm">IVR Keypad</h3>
+            <button 
+              onClick={() => { setShowKeypad(false); setDtmfDigits(''); }}
+              className="text-gray-400 hover:text-white transition-colors"
+            >
+              &times;
+            </button>
+          </div>
+          
+          {dtmfDigits && (
+            <div className="px-4 py-3 bg-gray-800/50 border-b border-gray-700">
+              <p className="text-xs text-gray-500 mb-1">Entered:</p>
+              <p className="text-2xl font-mono tracking-widest text-center text-blue-400">{dtmfDigits}</p>
+            </div>
+          )}
+          
+          <div className="p-4">
+            <div className="grid grid-cols-3 gap-2 mb-3">
+              {['1', '2', '3', '4', '5', '6', '7', '8', '9', '*', '0', '#'].map(digit => (
+                <button
+                  key={digit}
+                  onClick={() => sendDigit(digit)}
+                  className="h-12 bg-gray-800 hover:bg-gray-700 rounded-lg text-lg font-medium transition-colors active:bg-gray-600"
+                >
+                  {digit}
+                </button>
+              ))}
+            </div>
+            
+            <div className="flex gap-2">
+              <button
+                onClick={clearDtmf}
+                className="flex-1 h-10 bg-gray-800 hover:bg-gray-700 rounded-lg text-sm font-medium transition-colors text-gray-400"
+              >
+                Clear
+              </button>
+              <button
+                onClick={() => setShowKeypad(false)}
+                className="flex-1 h-10 bg-blue-600 hover:bg-blue-700 rounded-lg text-sm font-medium transition-colors"
+              >
+                Done
+              </button>
+            </div>
+            
+            <p className="text-[10px] text-gray-500 text-center mt-3">
+              Press digits to navigate IVR menus
+            </p>
           </div>
         </div>
       )}

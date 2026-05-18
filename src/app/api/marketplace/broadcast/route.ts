@@ -139,11 +139,13 @@ export async function POST(req: NextRequest) {
         }
 
         // Send the message via Twilio using native fetch instead of SDK
+        // NOTE: Since you don't have a WhatsApp template set up yet, we must send this as a standard SMS
+        // to avoid Twilio rejecting the free-form text outside of a 24-hour WhatsApp session window.
         await sendTwilioMessage(
-          `whatsapp:${formattedPhone}`,
-          twilioPhoneNumber,
-          `Hi ${contractor.company_name || contractor.contact_name || 'there'},\n\nWe've found a new lead that matches your preferences in ${lead.location || 'your area'}.\n\nInterested? You can view the details below.`,
-          finalImageUrl
+          `${formattedPhone}`, // Removed 'whatsapp:' prefix to send as standard SMS
+          process.env.TWILIO_PHONE_NUMBER || twilioPhoneNumber.replace('whatsapp:', ''), // Fallback to standard Twilio number
+          `Hi ${contractor.company_name || contractor.contact_name || 'there'},\n\nWe've found a new lead that matches your preferences in ${lead.location || 'your area'}.\n\nInterested? You can view the details below:\n${finalImageUrl}`
+          // Removed mediaUrl parameter because standard SMS in the UK often doesn't support MMS reliably
         );
         
         sentCount++;

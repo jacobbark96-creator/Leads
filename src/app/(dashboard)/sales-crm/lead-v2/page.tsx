@@ -824,19 +824,19 @@ function LeadDetailsV2Content() {
     }
   };
 
-  const handleMarketLead = async () => {
+  const handleMarketLead = async (pushToWhatsapp: boolean) => {
     if (!lead) return;
     try {
       setLoading(true);
       const { error } = await supabase
         .from('leads')
-        .update({ is_marketed: true, status: 'marketplace' })
+        .update({ is_marketed: true, status: 'marketplace', push_to_whatsapp: pushToWhatsapp })
         .eq('id', lead.id);
 
       if (error) throw error;
       setLead({ ...lead, is_marketed: true, status: 'marketplace' });
       setIsMarketConfirmOpen(false);
-      toast.success('Lead has been pushed to the marketplace!');
+      toast.success(pushToWhatsapp ? 'Lead pushed to marketplace and contractors notified via WhatsApp!' : 'Lead pushed to marketplace (No WhatsApp notifications sent)');
       router.refresh();
     } catch (err: any) {
       toast.error('Failed to market lead: ' + err.message);
@@ -2151,11 +2151,18 @@ function LeadDetailsV2Content() {
       {isMarketConfirmOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Market Lead?</h3>
-            <p className="text-sm text-gray-500 mb-6">Are you sure you want to push this lead to the marketplace? All eligible contractors will be notified instantly.</p>
-            <div className="flex gap-3 justify-center">
-              <button onClick={() => setIsMarketConfirmOpen(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">Cancel</button>
-              <button onClick={handleMarketLead} className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700">Yes, Market Lead</button>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Market Lead</h3>
+            <p className="text-sm text-gray-500 mb-6">Do you want to notify eligible contractors via WhatsApp about this lead?</p>
+            <div className="flex flex-col gap-3">
+              <button onClick={() => handleMarketLead(true)} className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 flex items-center justify-center gap-2">
+                Yes, Notify via WhatsApp
+              </button>
+              <button onClick={() => handleMarketLead(false)} className="w-full px-4 py-3 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700">
+                No, Just Push to Marketplace
+              </button>
+              <button onClick={() => setIsMarketConfirmOpen(false)} className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
             </div>
           </div>
         </div>

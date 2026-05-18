@@ -64,6 +64,11 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid lead payload or lead is not marketed' }, { status: 400 });
     }
 
+    if (lead.push_to_whatsapp === false) {
+      console.log(`[Broadcast] Skipped WhatsApp broadcast for Lead ID: ${lead.id} (push_to_whatsapp is false)`);
+      return NextResponse.json({ message: 'WhatsApp notification skipped by user' });
+    }
+
     console.log(`[Broadcast] Starting broadcast for Lead ID: ${lead.id}`);
 
     // 3. The Matching Engine

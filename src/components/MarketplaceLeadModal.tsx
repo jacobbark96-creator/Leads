@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Lead } from '../types';
+import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
 import { 
   X, MapPin, User, Calendar, Home, CheckCircle, Zap, ShieldCheck, 
   ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, 
@@ -17,15 +19,26 @@ interface MarketplaceLeadModalProps {
 
 const MissingValue = () => null;
 
-const DisplayValue = ({ value, suffix = '' }: { value: any, suffix?: string }) => {
+const DisplayValue = ({ value, suffix = '', className = "text-xs text-right" }: { value: any, suffix?: string, className?: string }) => {
   if (value === undefined || value === null || value === '' || value === 'N/A' || value === '0') {
     return <MissingValue />;
   }
-  return <span className="text-gray-900 font-semibold text-xs">{value}{suffix}</span>;
+  return <span className={`text-gray-900 font-semibold break-words ${className}`}>{value}{suffix}</span>;
 };
 
 export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOpen, onClose, lead, onPurchase }) => {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [hasBills, setHasBills] = useState<boolean>(false);
+  const { profile } = useAuthStore();
+
+  useEffect(() => {
+    const checkBills = async () => {
+      if (!lead?.id) return;
+      const { data } = await supabase.from('files').select('id').eq('lead_id', lead.id).limit(1);
+      setHasBills(!!(data && data.length > 0));
+    };
+    checkBills();
+  }, [lead?.id]);
 
   if (!isOpen) return null;
 
@@ -102,99 +115,199 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
             </div>
 
             {/* Stats Card */}
-            <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex-[1.6] flex items-start justify-between">
-              <div className="flex flex-col items-center text-center">
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Est. Monthly Spend</h3>
-                <div className="text-lg font-extrabold text-green-600">
-                  {lead.monthly_spend ? `£${lead.monthly_spend} /mo` : <MissingValue />}
+            <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex-[1.6] flex items-center justify-between divide-x divide-gray-100">
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Est. Monthly Spend</h3>
+                <div className="h-9 flex items-center justify-center text-base font-bold text-green-600">
+                  {lead.monthly_spend ? `£${lead.monthly_spend}/mo` : <MissingValue />}
                 </div>
               </div>
-              <div className="flex flex-col items-center text-center">
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Timeframe</h3>
-                <div className="text-base font-bold text-gray-900">
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Timeframe</h3>
+                <div className="h-9 flex items-center justify-center text-base font-bold text-gray-900">
                   <DisplayValue value={lead.timeframe} />
                 </div>
               </div>
-              <div className="flex flex-col items-center text-center">
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Est. System Size</h3>
-                <div className="text-base font-bold text-gray-900">
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Est. System Size</h3>
+                <div className="h-9 flex items-center justify-center text-base font-bold text-gray-900">
                   <DisplayValue value={lead.est_system_size} />
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center pl-3 border-l border-gray-100">
-                <h3 className="text-[11px] font-bold text-gray-400 uppercase tracking-wider mb-3">Quality Score</h3>
-                <div className="relative w-10 h-10 flex items-center justify-center rounded-full border-[3px] border-green-500 text-green-600 font-bold text-base">
-                  {(lead as any).lead_score || <MissingValue />}
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Bills Received</h3>
+                <div className="h-9 flex items-center justify-center">
+                  <div className={`relative w-9 h-9 flex items-center justify-center rounded-full border-[2px] ${hasBills ? 'border-green-500 text-green-600' : 'border-gray-200 text-gray-300'}`}>
+                    {hasBills && <Check className="w-4 h-4" strokeWidth={3} />}
+                  </div>
                 </div>
-                <span className="text-[10px] font-bold text-green-600 mt-0.5">High</span>
+              </div>
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Sole Decision Maker</h3>
+                <div className="h-9 flex items-center justify-center">
+                  <div className={`relative w-9 h-9 flex items-center justify-center rounded-full border-[2px] ${lead.sole_decision_maker ? 'border-green-500 text-green-600' : 'border-gray-200 text-gray-300'}`}>
+                    {lead.sole_decision_maker && <Check className="w-4 h-4" strokeWidth={3} />}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Quality Score</h3>
+                <div className="h-9 flex items-center justify-center">
+                  <div className="relative w-9 h-9 flex items-center justify-center rounded-full border-[2px] border-green-500 text-green-600 font-bold text-base">
+                    {(lead as any).lead_score || <MissingValue />}
+                  </div>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-stretch">
-            
-            {/* COLUMN 1 */}
-            <div className="flex flex-col gap-3">
-              
-              {/* Property & Installation */}
-              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm">
-                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Home className="w-3.5 h-3.5 text-gray-400" /> Property & Installation
-                </h3>
-                <div className="grid grid-cols-2 gap-y-2 gap-x-3">
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> Location</span>
-                    <DisplayValue value={extractTown(lead.location)} />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
-                    <DisplayValue value={lead.roof_size} />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><User className="w-3 h-3" /> Ownership</span>
-                    <DisplayValue value={lead.property_ownership} />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Roof Material</span>
-                    <DisplayValue value={lead.roof_material} />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> Availability</span>
-                    <DisplayValue value={lead.availability} />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Zap className="w-3 h-3" /> Elec Supply</span>
-                    <DisplayValue value={lead.electrical_supply} />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Sun className="w-3 h-3" /> Solar Location</span>
-                    <DisplayValue value={lead.solar_location} />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Ground Mount</span>
-                    <DisplayValue value={lead.ground_mount !== null ? (lead.ground_mount ? 'Yes' : 'No') : null} />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Roof Condition</span>
-                    <DisplayValue value={lead.roof_condition} />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Unit Rate</span>
-                    <DisplayValue value={lead.unit_rate} suffix="p" />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Sun className="w-3 h-3" /> Skylights</span>
-                    <DisplayValue value={lead.cover_skylights !== null ? (lead.cover_skylights ? 'Yes' : 'No') : null} />
-                  </div>
-                  <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Battery className="w-3 h-3" /> Ann. Consump.</span>
-                    <DisplayValue value={lead.est_ann_consumption} />
+          <div className="flex flex-col gap-3">
+            {/* ROW 1: Top section with images, property details, insights */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr] gap-3 items-stretch">
+              {/* Top Col 1 */}
+              <div className="flex flex-col gap-3">
+                {/* Property & Installation */}
+                <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm h-full">
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Home className="w-3.5 h-3.5 text-gray-400" /> Property & Installation
+                  </h3>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> Location</span>
+                      <DisplayValue value={extractTown(lead.location)} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
+                      <DisplayValue value={lead.roof_size} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><User className="w-3 h-3" /> Ownership</span>
+                      <DisplayValue value={lead.property_ownership} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Roof Material</span>
+                      <DisplayValue value={lead.roof_material} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Zap className="w-3 h-3" /> Elec Supply</span>
+                      <DisplayValue value={lead.electrical_supply} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Sun className="w-3 h-3" /> Solar Location</span>
+                      <DisplayValue value={lead.solar_location} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Ground Mount</span>
+                      <DisplayValue value={lead.ground_mount !== null ? (lead.ground_mount ? 'Yes' : 'No') : null} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Roof Condition</span>
+                      <DisplayValue value={lead.roof_condition} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Day Unit Rate</span>
+                      <DisplayValue value={lead.unit_rate} suffix="p" />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Night Unit Rate</span>
+                      <DisplayValue value={lead.night_unit_rate} suffix="p" />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Sun className="w-3 h-3" /> Skylights</span>
+                      <DisplayValue value={lead.cover_skylights !== null ? (lead.cover_skylights ? 'Yes' : 'No') : null} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1 col-span-2">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Battery className="w-3 h-3" /> Ann. Consump.</span>
+                      <DisplayValue value={lead.est_ann_consumption} />
+                    </div>
                   </div>
                 </div>
               </div>
 
+              {/* Top Col 2 */}
+              <div className="flex flex-col gap-3">
+                {/* Lead Insights */}
+                <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm h-full">
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5 text-indigo-500" /> Lead Insights
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-50 flex flex-col items-center text-center">
+                      <Building className="w-3.5 h-3.5 text-purple-500 mb-1" />
+                      <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Property Type</span>
+                      <DisplayValue value={lead.building_type || 'Commercial'} />
+                    </div>
+                    <div className="bg-indigo-50/50 p-2 rounded-lg border border-indigo-50 flex flex-col items-center text-center">
+                      <Globe className="w-3.5 h-3.5 text-indigo-500 mb-1" />
+                      <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Lead Source</span>
+                      <DisplayValue value={(lead as any).lead_source} />
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex flex-col flex-1">
+                    <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-1">Notes</span>
+                    <p className="text-[11px] text-gray-700 whitespace-pre-wrap">{(lead as any).marketplace_notes || <MissingValue />}</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Col 3 */}
+              <div className="flex flex-col gap-3">
+                {/* Property Images */}
+                <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm h-full flex flex-col">
+                  {lead.photos && lead.photos.length > 0 ? (
+                    lead.photos.length === 1 ? (
+                      <div 
+                        className="rounded-lg overflow-hidden cursor-pointer flex-1"
+                        onClick={() => setLightboxUrl(lead.photos![0])}
+                      >
+                        <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                      </div>
+                    ) : lead.photos.length === 2 ? (
+                      <div className="grid grid-cols-2 gap-2 flex-1">
+                        <div 
+                          className="rounded-lg overflow-hidden cursor-pointer"
+                          onClick={() => setLightboxUrl(lead.photos![0])}
+                        >
+                          <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                        </div>
+                        <div 
+                          className="rounded-lg overflow-hidden cursor-pointer"
+                          onClick={() => setLightboxUrl(lead.photos![1])}
+                        >
+                          <img src={lead.photos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2 flex-1">
+                        <div 
+                          className="col-span-2 rounded-lg overflow-hidden cursor-pointer"
+                          onClick={() => setLightboxUrl(lead.photos![0])}
+                        >
+                          <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                        </div>
+                        <div className="grid grid-rows-2 gap-2 h-full">
+                          <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(lead.photos![1])}>
+                            <img src={lead.photos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                          </div>
+                          <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(lead.photos![2])}>
+                            <img src={lead.photos[2]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="flex-1 rounded-lg bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center min-h-[160px]">
+                      <MissingValue />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 2: Bottom section with Financial, Roof Insights, System Summary */}
+            <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.3fr_1.4fr] gap-3 items-stretch">
               {/* Financial & Payment */}
-              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm mt-auto">
+              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col justify-center">
                 <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                   <FileText className="w-3.5 h-3.5 text-gray-400" /> Financial & Payment
                 </h3>
@@ -210,136 +323,48 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 </div>
               </div>
 
-            </div>
-
-            {/* COLUMN 2 */}
-            <div className="flex flex-col gap-3">
-              
-              {/* Lead Insights */}
-              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm">
-                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Activity className="w-3.5 h-3.5 text-indigo-500" /> Lead Insights
-                </h3>
-                <div className="grid grid-cols-2 gap-2">
-                  <div className="bg-indigo-50/50 p-2 rounded-lg border border-indigo-50 flex flex-col items-center text-center">
-                    <Globe className="w-3.5 h-3.5 text-indigo-500 mb-1" />
-                    <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Lead Source</span>
-                    <DisplayValue value={(lead as any).lead_source} />
-                  </div>
-                  <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-50 flex flex-col items-center text-center">
-                    <Calendar className="w-3.5 h-3.5 text-blue-500 mb-1" />
-                    <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Submitted</span>
-                    <span className="text-gray-900 font-bold text-[10px]">{lead.created_at ? formatDistanceToNow(new Date(lead.created_at), { addSuffix: true }) : <MissingValue />}</span>
-                  </div>
-                  <div className="bg-green-50/50 p-2 rounded-lg border border-green-50 flex flex-col items-center text-center">
-                    <Zap className="w-3.5 h-3.5 text-green-500 mb-1" />
-                    <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Response Window</span>
-                    <MissingValue />
-                  </div>
-                  <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-50 flex flex-col items-center text-center">
-                    <Building className="w-3.5 h-3.5 text-purple-500 mb-1" />
-                    <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Property Type</span>
-                    <DisplayValue value={lead.building_type || 'Commercial'} />
-                  </div>
-                </div>
-              </div>
-
               {/* Roof & Sun Insights */}
-              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm mt-auto">
-                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <Sun className="w-3.5 h-3.5 text-gray-400" /> Roof & Sun Insights
-                </h3>
-                <div className="flex justify-between items-center divide-x divide-gray-100">
-                  <div className="flex-1 flex flex-col items-center text-center px-1">
+              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col justify-center">
+                <div className="flex justify-between items-center divide-x divide-gray-100 h-full py-1">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <CheckCircle className="w-4 h-4 text-green-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Roof Suitability</span>
-                    <MissingValue />
+                    <DisplayValue value={(lead as any).roof_suitability} className="text-[10px] text-center" />
                   </div>
-                  <div className="flex-1 flex flex-col items-center text-center px-1">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <Sun className="w-4 h-4 text-amber-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Solar Exposure</span>
-                    <MissingValue />
+                    <DisplayValue value={(lead as any).solar_exposure} className="text-[10px] text-center" />
                   </div>
-                  <div className="flex-1 flex flex-col items-center text-center px-1">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <Activity className="w-4 h-4 text-green-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Shading</span>
-                    <MissingValue />
+                    <DisplayValue value={(lead as any).shading} className="text-[10px] text-center" />
                   </div>
-                  <div className="flex-1 flex flex-col items-center text-center px-1">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <Globe className="w-4 h-4 text-blue-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Orientation</span>
-                    <MissingValue />
+                    <DisplayValue value={(lead as any).orientation || lead.solar_location} className="text-[10px] text-center" />
                   </div>
                 </div>
               </div>
 
-            </div>
-
-            {/* COLUMN 3 */}
-            <div className="flex flex-col gap-3">
-              
-              {/* Property Images */}
-              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm">
-                {lead.photos && lead.photos.length > 0 ? (
-                  lead.photos.length === 1 ? (
-                    <div 
-                      className="rounded-lg overflow-hidden cursor-pointer h-40"
-                      onClick={() => setLightboxUrl(lead.photos![0])}
-                    >
-                      <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                    </div>
-                  ) : lead.photos.length === 2 ? (
-                    <div className="grid grid-cols-2 gap-2 h-40">
-                      <div 
-                        className="rounded-lg overflow-hidden cursor-pointer"
-                        onClick={() => setLightboxUrl(lead.photos![0])}
-                      >
-                        <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                      </div>
-                      <div 
-                        className="rounded-lg overflow-hidden cursor-pointer"
-                        onClick={() => setLightboxUrl(lead.photos![1])}
-                      >
-                        <img src={lead.photos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-3 gap-2 h-40">
-                      <div 
-                        className="col-span-2 rounded-lg overflow-hidden cursor-pointer"
-                        onClick={() => setLightboxUrl(lead.photos![0])}
-                      >
-                        <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                      </div>
-                      <div className="grid grid-rows-2 gap-2 h-full">
-                        <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(lead.photos![1])}>
-                          <img src={lead.photos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                        </div>
-                        <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(lead.photos![2])}>
-                          <img src={lead.photos[2]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                        </div>
-                      </div>
-                    </div>
-                  )
-                ) : (
-                  <div className="h-32 rounded-lg bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center">
-                    <MissingValue />
-                  </div>
-                )}
-              </div>
-
-              {/* Potential System Summary */}
-              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm mt-auto">
-                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Potential System Summary (Est.)</h3>
+              {/* Potential Max System Summary */}
+              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col justify-center">
+                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Potential Max System Summary</h3>
                 <div className="bg-blue-50/30 p-3 rounded-lg border border-blue-50">
                   <div className="flex items-center justify-between gap-4">
                     <div className="flex flex-col flex-1">
                       <span className="text-[10px] text-gray-500 mb-0.5">System Size</span>
-                      <MissingValue />
+                      <DisplayValue value={lead.est_system_size} className="text-[10px]" />
                     </div>
                     <div className="flex flex-col flex-1">
                       <span className="text-[10px] text-gray-500 mb-0.5">Ann. Gen</span>
-                      <MissingValue />
+                      <DisplayValue value={
+                        lead.est_system_size && lead.est_system_size.match(/(\d+(\.\d+)?)/) 
+                          ? `${Math.round(parseFloat(lead.est_system_size.match(/(\d+(\.\d+)?)/)![1]) * 850).toLocaleString()} kWh`
+                          : null
+                      } className="text-[10px]" />
                     </div>
                     <div className="flex flex-col flex-1">
                       <span className="text-[10px] text-gray-500 mb-0.5">Battery Size</span>
@@ -353,26 +378,27 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 </div>
               </div>
 
-              {/* Local Market Intelligence (Hidden for now) */}
-              {/* <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm">
-                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Local Market Intelligence</h3>
-                <div className="grid grid-cols-3 gap-4 divide-x divide-gray-100">
-                  <div className="pr-4">
-                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5 block">Local Demand</span>
-                    <MissingValue />
-                  </div>
-                  <div className="px-4">
-                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5 block">Competition</span>
-                    <MissingValue />
-                  </div>
-                  <div className="pl-4">
-                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5 block">Win Rate (This Area)</span>
-                    <MissingValue />
-                  </div>
-                </div>
-              </div> */}
-
             </div>
+
+            {/* Local Market Intelligence (Hidden for now) */}
+            {/* <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Local Market Intelligence</h3>
+              <div className="grid grid-cols-3 gap-4 divide-x divide-gray-100">
+                <div className="pr-4">
+                  <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5 block">Local Demand</span>
+                  <MissingValue />
+                </div>
+                <div className="px-4">
+                  <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5 block">Competition</span>
+                  <MissingValue />
+                </div>
+                <div className="pl-4">
+                  <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5 block">Win Rate (This Area)</span>
+                  <MissingValue />
+                </div>
+              </div>
+            </div> */}
+
           </div>
         </div>
 

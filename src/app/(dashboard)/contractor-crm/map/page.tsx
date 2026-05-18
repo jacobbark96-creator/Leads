@@ -539,7 +539,7 @@ export default function MapTab() {
                     <div className="bg-blue-100 text-blue-800 text-[10px] font-bold px-2 py-0.5 rounded-full inline-block">
                       MARKETED LEAD
                     </div>
-                    <h3 className="font-bold text-lg text-gray-900">£{selectedLead.price || '135.00'}</h3>
+                    <h3 className="font-bold text-lg text-gray-900">£{selectedLead.exclusive_price || selectedLead.price || '135.00'}</h3>
                   </div>
 
                   <div className="mb-3">

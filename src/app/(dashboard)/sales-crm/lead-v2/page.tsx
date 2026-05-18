@@ -787,6 +787,16 @@ function LeadDetailsV2Content() {
 
       if (error) throw error;
       
+      // Add activity if status changed to qualified
+      if (updatePayload.status === 'qualified' && lead.status !== 'qualified' && profile) {
+        await supabase.from('lead_activities').insert([{
+          lead_id: lead.id,
+          user_id: profile.id,
+          activity_type: 'qualified',
+          description: 'Lead was marked as qualified'
+        }]);
+      }
+      
       // Force a fresh fetch to ensure all data is in sync
       const { data: freshLead } = await supabase
         .from('leads')
@@ -1716,6 +1726,17 @@ function LeadDetailsV2Content() {
                     <span className="text-gray-500 text-xs">First Contact</span>
                     <span className="text-gray-900 text-sm font-medium">{new Date(lead.created_at).toLocaleDateString()}</span>
                   </div>
+                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                    <span className="text-gray-500 text-xs">Sole Decision Maker</span>
+                    {editingCard === 'overview' ? (
+                      <select value={editForm.sole_decision_maker ? 'yes' : 'no'} onChange={e => setEditForm({...editForm, sole_decision_maker: e.target.value === 'yes'} as any)} className="border rounded px-1.5 py-0.5 text-xs w-32 focus:ring-1 focus:ring-blue-500 bg-white">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">{lead.sole_decision_maker ? 'Yes' : 'No'}</span>
+                    )}
+                  </div>
                 </div>
               </div>
               <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
@@ -1754,22 +1775,26 @@ function LeadDetailsV2Content() {
                       <span className="text-green-600 text-sm font-bold">{(lead as any).est_savings ? `£${(lead as any).est_savings}/yr` : 'N/A'}</span>
                     )}
                   </div>
-                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Exclusive Price</span>
-                    {editingCard === 'opportunity' ? (
-                      <input type="number" value={editForm.exclusive_price || ''} onChange={e => setEditForm({...editForm, exclusive_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 135" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{lead.exclusive_price ? `£${lead.exclusive_price}` : 'N/A'}</span>
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Share Price</span>
-                    {editingCard === 'opportunity' ? (
-                      <input type="number" value={editForm.share_price || ''} onChange={e => setEditForm({...editForm, share_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 45" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{lead.share_price ? `£${lead.share_price}` : 'N/A'}</span>
-                    )}
-                  </div>
+                  {profile?.role === 'super_admin' && (
+                    <>
+                      <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                        <span className="text-gray-500 text-xs">Exclusive Price</span>
+                        {editingCard === 'opportunity' ? (
+                          <input type="number" value={editForm.exclusive_price || ''} onChange={e => setEditForm({...editForm, exclusive_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 135" />
+                        ) : (
+                          <span className="text-gray-900 text-sm font-medium">{lead.exclusive_price ? `£${lead.exclusive_price}` : 'N/A'}</span>
+                        )}
+                      </div>
+                      <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                        <span className="text-gray-500 text-xs">Share Price</span>
+                        {editingCard === 'opportunity' ? (
+                          <input type="number" value={editForm.share_price || ''} onChange={e => setEditForm({...editForm, share_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 45" />
+                        ) : (
+                          <span className="text-gray-900 text-sm font-medium">{lead.share_price ? `£${lead.share_price}` : 'N/A'}</span>
+                        )}
+                      </div>
+                    </>
+                  )}
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
                     <span className="text-gray-500 text-xs">Payback Period</span>
                     {editingCard === 'opportunity' ? (
@@ -1805,19 +1830,47 @@ function LeadDetailsV2Content() {
                     )}
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                    <span className="text-gray-500 text-xs">Day Unit Rate</span>
+                    {editingCard === 'keyinfo' ? (
+                      <input type="text" value={(editForm as any).unit_rate || ''} onChange={e => setEditForm({...editForm, unit_rate: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 0.28" />
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">{(lead as any).unit_rate ? `£${(lead as any).unit_rate}` : 'N/A'}</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                    <span className="text-gray-500 text-xs">Night Unit Rate</span>
+                    {editingCard === 'keyinfo' ? (
+                      <input type="text" value={(editForm as any).night_unit_rate || ''} onChange={e => setEditForm({...editForm, night_unit_rate: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 0.12" />
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">{(lead as any).night_unit_rate ? `£${(lead as any).night_unit_rate}` : 'N/A'}</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
                     <span className="text-gray-500 text-xs">Timeframe</span>
                     {editingCard === 'keyinfo' ? (
-                      <input type="text" value={editForm.timeframe || ''} onChange={e => setEditForm({...editForm, timeframe: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                      <select value={editForm.timeframe || ''} onChange={e => setEditForm({...editForm, timeframe: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500 bg-white">
+                        <option value="">Select...</option>
+                        <option value="ASAP">ASAP</option>
+                        <option value="1 to 3 months">1 to 3 months</option>
+                        <option value="3 to 6 months">3 to 6 months</option>
+                        <option value="6 Months +">6 Months +</option>
+                      </select>
                     ) : (
                       <span className="text-gray-900 text-sm font-medium">{lead.timeframe || 'N/A'}</span>
                     )}
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Property</span>
+                    <span className="text-gray-500 text-xs">Finance Options</span>
                     {editingCard === 'keyinfo' ? (
-                      <input type="text" value={editForm.property_ownership || ''} onChange={e => setEditForm({...editForm, property_ownership: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                      <select value={(editForm as any).payment_options || ''} onChange={e => setEditForm({...editForm, payment_options: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500 bg-white">
+                        <option value="">Select...</option>
+                        <option value="Capex">Capex</option>
+                        <option value="PPA">PPA</option>
+                        <option value="Finance">Finance</option>
+                        <option value="Will consider all payment options">Will consider all payment options</option>
+                      </select>
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{lead.property_ownership || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">{(lead as any).payment_options || 'N/A'}</span>
                     )}
                   </div>
                 </div>
@@ -1917,11 +1970,40 @@ function LeadDetailsV2Content() {
                   <div className="flex flex-col">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Ownership Status</span>
                     {editingCard === 'building' ? (
-                      <input type="text" value={editForm.property_ownership || ''} onChange={e => setEditForm({...editForm, property_ownership: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
+                      <select value={editForm.property_ownership || ''} onChange={e => setEditForm({...editForm, property_ownership: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1 bg-white">
+                        <option value="">Select...</option>
+                        <option value="Owned">Owned</option>
+                        <option value="Leased">Leased</option>
+                      </select>
                     ) : (
                       <span className="text-gray-900 text-sm font-medium">{lead.property_ownership || 'N/A'}</span>
                     )}
                   </div>
+                  {((editingCard === 'building' && editForm.property_ownership === 'Leased') || (editingCard !== 'building' && lead.property_ownership === 'Leased')) && (
+                    <>
+                      <div className="flex flex-col">
+                        <span className="text-gray-500 text-[11px] uppercase tracking-wider">Length of Lease</span>
+                        {editingCard === 'building' ? (
+                          <input type="text" value={editForm.lease_duration || ''} onChange={e => setEditForm({...editForm, lease_duration: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
+                        ) : (
+                          <span className="text-gray-900 text-sm font-medium">{lead.lease_duration || 'N/A'}</span>
+                        )}
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-gray-500 text-[11px] uppercase tracking-wider">Permission from Landlord</span>
+                        {editingCard === 'building' ? (
+                          <select value={editForm.landlord_permission || ''} onChange={e => setEditForm({...editForm, landlord_permission: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1 bg-white">
+                            <option value="">Select...</option>
+                            <option value="Yes">Yes</option>
+                            <option value="No">No</option>
+                            <option value="Pending">Pending</option>
+                          </select>
+                        ) : (
+                          <span className="text-gray-900 text-sm font-medium">{lead.landlord_permission || 'N/A'}</span>
+                        )}
+                      </div>
+                    </>
+                  )}
                   <div className="flex flex-col">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Annual Consumption</span>
                     {editingCard === 'building' ? (
@@ -1933,7 +2015,11 @@ function LeadDetailsV2Content() {
                   <div className="flex flex-col">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Grid Connection</span>
                     {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).electrical_supply || ''} onChange={e => setEditForm({...editForm, electrical_supply: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
+                      <select value={(editForm as any).electrical_supply || ''} onChange={e => setEditForm({...editForm, electrical_supply: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1 bg-white">
+                        <option value="">Select...</option>
+                        <option value="Single Phase">Single Phase</option>
+                        <option value="Three Phase">Three Phase</option>
+                      </select>
                     ) : (
                       <span className="text-gray-900 text-sm font-medium">{(lead as any).electrical_supply || 'N/A'}</span>
                     )}
@@ -1941,7 +2027,10 @@ function LeadDetailsV2Content() {
                   <div className="flex flex-col">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Cover Skylights</span>
                     {editingCard === 'building' ? (
-                      <input type="checkbox" checked={!!editForm.cover_skylights} onChange={e => setEditForm({...editForm, cover_skylights: e.target.checked})} className="mt-2 rounded border-gray-300 text-blue-600 focus:ring-blue-500 h-4 w-4" />
+                      <select value={editForm.cover_skylights ? 'yes' : 'no'} onChange={e => setEditForm({...editForm, cover_skylights: e.target.value === 'yes'} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1 bg-white">
+                        <option value="yes">Yes</option>
+                        <option value="no">No</option>
+                      </select>
                     ) : (
                       <span className="text-gray-900 text-sm font-medium">{lead.cover_skylights ? 'Yes' : 'No'}</span>
                     )}
@@ -1957,7 +2046,14 @@ function LeadDetailsV2Content() {
                   <div className="flex flex-col">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Roof Condition</span>
                     {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).roof_condition || ''} onChange={e => setEditForm({...editForm, roof_condition: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
+                      <select value={(editForm as any).roof_condition || ''} onChange={e => setEditForm({...editForm, roof_condition: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1 bg-white">
+                        <option value="">Select...</option>
+                        <option value="New">New</option>
+                        <option value="Excellent">Excellent</option>
+                        <option value="Good">Good</option>
+                        <option value="Old">Old</option>
+                        <option value="Bad">Bad</option>
+                      </select>
                     ) : (
                       <span className="text-gray-900 text-sm font-medium">{(lead as any).roof_condition || 'N/A'}</span>
                     )}
@@ -1975,7 +2071,17 @@ function LeadDetailsV2Content() {
                   <div className="flex flex-col">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Orientation</span>
                     {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).solar_location || ''} onChange={e => setEditForm({...editForm, solar_location: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
+                      <select value={(editForm as any).solar_location || ''} onChange={e => setEditForm({...editForm, solar_location: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1 bg-white">
+                        <option value="">Select...</option>
+                        <option value="North">North</option>
+                        <option value="North East">North East</option>
+                        <option value="East">East</option>
+                        <option value="South East">South East</option>
+                        <option value="South">South</option>
+                        <option value="South West">South West</option>
+                        <option value="West">West</option>
+                        <option value="North West">North West</option>
+                      </select>
                     ) : (
                       <span className="text-gray-900 text-sm font-medium">{buildingEnrichment?.orientation || (lead as any).solar_location || 'N/A'}</span>
                     )}
@@ -1992,6 +2098,61 @@ function LeadDetailsV2Content() {
                       <input type="text" value={(editForm as any).epc_rating || ''} onChange={e => setEditForm({...editForm, epc_rating: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
                     ) : (
                       <span className="text-gray-900 text-sm font-medium flex items-center gap-1">{(buildingEnrichment?.epc_rating || (lead as any).epc_rating) ? <><span className="w-4 h-4 bg-green-500 text-white rounded-sm flex items-center justify-center text-[10px] font-bold">{(buildingEnrichment?.epc_rating || (lead as any).epc_rating)[0]}</span> {(buildingEnrichment?.epc_rating || (lead as any).epc_rating)}</> : 'N/A'}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Shading</span>
+                    {editingCard === 'building' ? (
+                      <select value={(editForm as any).shading || ''} onChange={e => setEditForm({...editForm, shading: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1 bg-white">
+                        <option value="">Select...</option>
+                        <option value="None">None</option>
+                        <option value="Light">Light</option>
+                        <option value="Moderate">Moderate</option>
+                        <option value="Heavy">Heavy</option>
+                      </select>
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">{(lead as any).shading || 'N/A'}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Roof Suitability</span>
+                    {editingCard === 'building' ? (
+                      <select value={(editForm as any).roof_suitability || ''} onChange={e => setEditForm({...editForm, roof_suitability: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1 bg-white">
+                        <option value="">Select...</option>
+                        <option value="Excellent">Excellent</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                        <option value="Poor">Poor</option>
+                      </select>
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">{(lead as any).roof_suitability || 'N/A'}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Solar Exposure</span>
+                    {editingCard === 'building' ? (
+                      <select value={(editForm as any).solar_exposure || ''} onChange={e => setEditForm({...editForm, solar_exposure: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1 bg-white">
+                        <option value="">Select...</option>
+                        <option value="Excellent">Excellent</option>
+                        <option value="Good">Good</option>
+                        <option value="Fair">Fair</option>
+                        <option value="Poor">Poor</option>
+                      </select>
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium">{(lead as any).solar_exposure || 'N/A'}</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col col-span-2 mt-2">
+                    <span className="text-gray-500 text-[11px] uppercase tracking-wider mb-1">Marketplace Notes</span>
+                    {editingCard === 'building' ? (
+                      <textarea 
+                        value={(editForm as any).marketplace_notes || ''} 
+                        onChange={e => setEditForm({...editForm, marketplace_notes: e.target.value} as any)} 
+                        className="border rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-blue-500 w-full min-h-[60px]"
+                        placeholder="These notes will be visible to contractors on the marketplace..."
+                      />
+                    ) : (
+                      <p className="text-gray-900 text-sm bg-gray-50 p-2 rounded border border-gray-100 min-h-[60px] whitespace-pre-wrap">{(lead as any).marketplace_notes || 'No marketplace notes added.'}</p>
                     )}
                   </div>
                 </div>

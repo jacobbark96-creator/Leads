@@ -54,7 +54,7 @@ export const NearbyLeadsModal: React.FC<NearbyLeadsModalProps> = ({ isOpen, onCl
                       <DollarSign className="w-3 h-3 mr-1" /> Exclusive
                     </div>
                     <div className="font-black text-green-700 text-lg">
-                      £{lead.exclusive_price || '135.00'}
+                      £{lead.exclusive_price || lead.price || '135.00'}
                     </div>
                   </div>
                   

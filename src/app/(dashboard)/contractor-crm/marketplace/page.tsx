@@ -143,7 +143,7 @@ function MarketplaceAdminContent() {
                     <div className="flex items-center gap-3 mt-1 text-xs text-gray-500">
                       <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {lead.location}</span>
                       <span className="flex items-center gap-1"><Briefcase className="w-3 h-3" /> {lead.category_id}</span>
-                      <span className="font-semibold text-gray-700">£{lead.price || '135'}</span>
+                      <span className="font-semibold text-gray-700">£{lead.exclusive_price || lead.price || '135'}</span>
                     </div>
                   </div>
                 </div>

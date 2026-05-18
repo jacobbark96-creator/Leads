@@ -78,6 +78,8 @@ export interface Lead {
   cover_skylights?: boolean;
   ground_mount?: boolean;
   unit_rate?: number;
+  night_unit_rate?: number;
+  sole_decision_maker?: boolean;
   est_ann_consumption?: number;
   qualification_notes?: string;
   est_system_size?: string;
@@ -123,6 +125,11 @@ export interface Lead {
   purchase_id?: string;
   purchase_status?: string;
   lead_notes?: any[];
+  roof_suitability?: string;
+  solar_exposure?: string;
+  shading?: string;
+  marketplace_notes?: string;
+  orientation?: string;
 }
 
 export interface LeadNote {

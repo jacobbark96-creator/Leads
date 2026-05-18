@@ -389,7 +389,7 @@ export default function Marketplace() {
                   </div>
                   <div className="text-right shrink-0">
                     <span className="block text-[10px] uppercase tracking-wider font-semibold text-gray-500">Price</span>
-                    <span className="text-base font-bold text-green-600 leading-none">£{lead.price || '135.00'}</span>
+                    <span className="text-base font-bold text-green-600 leading-none">£{lead.exclusive_price || lead.price || '135.00'}</span>
                   </div>
                 </div>
 

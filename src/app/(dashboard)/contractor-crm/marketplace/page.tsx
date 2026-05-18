@@ -26,7 +26,7 @@ function MarketplaceAdminContent() {
       let query = supabase
         .from('leads')
         .select('*')
-        .eq('status', 'qualified')
+        .in('status', ['qualified', 'marketplace'])
         .is('client_id', null)
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);

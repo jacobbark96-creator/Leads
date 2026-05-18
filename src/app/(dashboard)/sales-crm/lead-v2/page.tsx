@@ -864,6 +864,18 @@ function LeadDetailsV2Content() {
           body: JSON.stringify({
             record: { ...lead, is_marketed: true, push_to_whatsapp: true }
           })
+        }).then(async res => {
+          if (!res.ok) {
+            const errData = await res.json();
+            console.error('Broadcast endpoint returned error:', errData);
+            toast.error('Failed to send WhatsApp broadcast.');
+          } else {
+            const data = await res.json();
+            console.log('Broadcast success:', data);
+            if (data.errors && data.errors.length > 0) {
+              toast.error('Twilio Error: ' + data.errors[0].error);
+            }
+          }
         }).catch(err => console.error('Broadcast fetch failed:', err));
       }
 

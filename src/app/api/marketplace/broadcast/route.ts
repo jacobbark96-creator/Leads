@@ -1,5 +1,3 @@
-export const runtime = 'edge';
-
 import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
@@ -42,7 +40,8 @@ async function sendTwilioMessage(to: string, from: string, body: string, mediaUr
   });
 
   if (!response.ok) {
-    throw new Error(`Twilio API error: ${response.statusText}`);
+    const errText = await response.text();
+    throw new Error(`Twilio API error: ${response.status} ${response.statusText} - ${errText}`);
   }
   
   return await response.json();
@@ -84,8 +83,12 @@ export async function POST(req: NextRequest) {
     console.log(`[Broadcast] Found ${matchedContractors.length} potential matches.`);
 
     // 4. Construct the OG Image URL
+    const host = req.headers.get('host') || 'openlead.co.uk';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const dynamicAppUrl = `${protocol}://${host}`;
+
     // We pass the lead's specific data as query parameters to our dynamic image generator
-    const ogImageUrl = new URL(`${appUrl}/api/og/whatsapp-lead`);
+    const ogImageUrl = new URL(`${dynamicAppUrl}/api/og/whatsapp-lead`);
     ogImageUrl.searchParams.set('ref', lead.id.split('-')[0].toUpperCase());
     ogImageUrl.searchParams.set('exclusivePrice', lead.exclusive_price?.toString() || '185');
     ogImageUrl.searchParams.set('leadsharePrice', lead.share_price?.toString() || '135');
@@ -124,9 +127,15 @@ export async function POST(req: NextRequest) {
     for (const contractor of matchedContractors) {
       try {
         // Ensure phone number is in E.164 format (e.g., +447123456789)
-        let formattedPhone = contractor.phone;
+        let formattedPhone = contractor.phone.replace(/[^0-9+]/g, '');
         if (formattedPhone.startsWith('0')) {
           formattedPhone = '+44' + formattedPhone.slice(1);
+        } else if (!formattedPhone.startsWith('+')) {
+          if (formattedPhone.startsWith('44')) {
+            formattedPhone = '+' + formattedPhone;
+          } else {
+            formattedPhone = '+44' + formattedPhone;
+          }
         }
 
         // Send the message via Twilio using native fetch instead of SDK

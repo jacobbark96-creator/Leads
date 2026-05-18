@@ -22,11 +22,26 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const [isDialpadOpen, setIsDialpadOpen] = useState(false);
   const [isInternalChatOpen, setIsInternalChatOpen] = useState(false);
+  const [toastMessage, setToastMessage] = useState<{ senderName: string, content: string } | null>(null);
 
   useEffect(() => {
     const handleToggleChat = () => setIsInternalChatOpen(prev => !prev);
     window.addEventListener('toggle-internal-chat', handleToggleChat);
     return () => window.removeEventListener('toggle-internal-chat', handleToggleChat);
+  }, []);
+
+  useEffect(() => {
+    const handleNewMessageToast = (e: any) => {
+      setToastMessage(e.detail);
+      
+      // Auto-hide after 3 seconds
+      setTimeout(() => {
+        setToastMessage(null);
+      }, 3000);
+    };
+
+    window.addEventListener('new-internal-message-toast', handleNewMessageToast);
+    return () => window.removeEventListener('new-internal-message-toast', handleNewMessageToast);
   }, []);
   const [manualNumber, setManualNumber] = useState('');
   const [currentEntityId, setCurrentEntityId] = useState<string | null>(null);
@@ -407,19 +422,34 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           )}
 
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => {
-                // Toggle internal chat, you could create a context for this or dispatch an event
-                // For now we will just dispatch a custom event
-                window.dispatchEvent(new CustomEvent('toggle-internal-chat'));
-              }}
-              className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-transform hover:scale-105 active:scale-95 relative"
-              title="Internal Chat"
-            >
-              <MessageSquare className="w-6 h-6" />
-              {/* Unread badge can go here */}
-              <span id="global-unread-badge" className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full hidden"></span>
-            </button>
+            <div className="relative">
+              {/* Tooltip for new messages */}
+              <div 
+                className={`absolute right-full mr-4 top-1/2 -translate-y-1/2 w-64 bg-gray-900 border border-gray-700 text-white p-3 rounded-xl shadow-2xl transition-all duration-300 origin-right ${
+                  toastMessage 
+                    ? 'opacity-100 scale-100 translate-x-0' 
+                    : 'opacity-0 scale-95 translate-x-4 pointer-events-none'
+                }`}
+              >
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-blue-400 mb-1">{toastMessage?.senderName}</span>
+                  <span className="text-[11px] text-gray-300 line-clamp-2">{toastMessage?.content}</span>
+                </div>
+                {/* Right pointing arrow */}
+                <div className="absolute top-1/2 -right-2 -translate-y-1/2 border-[6px] border-transparent border-l-gray-900"></div>
+              </div>
+
+              <button
+                onClick={() => {
+                  window.dispatchEvent(new CustomEvent('toggle-internal-chat'));
+                }}
+                className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-transform hover:scale-105 active:scale-95 relative"
+                title="Internal Chat"
+              >
+                <MessageSquare className="w-6 h-6" />
+                <span id="global-unread-badge" className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full hidden"></span>
+              </button>
+            </div>
 
             <button
               onClick={() => setIsDialpadOpen(!isDialpadOpen)}

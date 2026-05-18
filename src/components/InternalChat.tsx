@@ -4,6 +4,8 @@ import { useAuthStore } from '@/store/authStore';
 import { X, Search, MessageSquare, Send, Check, CheckCheck, Smile, Users, Plus } from 'lucide-react';
 import { format } from 'date-fns';
 import { RealtimeChannel } from '@supabase/supabase-js';
+import { DialerContext } from '@/contexts/DialerContext';
+import { useContext } from 'react';
 
 import toast from 'react-hot-toast';
 
@@ -32,11 +34,22 @@ type GroupChat = {
 
 export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; isModal?: boolean }> = ({ isOpen = true, onClose, isModal = true }) => {
   const { profile } = useAuthStore();
+  const dialerContext = useContext(DialerContext);
+  const activeCall = dialerContext?.activeCall;
   
   const [users, setUsers] = useState<any[]>([]);
   const [groups, setGroups] = useState<GroupChat[]>([]);
   const [presences, setPresences] = useState<Record<string, UserPresence>>({});
+  const [now, setNow] = useState(Date.now());
   const [activeChatUser, setActiveChatUser] = useState<any | null>(null);
+
+  // Force re-render every minute to update online/away/offline statuses
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setNow(Date.now());
+    }, 60000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Persist active chat user to session storage so it survives unmounts
   useEffect(() => {
@@ -98,14 +111,18 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
     if (!profile) return;
 
     const channelName = 'online-users';
+
+    // IMPORTANT: Because this component mounts/unmounts frequently (especially in dev with Strict Mode),
+    // Supabase returns the EXISTING channel if we don't recreate it properly. 
+    // If the channel is already subscribed, we CANNOT add new `.on` listeners to it without throwing the "cannot add presence callbacks after subscribe" error.
+    let channel = supabase.getChannels().find(c => c.topic === `realtime:${channelName}`);
     
-    // Clean up any existing channel with the same name to prevent React StrictMode double-subscription errors
-    const existingChannel = supabase.getChannels().find(c => c.topic === `realtime:${channelName}`);
-    if (existingChannel) {
-      supabase.removeChannel(existingChannel);
+    if (channel) {
+      // If it exists, we MUST unsubscribe/remove it first before recreating our listeners
+      supabase.removeChannel(channel);
     }
 
-    const channel = supabase.channel(channelName, {
+    channel = supabase.channel(channelName, {
       config: {
         presence: {
           key: profile.id,
@@ -121,7 +138,15 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
         const newPresences: Record<string, UserPresence> = {};
         for (const [key, presencesArray] of Object.entries(state)) {
           if (presencesArray.length > 0) {
-            newPresences[key] = presencesArray[0];
+            // Find the presence with the most recent last_active_at timestamp
+            // This prevents the "multiple tabs" bug where an idle background tab overrides the active tab's status
+            const mostRecentPresence = presencesArray.reduce((latest, current) => {
+              const currentActive = new Date(current.last_active_at || 0).getTime();
+              const latestActive = new Date(latest.last_active_at || 0).getTime();
+              return currentActive > latestActive ? current : latest;
+            }, presencesArray[0]);
+            
+            newPresences[key] = mostRecentPresence;
           }
         }
         setPresences(newPresences);
@@ -176,13 +201,48 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
 
     window.addEventListener('click', handleActivity);
     window.addEventListener('keydown', handleActivity);
+    window.addEventListener('mousemove', handleActivity);
+    window.addEventListener('scroll', handleActivity);
+    window.addEventListener('touchstart', handleActivity);
 
     return () => {
       window.removeEventListener('click', handleActivity);
       window.removeEventListener('keydown', handleActivity);
+      window.removeEventListener('mousemove', handleActivity);
+      window.removeEventListener('scroll', handleActivity);
+      window.removeEventListener('touchstart', handleActivity);
       supabase.removeChannel(channel);
     };
   }, [profile]);
+
+  // Keep alive if on an active call
+  useEffect(() => {
+    if (!profile || !presenceChannelRef.current || !activeCall) return;
+    
+    // If they are on a call, update their activity immediately
+    if (presenceChannelRef.current.state === 'joined') {
+      presenceChannelRef.current.track({
+        id: profile.id,
+        name: profile.name,
+        role: profile.role,
+        last_active_at: new Date().toISOString(),
+      });
+    }
+    
+    // And keep updating it every 30 seconds while the call is active
+    const interval = setInterval(() => {
+      if (presenceChannelRef.current?.state === 'joined') {
+        presenceChannelRef.current.track({
+          id: profile.id,
+          name: profile.name,
+          role: profile.role,
+          last_active_at: new Date().toISOString(),
+        });
+      }
+    }, 30000);
+    
+    return () => clearInterval(interval);
+  }, [activeCall, profile]);
 
   // 3. Fetch initial unread counts & subscribe to messages
   useEffect(() => {
@@ -228,12 +288,13 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
     fetchUnread();
 
     const msgChannelName = 'internal_messages_updates';
-    const existingMsgChannel = supabase.getChannels().find(c => c.topic === `realtime:${msgChannelName}`);
-    if (existingMsgChannel) {
-      supabase.removeChannel(existingMsgChannel);
+    let msgChannel = supabase.getChannels().find(c => c.topic === `realtime:${msgChannelName}`);
+    
+    if (msgChannel) {
+      supabase.removeChannel(msgChannel);
     }
 
-    const msgChannel = supabase.channel(msgChannelName)
+    msgChannel = supabase.channel(msgChannelName)
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
@@ -258,6 +319,17 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
           supabase.from('internal_messages').update({ is_read: true }).eq('id', newMsg.id).then();
         } else {
           // Otherwise increment unread (group unread by group_id, direct by sender_id)
+          
+          // Dispatch event for floating tooltip
+          const senderUser = users.find(u => u.id === newMsg.sender_id);
+          const senderName = senderUser ? senderUser.name : 'Team Member';
+          window.dispatchEvent(new CustomEvent('new-internal-message-toast', {
+            detail: {
+              senderName,
+              content: newMsg.content
+            }
+          }));
+
           const unreadKey = newMsg.group_id ? newMsg.group_id : newMsg.sender_id;
           setUnreadCounts(prev => {
             const newCounts = { ...prev, [unreadKey]: (prev[unreadKey] || 0) + 1 };
@@ -288,7 +360,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
     return () => {
       supabase.removeChannel(msgChannel);
     };
-  }, [profile, activeChatUser, isOpen]);
+  }, [profile, activeChatUser, isOpen, users, groups]);
 
   // 4. Fetch messages when active user/group changes
   useEffect(() => {
@@ -409,11 +481,10 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
     if (!presence) return 'offline';
     
     const lastActive = new Date(presence.last_active_at).getTime();
-    const now = Date.now();
     const diffMins = (now - lastActive) / 1000 / 60;
     
-    if (diffMins < 10) return 'online';
-    if (diffMins < 30) return 'away';
+    if (diffMins < 15) return 'online';
+    if (diffMins < 60) return 'away';
     return 'offline';
   };
 

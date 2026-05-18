@@ -852,6 +852,21 @@ function LeadDetailsV2Content() {
         .eq('id', lead.id);
 
       if (error) throw error;
+      
+      // Directly trigger the broadcast API from the client to avoid relying on Supabase pg_net trigger
+      // which can fail in production if base_url is not correctly configured in the database settings.
+      if (pushToWhatsapp) {
+        fetch('/api/marketplace/broadcast', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            record: { ...lead, is_marketed: true, push_to_whatsapp: true }
+          })
+        }).catch(err => console.error('Broadcast fetch failed:', err));
+      }
+
       setLead({ ...lead, is_marketed: true, status: 'marketplace' });
       setIsMarketConfirmOpen(false);
       toast.success(pushToWhatsapp ? 'Lead pushed to marketplace and contractors notified via WhatsApp!' : 'Lead pushed to marketplace (No WhatsApp notifications sent)');

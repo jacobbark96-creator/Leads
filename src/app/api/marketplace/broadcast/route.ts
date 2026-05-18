@@ -72,14 +72,9 @@ export async function POST(req: NextRequest) {
     console.log(`[Broadcast] Starting broadcast for Lead ID: ${lead.id}`);
 
     // 3. The Matching Engine
-    // Find contractors where their accepted categories match the lead, and they cover the area
-    // Note: In a real complex spatial query, we'd use PostGIS (ST_DWithin). 
-    // Here we simulate matching by grabbing all approved contractors with a valid phone number.
+    // Use the RPC to precisely find contractors matching category and service area radius
     const { data: matchedContractors, error: matchError } = await supabase
-      .from('contractors')
-      .select('id, name, company_name, phone')
-      // .eq('status', 'active') // TEMPORARILY REMOVED FOR TESTING
-      .not('phone', 'is', null);
+      .rpc('get_matched_contractors_for_lead', { p_lead_id: lead.id });
 
     if (matchError || !matchedContractors || matchedContractors.length === 0) {
       console.log(`[Broadcast] No matched contractors found for lead ${lead.id}`);

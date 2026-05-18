@@ -322,6 +322,8 @@ function LeadDetailsV2Content() {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
 
   const [isMarketConfirmOpen, setIsMarketConfirmOpen] = useState(false);
+  const [matchedContractors, setMatchedContractors] = useState<any[]>([]);
+  const [isFetchingMatches, setIsFetchingMatches] = useState(false);
   const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
   const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null);
 
@@ -824,6 +826,22 @@ function LeadDetailsV2Content() {
     }
   };
 
+  const openMarketConfirmModal = async () => {
+    setIsMarketConfirmOpen(true);
+    if (!lead) return;
+    setIsFetchingMatches(true);
+    try {
+      const { data, error } = await supabase
+        .rpc('get_matched_contractors_for_lead', { p_lead_id: lead.id });
+      if (error) throw error;
+      setMatchedContractors(data || []);
+    } catch (err) {
+      console.error('Failed to fetch matched contractors', err);
+    } finally {
+      setIsFetchingMatches(false);
+    }
+  };
+
   const handleMarketLead = async (pushToWhatsapp: boolean) => {
     if (!lead) return;
     try {
@@ -1251,7 +1269,7 @@ function LeadDetailsV2Content() {
               <SmsNotifications />
               {profile?.role === 'super_admin' && lead.status === 'qualified' && !lead.is_marketed && (
                 <button 
-                  onClick={() => setIsMarketConfirmOpen(true)}
+                  onClick={openMarketConfirmModal}
                   className="bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors ml-2 whitespace-nowrap"
                 >
                   Market Lead
@@ -2152,9 +2170,38 @@ function LeadDetailsV2Content() {
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Market Lead</h3>
-            <p className="text-sm text-gray-500 mb-6">Do you want to notify eligible contractors via WhatsApp about this lead?</p>
+            <p className="text-sm text-gray-500 mb-4">Do you want to notify eligible contractors via WhatsApp about this lead?</p>
+            
+            {isFetchingMatches ? (
+              <div className="flex justify-center mb-6">
+                <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+              </div>
+            ) : (
+              <div className="mb-6 bg-gray-50 rounded-lg p-4 text-left">
+                <p className="text-sm font-bold text-gray-700 mb-2">
+                  {matchedContractors.length} Matching Contractor{matchedContractors.length !== 1 && 's'} Found:
+                </p>
+                {matchedContractors.length > 0 ? (
+                  <ul className="text-xs text-gray-600 max-h-32 overflow-y-auto space-y-1">
+                    {matchedContractors.map(c => (
+                      <li key={c.id} className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
+                        <span className="truncate">{c.company_name || c.name}</span>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-xs text-gray-500 italic">No contractors in this area match the criteria.</p>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-col gap-3">
-              <button onClick={() => handleMarketLead(true)} className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 flex items-center justify-center gap-2">
+              <button 
+                onClick={() => handleMarketLead(true)} 
+                disabled={isFetchingMatches || matchedContractors.length === 0}
+                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+              >
                 Yes, Notify via WhatsApp
               </button>
               <button onClick={() => handleMarketLead(false)} className="w-full px-4 py-3 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700">

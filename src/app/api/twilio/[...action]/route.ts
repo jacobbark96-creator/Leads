@@ -104,8 +104,9 @@ async function handleMonitoring(request: Request) {
 
     const recordingMap = new Map();
     recordings.forEach((r: any) => {
-      const mp3Url = `https://${twilioSid}:${twilioToken}@api.twilio.com${r.uri.replace('.json', '.mp3')}`;
-      recordingMap.set(r.call_sid, mp3Url);
+      const cleanUrl = `https://api.twilio.com${r.uri.replace('.json', '.mp3')}`;
+      const proxyUrl = `/api/twilio/media?url=${encodeURIComponent(cleanUrl)}`;
+      recordingMap.set(r.call_sid, proxyUrl);
     });
 
     const repSummaries = (users || []).map(user => ({
@@ -147,7 +148,7 @@ async function handleMonitoring(request: Request) {
           duration: duration,
           status: call.status,
           time: call.start_time,
-          recordingUrl: recordingMap.get(call.sid) || null
+          recordingUrl: recordingMap.get(call.sid) || (call.parent_call_sid ? recordingMap.get(call.parent_call_sid) : null) || null
         });
       }
     });

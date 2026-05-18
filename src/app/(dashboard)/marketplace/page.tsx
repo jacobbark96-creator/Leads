@@ -118,7 +118,7 @@ export default function Marketplace() {
         let query = supabase
           .from('leads')
           .select('*')
-          .eq('status', 'qualified')
+          .in('status', ['qualified', 'marketplace'])
           .eq('is_marketed', true)
           .is('client_id', null);
 

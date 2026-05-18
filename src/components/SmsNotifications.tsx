@@ -52,12 +52,14 @@ export function SmsNotifications() {
     if (!profile) return;
     
     try {
+      const userTwilioNumber = profile.twilio_number?.replace(/[^\d]/g, '').slice(-10) || '';
+      
       const { data, error } = await supabase
         .from('sms_messages')
         .select('*')
-        .eq('user_id', profile.id)
+        .or(`user_id.eq.${profile.id},contact_number.ilike.%${userTwilioNumber}%`)
         .order('created_at', { ascending: false });
-
+      
       if (error) throw error;
       
       const msgs = data || [];

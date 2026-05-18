@@ -79,7 +79,7 @@ function QualifiedLeadsContent() {
       const { data } = await supabase
         .from('leads')
         .select('upload_name')
-        .in('status', ['qualified', 'sold'])
+        .in('status', ['qualified', 'sold', 'marketplace'])
         .not('upload_name', 'is', null);
         
       if (data) {
@@ -100,12 +100,12 @@ function QualifiedLeadsContent() {
       let query = supabase
         .from('leads')
         .select('*, clients(company_name, contact_name)', { count: 'exact' })
-        .in('status', ['qualified', 'sold'])
+        .in('status', ['qualified', 'sold', 'marketplace'])
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
       if (isInitial) {
-        let countQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).in('status', ['qualified', 'sold']);
+        let countQuery = supabase.from('leads').select('id', { count: 'exact', head: true }).in('status', ['qualified', 'sold', 'marketplace']);
         
         if (['super_admin', 'admin'].includes(profile?.role || '')) {
           if (assignedUserFilter === 'me') {

@@ -52,7 +52,7 @@ export function SmsNotifications() {
             let resolvedName = num;
             
             if (cleanNum.length >= 7) {
-              const fuzzyNum = `%${cleanNum}%`;
+              const fuzzyNum = `%${cleanNum.split('').join('%')}%`;
               const isValidName = (name?: string | null) => name && !name.toLowerCase().includes('unknown');
               
               const { data: leads } = await supabase.from('leads').select('name, company').or(`phone.ilike.${fuzzyNum},secondary_phone.ilike.${fuzzyNum}`).limit(1);
@@ -125,12 +125,15 @@ export function SmsNotifications() {
             const cleanChunk = chunk.map(n => (n as string).replace(/[^\d]/g, '').slice(-10)).filter(n => n.length >= 7);
             if (cleanChunk.length === 0) continue;
 
-            const orQuery = cleanChunk.map(num => `phone.ilike.%${num}%`).join(',');
-            const orQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
+            // Generate fuzzy pattern (digit-by-digit) to handle spaces/formatting
+            const getFuzzyPattern = (num: string) => `%${num.split('').join('%')}%`;
+
+            const orQuery = cleanChunk.map(num => `phone.ilike.${getFuzzyPattern(num)}`).join(',');
+            const orQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.${getFuzzyPattern(num)}`).join(',');
             
-            const contractorOrQuery = cleanChunk.map(num => `phone.ilike.%${num}%`).join(',');
-            const contractorOrQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
-            const contractorOrQueryOther = cleanChunk.map(num => `other_contact_numbers.ilike.%${num}%`).join(',');
+            const contractorOrQuery = cleanChunk.map(num => `phone.ilike.${getFuzzyPattern(num)}`).join(',');
+            const contractorOrQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.${getFuzzyPattern(num)}`).join(',');
+            const contractorOrQueryOther = cleanChunk.map(num => `other_contact_numbers.ilike.${getFuzzyPattern(num)}`).join(',');
 
             // Run fewer parallel queries and combine conditions
             const [leadsData, contractorsData] = await Promise.all([

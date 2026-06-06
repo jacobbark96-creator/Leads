@@ -1,0 +1,65 @@
+import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
+
+export const runtime = 'edge';
+
+export async function POST(req: Request) {
+  try {
+    const { userId } = await req.json();
+
+    if (!userId) {
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    }
+
+    const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+    const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
+
+    if (!clientId || !clientSecret) {
+      return NextResponse.json({ error: 'Google Client ID or Secret is not configured' }, { status: 500 });
+    }
+
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+
+    // Get the user's refresh token
+    const { data: user, error: userError } = await supabase
+      .from('users')
+      .select('google_refresh_token')
+      .eq('id', userId)
+      .single();
+
+    if (userError || !user || !user.google_refresh_token) {
+      return NextResponse.json({ error: 'No refresh token found for user' }, { status: 404 });
+    }
+
+    // Exchange refresh token for a new access token
+    const tokenResponse = await fetch('https://oauth2.googleapis.com/token', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        client_id: clientId,
+        client_secret: clientSecret,
+        refresh_token: user.google_refresh_token,
+        grant_type: 'refresh_token',
+      }),
+    });
+
+    const tokens = await tokenResponse.json();
+
+    if (!tokenResponse.ok) {
+      console.error('Google refresh token error:', tokens);
+      return NextResponse.json({ error: 'Failed to refresh token' }, { status: tokenResponse.status });
+    }
+
+    return NextResponse.json({
+      access_token: tokens.access_token,
+      expires_in: tokens.expires_in
+    });
+  } catch (error: any) {
+    console.error('Refresh route error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

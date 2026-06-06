@@ -1,0 +1,3 @@
+ALTER TABLE public.contractors
+ADD COLUMN IF NOT EXISTS latitude NUMERIC,
+ADD COLUMN IF NOT EXISTS longitude NUMERIC;

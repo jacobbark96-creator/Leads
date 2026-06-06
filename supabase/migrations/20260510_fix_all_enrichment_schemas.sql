@@ -1,0 +1,31 @@
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS lead_id uuid REFERENCES leads(id) ON DELETE CASCADE;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS normalized_name varchar(255);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS company_number varchar(100);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS incorporation_date date;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS sic_code text;
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS industry varchar(255);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS employee_count varchar(100);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS estimated_revenue varchar(100);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS net_assets varchar(100);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS website varchar(255);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS linkedin_url varchar(255);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS google_maps_url varchar(255);
+ALTER TABLE companies ADD COLUMN IF NOT EXISTS description text;
+
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS company_id uuid REFERENCES companies(id) ON DELETE CASCADE;
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS lead_id uuid REFERENCES leads(id) ON DELETE CASCADE;
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS property_type varchar(100);
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS roof_type varchar(100);
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS roof_area_estimate numeric;
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS solar_potential_score integer;
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS epc_rating varchar(10);
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS orientation varchar(50);
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS estimated_energy_usage numeric;
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS installation_complexity varchar(100);
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS max_array_panels_count integer;
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS max_sunshine_hours_per_year numeric;
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS satellite_image_url text;
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS latitude numeric;
+ALTER TABLE buildings ADD COLUMN IF NOT EXISTS longitude numeric;
+
+NOTIFY pgrst, 'reload schema';

@@ -1,0 +1,714 @@
+"use client";
+import React, { useEffect, useState } from 'react';
+import Image from 'next/image';
+import { ArrowRight, CheckCircle2, Star, Zap, Shield, BarChart3, Users, Clock, Mail, Globe, MapPin, Building, Target, PhoneCall, TrendingUp, Calendar, ShieldCheck, Sparkles, User } from 'lucide-react';
+import { useAuthStore } from '../../store/authStore';
+
+export default function Home() {
+  const { user, profile } = useAuthStore();
+  const [mounted, setMounted] = useState(false);
+  const [activeStatIndex, setActiveStatIndex] = useState(0);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setActiveStatIndex((prev) => (prev + 1) % 4);
+    }, 4000); // Increased interval to 4 seconds to allow smooth 1s fade
+    return () => clearInterval(interval);
+  }, []);
+
+  const getDashboardLink = () => {
+    if (!profile) return '/login';
+    if (profile.role === 'client') return '/client-portal';
+    return '/staff';
+  };
+
+  return (
+    <div className="flex flex-col min-h-screen">
+      {/* Hero Section */}
+      <section className="relative w-full min-h-[90vh] flex items-center justify-center overflow-hidden">
+        {/* Background Image */}
+        <div className="absolute inset-0 z-0">
+          <Image
+            src="https://images.unsplash.com/photo-1512917774080-9991f1c4c750?ixlib=rb-4.0.3&auto=format&fit=crop&w=2070&q=80"
+            alt="Beautiful residential street representing home service leads"
+            fill
+            priority
+            className="object-cover object-center"
+            sizes="100vw"
+            quality={90}
+          />
+          {/* Dark gradient overlay for readability and modern aesthetic */}
+          <div className="absolute inset-0 bg-gradient-to-r from-slate-950/95 via-slate-900/80 to-slate-900/40"></div>
+        </div>
+
+        <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full pt-0 pb-16">
+          <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
+            
+            {/* Left Content */}
+            <div className="max-w-2xl">
+              
+              <h1 className="font-darker-grotesque text-6xl md:text-7xl lg:text-8xl font-extrabold tracking-tight text-white mb-6 flex flex-col items-start" style={{ lineHeight: '0.75' }}>
+                <span>Scale With</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300 pb-4 -mb-4">
+                  High-Intent
+                </span>
+                <span>Leads</span>
+              </h1>
+              
+              <p className="text-lg md:text-xl text-slate-300 mb-10 leading-relaxed max-w-xl">
+                Stop fighting over shared data. We generate exclusive, pre-qualified leads for your industry directly to your CRM.
+              </p>
+              
+              <div className="flex flex-col sm:flex-row gap-4">
+                <a
+                  href={user && mounted ? getDashboardLink() : "/login"}
+                  className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-white bg-openlead-blue hover:bg-openlead-blue/90 shadow-[0_0_40px_-10px_rgba(57,204,204,0.5)] hover:shadow-[0_0_60px_-15px_rgba(57,204,204,0.7)] transition-all duration-300"
+                >
+                  {user && mounted ? "Dashboard" : "Login / Sign up"} <ArrowRight className="ml-2 w-5 h-5" />
+                </a>
+                <a
+                  href="/services"
+                  className="inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-xl text-white bg-white/5 hover:bg-white/10 border border-white/10 backdrop-blur-md transition-all duration-300"
+                >
+                  View Services
+                </a>
+              </div>
+
+              <div className="mt-12 flex items-center gap-6">
+                <div className="flex -space-x-3">
+                  {[...Array(4)].map((_, i) => (
+                    <div key={i} className="w-10 h-10 rounded-full border-2 border-slate-900 bg-slate-800 overflow-hidden relative">
+                      <Image 
+                        src={`https://i.pravatar.cc/100?img=${i + 11}`}
+                        alt="Contractor avatar"
+                        fill
+                        className="object-cover"
+                        sizes="40px"
+                      />
+                    </div>
+                  ))}
+                </div>
+                <div className="flex flex-col">
+                  <div className="flex text-amber-400 mb-1">
+                    {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
+                  </div>
+                  <span className="text-slate-300 text-sm font-medium">Trusted by 500+ Contractors</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Right Content - Floating UI Cards */}
+            <div className="hidden lg:block relative h-[600px] w-full perspective-1000">
+              
+              {/* Main CRM Mockup */}
+              <div className="absolute top-1/2 right-4 -translate-y-1/2 w-[420px] bg-white rounded-2xl shadow-2xl border border-slate-100 overflow-hidden transform -rotate-2 hover:rotate-0 transition-transform duration-500 z-10">
+                <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex justify-between items-center">
+                  <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full bg-red-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-amber-400"></div>
+                    <div className="w-3 h-3 rounded-full bg-green-400"></div>
+                  </div>
+                  <span className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Openlead CRM</span>
+                </div>
+                <div className="p-6 space-y-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="font-bold text-slate-800">New Lead Received</h3>
+                    <span className="text-xs font-bold bg-green-100 text-green-700 px-2.5 py-1 rounded-full">Exclusive</span>
+                  </div>
+                  <div className="bg-slate-50 rounded-xl p-5 border border-slate-100">
+                    <div className="flex justify-between items-start mb-4">
+                      <div>
+                        <p className="font-bold text-slate-900 text-lg">Michael Anderson</p>
+                        <p className="text-sm text-slate-500">123 Example Street, London, N1 1AB</p>
+                      </div>
+                      <div className="bg-blue-100 text-blue-700 p-2.5 rounded-lg">
+                        <Zap className="w-5 h-5" />
+                      </div>
+                    </div>
+                    <div className="space-y-3 mt-4 pt-4 border-t border-slate-200">
+                      <div className="flex items-center gap-3 text-sm text-slate-700 font-medium">
+                        <Target className="w-4 h-4 text-blue-500" /> Solar Installation
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-slate-700 font-medium">
+                        <PhoneCall className="w-4 h-4 text-green-500" /> +44 7123456789
+                      </div>
+                    </div>
+                    <button className="mt-6 w-full bg-openlead-blue text-white rounded-lg py-3 text-sm font-bold hover:bg-openlead-blue/90 transition-colors flex items-center justify-center gap-2 shadow-md">
+                      <PhoneCall className="w-4 h-4" /> Call Lead Now
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              {/* Small Floating Card 1 */}
+              <div className="absolute top-16 right-[320px] w-64 bg-white p-5 rounded-2xl shadow-xl border border-slate-100 transform -rotate-6 animate-float-slow z-20">
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shrink-0">
+                    <TrendingUp className="w-6 h-6" />
+                  </div>
+                  <div>
+                    <p className="text-sm text-slate-500 font-medium mb-0.5">Conversion Rate</p>
+                    <p className="text-xl font-bold text-slate-900">+24% This Month</p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Small Floating Card 2 */}
+              <div className="absolute bottom-20 right-2 w-72 bg-slate-900/95 backdrop-blur-md p-5 rounded-2xl shadow-2xl border border-slate-700 transform rotate-3 animate-float z-20">
+                <div className="flex items-center justify-between mb-4">
+                  <span className="text-sm text-slate-300 font-semibold">Upcoming Bookings</span>
+                  <Calendar className="w-4 h-4 text-blue-400" />
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-blue-400 shadow-[0_0_10px_rgba(96,165,250,0.8)]"></div>
+                    <p className="text-sm text-white font-medium">Site Visit - Roofing</p>
+                    <p className="text-xs text-slate-400 ml-auto font-medium">10:00 AM</p>
+                  </div>
+                  <div className="flex items-center gap-3">
+                    <div className="w-2.5 h-2.5 rounded-full bg-cyan-400 shadow-[0_0_10px_rgba(34,211,238,0.8)]"></div>
+                    <p className="text-sm text-white font-medium">Solar Consultation</p>
+                    <p className="text-xs text-slate-400 ml-auto font-medium">2:30 PM</p>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+          </div>
+        </div>
+      </section>
+
+      {/* Features/Stats Strip */}
+      <section className="border-b border-slate-200 bg-white relative z-20">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 md:py-12">
+          
+          {/* Mobile: Fading Stats Carousel */}
+          <div className="md:hidden relative w-full h-24 flex items-center justify-center overflow-hidden">
+            {[
+              { label: "Exclusive Leads", value: "100%", desc: "Never shared or resold" },
+              { label: "Lead Categories", value: "4+", desc: "Solar, Roofing & more" },
+              { label: "Delivered Leads", value: "1K+", desc: "To growing contractors" },
+              { label: "Avg. Min Saving", value: "180%", desc: "on lead cost with zero reduction in close rate." },
+            ].map((stat, i) => (
+              <div 
+                key={i} 
+                className={`absolute inset-0 flex flex-col items-center justify-center transition-opacity duration-1000 ease-in-out ${
+                  i === activeStatIndex ? 'opacity-100 z-10' : 'opacity-0 z-0'
+                }`}
+              >
+                <p className="text-4xl font-extrabold text-openlead-blue mb-2">{stat.value}</p>
+                <p className="text-slate-900 font-bold mb-1 text-lg">{stat.label}</p>
+                <p className="text-slate-500 text-sm">{stat.desc}</p>
+              </div>
+            ))}
+          </div>
+
+          {/* Desktop: Standard Grid */}
+          <div className="hidden md:grid md:grid-cols-4 gap-8 divide-x divide-slate-100">
+            {[
+              { label: "Exclusive Leads", value: "100%", desc: "Never shared or resold" },
+              { label: "Lead Categories", value: "4+", desc: "Solar, Roofing & more" },
+              { label: "Delivered Leads", value: "10k+", desc: "To growing contractors" },
+              { label: "Avg. Min Saving", value: "180%", desc: "on lead cost with zero reduction in close rate." },
+            ].map((stat, i) => (
+              <div key={i} className="text-center px-4">
+                <p className="text-4xl md:text-5xl font-extrabold text-openlead-blue mb-2">{stat.value}</p>
+                <p className="text-slate-900 font-bold mb-1 text-lg">{stat.label}</p>
+                <p className="text-slate-500 text-sm">{stat.desc}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Why Choose Us - Data-Driven Approach */}
+      <section className="py-12 md:py-24 bg-white relative overflow-hidden">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+          <div className="text-center max-w-3xl mx-auto mb-12 md:mb-20">
+            <h2 className="text-4xl md:text-5xl lg:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight">
+              Backed by <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-500">Hard Data</span>
+            </h2>
+            <p className="text-xl text-slate-600 leading-relaxed font-light">
+              We don't just promise better leads. We engineer them. Our platform is built to maximize your ROI through rigorous qualification and absolute exclusivity.
+            </p>
+          </div>
+
+          {/* Mobile: Swipeable Card Carousel */}
+          <div className="md:hidden flex overflow-x-auto snap-x snap-mandatory relative w-[100vw] left-1/2 -translate-x-1/2 pb-12 px-[7.5vw] gap-4 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+            {/* Set 1 */}
+            <div className="snap-center w-[85vw] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 transition-all duration-300 group">
+                {/* Data Vis Area */}
+                <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                   <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] flex items-center gap-5 transform group-hover:-translate-y-1 transition-transform duration-500">
+                      <div className="w-16 h-16 rounded-full border-4 border-slate-50 flex items-center justify-center relative shadow-inner">
+                         <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
+                           <path className="text-slate-100" strokeWidth="4" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                           <path className="text-openlead-blue transition-all duration-1000 ease-out" strokeDasharray="98, 100" strokeWidth="4" strokeLinecap="round" fill="none" stroke="currentColor" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                         </svg>
+                         <span className="font-bold text-slate-900 text-sm">98%</span>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Intent Score</p>
+                        <p className="text-sm font-bold text-slate-900">Highly Qualified</p>
+                        <div className="flex gap-1 mt-2">
+                          <div className="h-1.5 w-4 bg-openlead-blue rounded-full"></div>
+                          <div className="h-1.5 w-4 bg-openlead-blue rounded-full"></div>
+                          <div className="h-1.5 w-4 bg-openlead-blue rounded-full"></div>
+                          <div className="h-1.5 w-4 bg-slate-200 rounded-full"></div>
+                        </div>
+                      </div>
+                   </div>
+                </div>
+                <div className="p-8">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-6">
+                    <Target className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">Pre-Qualified Intent</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    We don't just sell data. Every lead is a potential client who has actively requested a quote for your specific service. High intent means higher close rates.
+                  </p>
+                </div>
+              </div>
+
+              <div className="snap-center w-[85vw] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 group">
+                {/* Data Vis Area */}
+                <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                   <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Distribution Limit</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                          Live
+                        </span>
+                      </div>
+                      <div className="flex items-end gap-3 border-b border-slate-100 pb-4 mb-3">
+                        <span className="text-5xl font-black text-slate-900 leading-none">1</span>
+                        <span className="text-2xl font-bold text-slate-300 leading-none mb-1">/ 1</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                        <p className="text-xs text-slate-500 font-semibold">Sold exclusively to you.</p>
+                      </div>
+                   </div>
+                </div>
+                <div className="p-8">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-6">
+                    <ShieldCheck className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">Absolute Exclusivity</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    Unlike the majority of other lead generation companies, We never sell the same prospect to multiple contractors. No racing to the bottom on price.
+                  </p>
+                </div>
+              </div>
+
+              <div className="snap-center w-[85vw] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 group">
+                {/* Data Vis Area */}
+                <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                   <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                      <div className="flex justify-between items-center mb-5">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Speed to Lead</span>
+                        <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">Instant</span>
+                      </div>
+                      <div className="flex gap-2 items-end h-12 mt-2">
+                        <div className="w-1/5 bg-slate-100 rounded-t-md h-4 transition-all duration-500 group-hover:h-6"></div>
+                        <div className="w-1/5 bg-slate-100 rounded-t-md h-6 transition-all duration-500 group-hover:h-8"></div>
+                        <div className="w-1/5 bg-slate-100 rounded-t-md h-5 transition-all duration-500 group-hover:h-7"></div>
+                        <div className="w-1/5 bg-openlead-blue rounded-t-md h-12 relative shadow-[0_0_15px_rgba(57,204,204,0.3)]">
+                           <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full border-[3px] border-openlead-blue"></div>
+                        </div>
+                        <div className="w-1/5 bg-slate-100 rounded-t-md h-8 transition-all duration-500 group-hover:h-10"></div>
+                      </div>
+                      <div className="mt-3 flex justify-between text-[10px] text-slate-400 font-bold border-t border-slate-50 pt-2">
+                        <span>M</span><span>T</span><span>W</span><span className="text-openlead-blue">T</span><span>F</span>
+                      </div>
+                   </div>
+                </div>
+                <div className="p-8">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center mb-6">
+                    <Zap className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">All-in-One CRM</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    Manage your leads, track appointments, and using our built in client portal.
+                  </p>
+                </div>
+              </div>
+
+              <div className="snap-center w-[85vw] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group">
+                {/* Data Vis Area */}
+                <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                   <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Partner Network</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Vetted
+                        </span>
+                      </div>
+                      <div className="flex gap-1 mb-3">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
+                        <div className="flex -space-x-2">
+                           <div className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center overflow-hidden"><User className="w-4 h-4 text-slate-400" /></div>
+                           <div className="w-6 h-6 rounded-full bg-slate-300 border-2 border-white flex items-center justify-center overflow-hidden"><User className="w-4 h-4 text-slate-500" /></div>
+                           <div className="w-6 h-6 rounded-full bg-slate-400 border-2 border-white flex items-center justify-center overflow-hidden"><User className="w-4 h-4 text-slate-600" /></div>
+                        </div>
+                        <p className="text-xs text-slate-500 font-semibold ml-2">Top-tier providers</p>
+                      </div>
+                   </div>
+                </div>
+                <div className="p-8">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mb-6">
+                    <Users className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">Vetted Marketplace</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    We work with vetted and tested lead generation companies to build our marketplace, ensuring that the leads you get are not only the best price, but the best quality also.
+                  </p>
+                </div>
+              </div>
+
+              {/* Set 2 (Duplicated for Infinite Marquee) */}
+              <div className="w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-openlead-blue/10 transition-all duration-300 group">
+                <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                   <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] flex items-center gap-5 transform group-hover:-translate-y-1 transition-transform duration-500">
+                      <div className="w-16 h-16 rounded-full border-4 border-slate-50 flex items-center justify-center relative shadow-inner">
+                         <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
+                           <path className="text-slate-100" strokeWidth="4" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                           <path className="text-openlead-blue transition-all duration-1000 ease-out" strokeDasharray="98, 100" strokeWidth="4" strokeLinecap="round" fill="none" stroke="currentColor" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                         </svg>
+                         <span className="font-bold text-slate-900 text-sm">98%</span>
+                      </div>
+                      <div>
+                        <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-1">Intent Score</p>
+                        <p className="text-sm font-bold text-slate-900">Highly Qualified</p>
+                        <div className="flex gap-1 mt-2">
+                          <div className="h-1.5 w-4 bg-openlead-blue rounded-full"></div>
+                          <div className="h-1.5 w-4 bg-openlead-blue rounded-full"></div>
+                          <div className="h-1.5 w-4 bg-openlead-blue rounded-full"></div>
+                          <div className="h-1.5 w-4 bg-slate-200 rounded-full"></div>
+                        </div>
+                      </div>
+                   </div>
+                </div>
+                <div className="p-8">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-6">
+                    <Target className="w-6 h-6 text-blue-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">Pre-Qualified Intent</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    We don't just sell data. Every lead is a potential client who has actively requested a quote for your specific service. High intent means higher close rates.
+                  </p>
+                </div>
+              </div>
+
+              <div className="w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-emerald-500/10 transition-all duration-300 group">
+                <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                   <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Distribution Limit</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-xs font-bold">
+                          <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                          Live
+                        </span>
+                      </div>
+                      <div className="flex items-end gap-3 border-b border-slate-100 pb-4 mb-3">
+                        <span className="text-5xl font-black text-slate-900 leading-none">1</span>
+                        <span className="text-2xl font-bold text-slate-300 leading-none mb-1">/ 1</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <ShieldCheck className="w-4 h-4 text-emerald-500" />
+                        <p className="text-xs text-slate-500 font-semibold">Sold exclusively to you.</p>
+                      </div>
+                   </div>
+                </div>
+                <div className="p-8">
+                  <div className="w-12 h-12 rounded-2xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-6">
+                    <ShieldCheck className="w-6 h-6 text-emerald-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">Absolute Exclusivity</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    Unlike the majority of other lead generation companies, We never sell the same prospect to multiple contractors. No racing to the bottom on price.
+                  </p>
+                </div>
+              </div>
+
+              <div className="w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-amber-500/10 transition-all duration-300 group">
+                <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                   <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                      <div className="flex justify-between items-center mb-5">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Speed to Lead</span>
+                        <span className="text-xs font-bold text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">Instant</span>
+                      </div>
+                      <div className="flex gap-2 items-end h-12 mt-2">
+                        <div className="w-1/5 bg-slate-100 rounded-t-md h-4 transition-all duration-500 group-hover:h-6"></div>
+                        <div className="w-1/5 bg-slate-100 rounded-t-md h-6 transition-all duration-500 group-hover:h-8"></div>
+                        <div className="w-1/5 bg-slate-100 rounded-t-md h-5 transition-all duration-500 group-hover:h-7"></div>
+                        <div className="w-1/5 bg-openlead-blue rounded-t-md h-12 relative shadow-[0_0_15px_rgba(57,204,204,0.3)]">
+                           <div className="absolute -top-1.5 left-1/2 -translate-x-1/2 w-3 h-3 bg-white rounded-full border-[3px] border-openlead-blue"></div>
+                        </div>
+                        <div className="w-1/5 bg-slate-100 rounded-t-md h-8 transition-all duration-500 group-hover:h-10"></div>
+                      </div>
+                      <div className="mt-3 flex justify-between text-[10px] text-slate-400 font-bold border-t border-slate-50 pt-2">
+                        <span>M</span><span>T</span><span>W</span><span className="text-openlead-blue">T</span><span>F</span>
+                      </div>
+                   </div>
+                </div>
+                <div className="p-8">
+                  <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 flex items-center justify-center mb-6">
+                    <Zap className="w-6 h-6 text-amber-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">All-in-One CRM</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    Manage your leads, track appointments, and using our built in client portal.
+                  </p>
+                </div>
+              </div>
+
+              <div className="w-[85vw] max-w-[340px] shrink-0 bg-white rounded-3xl border border-slate-200 overflow-hidden shadow-xl shadow-slate-200/50 hover:shadow-2xl hover:shadow-indigo-500/10 transition-all duration-300 group">
+                <div className="h-56 bg-slate-50 p-6 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                   <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                   <div className="relative bg-white rounded-2xl shadow-sm border border-slate-200 p-5 w-full max-w-[260px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                      <div className="flex justify-between items-center mb-4">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Partner Network</span>
+                        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-xs font-bold">
+                          <CheckCircle2 className="w-3 h-3" />
+                          Vetted
+                        </span>
+                      </div>
+                      <div className="flex gap-1 mb-3">
+                        {[...Array(5)].map((_, i) => (
+                          <Star key={i} className="w-5 h-5 text-amber-400 fill-amber-400" />
+                        ))}
+                      </div>
+                      <div className="flex items-center gap-2 border-t border-slate-100 pt-3">
+                        <div className="flex -space-x-2">
+                           <div className="w-6 h-6 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center overflow-hidden"><User className="w-4 h-4 text-slate-400" /></div>
+                           <div className="w-6 h-6 rounded-full bg-slate-300 border-2 border-white flex items-center justify-center overflow-hidden"><User className="w-4 h-4 text-slate-500" /></div>
+                           <div className="w-6 h-6 rounded-full bg-slate-400 border-2 border-white flex items-center justify-center overflow-hidden"><User className="w-4 h-4 text-slate-600" /></div>
+                        </div>
+                        <p className="text-xs text-slate-500 font-semibold ml-2">Top-tier providers</p>
+                      </div>
+                   </div>
+                </div>
+                <div className="p-8">
+                  <div className="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mb-6">
+                    <Users className="w-6 h-6 text-indigo-600" />
+                  </div>
+                  <h3 className="text-2xl font-bold text-slate-900 mb-3">Vetted Marketplace</h3>
+                  <p className="text-slate-600 leading-relaxed">
+                    We work with vetted and tested lead generation companies to build our marketplace, ensuring that the leads you get are not only the best price, but the best quality also.
+                  </p>
+                </div>
+              </div>
+          </div>
+
+          {/* Desktop: Standard Grid */}
+          <div className="hidden md:grid md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {/* Card 1: Intent */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-openlead-blue/10 transition-all duration-300 group">
+              {/* Data Vis Area */}
+              <div className="h-44 bg-slate-50 p-4 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                 {/* Abstract Grid Background */}
+                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                 {/* UI Element */}
+                 <div className="relative bg-white rounded-xl shadow-sm border border-slate-200 p-4 w-full max-w-[220px] flex items-center gap-4 transform group-hover:-translate-y-1 transition-transform duration-500">
+                    <div className="w-14 h-14 rounded-full border-4 border-slate-50 flex items-center justify-center relative shadow-inner">
+                       <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 36 36">
+                         <path className="text-slate-100" strokeWidth="4" fill="none" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                         <path className="text-openlead-blue transition-all duration-1000 ease-out" strokeDasharray="98, 100" strokeWidth="4" strokeLinecap="round" fill="none" stroke="currentColor" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                       </svg>
+                       <span className="font-bold text-slate-900 text-xs">98%</span>
+                    </div>
+                    <div>
+                      <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider mb-1">Intent Score</p>
+                      <p className="text-xs font-bold text-slate-900">Highly Qualified</p>
+                      <div className="flex gap-1 mt-1.5">
+                        <div className="h-1 w-3 bg-openlead-blue rounded-full"></div>
+                        <div className="h-1 w-3 bg-openlead-blue rounded-full"></div>
+                        <div className="h-1 w-3 bg-openlead-blue rounded-full"></div>
+                        <div className="h-1 w-3 bg-slate-200 rounded-full"></div>
+                      </div>
+                    </div>
+                 </div>
+              </div>
+              <div className="p-6">
+                <div className="w-10 h-10 rounded-xl bg-blue-50 border border-blue-100 flex items-center justify-center mb-4">
+                  <Target className="w-5 h-5 text-blue-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Pre-Qualified Intent</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  We don't just sell data. Every lead is a potential client who has actively requested a quote for your specific service. High intent means higher close rates.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 2: Exclusivity */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-emerald-500/10 transition-all duration-300 group">
+              {/* Data Vis Area */}
+              <div className="h-44 bg-slate-50 p-4 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                 {/* Abstract Grid Background */}
+                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                 {/* UI Element */}
+                 <div className="relative bg-white rounded-xl shadow-sm border border-slate-200 p-4 w-full max-w-[220px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Distribution Limit</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-emerald-50 border border-emerald-100 text-emerald-700 text-[10px] font-bold">
+                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></div>
+                        Live
+                      </span>
+                    </div>
+                    <div className="flex items-end gap-2 border-b border-slate-100 pb-3 mb-2">
+                      <span className="text-4xl font-black text-slate-900 leading-none">1</span>
+                      <span className="text-xl font-bold text-slate-300 leading-none mb-1">/ 1</span>
+                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                      <p className="text-[11px] text-slate-500 font-semibold">Sold exclusively to you.</p>
+                    </div>
+                 </div>
+              </div>
+              <div className="p-6">
+                <div className="w-10 h-10 rounded-xl bg-emerald-50 border border-emerald-100 flex items-center justify-center mb-4">
+                  <ShieldCheck className="w-5 h-5 text-emerald-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Absolute Exclusivity</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Unlike the majority of other lead generation companies, We never sell the same prospect to multiple contractors. No racing to the bottom on price.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 3: CRM */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-amber-500/10 transition-all duration-300 group">
+              {/* Data Vis Area */}
+              <div className="h-44 bg-slate-50 p-4 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                 {/* Abstract Grid Background */}
+                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                 {/* UI Element */}
+                 <div className="relative bg-white rounded-xl shadow-sm border border-slate-200 p-4 w-full max-w-[220px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                    <div className="flex justify-between items-center mb-4">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Speed to Lead</span>
+                      <span className="text-[10px] font-bold text-amber-700 bg-amber-50 border border-amber-100 px-1.5 py-0.5 rounded-md">Instant</span>
+                    </div>
+                    <div className="flex gap-1.5 items-end h-10 mt-1">
+                      <div className="w-1/5 bg-slate-100 rounded-t-md h-3 transition-all duration-500 group-hover:h-5"></div>
+                      <div className="w-1/5 bg-slate-100 rounded-t-md h-5 transition-all duration-500 group-hover:h-7"></div>
+                      <div className="w-1/5 bg-slate-100 rounded-t-md h-4 transition-all duration-500 group-hover:h-6"></div>
+                      <div className="w-1/5 bg-openlead-blue rounded-t-md h-10 relative shadow-[0_0_10px_rgba(57,204,204,0.3)]">
+                         <div className="absolute -top-1 left-1/2 -translate-x-1/2 w-2.5 h-2.5 bg-white rounded-full border-[2px] border-openlead-blue"></div>
+                      </div>
+                      <div className="w-1/5 bg-slate-100 rounded-t-md h-7 transition-all duration-500 group-hover:h-9"></div>
+                    </div>
+                    <div className="mt-2 flex justify-between text-[9px] text-slate-400 font-bold border-t border-slate-50 pt-1.5">
+                      <span>M</span><span>T</span><span>W</span><span className="text-openlead-blue">T</span><span>F</span>
+                    </div>
+                 </div>
+              </div>
+              <div className="p-6">
+                <div className="w-10 h-10 rounded-xl bg-amber-50 border border-amber-100 flex items-center justify-center mb-4">
+                  <Zap className="w-5 h-5 text-amber-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">All-in-One CRM</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  Manage your leads, track appointments, and using our built in client portal.
+                </p>
+              </div>
+            </div>
+
+            {/* Card 4: Vetted Marketplace */}
+            <div className="bg-white rounded-2xl border border-slate-200 overflow-hidden shadow-lg shadow-slate-200/50 hover:shadow-xl hover:shadow-indigo-500/10 transition-all duration-300 group">
+              {/* Data Vis Area */}
+              <div className="h-44 bg-slate-50 p-4 flex items-center justify-center border-b border-slate-100 relative overflow-hidden">
+                 {/* Abstract Grid Background */}
+                 <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:12px_12px]"></div>
+                 {/* UI Element */}
+                 <div className="relative bg-white rounded-xl shadow-sm border border-slate-200 p-4 w-full max-w-[220px] transform group-hover:-translate-y-1 transition-transform duration-500">
+                    <div className="flex justify-between items-center mb-3">
+                      <span className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Partner Network</span>
+                      <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-indigo-50 border border-indigo-100 text-indigo-700 text-[10px] font-bold">
+                        <CheckCircle2 className="w-3 h-3" />
+                        Vetted
+                      </span>
+                    </div>
+                    <div className="flex gap-1 mb-2">
+                      {[...Array(5)].map((_, i) => (
+                        <Star key={i} className="w-4 h-4 text-amber-400 fill-amber-400" />
+                      ))}
+                    </div>
+                    <div className="flex items-center gap-1.5 border-t border-slate-100 pt-2">
+                      <div className="flex -space-x-1.5">
+                         <div className="w-5 h-5 rounded-full bg-slate-200 border border-white flex items-center justify-center overflow-hidden"><User className="w-3 h-3 text-slate-400" /></div>
+                         <div className="w-5 h-5 rounded-full bg-slate-300 border border-white flex items-center justify-center overflow-hidden"><User className="w-3 h-3 text-slate-500" /></div>
+                         <div className="w-5 h-5 rounded-full bg-slate-400 border border-white flex items-center justify-center overflow-hidden"><User className="w-3 h-3 text-slate-600" /></div>
+                      </div>
+                      <p className="text-[11px] text-slate-500 font-semibold ml-1">Top-tier providers</p>
+                    </div>
+                 </div>
+              </div>
+              <div className="p-6">
+                <div className="w-10 h-10 rounded-xl bg-indigo-50 border border-indigo-100 flex items-center justify-center mb-4">
+                  <Users className="w-5 h-5 text-indigo-600" />
+                </div>
+                <h3 className="text-xl font-bold text-slate-900 mb-2">Vetted Marketplace</h3>
+                <p className="text-sm text-slate-600 leading-relaxed">
+                  We work with vetted and tested lead generation companies to build our marketplace, ensuring that the leads you get are not only the best price, but the best quality also.
+                </p>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      {/* CTA Section - Silicon Valley Vibe */}
+      <section className="relative py-32 overflow-hidden bg-slate-900 border-t border-slate-800">
+        {/* Subtle glowing orbs for SV vibe */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-3xl h-full pointer-events-none">
+          <div className="absolute top-[-20%] left-[-10%] w-96 h-96 bg-openlead-blue/20 rounded-full blur-3xl opacity-50 animate-pulse"></div>
+          <div className="absolute bottom-[-20%] right-[-10%] w-96 h-96 bg-cyan-500/20 rounded-full blur-3xl opacity-50 animate-pulse" style={{ animationDelay: '2s' }}></div>
+        </div>
+
+        <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
+          <h2 className="text-4xl md:text-6xl font-extrabold text-white mb-8 tracking-tight">
+            Stop Waiting for the <span className="text-transparent bg-clip-text bg-gradient-to-r from-openlead-blue to-cyan-300">Phone to Ring</span>
+          </h2>
+          
+          <p className="text-xl md:text-2xl text-slate-400 mb-12 max-w-3xl mx-auto leading-relaxed font-light">
+            Join the top-performing contractors across the country who rely on Openlead to keep their pipelines full and revenue growing.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row justify-center items-center gap-4 sm:gap-6">
+            <a
+              href={user && mounted ? getDashboardLink() : "/login"}
+              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-full text-slate-900 bg-white hover:bg-slate-100 shadow-[0_0_40px_rgba(255,255,255,0.1)] hover:shadow-[0_0_60px_rgba(255,255,255,0.2)] hover:-translate-y-1 transition-all duration-300"
+            >
+              {user && mounted ? "Go to Dashboard" : "Get Started Now"}
+            </a>
+            <a
+              href="/about"
+              className="w-full sm:w-auto inline-flex items-center justify-center px-8 py-4 text-base font-bold rounded-full text-white bg-slate-800/50 hover:bg-slate-800 border border-slate-700 hover:border-slate-600 backdrop-blur-md transition-all duration-300"
+            >
+              Learn More
+            </a>
+          </div>
+        </div>
+      </section>
+    </div>
+  );
+}

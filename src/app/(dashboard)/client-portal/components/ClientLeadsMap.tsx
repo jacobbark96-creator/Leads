@@ -1,0 +1,119 @@
+"use client";
+
+import React, { useEffect, useState } from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+import { Lead } from '../../../../types';
+import { Home } from 'lucide-react';
+
+// Fix Leaflet's default icon paths and React 18 Strict Mode / Fast Refresh issues
+if (typeof window !== 'undefined') {
+  delete (L.Icon.Default.prototype as any)._getIconUrl;
+  L.Icon.Default.mergeOptions({
+    iconRetinaUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png',
+    iconUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png',
+    shadowUrl: 'https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png',
+  });
+
+  if (!(L.Map.prototype as any)._isPatched) {
+    const originalInit = (L.Map.prototype as any)._initContainer;
+    (L.Map.prototype as any)._initContainer = function (id: string | HTMLElement) {
+      const container = typeof id === 'string' ? document.getElementById(id) : id;
+      if (container) {
+        if ((container as any)._leaflet_id) {
+          (container as any)._leaflet_id = null;
+        }
+        // Instead of emptying innerHTML which destroys react's references, just ensure
+        // any existing leaflet panes are removed or let leaflet reuse the container safely.
+        const children = Array.from(container.childNodes);
+        children.forEach(child => {
+          if ((child as HTMLElement).classList?.contains('leaflet-pane') || 
+              (child as HTMLElement).classList?.contains('leaflet-control-container')) {
+            container.removeChild(child);
+          }
+        });
+      }
+      originalInit.call(this, id);
+    };
+    (L.Map.prototype as any)._isPatched = true;
+  }
+}
+
+// Custom house icon for installer HQ using standard leaflet marker but different color if possible
+// For simplicity, we'll use a custom div icon
+const homeIcon = L.divIcon({
+  className: 'custom-div-icon',
+  html: `<div style="background-color: #2563eb; width: 30px; height: 30px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; color: white;">
+           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m3 9 9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+         </div>`,
+  iconSize: [30, 30],
+  iconAnchor: [15, 15],
+});
+
+interface ClientLeadsMapProps {
+  leads: Lead[];
+  onLeadClick: (lead: Lead) => void;
+}
+
+export default function ClientLeadsMap({ leads, onLeadClick }: ClientLeadsMapProps) {
+  // Center of UK
+  const defaultCenter: [number, number] = [54.0, -2.5];
+  const [mapId, setMapId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setMapId('map-' + Math.random().toString(36).substr(2, 9));
+    }, 50);
+    return () => clearTimeout(timer);
+  }, []);
+
+  if (!mapId) {
+    return <div className="w-full h-[500px] lg:h-full bg-blue-50/50 flex items-center justify-center rounded-xl border border-blue-100/50">Loading map...</div>;
+  }
+
+  // Use leads that have lat/lng
+  const mapLeads = leads.filter(l => l.latitude && l.longitude);
+
+  return (
+    <div className="w-full h-[500px] lg:h-full rounded-xl overflow-hidden border border-gray-200 relative z-0">
+      {mapId && (
+        <MapContainer 
+          id={mapId}
+          center={defaultCenter} 
+          zoom={6} 
+          style={{ height: '100%', width: '100%', zIndex: 0 }}
+          zoomControl={true}
+        >
+        <TileLayer
+          attribution='&copy; OpenStreetMap'
+          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+        />
+        
+        {mapLeads.map(lead => (
+          <Marker 
+            key={lead.id} 
+            position={[lead.latitude as number, lead.longitude as number]}
+            eventHandlers={{
+              click: () => onLeadClick(lead),
+            }}
+          >
+            <Popup>
+              <div className="text-sm">
+                <p className="font-bold">{lead.name}</p>
+                <p className="text-gray-500">{lead.location}</p>
+                <button 
+                  onClick={() => onLeadClick(lead)}
+                  className="mt-2 text-blue-600 font-medium hover:underline text-xs"
+                >
+                  View Details
+                </button>
+              </div>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
+      )}
+    </div>
+  );
+}

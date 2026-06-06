@@ -1,0 +1,568 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { Lead } from '../types';
+import { useAuthStore } from '../store/authStore';
+import { supabase } from '../lib/supabase';
+import { 
+  X, MapPin, User, Calendar, Home, CheckCircle, Zap, ShieldCheck, 
+  ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, 
+  Battery, TrendingUp, ChevronRight, Check, Building
+} from 'lucide-react';
+import { extractTown } from '../lib/utils';
+import { formatDistanceToNow } from 'date-fns';
+import { trackLeadEvent } from '../utils/tracking';
+import { MagicCheckoutModal } from './MagicCheckoutModal';
+
+interface MarketplaceLeadModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  lead: Lead;
+  onPurchase: () => void;
+}
+
+const MissingValue = () => null;
+
+const DisplayValue = ({ value, suffix = '', className = "text-right" }: { value: any, suffix?: string, className?: string }) => {
+  if (value === undefined || value === null || value === '' || value === 'N/A' || value === '0') {
+    return <span className={`text-gray-300 font-normal italic ${className}`}></span>;
+  }
+  const strValue = String(value);
+  const len = strValue.length;
+  
+  let sizeClass = 'text-xs';
+  if (len > 40) sizeClass = 'text-[8.5px] leading-tight break-words';
+  else if (len > 25) sizeClass = 'text-[9.5px] leading-tight break-words';
+  else if (len > 15) sizeClass = 'text-[10.5px] leading-tight break-words';
+  
+  const finalClassName = className ? className.replace(/text-(xs|sm|base|lg|xl|\[.*?\])/g, '').trim() : '';
+
+  return <span className={`text-gray-900 font-semibold ${sizeClass} ${finalClassName}`} title={`${strValue}${suffix}`}>{strValue}{suffix}</span>;
+};
+
+export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOpen, onClose, lead, onPurchase }) => {
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
+  const [hasBills, setHasBills] = useState<boolean>(false);
+  const [showMagicLink, setShowMagicLink] = useState(false);
+  const [scale, setScale] = useState(1);
+  const { profile } = useAuthStore();
+  const hasTrackedView = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) return;
+    
+    // Do not scale for clients (contractors) - they should see the standard size
+    if (profile?.role === 'client') {
+      setScale(1);
+      return;
+    }
+
+    const calculateScale = () => {
+      if (typeof window !== 'undefined') {
+        // Scale based primarily on width so it fills the screen horizontally and is much larger/readable.
+        // We will allow vertical scrolling if the scaled height exceeds the screen height.
+        const availableWidth = window.innerWidth * 0.96; // 96% of screen width
+        
+        // Base dimensions of the modal
+        const BASE_WIDTH = 1200;
+        
+        let newScale = availableWidth / BASE_WIDTH;
+        
+        // Cap the scale so it doesn't become comically large on ultra-wide monitors
+        if (newScale > 1.8) newScale = 1.8;
+        if (newScale < 0.4) newScale = 0.4;
+        
+        setScale(newScale);
+      }
+    };
+
+    calculateScale();
+    window.addEventListener('resize', calculateScale);
+    return () => window.removeEventListener('resize', calculateScale);
+  }, [isOpen, profile?.role]);
+
+  useEffect(() => {
+    if (isOpen && lead?.id && profile?.id && !hasTrackedView.current) {
+      hasTrackedView.current = true;
+      trackLeadEvent(lead.id, profile.id, 'view').catch(err => {
+        console.error('Failed to track view', err);
+      });
+    }
+  }, [isOpen, lead?.id, profile?.id]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      hasTrackedView.current = false;
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    const checkBills = async () => {
+      if (!lead?.id) return;
+      const { data } = await supabase.from('files').select('id').eq('lead_id', lead.id).limit(1);
+      setHasBills(!!(data && data.length > 0));
+    };
+    checkBills();
+  }, [lead?.id]);
+
+  if (!isOpen) return null;
+
+  const isClient = profile?.role === 'client';
+
+  return (
+    <>
+      <div className={`fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-sm flex justify-center ${isClient ? 'items-center p-2 sm:p-4' : 'items-start py-8'}`}>
+        <div 
+          className={`bg-[#F8FAFC] rounded-2xl shadow-2xl flex flex-col overflow-hidden border border-gray-200 ${isClient ? 'w-full max-w-[1200px] max-h-[96vh]' : 'my-auto'}`}
+          style={!isClient ? {
+            width: '1200px',
+            minHeight: '800px',
+            zoom: scale
+          } : undefined}
+        >
+        
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
+          <div className="flex items-center gap-4">
+            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100">
+              <ShoppingCart className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-gray-900">Lead Details</h2>
+              </div>
+              <div className="flex items-center gap-3 mt-1">
+                <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Ref: #{lead.id.split('-')[0]}</p>
+                <span className="bg-green-50 text-green-700 border border-green-200 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                  New Lead
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            {profile?.role === 'super_admin' && (
+              <button 
+                onClick={() => setShowMagicLink(true)}
+                title="Generate Magic Checkout Link"
+                className="w-10 h-10 flex items-center justify-center text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-lg transition-colors shadow-sm"
+              >
+                <span className="text-lg font-bold">£</span>
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors bg-gray-50 hover:bg-gray-100 p-2 rounded-full border border-gray-200">
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+        </div>
+
+        {/* Content */}
+        <div className="flex-1 p-4 space-y-3 overflow-y-auto custom-scrollbar">
+          
+          {/* Top Row: Pricing & High-Level Summary */}
+          <div className="flex flex-col lg:flex-row gap-3">
+            {/* Pricing Card */}
+            <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex-[0.8] flex divide-x divide-gray-100">
+              <div className="flex-1 pr-3">
+                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Exclusive Price</h3>
+                <div className="text-xl font-extrabold text-green-600 mb-1">
+                  {lead.exclusive_price ? `£${lead.exclusive_price}` : <MissingValue />}
+                </div>
+                <div className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-100">
+                  <Zap className="w-3 h-3" /> Best for higher win rate
+                </div>
+              </div>
+              <div className="flex-1 pl-3">
+                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Leadshare Price</h3>
+                <div className="text-xl font-extrabold text-blue-600 mb-1">
+                  {lead.share_price ? `£${lead.share_price}` : <MissingValue />}
+                </div>
+                <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-100">
+                  <User className="w-3 h-3" /> Share with other installers
+                </div>
+              </div>
+            </div>
+
+            {/* Customer Needs (Moved to Top Row) */}
+            <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex-[0.6] flex flex-col justify-center">
+              <h3 className="text-[11px] font-bold text-gray-900 uppercase tracking-wider mb-1.5">Customer Needs</h3>
+              <div className="space-y-1 overflow-y-auto min-h-0 custom-scrollbar pr-1 max-h-[80px]">
+                {lead.primary_need || (lead as any).pain_point ? (
+                  <>
+                    {lead.primary_need && (
+                      <div className="flex items-start gap-1.5">
+                        <Check className="w-3 h-3 text-gray-700 mt-0.5 shrink-0" />
+                        <span className={`text-gray-700 leading-tight ${
+                          lead.primary_need.length > 100 ? 'text-[8.5px]' : 
+                          lead.primary_need.length > 50 ? 'text-[9.5px]' : 'text-[11px]'
+                        }`}>{lead.primary_need}</span>
+                      </div>
+                    )}
+                    {(lead as any).pain_point && (
+                      <div className="flex items-start gap-1.5">
+                        <Check className="w-3 h-3 text-gray-700 mt-0.5 shrink-0" />
+                        <span className={`text-gray-700 leading-tight ${
+                          (lead as any).pain_point.length > 100 ? 'text-[8.5px]' : 
+                          (lead as any).pain_point.length > 50 ? 'text-[9.5px]' : 'text-[11px]'
+                        }`}>{(lead as any).pain_point}</span>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <MissingValue />
+                )}
+              </div>
+            </div>
+
+            {/* Stats Card */}
+            <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex-[1.6] flex items-center justify-between divide-x divide-gray-100">
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Est. Monthly Spend</h3>
+                <div className="h-9 flex items-center justify-center text-base font-bold text-green-600">
+                  {lead.monthly_spend ? `£${lead.monthly_spend}/mo` : <MissingValue />}
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Timeframe</h3>
+                <div className="h-9 flex items-center justify-center text-base font-bold text-gray-900">
+                  <DisplayValue value={lead.timeframe} />
+                </div>
+              </div>
+              {/*
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Est. System Size</h3>
+                <div className="h-9 flex items-center justify-center text-base font-bold text-gray-900">
+                  <DisplayValue value={lead.est_system_size} />
+                </div>
+              </div>
+              */}
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Bills Received</h3>
+                <div className="h-9 flex items-center justify-center">
+                  <div className={`relative w-9 h-9 flex items-center justify-center rounded-full border-[2px] ${hasBills ? 'border-green-500 text-green-600' : 'border-gray-200 text-gray-300'}`}>
+                    {hasBills && <Check className="w-4 h-4" strokeWidth={3} />}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Sole Decision Maker</h3>
+                <div className="h-9 flex items-center justify-center">
+                  <div className={`relative w-9 h-9 flex items-center justify-center rounded-full border-[2px] ${lead.sole_decision_maker ? 'border-green-500 text-green-600' : 'border-gray-200 text-gray-300'}`}>
+                    {lead.sole_decision_maker && <Check className="w-4 h-4" strokeWidth={3} />}
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Quality Score</h3>
+                <div className="h-9 flex items-center justify-center">
+                  <div className="relative w-9 h-9 flex items-center justify-center rounded-full border-[2px] border-green-500 text-green-600 font-bold text-base">
+                    {(lead as any).lead_score || <MissingValue />}
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-3">
+            {/* ROW 1: Top section with images, property details, insights */}
+            <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr] gap-3 items-stretch">
+              {/* Top Col 1 */}
+              <div className="flex flex-col gap-3">
+                {/* Property & Installation */}
+                <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm h-full">
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Home className="w-3.5 h-3.5 text-gray-400" /> Property & Installation
+                  </h3>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> Location</span>
+                      <DisplayValue value={extractTown(lead.location)} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
+                      <DisplayValue value={lead.roof_size} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><User className="w-3 h-3" /> Ownership</span>
+                      <DisplayValue value={lead.property_ownership} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Roof Material</span>
+                      <DisplayValue value={lead.roof_material} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Zap className="w-3 h-3" /> Elec Supply</span>
+                      <DisplayValue value={lead.electrical_supply} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Sun className="w-3 h-3" /> Solar Location</span>
+                      <DisplayValue value={lead.solar_location} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Ground Mount</span>
+                      <DisplayValue value={lead.ground_mount !== null ? (lead.ground_mount ? 'Yes' : 'No') : null} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Roof Condition</span>
+                      <DisplayValue value={lead.roof_condition} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Day Unit Rate</span>
+                      <DisplayValue value={lead.unit_rate} suffix="p" />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Night Unit Rate</span>
+                      <DisplayValue value={lead.night_unit_rate} suffix="p" />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Sun className="w-3 h-3" /> Skylights</span>
+                      <DisplayValue value={lead.cover_skylights !== null ? (lead.cover_skylights ? 'Yes' : 'No') : null} />
+                    </div>
+                    <div className="flex justify-between items-center border-b border-gray-50 pb-1 col-span-2">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Battery className="w-3 h-3" /> Ann. Consump.</span>
+                      <DisplayValue value={lead.est_ann_consumption} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Col 2 */}
+              <div className="flex flex-col gap-3">
+                {/* Lead Insights */}
+                <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm h-full">
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                    <Activity className="w-3.5 h-3.5 text-indigo-500" /> Lead Insights
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2 mb-2">
+                    <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-50 flex flex-col items-center text-center">
+                      <Building className="w-3.5 h-3.5 text-purple-500 mb-1" />
+                      <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Property Type</span>
+                      <DisplayValue value={lead.building_type || 'Commercial'} />
+                    </div>
+                    <div className="bg-indigo-50/50 p-2 rounded-lg border border-indigo-50 flex flex-col items-center text-center">
+                      <Globe className="w-3.5 h-3.5 text-indigo-500 mb-1" />
+                      <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Lead Source</span>
+                      <DisplayValue value={(lead as any).lead_source} />
+                    </div>
+                  </div>
+                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex flex-col flex-1 min-h-0">
+                    <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-1 shrink-0">Notes</span>
+                    <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar pr-1">
+                      <p className={`text-gray-700 whitespace-pre-wrap leading-relaxed ${
+                        (lead as any).marketplace_notes?.length > 400 ? 'text-[8px]' :
+                        (lead as any).marketplace_notes?.length > 200 ? 'text-[8.5px]' : 'text-[9.5px]'
+                      }`}>{(lead as any).marketplace_notes || <MissingValue />}</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Top Col 3 */}
+              <div className="flex flex-col gap-3">
+                {/* Property Images */}
+                <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm h-full flex flex-col">
+                  {lead.photos && lead.photos.length > 0 ? (
+                    lead.photos.length === 1 ? (
+                      <div 
+                        className="rounded-lg overflow-hidden cursor-pointer flex-1"
+                        onClick={() => setLightboxUrl(lead.photos![0])}
+                      >
+                        <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                      </div>
+                    ) : lead.photos.length === 2 ? (
+                      <div className="grid grid-cols-2 gap-2 flex-1">
+                        <div 
+                          className="rounded-lg overflow-hidden cursor-pointer"
+                          onClick={() => setLightboxUrl(lead.photos![0])}
+                        >
+                          <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                        </div>
+                        <div 
+                          className="rounded-lg overflow-hidden cursor-pointer"
+                          onClick={() => setLightboxUrl(lead.photos![1])}
+                        >
+                          <img src={lead.photos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="grid grid-cols-3 gap-2 flex-1">
+                        <div 
+                          className="col-span-2 rounded-lg overflow-hidden cursor-pointer"
+                          onClick={() => setLightboxUrl(lead.photos![0])}
+                        >
+                          <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                        </div>
+                        <div className="grid grid-rows-2 gap-2 h-full">
+                          <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(lead.photos![1])}>
+                            <img src={lead.photos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                          </div>
+                          <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(lead.photos![2])}>
+                            <img src={lead.photos[2]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  ) : (
+                    <div className="flex-1 rounded-lg bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center min-h-[160px]">
+                      <MissingValue />
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* ROW 2: Bottom section with Financial, Roof Insights, System Summary */}
+            <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.3fr_1.4fr] gap-3 items-stretch">
+              {/* Financial & Payment */}
+              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col justify-center">
+                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                  <FileText className="w-3.5 h-3.5 text-gray-400" /> Financial & Payment
+                </h3>
+                <div className="grid grid-cols-1 gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> Payment Option</span>
+                    <DisplayValue value={lead.payment_options} />
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Funding Interest</span>
+                    <MissingValue />
+                  </div>
+                </div>
+              </div>
+
+              {/* Roof & Sun Insights */}
+              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col justify-center">
+                <div className="flex justify-between items-center divide-x divide-gray-100 h-full py-1">
+                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
+                    <CheckCircle className="w-4 h-4 text-green-500 mb-1" />
+                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Roof Suitability</span>
+                    <DisplayValue value={(lead as any).roof_suitability} className="text-[10px] text-center" />
+                  </div>
+                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
+                    <Sun className="w-4 h-4 text-amber-500 mb-1" />
+                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Solar Exposure</span>
+                    <DisplayValue value={(lead as any).solar_exposure} className="text-[10px] text-center" />
+                  </div>
+                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
+                    <Activity className="w-4 h-4 text-green-500 mb-1" />
+                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Shading</span>
+                    <DisplayValue value={(lead as any).shading} className="text-[10px] text-center" />
+                  </div>
+                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
+                    <Globe className="w-4 h-4 text-blue-500 mb-1" />
+                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Orientation</span>
+                    <DisplayValue value={(lead as any).orientation || lead.solar_location} className="text-[10px] text-center" />
+                  </div>
+                </div>
+              </div>
+
+              {/* Potential Max System Summary
+              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col justify-center">
+                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Potential Max System Summary</h3>
+                <div className="bg-blue-50/30 p-3 rounded-lg border border-blue-50">
+                  <div className="flex items-center justify-between gap-4">
+                    <div className="flex flex-col flex-1">
+                      <span className="text-[10px] text-gray-500 mb-0.5">System Size</span>
+                      <DisplayValue value={lead.est_system_size} className="text-[10px]" />
+                    </div>
+                    <div className="flex flex-col flex-1">
+                      <span className="text-[10px] text-gray-500 mb-0.5">Ann. Gen</span>
+                      <DisplayValue value={
+                        lead.est_system_size && lead.est_system_size.match(/(\d+(\.\d+)?)/) 
+                          ? `${Math.round(parseFloat(lead.est_system_size.match(/(\d+(\.\d+)?)/)![1]) * 850).toLocaleString()} kWh`
+                          : null
+                      } className="text-[10px]" />
+                    </div>
+                    <div className="flex flex-col flex-1">
+                      <span className="text-[10px] text-gray-500 mb-0.5">Battery Size</span>
+                      <MissingValue />
+                    </div>
+                    <div className="flex flex-col flex-1">
+                      <span className="text-[10px] text-gray-500 mb-0.5">Est. Savings</span>
+                      <MissingValue />
+                    </div>
+                  </div>
+                </div>
+              </div>
+              */}
+
+            </div>
+
+            {/* Local Market Intelligence (Hidden for now) */}
+            {/* <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm">
+              <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2">Local Market Intelligence</h3>
+              <div className="grid grid-cols-3 gap-4 divide-x divide-gray-100">
+                <div className="pr-4">
+                  <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5 block">Local Demand</span>
+                  <MissingValue />
+                </div>
+                <div className="px-4">
+                  <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5 block">Competition</span>
+                  <MissingValue />
+                </div>
+                <div className="pl-4">
+                  <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5 block">Win Rate (This Area)</span>
+                  <MissingValue />
+                </div>
+              </div>
+            </div> */}
+
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div className="px-6 py-4 bg-white border-t border-gray-200 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center">
+              <ShieldCheck className="w-4 h-4 text-blue-600" />
+            </div>
+            <div>
+              <p className="text-sm font-bold text-gray-900">Secure & GDPR Compliant</p>
+              <p className="text-xs text-gray-500">Contact information will be revealed instantly upon purchase.</p>
+            </div>
+          </div>
+          <div className="flex gap-3">
+            <button
+              onClick={onClose}
+              className="px-6 py-2.5 border border-gray-300 shadow-sm text-sm font-bold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={onPurchase}
+              className="px-6 py-2.5 shadow-sm text-sm font-bold rounded-xl text-white bg-blue-600 hover:bg-blue-700 flex items-center gap-2 transition-colors"
+            >
+              <ShoppingCart className="w-4 h-4" />
+              Proceed to Order Summary
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      {/* Photo Lightbox */}
+      {lightboxUrl && (
+        <div 
+          className="fixed inset-0 z-[60] bg-black/90 flex items-center justify-center p-4" 
+          onClick={() => setLightboxUrl(null)}
+        >
+          <button 
+            onClick={() => setLightboxUrl(null)}
+            className="absolute top-4 right-4 text-white/70 hover:text-white bg-black/50 hover:bg-black/80 rounded-full p-2 transition-all"
+          >
+            <X className="w-8 h-8" />
+          </button>
+          <img 
+            src={lightboxUrl} 
+            alt="Full size property view" 
+            className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
+      </div>
+      <MagicCheckoutModal 
+        isOpen={showMagicLink} 
+        onClose={() => setShowMagicLink(false)} 
+        lead={lead} 
+      />
+    </>
+  );
+};

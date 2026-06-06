@@ -148,7 +148,7 @@ export const WhatsAppMonitor = () => {
     } catch (err) {
       console.error('Error fetching SMS:', err);
     }
-  }, [profile]);
+  }, [profile?.id]);
 
   useEffect(() => {
     if (!profile) return;

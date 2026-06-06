@@ -107,6 +107,8 @@ export const TasksPanel = () => {
           });
           if (res.ok) {
             const data = await res.json();
+            if (data.has_token === false) return;
+            
             const token = data.access_token;
             
             const timeMin = todayStart.toISOString();

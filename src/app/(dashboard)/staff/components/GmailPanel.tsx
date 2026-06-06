@@ -145,6 +145,11 @@ const GmailPanelContent = () => {
       });
       if (res.ok) {
         const data = await res.json();
+        if (data.has_token === false) {
+          setAccessToken(null);
+          setLoading(false);
+          return;
+        }
         setAccessToken(data.access_token);
         fetchEmails(data.access_token);
       } else if (res.status === 401) {
@@ -186,7 +191,8 @@ const GmailPanelContent = () => {
         const data = await res.json();
         
         if (!res.ok) {
-          throw new Error(data.error || 'Failed to exchange code');
+          console.error('Google Auth Error Details:', data);
+          throw new Error(data.details || data.error || 'Failed to exchange code');
         }
         
         setAccessToken(data.access_token);

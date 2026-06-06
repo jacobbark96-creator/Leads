@@ -51,14 +51,14 @@ export function SmsNotifications() {
             const cleanNum = num.replace(/[^\d]/g, '').slice(-10);
             let resolvedName = num;
             
-            if (cleanNum.length >= 10) {
-              const fuzzyNum = `%${cleanNum.split('').join('%')}%`;
+            if (cleanNum.length >= 7) {
+              const fuzzyNum = `%${cleanNum}%`;
               const isValidName = (name?: string | null) => name && !name.toLowerCase().includes('unknown');
               
-              const { data: leads } = await supabase.from('leads').select('name, company').ilike('phone', fuzzyNum).limit(1);
+              const { data: leads } = await supabase.from('leads').select('name, company').or(`phone.ilike.${fuzzyNum},secondary_phone.ilike.${fuzzyNum}`).limit(1);
               if (leads && leads.length > 0 && (isValidName(leads[0].name) || isValidName(leads[0].company))) resolvedName = isValidName(leads[0].name) ? leads[0].name : leads[0].company;
               else {
-                const { data: clients } = await supabase.from('contractors').select('company_name, contact_name').ilike('phone', fuzzyNum).limit(1);
+                const { data: clients } = await supabase.from('contractors').select('company_name, contact_name').or(`phone.ilike.${fuzzyNum},secondary_phone.ilike.${fuzzyNum},other_contact_numbers.ilike.${fuzzyNum}`).limit(1);
                 if (clients && clients.length > 0 && (isValidName(clients[0].company_name) || isValidName(clients[0].contact_name))) resolvedName = isValidName(clients[0].company_name) ? clients[0].company_name : clients[0].contact_name;
               }
             }
@@ -113,7 +113,7 @@ export function SmsNotifications() {
       if (uniqueNumbers.length > 0) {
         // Chunk numbers to avoid massive OR queries that cause 500 errors
         const chunks = [];
-        const chunkSize = 10;
+        const chunkSize = 5; // Reduced from 10
         for (let i = 0; i < uniqueNumbers.length; i += chunkSize) {
           chunks.push(uniqueNumbers.slice(i, i + chunkSize));
         }
@@ -121,60 +121,72 @@ export function SmsNotifications() {
         const nameMap: Record<string, string> = {};
 
         for (const chunk of chunks) {
-          const cleanChunk = chunk.map(n => (n as string).replace(/[^\d]/g, '').slice(-10)).filter(n => n.length >= 7);
-          if (cleanChunk.length === 0) continue;
+          try {
+            const cleanChunk = chunk.map(n => (n as string).replace(/[^\d]/g, '').slice(-10)).filter(n => n.length >= 7);
+            if (cleanChunk.length === 0) continue;
 
-          const orQuery = cleanChunk.map(num => `phone.ilike.%${num}%`).join(',');
-          const orQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
-          const orQueryContractorOther = cleanChunk.map(num => `other_contact_numbers.ilike.%${num}%`).join(',');
+            const orQuery = cleanChunk.map(num => `phone.ilike.%${num}%`).join(',');
+            const orQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
+            
+            const contractorOrQuery = cleanChunk.map(num => `phone.ilike.%${num}%`).join(',');
+            const contractorOrQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
+            const contractorOrQueryOther = cleanChunk.map(num => `other_contact_numbers.ilike.%${num}%`).join(',');
 
-          // Query leads and contractors in parallel for this chunk
-          const [
-            { data: leads }, 
-            { data: leadsSec }, 
-            { data: contractors }, 
-            { data: contractorsOther }
-          ] = await Promise.all([
-            supabase.from('leads').select('phone, name, company').or(orQuery),
-            supabase.from('leads').select('phone:secondary_phone, name, company').or(orQuerySecondary),
-            supabase.from('contractors').select('phone, company_name, contact_name').or(orQuery),
-            supabase.from('contractors').select('phone:other_contact_numbers, company_name, contact_name').or(orQueryContractorOther)
-          ]);
+            // Run fewer parallel queries and combine conditions
+            const [leadsData, contractorsData] = await Promise.all([
+              supabase.from('leads')
+                .select('phone, secondary_phone, name, company')
+                .or(`${orQuery},${orQuerySecondary}`),
+              supabase.from('contractors')
+                .select('phone, secondary_phone, other_contact_numbers, company_name, contact_name')
+                .or(`${contractorOrQuery},${contractorOrQuerySecondary},${contractorOrQueryOther}`)
+            ]);
 
-          const processResults = (list: any[] | null, isContractor: boolean) => {
-            list?.forEach(item => {
-              const dbPhone = item.phone;
-              if (!dbPhone) return;
-              const cleanDb = dbPhone.replace(/[^\d]/g, '').slice(-10);
-              const isValidName = (name?: string | null) => name && !name.toLowerCase().includes('unknown');
-              
-              let fallbackName = dbPhone;
-              if (isContractor) {
-                if (isValidName(item.contact_name) || isValidName(item.company_name)) {
-                  fallbackName = isValidName(item.contact_name) ? item.contact_name : item.company_name;
-                }
-              } else {
-                if (isValidName(item.name) || isValidName(item.company)) {
-                  fallbackName = isValidName(item.name) ? item.name : item.company;
-                }
-              }
+            const processResults = (list: any[] | null, isContractor: boolean) => {
+              list?.forEach(item => {
+                const phones = isContractor 
+                  ? [item.phone, item.secondary_phone, item.other_contact_numbers]
+                  : [item.phone, item.secondary_phone];
+                
+                phones.forEach(dbPhone => {
+                  if (!dbPhone) return;
+                  const cleanDb = dbPhone.replace(/[^\d]/g, '').slice(-10);
+                  const isValidName = (name?: string | null) => name && !name.toLowerCase().includes('unknown');
+                  
+                  let fallbackName = dbPhone;
+                  if (isContractor) {
+                    if (isValidName(item.contact_name) || isValidName(item.company_name)) {
+                      fallbackName = isValidName(item.contact_name) ? item.contact_name : item.company_name;
+                    }
+                  } else {
+                    if (isValidName(item.name) || isValidName(item.company)) {
+                      fallbackName = isValidName(item.name) ? item.name : item.company;
+                    }
+                  }
 
-              chunk.forEach(num => {
-                const cleanNum = (num as string).replace(/[^\d]/g, '').slice(-10);
-                if (cleanDb === cleanNum && cleanNum.length >= 7) {
-                  nameMap[num as string] = fallbackName;
-                }
+                  chunk.forEach(num => {
+                    const cleanNum = (num as string).replace(/[^\d]/g, '').slice(-10);
+                    if (cleanDb === cleanNum && cleanNum.length >= 7) {
+                      nameMap[num as string] = fallbackName;
+                    }
+                  });
+                });
               });
-            });
-          };
+            };
 
-          processResults(leads, false);
-          processResults(leadsSec, false);
-          processResults(contractors, true);
-          processResults(contractorsOther, true);
+            processResults(leadsData.data, false);
+            processResults(contractorsData.data, true);
+            
+            // Sequential delay to let DB breathe
+            if (chunks.length > 1) {
+              await new Promise(r => setTimeout(r, 200));
+            }
+          } catch (chunkErr) {
+            console.error('Error processing SMS name chunk:', chunkErr);
+          }
         }
         
-        setContactNames(nameMap);
+        setContactNames(prev => ({ ...prev, ...nameMap }));
       }
 
     } catch (err) {

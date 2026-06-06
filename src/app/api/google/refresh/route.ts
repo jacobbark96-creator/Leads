@@ -30,7 +30,10 @@ export async function POST(req: Request) {
       .single();
 
     if (userError || !user || !user.google_refresh_token) {
-      return NextResponse.json({ error: 'No refresh token found for user' }, { status: 404 });
+      return NextResponse.json({ 
+        error: 'No refresh token found', 
+        has_token: false 
+      }, { status: 200 }); // Changed from 404 to 200 to avoid console noise
     }
 
     // Exchange refresh token for a new access token

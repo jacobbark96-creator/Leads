@@ -207,8 +207,8 @@ export default function StaffPortal() {
       <TopNav profile={profile} />
 
       {/* Main Dashboard Grid */}
-      <main className="relative z-10 px-4 pt-[135px] pb-4 min-h-screen overflow-hidden" style={{ zoom: 0.67 }}>
-        <div className="w-full mx-auto">
+      <main className="relative z-10 px-4 pt-[100px] xl:pt-[135px] pb-4 min-h-screen overflow-hidden">
+        <div className="w-full max-w-[1600px] mx-auto">
           
           {/* Header & KPIs Row (4 Columns total) */}
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mb-4">
@@ -217,9 +217,9 @@ export default function StaffPortal() {
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
-              className={`xl:col-span-1 flex flex-col justify-center pl-6 ${!isAdmin ? 'xl:col-span-4 mb-2' : ''}`}
+              className={`xl:col-span-1 flex flex-col justify-center pl-0 xl:pl-6 ${!isAdmin ? 'xl:col-span-4 mb-2' : 'mb-4 xl:mb-0'}`}
             >
-              <h1 className="text-3xl 2xl:text-4xl font-extrabold text-white tracking-tight mb-1">
+              <h1 className="text-2xl md:text-3xl 2xl:text-4xl font-extrabold text-white tracking-tight mb-1">
                 Good morning, {profile.name.split(' ')[0]} <span className="inline-block animate-wave origin-bottom-right">👋</span>
               </h1>
               <p className="text-sm text-gray-400 font-medium">Here's what's happening at Openlead today.</p>
@@ -227,7 +227,15 @@ export default function StaffPortal() {
 
             {/* Top KPI Cards (Only for Admins/Super Admins) */}
             {isAdmin && (
-              <div className="xl:col-span-3 grid grid-cols-2 md:grid-cols-7 gap-4">
+              <div className="xl:col-span-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 xl:gap-4">
+                <GlassCard delay={0.1} className="flex flex-col items-center justify-center h-full p-3 xl:p-4">
+                  <h3 className="text-xl xl:text-3xl font-bold text-white mb-1 tracking-tight text-center">{currentDate || '-'}</h3>
+                </GlassCard>
+                <GlassCard delay={0.15} className="flex flex-col items-center justify-center h-full p-3 xl:p-4">
+                  <h3 className="text-2xl xl:text-4xl font-bold text-emerald-400 tracking-widest" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                    {currentTime || '-'}
+                  </h3>
+                </GlassCard>
                 <KpiCard 
                   title="New Leads" 
                   value={stats.newLeads.toString()} 
@@ -235,7 +243,7 @@ export default function StaffPortal() {
                   isPositive={true} 
                   icon={Users} 
                   iconColor="text-blue-400" 
-                  delay={0.1} 
+                  delay={0.2} 
                 />
                 <KpiCard 
                   title="Missing Bills" 
@@ -244,7 +252,7 @@ export default function StaffPortal() {
                   isPositive={false} 
                   icon={FileWarning} 
                   iconColor="text-red-400" 
-                  delay={0.15}
+                  delay={0.25}
                   onClick={() => router.push('/sales-crm/qualified?filter=missing_bills')}
                 />
                 <KpiCard 
@@ -254,7 +262,7 @@ export default function StaffPortal() {
                   isPositive={true} 
                   icon={UserPlus} 
                   iconColor="text-blue-400" 
-                  delay={0.2} 
+                  delay={0.3} 
                 />
                 <KpiCard 
                   title="Sales" 
@@ -263,7 +271,7 @@ export default function StaffPortal() {
                   isPositive={true} 
                   icon={Trophy} 
                   iconColor="text-amber-400" 
-                  delay={0.3} 
+                  delay={0.35} 
                 />
                 <KpiCard 
                   title="Revenue" 
@@ -274,22 +282,14 @@ export default function StaffPortal() {
                   iconColor="text-blue-400" 
                   delay={0.4} 
                 />
-                <GlassCard delay={0.5} className="flex flex-col items-center justify-center h-full p-4">
-                  <h3 className="text-3xl font-bold text-white mb-1 tracking-tight text-center">{currentDate || '-'}</h3>
-                </GlassCard>
-                <GlassCard delay={0.6} className="flex flex-col items-center justify-center h-full p-4">
-                  <h3 className="text-4xl font-bold text-emerald-400 tracking-widest" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    {currentTime || '-'}
-                  </h3>
-                </GlassCard>
               </div>
             )}
           </div>
 
           {/* Main Content Grid: 4 Columns */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 h-[640px]">
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 xl:h-[640px]">
             {/* Column 1: Tasks & Feed/Performance */}
-            <div className="flex flex-col gap-4 h-full min-h-0">
+            <div className="flex flex-col gap-4 h-[500px] xl:h-full min-h-0">
               <div className="h-1/2 overflow-hidden">
                 <TasksPanel />
               </div>
@@ -299,7 +299,7 @@ export default function StaffPortal() {
             </div>
 
             {/* Column 2: News & Conditional Component */}
-            <div className="flex flex-col gap-4 h-full min-h-0">
+            <div className="flex flex-col gap-4 h-[500px] xl:h-full min-h-0">
               <div className={`${isAdmin ? "h-1/2" : "h-full"} overflow-hidden`}>
                 <NewsPanel />
               </div>
@@ -311,12 +311,12 @@ export default function StaffPortal() {
             </div>
 
             {/* Column 3: WhatsApp/Gmail Monitor (Double Height) */}
-            <div className="h-full overflow-hidden">
+            <div className="h-[500px] xl:h-full overflow-hidden">
               {isAdmin ? <WhatsAppMonitor /> : <GmailPanel />}
             </div>
 
             {/* Column 4: Team Messages (Double Height) */}
-            <div className="h-full overflow-hidden">
+            <div className="h-[500px] xl:h-full overflow-hidden">
               <TeamMessages />
             </div>
           </div>

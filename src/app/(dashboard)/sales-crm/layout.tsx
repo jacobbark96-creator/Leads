@@ -2,12 +2,13 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home, Archive } from 'lucide-react';
+import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home, Archive, ChevronLeft } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
 import { SmsNotifications } from '@/components/SmsNotifications';
 import { supabase } from '@/lib/supabase';
+import { motion, AnimatePresence } from 'framer-motion';
 
 import toast from 'react-hot-toast';
 
@@ -18,6 +19,11 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [crmDropdownOpen, setCrmDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  
+  // Close mobile menu on path change
+  useEffect(() => {
+    setMobileMenuOpen(false);
+  }, [pathname]);
   
   // Lead Packs
   const [leadPacks, setLeadPacks] = useState<any[]>([]);
@@ -62,8 +68,105 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
 
   return (
     <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>
-      <div className="min-h-screen bg-[#F9FAFB] flex font-sans text-gray-900">
-        {/* LEFT SIDEBAR */}
+      <div className="min-h-screen bg-[#F9FAFB] flex font-sans text-gray-900 overflow-hidden">
+        {/* MOBILE SIDEBAR OVERLAY */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-30 md:hidden"
+              />
+              <motion.aside
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed inset-y-0 left-0 w-64 bg-white shadow-2xl z-40 md:hidden flex flex-col"
+              >
+                <div className="h-14 flex items-center justify-between px-5 border-b border-gray-100">
+                  <Link href="/" className="flex items-center gap-2">
+                    {profile?.divisions?.logo_url ? (
+                      <img src={profile.divisions.logo_url} alt="Division Logo" className="h-6 w-auto object-contain" />
+                    ) : (
+                      <img src="/openlead-logo.png" alt="Openlead" className="h-5 object-contain" />
+                    )}
+                  </Link>
+                  <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-gray-400 hover:text-gray-600">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto py-4">
+                  <div className="px-5 mb-2">
+                    <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sales CRM</h2>
+                  </div>
+                  <nav className="px-3 space-y-1">
+                    {sidebarItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = item.exact ? pathname === item.path : pathname?.startsWith(item.path);
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.path}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                            isActive 
+                              ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                          {item.name}
+                        </Link>
+                      );
+                    })}
+
+                    <div className="pt-6 pb-2 px-3">
+                      <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Lead Packs</h3>
+                      <div className="space-y-1">
+                        {leadPacks.map(pack => (
+                          <Link
+                            key={pack.id}
+                            href={`/sales-crm/lead-v2?pack=${pack.id}`}
+                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all"
+                          >
+                            <div className="w-8 h-8 rounded-lg shadow-inner flex items-center justify-center text-white shrink-0" style={{ backgroundColor: pack.color || '#3B82F6' }}>
+                              {pack.icon ? <span className="text-sm">{pack.icon}</span> : <Database className="w-4 h-4" />}
+                            </div>
+                            <div className="flex flex-col min-w-0 flex-1">
+                              <span className="truncate leading-tight">{pack.name}</span>
+                              <span className="text-[10px] text-gray-400 font-normal">{pack.leads_remaining} remaining</span>
+                            </div>
+                          </Link>
+                        ))}
+                      </div>
+                    </div>
+                  </nav>
+                </div>
+
+                <div className="p-4 border-t border-gray-100">
+                  <div className="flex items-center gap-3 px-2">
+                    <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm shadow-inner shrink-0">
+                      {profile?.name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-bold text-gray-900 truncate">{profile?.name}</p>
+                      <p className="text-xs text-gray-500 truncate uppercase tracking-wider">{profile?.role?.replace('_', ' ')}</p>
+                    </div>
+                    <button onClick={() => signOut()} className="p-2 text-gray-400 hover:text-red-600">
+                      <LogOut className="w-5 h-5" />
+                    </button>
+                  </div>
+                </div>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
+
+        {/* LEFT SIDEBAR (DESKTOP) */}
         <aside className="fixed inset-y-0 left-0 w-56 bg-white border-r border-gray-200 flex flex-col z-20 hidden md:flex">
           <div className="h-12 flex items-center px-5 border-b border-gray-100 shrink-0">
             <Link href="/" className="flex items-center gap-2">
@@ -164,8 +267,11 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
         <div className="flex-1 flex flex-col md:pl-56 min-w-0 h-screen">
           {/* TOP NAVBAR */}
           <header className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-10 flex items-center justify-between px-4 sm:px-5 shrink-0 shadow-sm">
-            <div className="flex items-center gap-4">
-              <button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
+            <div className="flex items-center gap-2 md:gap-4">
+              <button 
+                onClick={() => setMobileMenuOpen(true)}
+                className="md:hidden p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
+              >
                 <Menu className="w-5 h-5" />
               </button>
               

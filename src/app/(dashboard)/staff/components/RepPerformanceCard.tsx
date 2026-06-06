@@ -68,52 +68,53 @@ export const RepPerformanceCard = () => {
         </div>
       </div>
       
-      <div className="flex-1 p-6 flex flex-col items-center justify-center gap-8 relative">
-        <div className="flex justify-center w-full gap-8">
+      <div className="flex-1 p-4 sm:p-6 flex flex-col items-center justify-center gap-4 sm:gap-8 relative">
+        <div className="flex flex-col sm:flex-row items-center justify-center w-full gap-6 sm:gap-8">
           {/* Circular Progress wrapping the Target */}
-          <div className="relative w-32 h-32 flex flex-col items-center justify-center">
+          <div className="relative w-28 h-28 sm:w-32 sm:h-32 flex flex-col items-center justify-center shrink-0">
             <svg className="absolute inset-0 w-full h-full transform -rotate-90">
               <circle
-                cx="64"
-                cy="64"
+                cx="56"
+                cy="56"
                 r={radius}
                 stroke="rgba(255,255,255,0.1)"
                 strokeWidth="8"
                 fill="none"
+                className="sm:cx-64 sm:cy-64"
               />
               <circle
-                cx="64"
-                cy="64"
+                cx="56"
+                cy="56"
                 r={radius}
                 stroke="currentColor"
                 strokeWidth="8"
                 fill="none"
                 strokeLinecap="round"
-                className="text-blue-500 transition-all duration-1000 ease-out"
+                className="text-blue-500 transition-all duration-1000 ease-out sm:cx-64 sm:cy-64"
                 style={{ strokeDasharray: circumference, strokeDashoffset }}
               />
             </svg>
             <div className="flex flex-col items-center z-10 text-center">
-              <span className="text-3xl font-extrabold text-white">{target}</span>
-              <span className="text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Target</span>
+              <span className="text-2xl sm:text-3xl font-extrabold text-white">{target}</span>
+              <span className="text-[10px] sm:text-[11px] text-gray-400 uppercase tracking-wider font-semibold">Target</span>
             </div>
           </div>
           
-          <div className="flex flex-col justify-center gap-4">
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3 w-32 text-center shadow-inner">
+          <div className="flex flex-row sm:flex-col justify-center gap-3 sm:gap-4 w-full sm:w-auto">
+            <div className="flex-1 sm:flex-none bg-white/5 border border-white/10 rounded-xl p-2.5 sm:p-3 sm:w-32 text-center shadow-inner">
               <div className="flex items-center justify-center gap-1.5 mb-1 text-gray-400">
-                <Trophy className="w-3.5 h-3.5" />
-                <span className="text-[11px] uppercase font-bold tracking-wider">Qualified</span>
+                <Trophy className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="text-[9px] sm:text-[11px] uppercase font-bold tracking-wider">Qualified</span>
               </div>
-              <span className="text-xl font-bold text-white">{qualifiedMTD}</span>
+              <span className="text-lg sm:text-xl font-bold text-white">{qualifiedMTD}</span>
             </div>
             
-            <div className="bg-white/5 border border-white/10 rounded-xl p-3 w-32 text-center shadow-inner">
+            <div className="flex-1 sm:flex-none bg-white/5 border border-white/10 rounded-xl p-2.5 sm:p-3 sm:w-32 text-center shadow-inner">
               <div className="flex items-center justify-center gap-1.5 mb-1 text-gray-400">
-                <Phone className="w-3.5 h-3.5" />
-                <span className="text-[11px] uppercase font-bold tracking-wider">Comms Coming</span>
+                <Phone className="w-3 h-3 sm:w-3.5 sm:h-3.5" />
+                <span className="text-[9px] sm:text-[11px] uppercase font-bold tracking-wider">Comms Coming</span>
               </div>
-              <span className="text-xl font-bold text-white">-</span>
+              <span className="text-lg sm:text-xl font-bold text-white">-</span>
             </div>
           </div>
         </div>

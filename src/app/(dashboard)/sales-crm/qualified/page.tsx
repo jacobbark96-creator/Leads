@@ -5,7 +5,7 @@ import React, { useEffect, useState, Suspense } from 'react';
 import { supabase } from '../../../../lib/supabase';
 import { Lead } from '../../../../types';
 import toast from 'react-hot-toast';
-import { Phone, Mail, Building, User, Users, Trash2, Search, ShieldCheck, Filter, ChevronDown, Check, Pause, Play, ShoppingCart } from 'lucide-react';
+import { Phone, Mail, Building, User, Users, Trash2, Search, ShieldCheck, Filter, ChevronDown, Check, Pause, Play, ShoppingCart, Eye } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
@@ -414,9 +414,9 @@ function QualifiedLeadsContent() {
 
   return (
     <div>
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+      <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-8">
         <div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">
+          <h1 className="text-2xl md:text-3xl font-black text-gray-900 tracking-tight">
             {filterParam === 'missing_bills' ? 'Leads Missing Bills' : 'Qualified Leads'}
           </h1>
           <p className="text-sm text-gray-500 font-medium mt-1">
@@ -428,9 +428,9 @@ function QualifiedLeadsContent() {
           </p>
         </div>
 
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-4">
-          {/* Main Status Slider */}
-          <div className="relative p-1 bg-gray-100 rounded-xl border border-gray-200 flex items-center shadow-inner">
+        <div className="flex flex-col md:flex-row items-stretch md:items-center gap-4">
+          {/* Main Status Slider - Scrollable on Mobile */}
+          <div className="relative p-1 bg-gray-100 rounded-xl border border-gray-200 flex items-center shadow-inner overflow-x-auto no-scrollbar min-w-0">
             <motion.div
               layoutId="slider-bg"
               className="absolute bg-white rounded-lg shadow-sm border border-gray-200"
@@ -446,177 +446,179 @@ function QualifiedLeadsContent() {
             />
             <button
               onClick={() => setMainFilter('qualified')}
-              className={`relative z-10 flex-1 px-4 py-2 text-[10px] font-black transition-colors ${mainFilter === 'qualified' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`relative z-10 flex-1 px-3 md:px-4 py-2 text-[10px] font-black transition-colors whitespace-nowrap ${mainFilter === 'qualified' ? 'text-blue-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Qualified
             </button>
             <button
               onClick={() => setMainFilter('marketed')}
-              className={`relative z-10 flex-1 px-4 py-2 text-[10px] font-black transition-colors ${mainFilter === 'marketed' ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`relative z-10 flex-1 px-3 md:px-4 py-2 text-[10px] font-black transition-colors whitespace-nowrap ${mainFilter === 'marketed' ? 'text-emerald-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Marketed
             </button>
             <button
               onClick={() => setMainFilter('sales')}
-              className={`relative z-10 flex-1 px-4 py-2 text-[10px] font-black transition-colors ${mainFilter === 'sales' ? 'text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`relative z-10 flex-1 px-3 md:px-4 py-2 text-[10px] font-black transition-colors whitespace-nowrap ${mainFilter === 'sales' ? 'text-orange-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Sales
             </button>
             <button
               onClick={() => setMainFilter('sold')}
-              className={`relative z-10 flex-1 px-4 py-2 text-[10px] font-black transition-colors ${mainFilter === 'sold' ? 'text-purple-600' : 'text-gray-500 hover:text-gray-700'}`}
+              className={`relative z-10 flex-1 px-3 md:px-4 py-2 text-[10px] font-black transition-colors whitespace-nowrap ${mainFilter === 'sold' ? 'text-purple-600' : 'text-gray-500 hover:text-gray-700'}`}
             >
               Sold
             </button>
           </div>
 
-          {/* Search Bar */}
-          <div className="relative min-w-[280px]">
-            <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search leads..."
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
-            />
-          </div>
+          <div className="flex items-center gap-3">
+            {/* Search Bar - Expandable */}
+            <div className="relative flex-1 md:min-w-[280px]">
+              <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+              <input
+                type="text"
+                placeholder="Search leads..."
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="w-full pl-11 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl shadow-sm text-sm font-medium focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+              />
+            </div>
 
-          {/* Filter Dropdown */}
-          <div className="relative">
-            <button
-              onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
-              className={`inline-flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-bold transition-all shadow-sm ${
-                isFilterDropdownOpen || [phoneFilter, propertyTypeFilter, uploadNameFilter, radiusFilter, assignedUserFilter].some(f => f !== 'all' && f !== 'any')
-                  ? 'bg-blue-50 border-blue-200 text-blue-700'
-                  : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
-              }`}
-            >
-              <Filter className="w-4 h-4" />
-              <span>Filters</span>
-              <ChevronDown className={`w-4 h-4 transition-transform ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
-            </button>
+            {/* Filter Dropdown */}
+            <div className="relative shrink-0">
+              <button
+                onClick={() => setIsFilterDropdownOpen(!isFilterDropdownOpen)}
+                className={`inline-flex items-center gap-2 px-4 py-2.5 border rounded-xl text-sm font-bold transition-all shadow-sm ${
+                  isFilterDropdownOpen || [phoneFilter, propertyTypeFilter, uploadNameFilter, radiusFilter, assignedUserFilter].some(f => f !== 'all' && f !== 'any')
+                    ? 'bg-blue-50 border-blue-200 text-blue-700'
+                    : 'bg-white border-gray-200 text-gray-700 hover:bg-gray-50'
+                }`}
+              >
+                <Filter className="w-4 h-4" />
+                <span className="hidden sm:inline">Filters</span>
+                <ChevronDown className={`w-4 h-4 transition-transform ${isFilterDropdownOpen ? 'rotate-180' : ''}`} />
+              </button>
 
-            <AnimatePresence>
-              {isFilterDropdownOpen && (
-                <>
-                  <div 
-                    className="fixed inset-0 z-20" 
-                    onClick={() => setIsFilterDropdownOpen(false)} 
-                  />
-                  <motion.div
-                    initial={{ opacity: 0, y: 10, scale: 0.95 }}
-                    animate={{ opacity: 1, y: 0, scale: 1 }}
-                    exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                    className="absolute right-0 mt-2 w-[320px] bg-white rounded-2xl shadow-xl border border-gray-100 z-30 p-5 overflow-hidden"
-                  >
-                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-50">
-                      <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest">Refine Results</h3>
-                      <button 
-                        onClick={() => {
-                          setPhoneFilter('all');
-                          setPropertyTypeFilter('all');
-                          setUploadNameFilter('all');
-                          setRadiusFilter('any');
-                          setAssignedUserFilter('all');
-                        }}
-                        className="text-[10px] font-bold text-blue-600 hover:underline"
-                      >
-                        Reset All
-                      </button>
-                    </div>
-
-                    <div className="space-y-5">
-                      {/* Distance Filter */}
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Distance from Search</label>
-                        <select
-                          value={radiusFilter}
-                          onChange={(e) => setRadiusFilter(e.target.value)}
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+              <AnimatePresence>
+                {isFilterDropdownOpen && (
+                  <>
+                    <div 
+                      className="fixed inset-0 z-20" 
+                      onClick={() => setIsFilterDropdownOpen(false)} 
+                    />
+                    <motion.div
+                      initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                      animate={{ opacity: 1, y: 0, scale: 1 }}
+                      exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                      className="absolute right-0 mt-2 w-[calc(100vw-2rem)] sm:w-[320px] bg-white rounded-2xl shadow-xl border border-gray-100 z-30 p-5 overflow-hidden"
+                    >
+                      <div className="flex items-center justify-between mb-4 pb-2 border-b border-gray-50">
+                        <h3 className="text-xs font-black text-gray-900 uppercase tracking-widest">Refine Results</h3>
+                        <button 
+                          onClick={() => {
+                            setPhoneFilter('all');
+                            setPropertyTypeFilter('all');
+                            setUploadNameFilter('all');
+                            setRadiusFilter('any');
+                            setAssignedUserFilter('all');
+                          }}
+                          className="text-[10px] font-bold text-blue-600 hover:underline"
                         >
-                          <option value="any">Any Distance</option>
-                          <option value="10">Within 10 Miles</option>
-                          <option value="30">Within 30 Miles</option>
-                          <option value="50">Within 50 Miles</option>
-                          <option value="100">Within 100 Miles</option>
-                        </select>
+                          Reset All
+                        </button>
                       </div>
 
-                      {/* Property Type */}
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Property Type</label>
-                        <div className="grid grid-cols-3 gap-2">
-                          {['all', 'commercial', 'residential'].map((type) => (
-                            <button
-                              key={type}
-                              onClick={() => setPropertyTypeFilter(type as any)}
-                              className={`py-2 rounded-lg text-[10px] font-bold border transition-all ${
-                                propertyTypeFilter === type 
-                                  ? 'bg-blue-50 border-blue-200 text-blue-700' 
-                                  : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
-                              }`}
-                            >
-                              {type.charAt(0).toUpperCase() + type.slice(1)}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-
-                      {/* Assigned Rep */}
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Assigned Representative</label>
-                        <select
-                          value={assignedUserFilter}
-                          onChange={(e) => setAssignedUserFilter(e.target.value)}
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
-                        >
-                          <option value="all">Everyone's Leads</option>
-                          <option value="me">Assigned to Me</option>
-                          {['super_admin', 'admin'].includes(profile?.role || '') && staffUsers.map(u => (
-                            <option key={u.id} value={u.id}>{u.name}</option>
-                          ))}
-                        </select>
-                      </div>
-
-                      {/* Phone & Upload */}
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="space-y-5">
+                        {/* Distance Filter */}
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Phone</label>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Distance from Search</label>
                           <select
-                            value={phoneFilter}
-                            onChange={(e) => setPhoneFilter(e.target.value)}
+                            value={radiusFilter}
+                            onChange={(e) => setRadiusFilter(e.target.value)}
                             className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                           >
-                            <option value="all">All</option>
-                            <option value="with_phone">Has Phone</option>
+                            <option value="any">Any Distance</option>
+                            <option value="10">Within 10 Miles</option>
+                            <option value="30">Within 30 Miles</option>
+                            <option value="50">Within 50 Miles</option>
+                            <option value="100">Within 100 Miles</option>
                           </select>
                         </div>
+
+                        {/* Property Type */}
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Upload Batch</label>
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Property Type</label>
+                          <div className="grid grid-cols-3 gap-2">
+                            {['all', 'commercial', 'residential'].map((type) => (
+                              <button
+                                key={type}
+                                onClick={() => setPropertyTypeFilter(type as any)}
+                                className={`py-2 rounded-lg text-[10px] font-bold border transition-all ${
+                                  propertyTypeFilter === type 
+                                    ? 'bg-blue-50 border-blue-200 text-blue-700' 
+                                    : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                                }`}
+                              >
+                                {type.charAt(0).toUpperCase() + type.slice(1)}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Assigned Rep */}
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Assigned Representative</label>
                           <select
-                            value={uploadNameFilter}
-                            onChange={(e) => setUploadNameFilter(e.target.value)}
+                            value={assignedUserFilter}
+                            onChange={(e) => setAssignedUserFilter(e.target.value)}
                             className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
                           >
-                            <option value="all">All Batches</option>
-                            {uploadNames.map(name => (
-                              <option key={name} value={name}>{name}</option>
+                            <option value="all">Everyone's Leads</option>
+                            <option value="me">Assigned to Me</option>
+                            {['super_admin', 'admin'].includes(profile?.role || '') && staffUsers.map(u => (
+                              <option key={u.id} value={u.id}>{u.name}</option>
                             ))}
                           </select>
                         </div>
+
+                        {/* Phone & Upload */}
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Phone</label>
+                            <select
+                              value={phoneFilter}
+                              onChange={(e) => setPhoneFilter(e.target.value)}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            >
+                              <option value="all">All</option>
+                              <option value="with_phone">Has Phone</option>
+                            </select>
+                          </div>
+                          <div className="space-y-2">
+                            <label className="text-[10px] font-black text-gray-400 uppercase tracking-wider">Upload Batch</label>
+                            <select
+                              value={uploadNameFilter}
+                              onChange={(e) => setUploadNameFilter(e.target.value)}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-lg py-2 px-3 text-sm font-bold text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                            >
+                              <option value="all">All Batches</option>
+                              {uploadNames.map(name => (
+                                <option key={name} value={name}>{name}</option>
+                              ))}
+                            </select>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </motion.div>
-                </>
-              )}
-            </AnimatePresence>
+                    </motion.div>
+                  </>
+                )}
+              </AnimatePresence>
+            </div>
           </div>
 
           {profile?.role && ['admin', 'super_admin'].includes(profile.role) && (
             <button
               onClick={() => setIsAddModalOpen(true)}
-              className="inline-flex items-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+              className="inline-flex items-center justify-center px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
             >
               Add Lead
             </button>
@@ -652,7 +654,7 @@ function QualifiedLeadsContent() {
         )}
 
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 hidden md:table">
             <thead className="bg-gray-50/80">
               <tr>
                 <th className="w-12 py-2.5 px-4 text-center">
@@ -862,6 +864,148 @@ function QualifiedLeadsContent() {
               )}
             </tbody>
           </table>
+
+          {/* MOBILE CARD VIEW */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {loading && leads.length === 0 ? (
+              <div className="py-16 text-center">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+              </div>
+            ) : leads.length > 0 ? (
+              leads.map((lead) => {
+                const isSelected = selectedLeads.has(lead.id);
+                return (
+                  <div key={lead.id} className={`p-4 transition-colors active:bg-gray-50 ${isSelected ? 'bg-blue-50/30' : 'bg-white'}`}>
+                    <div className="flex items-start justify-between gap-3 mb-3">
+                      <div className="flex items-center gap-3">
+                        {profile?.role === 'super_admin' && (
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={(e) => handleSelectLead(lead.id, e.target.checked)}
+                            className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500 cursor-pointer"
+                          />
+                        )}
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${lead.building_type === 'Residential' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
+                          {lead.building_type === 'Residential' ? <User className="w-4 h-4" /> : <Building className="w-4 h-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <a 
+                            href={`/sales-crm/lead-v2?id=${lead.id}&tab=qualified`}
+                            className="text-sm font-bold text-gray-900 block truncate"
+                          >
+                            {lead.company || lead.name || 'Unknown Lead'}
+                          </a>
+                          <div className="flex items-center gap-2 mt-0.5">
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${lead.building_type === 'Residential' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>
+                              {lead.building_type}
+                            </span>
+                            <span className="text-[10px] text-gray-500 truncate max-w-[150px]">
+                              {lead.location || 'Unknown'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="shrink-0">
+                        {lead.status === 'sold' ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-green-100 text-green-800 border border-green-200">
+                            Sold
+                          </span>
+                        ) : lead.status === 'awaiting_sales' ? (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-orange-100 text-orange-800 border border-orange-200">
+                            Awaiting Sales
+                          </span>
+                        ) : (
+                          <span className="inline-flex items-center px-2 py-1 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-100">
+                            {lead.status.charAt(0).toUpperCase() + lead.status.slice(1)}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4 mb-4 pt-3 border-t border-gray-50">
+                      <div>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Added</p>
+                        <p className="text-xs text-gray-700 font-medium">{new Date(lead.created_at).toLocaleDateString()}</p>
+                      </div>
+                      {filterParam === 'missing_bills' && (
+                        <div>
+                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Qualified</p>
+                          <p className="text-xs text-gray-700 font-medium">
+                            {qualificationDates[lead.id] ? new Date(qualificationDates[lead.id]).toLocaleDateString() : 'Unknown'}
+                          </p>
+                        </div>
+                      )}
+                      <div>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Assigned To</p>
+                        <p className="text-xs text-gray-700 font-medium truncate">
+                          {staffUsers.find(u => u.id === lead.assigned_to)?.name || 'Unassigned'}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-wrap gap-2 pt-3 border-t border-gray-50">
+                      {lead.status === 'sold' ? (
+                        <button
+                          onClick={() => setSoldLeadDetails(lead)}
+                          className="flex-1 px-3 py-2 bg-green-600 text-white rounded-lg text-xs font-bold hover:bg-green-700 transition-colors"
+                        >
+                          Sold Details
+                        </button>
+                      ) : (
+                        <>
+                          {!lead.is_marketed && (
+                            <button
+                              onClick={() => setLeadForContractors(lead)}
+                              className="flex-1 inline-flex items-center justify-center px-3 py-2 bg-indigo-600 text-white rounded-lg text-xs font-bold hover:bg-indigo-700 transition-colors"
+                            >
+                              <ShieldCheck className="w-3.5 h-3.5 mr-1.5" />
+                              Contractors
+                            </button>
+                          )}
+                          
+                          {!lead.is_marketed ? (
+                            <button
+                              onClick={() => setLeadToMarket(lead)}
+                              className="flex-1 px-3 py-2 bg-blue-600 text-white rounded-lg text-xs font-bold hover:bg-blue-700 transition-colors"
+                            >
+                              Market
+                            </button>
+                          ) : (
+                            <div className="flex-1 flex items-center justify-center gap-2">
+                              <span className="flex-1 text-center px-3 py-2 bg-green-50 text-green-700 border border-green-200 rounded-lg text-xs font-bold">
+                                Marketed
+                              </span>
+                              <button
+                                onClick={() => setLeadToPause(lead)}
+                                className="p-2 border border-gray-200 rounded-lg text-gray-600 hover:bg-gray-50"
+                              >
+                                <Pause className="w-4 h-4" />
+                              </button>
+                            </div>
+                          )}
+                        </>
+                      )}
+                      <a 
+                        href={`/sales-crm/lead-v2?id=${lead.id}&tab=qualified`}
+                        className="p-2 bg-gray-50 text-gray-500 rounded-lg hover:bg-gray-100 transition-colors"
+                      >
+                        <Eye className="w-4 h-4" />
+                      </a>
+                    </div>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="py-16 text-center px-4">
+                <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gray-50 mb-4">
+                  <Search className="w-6 h-6 text-gray-400" />
+                </div>
+                <h3 className="text-sm font-semibold text-gray-900">No qualified leads</h3>
+                <p className="mt-1 text-xs text-gray-500">Change a lead's status to 'Qualified' to see them here.</p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

@@ -50,27 +50,27 @@ export default function PipelineBoard({ leads }: PipelineBoardProps) {
   };
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar items-start">
+    <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar items-start snap-x snap-mandatory">
       {COLUMNS.map(col => {
         const columnLeads = getLeadsByStatus(col.id);
         const columnValue = columnLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
         const Icon = col.icon;
 
         return (
-          <div key={col.id} className={`flex-1 min-w-[200px] rounded-xl border flex flex-col ${getColumnColorClass(col.color)} bg-opacity-40 max-h-[calc(100vh-250px)]`}>
+          <div key={col.id} className={`flex-1 min-w-[280px] sm:min-w-[240px] md:min-w-[200px] rounded-xl border flex flex-col ${getColumnColorClass(col.color)} bg-opacity-40 max-h-[calc(100vh-250px)] snap-center`}>
             {/* Column Header */}
-            <div className={`p-2 border-b flex items-center justify-between rounded-t-xl ${getHeaderColorClass(col.color)}`}>
-              <div className="flex items-center gap-1.5">
-                <Icon className="w-3.5 h-3.5 opacity-70" />
+            <div className={`p-2.5 border-b flex items-center justify-between rounded-t-xl ${getHeaderColorClass(col.color)}`}>
+              <div className="flex items-center gap-2">
+                <Icon className="w-4 h-4 opacity-70" />
                 <h3 className="font-bold text-xs uppercase tracking-wider">{col.label}</h3>
               </div>
-              <span className="bg-white bg-opacity-50 px-1.5 py-0.5 rounded-full text-[10px] font-bold">
+              <span className="bg-white bg-opacity-50 px-2 py-0.5 rounded-full text-[10px] font-bold">
                 {columnLeads.length}
               </span>
             </div>
             
             {/* Column Value Summary */}
-            <div className="px-3 py-1.5 bg-white bg-opacity-30 border-b border-white/20">
+            <div className="px-3 py-2 bg-white bg-opacity-30 border-b border-white/20">
               <p className="text-[9px] uppercase tracking-wider opacity-70 font-semibold mb-0.5">Commission Value</p>
               <p className="text-base font-bold">£{columnValue.toLocaleString()}</p>
             </div>
@@ -81,7 +81,7 @@ export default function PipelineBoard({ leads }: PipelineBoardProps) {
                 <PipelineCard key={lead.id} lead={lead} color={col.color} />
               ))}
               {columnLeads.length === 0 && (
-                <div className="flex-1 flex items-center justify-center text-[10px] opacity-50 italic text-center px-4 py-6">
+                <div className="flex-1 flex items-center justify-center text-[10px] opacity-50 italic text-center px-4 py-8">
                   No leads in {col.label}
                 </div>
               )}

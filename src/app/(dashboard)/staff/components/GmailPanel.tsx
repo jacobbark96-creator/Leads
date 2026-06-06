@@ -376,28 +376,28 @@ const GmailPanelContent = () => {
           </div>
         )}
 
-        <div className="flex gap-4 mb-4 border-b border-white/10 pb-2">
+        <div className="flex gap-3 sm:gap-4 mb-4 border-b border-white/10 pb-2 overflow-x-auto custom-scrollbar no-scrollbar">
           <div 
             onClick={() => handleTabChange('INBOX')}
-            className={`text-sm font-medium cursor-pointer relative pb-1 transition-colors ${activeTab === 'INBOX' ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
+            className={`text-xs sm:text-sm font-medium cursor-pointer relative pb-1 transition-colors shrink-0 ${activeTab === 'INBOX' ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
           >
-            <Inbox className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />
+            <Inbox className="w-3 sm:w-3.5 h-3 sm:h-3.5 inline mr-1 sm:mr-1.5 mb-0.5" />
             Inbox
             {activeTab === 'INBOX' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-400 rounded-t-full"></div>}
           </div>
           <div 
             onClick={() => handleTabChange('SENT')}
-            className={`text-sm font-medium cursor-pointer relative pb-1 transition-colors ${activeTab === 'SENT' ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
+            className={`text-xs sm:text-sm font-medium cursor-pointer relative pb-1 transition-colors shrink-0 ${activeTab === 'SENT' ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
           >
-            <Send className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />
+            <Send className="w-3 sm:w-3.5 h-3 sm:h-3.5 inline mr-1 sm:mr-1.5 mb-0.5" />
             Sent
             {activeTab === 'SENT' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-400 rounded-t-full"></div>}
           </div>
           <div 
             onClick={() => handleTabChange('ARCHIVE')}
-            className={`text-sm font-medium cursor-pointer relative pb-1 transition-colors ${activeTab === 'ARCHIVE' ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
+            className={`text-xs sm:text-sm font-medium cursor-pointer relative pb-1 transition-colors shrink-0 ${activeTab === 'ARCHIVE' ? 'text-white' : 'text-gray-400 hover:text-gray-200'}`}
           >
-            <Archive className="w-3.5 h-3.5 inline mr-1.5 mb-0.5" />
+            <Archive className="w-3 sm:w-3.5 h-3 sm:h-3.5 inline mr-1 sm:mr-1.5 mb-0.5" />
             Archive
             {activeTab === 'ARCHIVE' && <div className="absolute bottom-0 left-0 right-0 h-0.5 bg-red-400 rounded-t-full"></div>}
           </div>

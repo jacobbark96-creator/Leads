@@ -96,18 +96,18 @@ export const NewsPanel = () => {
           )}
         </div>
       ) : (
-        <div className="flex-1 space-y-4 overflow-y-auto pr-2 custom-scrollbar">
+        <div className="flex-1 grid grid-cols-3 sm:grid-cols-1 gap-2 sm:gap-4 overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
           {news.map((item, i) => (
-            <div key={i} className="flex gap-3 group cursor-pointer">
-              <div className="w-16 h-12 rounded-lg overflow-hidden shrink-0">
+            <div key={i} className="flex flex-col sm:flex-row gap-1 sm:gap-3 group cursor-pointer bg-white/5 sm:bg-transparent p-1 sm:p-0 rounded-lg sm:rounded-none border border-white/5 sm:border-0 hover:bg-white/10 sm:hover:bg-transparent transition-all">
+              <div className="w-full sm:w-16 h-12 sm:h-12 rounded-md sm:rounded-lg overflow-hidden shrink-0 shadow-lg">
                 <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full text-white ${item.badgeColor} mb-1 inline-block uppercase tracking-wider`}>
+                <span className={`text-[6px] sm:text-[10px] font-bold px-1 py-0.5 rounded-full text-white ${item.badgeColor} mb-0.5 sm:mb-1 inline-block uppercase tracking-wider`}>
                   {item.badge}
                 </span>
-                <h3 className="text-sm font-bold text-white mb-0.5 group-hover:text-blue-400 transition-colors truncate">{item.title}</h3>
-                <span className="text-[10px] text-gray-500 font-medium">{item.time}</span>
+                <h3 className="text-[9px] sm:text-sm font-bold text-white mb-0.5 group-hover:text-blue-400 transition-colors line-clamp-2 sm:truncate leading-tight">{item.title}</h3>
+                <span className="text-[7px] sm:text-[10px] text-gray-500 font-medium">{item.time}</span>
               </div>
             </div>
           ))}
@@ -116,60 +116,60 @@ export const NewsPanel = () => {
     </GlassCard>
 
     {isModalOpen && (
-      <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
-        <div className="bg-[#0a0a14] border border-white/10 rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
-          <div className="flex justify-between items-center p-4 border-b border-white/10">
+      <div className="fixed inset-0 z-[100] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm p-0 sm:p-4">
+        <div className="bg-[#0a0a14] border-t sm:border border-white/10 rounded-t-3xl sm:rounded-2xl w-full sm:max-w-md shadow-2xl overflow-hidden animate-in slide-in-from-bottom sm:zoom-in duration-300">
+          <div className="flex justify-between items-center p-4 sm:p-5 border-b border-white/10">
             <h3 className="text-lg font-bold text-white">Create Company News</h3>
             <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-white">
               <X className="w-5 h-5" />
             </button>
           </div>
-          <form onSubmit={handleCreateNews} className="p-4 space-y-4">
+          <form onSubmit={handleCreateNews} className="p-4 sm:p-5 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Title</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Title</label>
               <input
                 type="text"
                 value={newTitle}
                 onChange={e => setNewTitle(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-base text-white focus:border-blue-500 outline-none"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 sm:py-2 text-base sm:text-sm text-white focus:border-blue-500 outline-none transition-colors"
                 placeholder="News title..."
                 required
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Category</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Category</label>
               <select
                 value={newCategory}
                 onChange={e => setNewCategory(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-base text-white focus:border-blue-500 outline-none"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 sm:py-2 text-base sm:text-sm text-white focus:border-blue-500 outline-none transition-colors appearance-none"
               >
-                <option value="Company News" className="bg-gray-900">Company News</option>
-                <option value="Product Update" className="bg-gray-900">Product Update</option>
-                <option value="Event" className="bg-gray-900">Event</option>
+                <option value="Company News" className="bg-[#0a0a14]">Company News</option>
+                <option value="Product Update" className="bg-[#0a0a14]">Product Update</option>
+                <option value="Event" className="bg-[#0a0a14]">Event</option>
               </select>
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-400 mb-1">Content (Brief)</label>
+              <label className="block text-xs sm:text-sm font-medium text-gray-400 mb-1.5 uppercase tracking-wider">Content (Brief)</label>
               <textarea
                 value={newContent}
                 onChange={e => setNewContent(e.target.value)}
-                className="w-full bg-white/5 border border-white/10 rounded-lg px-3 py-2 text-base text-white focus:border-blue-500 outline-none h-24 resize-none"
+                className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-2.5 sm:py-2 text-base sm:text-sm text-white focus:border-blue-500 outline-none h-24 resize-none transition-colors"
                 placeholder="Short description..."
                 required
               />
             </div>
-            <div className="pt-2 flex justify-end gap-3">
+            <div className="pt-2 flex justify-end gap-3 pb-6 sm:pb-0">
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="px-4 py-2 text-base font-medium text-gray-300 hover:text-white"
+                className="px-6 py-2.5 sm:px-4 sm:py-2 text-base sm:text-sm font-medium text-gray-300 hover:text-white transition-colors"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-base font-bold rounded-lg disabled:opacity-50"
+                className="px-8 py-2.5 sm:px-6 sm:py-2 bg-blue-600 hover:bg-blue-500 text-white text-base sm:text-sm font-bold rounded-xl disabled:opacity-50 shadow-lg shadow-blue-600/20 transition-all active:scale-95"
               >
                 {isSubmitting ? 'Publishing...' : 'Publish'}
               </button>

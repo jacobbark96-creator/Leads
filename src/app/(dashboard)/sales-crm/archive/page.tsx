@@ -110,7 +110,7 @@ function ArchiveLeadsContent() {
               placeholder="Search archive..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full pl-8 pr-3 py-1.5 border border-gray-200 rounded-lg shadow-sm text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
+              className="w-full pl-8 pr-3 py-2 border border-gray-200 rounded-lg shadow-sm text-xs focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all bg-white"
             />
           </div>
           
@@ -118,7 +118,7 @@ function ArchiveLeadsContent() {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="border-gray-200 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-1.5 pl-3 pr-8 bg-white"
+              className="flex-1 sm:flex-none border-gray-200 rounded-lg shadow-sm text-xs focus:ring-blue-500 focus:border-blue-500 py-2 pl-3 pr-8 bg-white"
             >
               <option value="all">All Statuses</option>
               <option value="fresh">Fresh</option>
@@ -129,7 +129,7 @@ function ArchiveLeadsContent() {
 
         <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse whitespace-nowrap">
+            <table className="w-full text-left border-collapse whitespace-nowrap hidden md:table">
               <thead className="bg-gray-50/50 border-b border-gray-200">
                 <tr>
                   <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Lead / Company</th>
@@ -196,6 +196,61 @@ function ArchiveLeadsContent() {
                 )}
               </tbody>
             </table>
+
+            {/* MOBILE CARD VIEW */}
+            <div className="md:hidden divide-y divide-gray-100">
+              {loading ? (
+                <div className="py-16 text-center">
+                  <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                </div>
+              ) : leads.length > 0 ? (
+                leads.map((lead) => (
+                  <div key={lead.id} className="p-4 bg-white active:bg-gray-50 transition-colors">
+                    <div className="flex items-start justify-between gap-3 mb-2">
+                      <div className="flex items-center gap-2">
+                        <div className={`w-8 h-8 rounded-lg flex items-center justify-center shrink-0 ${lead.building_type === 'Residential' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
+                          {lead.building_type === 'Residential' ? <User className="w-4 h-4" /> : <Building className="w-4 h-4" />}
+                        </div>
+                        <div className="min-w-0">
+                          <span className="text-sm font-bold text-gray-900 block truncate">
+                            {lead.company || lead.name || 'Unknown Lead'}
+                          </span>
+                          <div className="flex items-center gap-1.5 mt-0.5">
+                            <span className={`text-[9px] font-bold px-1.5 py-0.5 rounded uppercase tracking-wider ${lead.building_type === 'Residential' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700'}`}>
+                              {lead.building_type}
+                            </span>
+                            <span className="text-[10px] text-gray-500 flex items-center gap-1">
+                              <MapPin className="w-3 h-3" />
+                              {extractTown(lead.location)}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      <span className="inline-flex items-center gap-1.5 px-2 py-1 rounded text-[10px] font-bold bg-gray-50 text-gray-600 border border-gray-100 capitalize">
+                        {lead.status}
+                      </span>
+                    </div>
+                    
+                    <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-50">
+                      <div className="flex flex-col">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Added</span>
+                        <span className="text-xs text-gray-700 font-medium">{new Date(lead.created_at).toLocaleDateString()}</span>
+                      </div>
+                      <a 
+                        href={`/sales-crm/lead-v2?id=${lead.id}&tab=archive`}
+                        className="px-3 py-1.5 bg-blue-50 text-blue-600 rounded-lg text-xs font-bold hover:bg-blue-100 transition-colors"
+                      >
+                        View Details
+                      </a>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-16 text-center text-gray-500 px-4">
+                  No archived leads found.
+                </div>
+              )}
+            </div>
           </div>
           <div className="bg-gray-50 px-4 py-3 border-t border-gray-100 flex items-center justify-between">
             <span className="text-xs text-gray-500">Total Archived: <span className="font-bold text-gray-900">{totalCount}</span></span>

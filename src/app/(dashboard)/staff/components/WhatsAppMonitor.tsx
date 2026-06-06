@@ -357,251 +357,250 @@ export const WhatsAppMonitor = () => {
 
   return (
     <GlassCard delay={0.4} className="p-0 flex flex-col h-full overflow-hidden border-0">
-      {activeContact ? (
-        <div className="flex flex-col h-full bg-[#0b141a]">
-          {/* Chat Header */}
-          <div className="p-3 bg-[#1f2c33] flex items-center gap-3 shrink-0">
-            <button 
-              onClick={() => setActiveContact(null)}
-              className="p-1 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <div className="relative shrink-0">
-              <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${isWhatsAppMessage(activeContact) ? 'from-[#00a884] to-[#00d4aa]' : 'from-blue-500 to-blue-600'} flex items-center justify-center text-white font-medium text-base`}>
-                {(contactNames[activeContact]?.name || activeContact).substring(0, 2).toUpperCase()}
-              </div>
-              <div className="absolute -bottom-1 -right-1 bg-[#1f2c33] rounded-full p-0.5 border border-[#0b141a]">
-                {isWhatsAppMessage(activeContact) ? (
-                  <MessageCircle className="w-3 h-3 text-[#00a884]" fill="#00a884" />
-                ) : (
-                  <MessageSquare className="w-3 h-3 text-blue-400" fill="currentColor" />
-                )}
-              </div>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2">
-                <h3 className="text-base font-semibold text-white truncate">
-                  {contactNames[activeContact]?.name || activeContact}
-                </h3>
-                {contactNames[activeContact]?.id && (
-                  <a 
-                    href={contactNames[activeContact]?.type === 'contractor' ? `/contractors?id=${contactNames[activeContact]?.id}` : `/sales-crm/lead-v2?id=${contactNames[activeContact]?.id}`}
-                    className="p-1 hover:bg-white/10 rounded text-blue-400 hover:text-blue-300 transition-colors"
-                    title="Open Details"
-                  >
-                    <ExternalLink className="w-3.5 h-3.5" />
-                  </a>
-                )}
-              </div>
-              <p className="text-xs text-[#8696a0]">
-                {isWhatsAppMessage(activeContact) ? (isConnected ? 'WhatsApp' : 'connecting...') : 'SMS Message'}
-              </p>
-            </div>
-            <div className="flex items-center gap-1">
-              <button className="p-2 text-[#8696a0] hover:text-white transition-colors">
-                <Phone className="w-5 h-5" />
-              </button>
-              <button className="p-2 text-[#8696a0] hover:text-white transition-colors">
-                <MoreVertical className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-
-          {/* Messages Area */}
-          <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar min-h-0 bg-[#0b141a]">
-            {activeChatMessages.map((msg, idx, arr) => {
-              const isOutbound = msg.direction === 'outbound';
-              const msgDate = new Date(msg.created_at);
-              const prevDate = idx > 0 ? new Date(arr[idx - 1].created_at) : null;
-              const showDateSeparator = idx === 0 || 
-                msgDate.toDateString() !== prevDate?.toDateString();
-              
-              const isFirstOfDay = showDateSeparator;
-              const isConsecutive = idx > 0 && !showDateSeparator && 
-                arr[idx - 1].direction === msg.direction;
-              
-              return (
-                <React.Fragment key={msg.id}>
-                  {showDateSeparator && (
-                    <div className="flex justify-center my-3">
-                      <span className="bg-[#1f2c33] text-[#8696a0] text-xs px-3 py-1 rounded-lg">
-                        {formatMessageDate(msgDate)}
-                      </span>
-                    </div>
-                  )}
-                  <div 
-                    className={`flex flex-col ${isOutbound ? 'items-end' : 'items-start'} ${isFirstOfDay ? 'mt-2' : 'mt-0.5'}`}
-                  >
-                    <div 
-                      className={`max-w-[75%] px-3 py-1.5 rounded-lg ${
-                        isOutbound 
-                          ? 'bg-[#005c4b] text-white rounded-tr-none' 
-                          : 'bg-[#1f2c33] text-[#e9edef] rounded-tl-none'
-                      } ${isConsecutive ? (isOutbound ? 'rounded-br-sm' : 'rounded-bl-sm') : ''}`}
-                      style={{ 
-                        borderRadius: isConsecutive 
-                          ? (isOutbound ? '8px 8px 2px 8px' : '8px 8px 8px 2px')
-                          : '8px 8px 8px 8px'
-                      }}
-                    >
-                      <p className="text-[13px] whitespace-pre-wrap break-words leading-relaxed">
-                        {msg.body || 'Media message'}
-                      </p>
-                      {msg.media_url && (
-                        <div className="mt-2">
-                          <img 
-                            src={`/api/twilio/media?url=${encodeURIComponent(msg.media_url)}`} 
-                            alt="Media" 
-                            className="max-w-full rounded-lg"
-                          />
-                        </div>
-                      )}
-                    </div>
-                    <div className={`flex items-center gap-1 mt-0.5 ${isOutbound ? 'flex-row-reverse' : ''}`}>
-                      <span className="text-[11px] text-[#8696a0]">
-                        {formatMessageTime(msgDate)}
-                      </span>
-                      {getStatusIcon(msg)}
-                    </div>
-                  </div>
-                </React.Fragment>
-              );
-            })}
-            <div ref={messagesEndRef} />
-          </div>
-
-          {/* Input Area */}
-          <div className="p-2 bg-[#1f2c33] shrink-0">
-            <form onSubmit={handleSend} className="flex items-center gap-2 bg-[#2a3942] rounded-lg px-3 py-2">
-              <input
-                type="text"
-                value={newMessage}
-                onChange={(e) => setNewMessage(e.target.value)}
-                placeholder="Message..."
-                disabled={isSending}
-                className="flex-1 bg-transparent border-none outline-none text-base text-white placeholder:text-[#8696a0]"
-              />
+      <div className="flex flex-col h-full bg-[#111b21]">
+        {activeContact ? (
+          <div className="flex flex-col h-full bg-[#0b141a]">
+            {/* Chat Header */}
+            <div className="p-2 sm:p-3 bg-[#1f2c33] flex items-center gap-2 sm:gap-3 shrink-0">
               <button 
-                type="submit"
-                disabled={!newMessage.trim() || isSending}
-                className="text-[#00a884] p-1 hover:text-[#00d4aa] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                onClick={() => setActiveContact(null)}
+                className="p-1.5 sm:p-1 hover:bg-white/10 rounded-full transition-colors text-gray-400 hover:text-white"
               >
-                <Send className="w-5 h-5" />
+                <ArrowLeft className="w-5 h-5" />
               </button>
-            </form>
-          </div>
-        </div>
-      ) : (
-        <div className="flex flex-col h-full bg-[#111b21]">
-          {/* Header */}
-          <div className="p-4 bg-[#1f2c33] shrink-0">
-            <div className="flex items-center justify-between mb-3">
-              <h2 className="text-lg font-bold text-white">Messaging</h2>
-              <div className="flex items-center gap-2">
-                <button className="p-2 text-[#8696a0] hover:text-white transition-colors rounded-full hover:bg-white/10">
-                  <Circle className="w-5 h-5" fill={isConnected ? '#00a884' : '#8696a0'} />
+              <div className="relative shrink-0">
+                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br ${isWhatsAppMessage(activeContact) ? 'from-[#00a884] to-[#00d4aa]' : 'from-blue-500 to-blue-600'} flex items-center justify-center text-white font-medium text-sm sm:text-base`}>
+                  {(contactNames[activeContact]?.name || activeContact).substring(0, 2).toUpperCase()}
+                </div>
+                <div className="absolute -bottom-1 -right-1 bg-[#1f2c33] rounded-full p-0.5 border border-[#0b141a]">
+                  {isWhatsAppMessage(activeContact) ? (
+                    <MessageCircle className="w-2.5 h-2.5 sm:w-3 h-3 text-[#00a884]" fill="#00a884" />
+                  ) : (
+                    <MessageSquare className="w-2.5 h-2.5 sm:w-3 h-3 text-blue-400" fill="currentColor" />
+                  )}
+                </div>
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center gap-1 sm:gap-2">
+                  <h3 className="text-sm sm:text-base font-semibold text-white truncate">
+                    {contactNames[activeContact]?.name || activeContact}
+                  </h3>
+                  {contactNames[activeContact]?.id && (
+                    <a 
+                      href={contactNames[activeContact]?.type === 'contractor' ? `/contractors?id=${contactNames[activeContact]?.id}` : `/sales-crm/lead-v2?id=${contactNames[activeContact]?.id}`}
+                      className="p-1 hover:bg-white/10 rounded text-blue-400 hover:text-blue-300 transition-colors"
+                      title="Open Details"
+                    >
+                      <ExternalLink className="w-3.5 h-3.5" />
+                    </a>
+                  )}
+                </div>
+                <p className="text-[10px] sm:text-xs text-[#8696a0]">
+                  {isWhatsAppMessage(activeContact) ? (isConnected ? 'WhatsApp' : 'connecting...') : 'SMS Message'}
+                </p>
+              </div>
+              <div className="flex items-center gap-0 sm:gap-1">
+                <button className="p-2 text-[#8696a0] hover:text-white transition-colors">
+                  <Phone className="w-4 h-4 sm:w-5 h-5" />
+                </button>
+                <button className="p-2 text-[#8696a0] hover:text-white transition-colors">
+                  <MoreVertical className="w-4 h-4 sm:w-5 h-5" />
                 </button>
               </div>
             </div>
-            
-            {/* Search */}
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-[#8696a0]" />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search or start new chat"
-                className="w-full bg-[#2a3942] text-white text-base pl-10 pr-4 py-2 rounded-lg placeholder:text-[#8696a0] outline-none focus:ring-1 focus:ring-[#00a884]"
-              />
-            </div>
-          </div>
-          
-          {/* Chat List */}
-          <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
-            {filteredChatList.length === 0 ? (
-              <div className="flex flex-col items-center justify-center h-full text-center p-6">
-                <div className="w-16 h-16 rounded-full bg-[#1f2c33] flex items-center justify-center mb-4">
-                  <MessageCircle className="w-8 h-8 text-[#8696a0]" />
-                </div>
-                <p className="text-[#8696a0] text-base font-medium">
-                  {searchQuery ? 'No results found' : 'No active chats'}
-                </p>
-                <p className="text-[#8696a0] text-sm mt-1">
-                  {searchQuery ? 'Try a different search term' : 'Waiting for incoming messages'}
-                </p>
-              </div>
-            ) : (
-              <div className="py-1">
-                {filteredChatList.map((chat, i) => (
-                  <div 
-                    key={i} 
-                    onClick={() => setActiveContact(chat.number)} 
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5"
-                  >
-                    <div className="relative shrink-0">
-                      <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${isWhatsAppMessage(chat.number) ? 'from-[#00a884] to-[#00d4aa]' : 'from-blue-500 to-blue-600'} flex items-center justify-center text-white font-medium text-lg`}>
-                        {(chat.name || chat.number).substring(0, 2).toUpperCase()}
+
+            {/* Messages Area */}
+            <div className="flex-1 overflow-y-auto p-3 space-y-1 custom-scrollbar min-h-0 bg-[#0b141a]">
+              {activeChatMessages.map((msg, idx, arr) => {
+                const isOutbound = msg.direction === 'outbound';
+                const msgDate = new Date(msg.created_at);
+                const prevDate = idx > 0 ? new Date(arr[idx - 1].created_at) : null;
+                const showDateSeparator = idx === 0 || 
+                  msgDate.toDateString() !== prevDate?.toDateString();
+                
+                const isFirstOfDay = showDateSeparator;
+                const isConsecutive = idx > 0 && !showDateSeparator && 
+                  arr[idx - 1].direction === msg.direction;
+                
+                return (
+                  <React.Fragment key={msg.id}>
+                    {showDateSeparator && (
+                      <div className="flex justify-center my-3">
+                        <span className="bg-[#1f2c33] text-[#8696a0] text-[10px] sm:text-xs px-3 py-1 rounded-lg">
+                          {formatMessageDate(msgDate)}
+                        </span>
                       </div>
-                      <div className="absolute -bottom-1 -right-1 bg-[#111b21] rounded-full p-1 border border-[#0b141a]">
-                        {isWhatsAppMessage(chat.number) ? (
-                          <MessageCircle className="w-3.5 h-3.5 text-[#00a884]" fill="#00a884" />
-                        ) : (
-                          <MessageSquare className="w-3.5 h-3.5 text-blue-400" fill="currentColor" />
+                    )}
+                    <div 
+                      className={`flex flex-col ${isOutbound ? 'items-end' : 'items-start'} ${isFirstOfDay ? 'mt-2' : 'mt-0.5'}`}
+                    >
+                      <div 
+                        className={`max-w-[85%] sm:max-w-[75%] px-3 py-1.5 rounded-lg ${
+                          isOutbound 
+                            ? 'bg-[#005c4b] text-white rounded-tr-none' 
+                            : 'bg-[#1f2c33] text-[#e9edef] rounded-tl-none'
+                        } ${isConsecutive ? (isOutbound ? 'rounded-br-sm' : 'rounded-bl-sm') : ''}`}
+                        style={{ 
+                          borderRadius: isConsecutive 
+                            ? (isOutbound ? '8px 8px 2px 8px' : '8px 8px 8px 2px')
+                            : '8px 8px 8px 8px'
+                        }}
+                      >
+                        <p className="text-[12px] sm:text-[13px] whitespace-pre-wrap break-words leading-relaxed">
+                          {msg.body || 'Media message'}
+                        </p>
+                        {msg.media_url && (
+                          <div className="mt-2">
+                            <img 
+                              src={`/api/twilio/media?url=${encodeURIComponent(msg.media_url)}`} 
+                              alt="Media" 
+                              className="max-w-full rounded-lg"
+                            />
+                          </div>
                         )}
                       </div>
+                      <div className={`flex items-center gap-1 mt-0.5 ${isOutbound ? 'flex-row-reverse' : ''}`}>
+                        <span className="text-[10px] text-[#8696a0]">
+                          {formatMessageTime(msgDate)}
+                        </span>
+                        {getStatusIcon(msg)}
+                      </div>
                     </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex justify-between items-start mb-0.5">
-                        <h3 className={`text-base font-semibold truncate pr-2 ${chat.unread > 0 ? 'text-white' : 'text-[#e9edef]'}`}>
-                          {chat.name}
-                        </h3>
-                        <div className="flex flex-col items-end shrink-0">
-                          <span className={`text-xs ${chat.unread > 0 ? 'text-[#00a884]' : 'text-[#8696a0]'}`}>
-                            {formatMessageTime(chat.time)}
-                          </span>
-                          {chat.unread > 0 && (
-                            <span className="bg-[#00a884] text-white text-[11px] font-bold w-5 h-5 rounded-full flex items-center justify-center mt-0.5">
-                              {chat.unread > 9 ? '9+' : chat.unread}
-                            </span>
+                  </React.Fragment>
+                );
+              })}
+              <div ref={messagesEndRef} />
+            </div>
+
+            {/* Input Area */}
+            <div className="p-2 bg-[#1f2c33] shrink-0">
+              <form onSubmit={handleSend} className="flex items-center gap-2 bg-[#2a3942] rounded-lg px-3 py-2">
+                <input
+                  type="text"
+                  value={newMessage}
+                  onChange={(e) => setNewMessage(e.target.value)}
+                  placeholder="Message..."
+                  disabled={isSending}
+                  className="flex-1 bg-transparent border-none outline-none text-sm sm:text-base text-white placeholder:text-[#8696a0]"
+                />
+                <button 
+                  type="submit"
+                  disabled={!newMessage.trim() || isSending}
+                  className="text-[#00a884] p-1 hover:text-[#00d4aa] disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                >
+                  <Send className="w-5 h-5" />
+                </button>
+              </form>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col h-full bg-[#111b21]">
+            {/* Header */}
+            <div className="p-3 sm:p-4 bg-[#1f2c33] shrink-0">
+              <div className="flex items-center justify-between mb-3">
+                <h2 className="text-base sm:text-lg font-bold text-white">Messaging</h2>
+                <div className="flex items-center gap-2">
+                  <button className="p-2 text-[#8696a0] hover:text-white transition-colors rounded-full hover:bg-white/10">
+                    <Circle className="w-4 h-4 sm:w-5 h-5" fill={isConnected ? '#00a884' : '#8696a0'} />
+                  </button>
+                </div>
+              </div>
+              
+              {/* Search */}
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 sm:w-4 h-4 text-[#8696a0]" />
+                <input
+                  type="text"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Search chats..."
+                  className="w-full bg-[#2a3942] text-white text-sm sm:text-base pl-9 sm:pl-10 pr-4 py-2 rounded-lg placeholder:text-[#8696a0] outline-none focus:ring-1 focus:ring-[#00a884]"
+                />
+              </div>
+            </div>
+            
+            {/* Chat List */}
+            <div className="flex-1 overflow-y-auto custom-scrollbar min-h-0">
+              {filteredChatList.length === 0 ? (
+                <div className="flex flex-col items-center justify-center h-full text-center p-6">
+                  <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-full bg-[#1f2c33] flex items-center justify-center mb-4">
+                    <MessageCircle className="w-6 h-6 sm:w-8 sm:h-8 text-[#8696a0]" />
+                  </div>
+                  <p className="text-[#8696a0] text-sm sm:text-base font-medium">
+                    {searchQuery ? 'No results found' : 'No active chats'}
+                  </p>
+                </div>
+              ) : (
+                <div className="py-1">
+                  {filteredChatList.map((chat, i) => (
+                    <div 
+                      key={i} 
+                      onClick={() => setActiveContact(chat.number)} 
+                      className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5"
+                    >
+                      <div className="relative shrink-0">
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br ${isWhatsAppMessage(chat.number) ? 'from-[#00a884] to-[#00d4aa]' : 'from-blue-500 to-blue-600'} flex items-center justify-center text-white font-medium text-base sm:text-lg`}>
+                          {(chat.name || chat.number).substring(0, 2).toUpperCase()}
+                        </div>
+                        <div className="absolute -bottom-1 -right-1 bg-[#111b21] rounded-full p-0.5 sm:p-1 border border-[#0b141a]">
+                          {isWhatsAppMessage(chat.number) ? (
+                            <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#00a884]" fill="#00a884" />
+                          ) : (
+                            <MessageSquare className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-400" fill="currentColor" />
                           )}
                         </div>
                       </div>
-                      <div className="flex items-center gap-2">
-                        <p className={`text-[13px] truncate flex-1 ${chat.unread > 0 ? 'text-white font-medium' : 'text-[#8696a0]'}`}>
-                          {chat.lastMsg.direction === 'outbound' && isWhatsAppMessage(chat.number) && (
-                            <span className="inline-flex mr-1">
-                              {chat.lastMsg.delivery_status === 'read' || chat.lastMsg.is_read ? (
-                                <CheckCheck className="w-3.5 h-3.5 text-blue-400 mr-1" />
-                              ) : chat.lastMsg.delivery_status === 'delivered' ? (
-                                <CheckCheck className="w-3.5 h-3.5 text-[#8696a0] mr-1" />
-                              ) : (
-                                <Check className="w-3.5 h-3.5 text-[#8696a0] mr-1" />
-                              )}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex justify-between items-start mb-0.5">
+                          <h3 className={`text-sm sm:text-base font-semibold truncate pr-2 ${chat.unread > 0 ? 'text-white' : 'text-[#e9edef]'}`}>
+                            {chat.name}
+                          </h3>
+                          <div className="flex flex-col items-end shrink-0">
+                            <span className={`text-[10px] sm:text-xs ${chat.unread > 0 ? 'text-[#00a884]' : 'text-[#8696a0]'}`}>
+                              {formatMessageTime(chat.time)}
                             </span>
-                          )}
-                          {chat.msg}
-                        </p>
+                            {chat.unread > 0 && (
+                              <span className="bg-[#00a884] text-white text-[10px] sm:text-[11px] font-bold w-4 h-4 sm:w-5 sm:h-5 rounded-full flex items-center justify-center mt-0.5">
+                                {chat.unread > 9 ? '9+' : chat.unread}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <p className={`text-[12px] sm:text-[13px] truncate flex-1 ${chat.unread > 0 ? 'text-white font-medium' : 'text-[#8696a0]'}`}>
+                            {chat.lastMsg.direction === 'outbound' && isWhatsAppMessage(chat.number) && (
+                              <span className="inline-flex mr-1">
+                                {chat.lastMsg.delivery_status === 'read' || chat.lastMsg.is_read ? (
+                                  <CheckCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-blue-400 mr-1" />
+                                ) : chat.lastMsg.delivery_status === 'delivered' ? (
+                                  <CheckCheck className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8696a0] mr-1" />
+                                ) : (
+                                  <Check className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#8696a0] mr-1" />
+                                )}
+                              </span>
+                            )}
+                            {chat.msg}
+                          </p>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Unread Badge in Footer */}
+            {totalUnread > 0 && (
+              <div className="p-2 sm:p-3 bg-[#1f2c33] border-t border-white/5 shrink-0">
+                <div className="flex items-center justify-center gap-2 text-[#8696a0] text-xs sm:text-sm">
+                  <Circle className="w-2.5 h-2.5 fill-[#00a884]" />
+                  <span>{totalUnread} unread message{totalUnread !== 1 ? 's' : ''}</span>
+                </div>
               </div>
             )}
           </div>
-          
-          {/* Unread Badge in Footer */}
-          {totalUnread > 0 && (
-            <div className="p-3 bg-[#1f2c33] border-t border-white/5 shrink-0">
-              <div className="flex items-center justify-center gap-2 text-[#8696a0] text-sm">
-                <Circle className="w-3 h-3 fill-[#00a884]" />
-                <span>{totalUnread} unread message{totalUnread !== 1 ? 's' : ''}</span>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
+        )}
+      </div>
     </GlassCard>
   );
 };

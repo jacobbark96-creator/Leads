@@ -14,6 +14,12 @@ export async function POST(req: Request) {
     const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
     const clientSecret = process.env.GOOGLE_CLIENT_SECRET;
 
+    console.log('Auth Exchange Attempt:', {
+      clientId: clientId?.substring(0, 15) + '...',
+      secretPrefix: clientSecret?.substring(0, 7) + '...',
+      secretLength: clientSecret?.length
+    });
+
     if (!clientId || !clientSecret) {
       return NextResponse.json({ error: 'Google Client ID or Secret is not configured' }, { status: 500 });
     }

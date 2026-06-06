@@ -1,7 +1,7 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
-import { X, Search, MessageSquare, Send, Check, CheckCheck, Smile, Users, Plus } from 'lucide-react';
+import { X, Search, MessageSquare, Send, Check, CheckCheck, Smile, Users, Plus, ArrowLeft } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import { RealtimeChannel } from '@supabase/supabase-js';
 import { DialerContext } from '@/contexts/DialerContext';
@@ -716,19 +716,24 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   );
 
   const containerClasses = isModal 
-    ? "fixed bottom-24 right-6 z-[100] w-[700px] h-[500px] bg-gray-900 rounded-2xl shadow-2xl border border-gray-700 overflow-hidden flex animate-in slide-in-from-bottom-5"
+    ? "fixed bottom-0 sm:bottom-24 inset-x-0 sm:inset-x-auto sm:right-6 z-[100] w-full sm:w-[700px] h-full sm:h-[500px] bg-gray-900 sm:rounded-2xl shadow-2xl border-t sm:border border-gray-700 overflow-hidden flex animate-in slide-in-from-bottom-5"
     : "flex w-full h-full bg-transparent overflow-hidden";
 
   return (
     <div className={containerClasses}>
       {/* Left Sidebar - Users List */}
-      <div className="w-1/3 border-r border-gray-700/50 flex flex-col bg-gray-900/30 min-h-0">
+      <div className={`${activeChatUser && !isModal ? 'hidden md:flex' : (activeChatUser ? 'hidden sm:flex' : 'flex')} w-full sm:w-1/3 border-r border-gray-700/50 flex flex-col bg-gray-900/30 min-h-0`}>
         <div className="p-3 border-b border-gray-700/50 flex items-center justify-between bg-white/[0.02] shrink-0">
           <h2 className="text-white text-base font-bold flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-blue-400" /> Team Messages
           </h2>
           {isModal && onClose && (
-            <button onClick={onClose} className="text-gray-400 hover:text-white">
+            <button onClick={onClose} className="text-gray-400 hover:text-white sm:hidden">
+              <X className="w-5 h-5" />
+            </button>
+          )}
+          {isModal && onClose && (
+            <button onClick={onClose} className="text-gray-400 hover:text-white hidden sm:block">
               <X className="w-4 h-4" />
             </button>
           )}
@@ -754,7 +759,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
               placeholder="Search team..." 
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="w-full bg-white/5 border-none rounded-lg py-1.5 pl-8 pr-3 text-xs text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500"
+              className="w-full bg-white/5 border-none rounded-lg py-2 sm:py-1.5 pl-8 pr-3 text-sm sm:text-xs text-white placeholder:text-gray-500 focus:ring-1 focus:ring-blue-500"
             />
           </div>
         </div>
@@ -772,13 +777,13 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
                   placeholder="Group Name" 
                   value={newGroupName}
                   onChange={(e) => setNewGroupName(e.target.value)}
-                  className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-xs text-white focus:ring-1 focus:ring-blue-500"
+                  className="w-full bg-white/5 border border-white/10 rounded-lg py-2 sm:py-1.5 px-3 text-sm sm:text-xs text-white focus:ring-1 focus:ring-blue-500"
                   required
                 />
                 <div className="flex-1 overflow-y-auto custom-scrollbar border border-white/5 rounded-lg p-2">
                   <p className="text-[11px] text-gray-500 mb-2 font-semibold">Select Members</p>
                   {users.map(u => (
-                    <label key={u.id} className="flex items-center gap-2 p-1.5 hover:bg-white/5 rounded cursor-pointer">
+                    <label key={u.id} className="flex items-center gap-3 sm:gap-2 p-2 sm:p-1.5 hover:bg-white/5 rounded cursor-pointer">
                       <input 
                         type="checkbox" 
                         checked={selectedGroupMembers.includes(u.id)}
@@ -786,16 +791,16 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
                           if (e.target.checked) setSelectedGroupMembers(prev => [...prev, u.id]);
                           else setSelectedGroupMembers(prev => prev.filter(id => id !== u.id));
                         }}
-                        className="rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500/20 focus:ring-offset-0 w-3 h-3"
+                        className="rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500/20 focus:ring-offset-0 w-4 h-4 sm:w-3 sm:h-3"
                       />
-                      <span className="text-xs text-gray-300">{u.name}</span>
+                      <span className="text-sm sm:text-xs text-gray-300">{u.name}</span>
                     </label>
                   ))}
                 </div>
                 <button 
                   type="submit" 
                   disabled={!newGroupName.trim()}
-                  className="bg-blue-600 text-white text-xs font-bold py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                  className="bg-blue-600 text-white text-sm sm:text-xs font-bold py-2.5 sm:py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
                 >
                   Create Group
                 </button>
@@ -812,14 +817,14 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
                 <div 
                   key={group.id} 
                   onClick={() => setActiveChatUser(group)}
-                  className={`p-2 flex items-center gap-2 cursor-pointer transition-colors border-b border-white/5 ${activeChatUser?.id === group.id ? 'bg-blue-900/20' : 'hover:bg-white/5'}`}
+                  className={`p-3 sm:p-2 flex items-center gap-3 sm:gap-2 cursor-pointer transition-colors border-b border-white/5 ${activeChatUser?.id === group.id ? 'bg-blue-900/20' : 'hover:bg-white/5'}`}
                 >
-                  <div className="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400">
-                    <Users className="w-4 h-4" />
+                  <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400">
+                    <Users className="w-5 h-5 sm:w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-gray-200 text-xs font-semibold truncate">{group.name}</h3>
-                    <p className="text-gray-500 text-[11px] truncate">Group Chat</p>
+                    <h3 className="text-gray-200 text-sm sm:text-xs font-semibold truncate">{group.name}</h3>
+                    <p className="text-gray-500 text-xs sm:text-[11px] truncate">Group Chat</p>
                   </div>
                 </div>
               ))}
@@ -839,7 +844,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
           </div>
 
           {filteredUsers.length === 0 && filteredGroups.length === 0 ? (
-            <div className="flex flex-col items-center justify-center p-4 text-center">
+            <div className="flex flex-col items-center justify-center p-6 text-center">
               <span className="text-sm text-gray-500">No users found</span>
             </div>
           ) : (
@@ -850,24 +855,24 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
                 <div 
                   key={user.id} 
                   onClick={() => setActiveChatUser(user)}
-                  className={`p-2 flex items-center gap-2 cursor-pointer transition-colors border-b border-white/5 ${activeChatUser?.id === user.id ? 'bg-blue-900/20' : 'hover:bg-white/5'}`}
+                  className={`p-3 sm:p-2 flex items-center gap-3 sm:gap-2 cursor-pointer transition-colors border-b border-white/5 ${activeChatUser?.id === user.id ? 'bg-blue-900/20' : 'hover:bg-white/5'}`}
                 >
                   <div className="relative">
-                    <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-[11px] uppercase">
+                    <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-xs sm:text-[11px] uppercase">
                       {user.name.substring(0, 2)}
                     </div>
-                    <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-gray-900 ${getStatusColor(status)}`}></div>
+                    <div className={`absolute bottom-0 right-0 w-3 h-3 sm:w-2.5 sm:h-2.5 rounded-full border-2 border-gray-900 ${getStatusColor(status)}`}></div>
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex justify-between items-center">
-                      <h3 className="text-gray-200 text-xs font-semibold truncate">{user.name}</h3>
+                      <h3 className="text-gray-200 text-sm sm:text-xs font-semibold truncate">{user.name}</h3>
                       {unread > 0 && (
                         <span className="bg-blue-500 text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full">
                           {unread}
                         </span>
                       )}
                     </div>
-                    <p className={`text-[11px] truncate ${typingUsers[user.id] ? 'text-blue-400 font-bold animate-pulse' : 'text-gray-500'}`}>
+                    <p className={`text-xs sm:text-[11px] truncate ${typingUsers[user.id] ? 'text-blue-400 font-bold animate-pulse' : 'text-gray-500'}`}>
                       {typingUsers[user.id] ? 'Typing...' : getUserStatusLabel(user.id)}
                     </p>
                   </div>
@@ -879,39 +884,50 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
       </div>
 
       {/* Right Side - Active Chat */}
-      <div className="w-2/3 flex flex-col bg-white/[0.01] min-h-0">
+      <div className={`${activeChatUser ? 'flex' : 'hidden sm:flex'} w-full sm:w-2/3 flex flex-col bg-white/[0.01] min-h-0`}>
         {activeChatUser ? (
           <>
             {/* Chat Header */}
             <div className="p-3 border-b border-gray-700/50 flex items-center justify-between bg-white/[0.02] shrink-0">
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-3 sm:gap-2">
+                <button 
+                  onClick={() => setActiveChatUser(null)}
+                  className="sm:hidden p-1 -ml-1 text-gray-400 hover:text-white"
+                >
+                  <ArrowLeft className="w-6 h-6" />
+                </button>
                 <div className="relative">
                   {activeChatUser.isGroup ? (
-                    <div className="w-8 h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400 shrink-0">
-                      <Users className="w-4 h-4" />
+                    <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-blue-900/50 flex items-center justify-center text-blue-400 shrink-0">
+                      <Users className="w-5 h-5 sm:w-4 h-4" />
                     </div>
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-[11px] uppercase shrink-0">
+                    <div className="w-10 h-10 sm:w-8 sm:h-8 rounded-full bg-gray-800 flex items-center justify-center text-white font-bold text-xs sm:text-[11px] uppercase shrink-0">
                       {activeChatUser.name.substring(0, 2)}
                     </div>
                   )}
                   {!activeChatUser.isGroup && (
-                    <div className={`absolute bottom-0 right-0 w-2.5 h-2.5 rounded-full border-2 border-gray-900 ${getStatusColor(getUserStatus(activeChatUser.id))}`}></div>
+                    <div className={`absolute bottom-0 right-0 w-3 h-3 sm:w-2.5 sm:h-2.5 rounded-full border-2 border-gray-900 ${getStatusColor(getUserStatus(activeChatUser.id))}`}></div>
                   )}
                 </div>
                 <div>
-                  <h3 className="text-white text-sm font-bold">{activeChatUser.name}</h3>
-                  <p className="text-gray-400 text-[11px] flex items-center gap-1">
+                  <h3 className="text-white text-sm sm:text-base font-bold leading-tight">{activeChatUser.name}</h3>
+                  <p className="text-gray-400 text-[10px] sm:text-[11px] flex items-center gap-1">
                     {activeChatUser.isGroup 
                       ? 'Group Chat' 
                       : getUserStatusLabel(activeChatUser.id)}
                   </p>
                 </div>
               </div>
+              {isModal && onClose && (
+                <button onClick={onClose} className="text-gray-400 hover:text-white sm:hidden p-1">
+                  <X className="w-6 h-6" />
+                </button>
+              )}
             </div>
 
             {/* Messages Area */}
-            <div className="flex-1 overflow-y-auto p-3 space-y-3 custom-scrollbar min-h-0">
+            <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 sm:space-y-3 custom-scrollbar min-h-0 bg-[#0a0a0f]">
               {messages.map((msg, idx) => {
                 const isMine = msg.sender_id === profile?.id;
                 const showDate = idx === 0 || new Date(messages[idx-1].created_at).getDate() !== new Date(msg.created_at).getDate();
@@ -920,8 +936,8 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
                 return (
                   <React.Fragment key={msg.id}>
                     {showDate && (
-                      <div className="flex justify-center my-2">
-                        <span className="bg-white/5 text-gray-400 text-[10px] uppercase tracking-wider px-2 py-0.5 rounded-full border border-white/10">
+                      <div className="flex justify-center my-4 sm:my-2">
+                        <span className="bg-white/5 text-gray-400 text-[10px] uppercase tracking-wider px-3 py-1 rounded-full border border-white/10">
                           {format(new Date(msg.created_at), 'MMM d, yyyy')}
                         </span>
                       </div>
@@ -931,15 +947,15 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
                         <span className="text-[10px] text-gray-500 mb-0.5 ml-1">{senderUser.name}</span>
                       )}
                       <div 
-                        className={`max-w-[85%] px-3 py-2 rounded-2xl ${
+                        className={`max-w-[90%] sm:max-w-[85%] px-4 py-2.5 sm:px-3 sm:py-2 rounded-2xl ${
                           isMine 
-                            ? 'bg-blue-600 text-white rounded-br-sm' 
+                            ? 'bg-blue-600 text-white rounded-br-sm shadow-lg shadow-blue-900/20' 
                             : 'bg-gray-800 text-gray-200 rounded-bl-sm border border-white/5'
                         }`}
                       >
-                        <p className="text-xs whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+                        <p className="text-sm sm:text-xs whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
                       </div>
-                      <div className="flex items-center gap-1 mt-1">
+                      <div className="flex items-center gap-1 mt-1 px-1">
                         <span className="text-[10px] text-gray-500">{format(new Date(msg.created_at), 'HH:mm')}</span>
                         {isMine && (
                           <div className="flex items-center gap-1">
@@ -959,10 +975,10 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
               
               {typingUsers[activeChatUser.id] && (
                 <div className="flex items-start gap-2">
-                  <div className="w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-gray-500 text-[10px] uppercase">
+                  <div className="w-8 h-8 sm:w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-gray-500 text-[10px] uppercase">
                     {activeChatUser.name.substring(0, 2)}
                   </div>
-                  <div className="bg-gray-800 border border-white/5 rounded-2xl rounded-bl-sm px-3 py-2 flex items-center gap-1">
+                  <div className="bg-gray-800 border border-white/5 rounded-2xl rounded-bl-sm px-4 py-2 sm:px-3 sm:py-2 flex items-center gap-1">
                     <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce"></span>
                     <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
                     <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
@@ -973,35 +989,35 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
             </div>
 
             {/* Input Area */}
-            <div className="p-2 border-t border-gray-700/50 bg-black/20 shrink-0">
-              <form onSubmit={handleSend} className="flex items-center gap-2 bg-white/5 rounded-full px-2 py-1 border border-white/10">
+            <div className="p-3 sm:p-2 border-t border-gray-700/50 bg-black/40 shrink-0">
+              <form onSubmit={handleSend} className="flex items-center gap-2 bg-white/5 rounded-full px-3 py-1.5 sm:px-2 sm:py-1 border border-white/10">
                 <button type="button" className="text-gray-400 hover:text-white p-1">
-                  <Smile className="w-4 h-4" />
+                  <Smile className="w-5 h-5 sm:w-4 h-4" />
                 </button>
                 <input
                   type="text"
                   value={newMessage}
                   onChange={handleTyping}
                   placeholder="Type a message..."
-                  className="flex-1 bg-transparent border-none outline-none py-1.5 px-2 text-xs text-white placeholder:text-gray-500 focus:ring-0"
+                  className="flex-1 bg-transparent border-none outline-none py-2 sm:py-1.5 px-2 text-sm sm:text-xs text-white placeholder:text-gray-500 focus:ring-0"
                 />
                 <button 
                   type="submit"
                   disabled={!newMessage.trim()}
-                  className="text-blue-400 p-1 hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  className="text-blue-400 p-2 sm:p-1 hover:text-blue-300 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                 >
-                  <Send className="w-4 h-4" />
+                  <Send className="w-5 h-5 sm:w-4 h-4" />
                 </button>
               </form>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center text-center p-4">
-            <div className="w-12 h-12 bg-white/5 rounded-full flex items-center justify-center mb-3">
-              <MessageSquare className="w-5 h-5 text-gray-500" />
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 bg-[#0a0a0f]">
+            <div className="w-16 h-16 sm:w-12 sm:h-12 bg-white/5 rounded-full flex items-center justify-center mb-4 sm:mb-3">
+              <MessageSquare className="w-7 h-7 sm:w-5 sm:h-5 text-gray-500" />
             </div>
-            <h3 className="text-white text-sm font-bold mb-1">Select a conversation</h3>
-            <p className="text-gray-500 text-[11px]">
+            <h3 className="text-white text-base sm:text-sm font-bold mb-1">Select a conversation</h3>
+            <p className="text-gray-500 text-sm sm:text-[11px] max-w-[200px]">
               Choose a team member to start chatting
             </p>
           </div>

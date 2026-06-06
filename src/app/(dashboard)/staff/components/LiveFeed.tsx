@@ -95,12 +95,12 @@ export const LiveFeed = () => {
       ) : (
         <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar">
           {events.map((e, i) => (
-            <div key={i} className="flex items-center gap-3 group cursor-pointer">
-              <span className="text-xs font-medium text-gray-500 w-16 shrink-0">{e.time}</span>
-              <div className="flex-1 text-center text-xs font-bold text-gray-200 group-hover:text-white transition-colors truncate">
+            <div key={i} className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
+              <span className="text-[10px] sm:text-xs font-medium text-gray-500 w-12 sm:w-16 shrink-0">{e.time}</span>
+              <div className="flex-1 text-center text-[11px] sm:text-xs font-bold text-gray-200 group-hover:text-white transition-colors truncate">
                 {e.title}
               </div>
-              <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full border shrink-0 ${getStatusStyle(e.status)}`}>
+              <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border shrink-0 ${getStatusStyle(e.status)}`}>
                 {e.status}
               </span>
             </div>

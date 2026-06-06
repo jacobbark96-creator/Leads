@@ -48,9 +48,24 @@ export async function POST(req: Request) {
     });
 
     const tokens = await tokenResponse.json();
-
+    
     if (!tokenResponse.ok) {
       console.error('Google refresh token error:', tokens);
+      
+      // If the refresh token is invalid (400) or unauthorized (401), 
+      // clear it from our database so we stop trying to use it.
+      if (tokenResponse.status === 400 || tokenResponse.status === 401) {
+        await supabase
+          .from('users')
+          .update({ google_refresh_token: null })
+          .eq('id', userId);
+        
+        return NextResponse.json({ 
+          error: 'Google connection expired. Please reconnect.',
+          code: 'CONNECTION_EXPIRED'
+        }, { status: 401 });
+      }
+
       return NextResponse.json({ error: 'Failed to refresh token' }, { status: tokenResponse.status });
     }
 

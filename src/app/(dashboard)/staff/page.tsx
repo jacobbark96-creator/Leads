@@ -183,7 +183,7 @@ export default function StaffPortal() {
       supabase.removeChannel(usersSub);
       supabase.removeChannel(purchasesSub);
     };
-  }, [profile]);
+  }, [profile?.id]);
 
   if (!profile) return null;
 

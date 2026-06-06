@@ -155,7 +155,7 @@ export const TasksPanel = () => {
     };
 
     fetchTasks();
-  }, [profile]);
+  }, [profile?.id]);
 
   const getPriorityColor = (priority: string) => {
     switch (priority) {

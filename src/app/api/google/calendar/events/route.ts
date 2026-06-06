@@ -33,7 +33,17 @@ async function getAccessToken(userId: string) {
   });
 
   const data = await res.json();
-  if (!res.ok) throw new Error(data.error || 'Failed to refresh token');
+  if (!res.ok) {
+    // If token is invalid, clear it from DB
+    if (res.status === 400 || res.status === 401) {
+      await supabase
+        .from('users')
+        .update({ google_refresh_token: null })
+        .eq('id', userId);
+      throw new Error('Google connection expired. Please reconnect.');
+    }
+    throw new Error(data.error || 'Failed to refresh token');
+  }
   return data.access_token;
 }
 

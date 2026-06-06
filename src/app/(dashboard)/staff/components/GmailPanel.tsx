@@ -147,6 +147,9 @@ const GmailPanelContent = () => {
         const data = await res.json();
         setAccessToken(data.access_token);
         fetchEmails(data.access_token);
+      } else if (res.status === 401) {
+        // Token was invalid and has been cleared by the server
+        setAccessToken(null);
       }
     } catch (error) {
       console.error('Failed to refresh token', error);

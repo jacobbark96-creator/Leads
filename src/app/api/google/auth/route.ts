@@ -36,8 +36,18 @@ export async function POST(req: Request) {
     const tokens = await tokenResponse.json();
 
     if (!tokenResponse.ok) {
-      console.error('Google token exchange error:', tokens);
-      return NextResponse.json({ error: 'Failed to exchange token' }, { status: tokenResponse.status });
+      console.error('Google token exchange error details:', {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        tokens,
+        clientId: clientId.substring(0, 10) + '...',
+        hasSecret: !!clientSecret,
+        code: code.substring(0, 5) + '...'
+      });
+      return NextResponse.json({ 
+        error: 'Failed to exchange token',
+        details: tokens.error_description || tokens.error || 'Unknown error'
+      }, { status: tokenResponse.status });
     }
 
     console.log('Successfully exchanged code for tokens. Refresh token present:', !!tokens.refresh_token);

@@ -33,6 +33,7 @@ export const BuyTwilioNumberModal: React.FC<BuyTwilioNumberModalProps> = ({
     contains: '',
     type: 'local'
   });
+  const [bundleSid, setBundleSid] = useState('');
   const [selectedNumber, setSelectedNumber] = useState<AvailableNumber | null>(null);
 
   if (!isOpen) return null;
@@ -80,7 +81,8 @@ export const BuyTwilioNumberModal: React.FC<BuyTwilioNumberModalProps> = ({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           phoneNumber: selectedNumber.phoneNumber,
-          userId: userId
+          userId: userId,
+          bundleSid: bundleSid
         })
       });
 
@@ -219,6 +221,29 @@ export const BuyTwilioNumberModal: React.FC<BuyTwilioNumberModalProps> = ({
               </div>
             )}
           </div>
+
+          {/* Regulatory Requirements */}
+          {searchParams.countryCode === 'GB' && (
+            <div className="mt-4 p-3 bg-blue-50 border border-blue-100 rounded-lg">
+              <div className="flex items-center gap-2 mb-2">
+                <AlertCircle className="w-4 h-4 text-blue-600" />
+                <span className="text-xs font-bold text-blue-700 uppercase tracking-wider">Regulatory Requirement</span>
+              </div>
+              <p className="text-[11px] text-blue-600 mb-3 leading-relaxed">
+                UK {searchParams.type === 'mobile' ? 'Mobile' : 'Local'} numbers require a **Regulatory Bundle** to be approved in your Twilio Console before purchase.
+              </p>
+              <div>
+                <label className="block text-[10px] font-bold text-blue-500 uppercase tracking-wider mb-1">Regulatory Bundle SID (Optional)</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. BUxxxxxxxxxxxxxxxx"
+                  value={bundleSid}
+                  onChange={e => setBundleSid(e.target.value)}
+                  className="w-full rounded-lg border-blue-200 bg-white shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-1.5 border"
+                />
+              </div>
+            </div>
+          )}
 
           {/* Footer Info */}
           <div className="mt-6 pt-4 border-t border-gray-100">

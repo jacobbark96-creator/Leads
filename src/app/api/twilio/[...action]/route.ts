@@ -507,6 +507,7 @@ async function handleAvailableNumbers(req: Request) {
     const countryCode = url.searchParams.get('countryCode') || 'GB';
     const areaCode = url.searchParams.get('areaCode');
     const contains = url.searchParams.get('contains');
+    const type = url.searchParams.get('type') || 'Local'; // Local, Mobile, or TollFree
 
     const twilioSid = process.env.TWILIO_ACCOUNT_SID;
     const twilioToken = process.env.TWILIO_AUTH_TOKEN;
@@ -516,9 +517,12 @@ async function handleAvailableNumbers(req: Request) {
     }
 
     const authHeader = 'Basic ' + btoa(`${twilioSid}:${twilioToken}`);
-    let searchUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/AvailablePhoneNumbers/${countryCode}/Local.json?PageSize=10`;
     
-    if (areaCode) searchUrl += `&AreaCode=${areaCode}`;
+    // Normalize type for Twilio API (Local, Mobile, TollFree)
+    const resourceType = type.charAt(0).toUpperCase() + type.slice(1).toLowerCase();
+    let searchUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/AvailablePhoneNumbers/${countryCode}/${resourceType}.json?PageSize=10`;
+    
+    if (areaCode && resourceType === 'Local') searchUrl += `&AreaCode=${areaCode}`;
     if (contains) searchUrl += `&Contains=${contains}`;
 
     const response = await fetch(searchUrl, {

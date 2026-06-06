@@ -23,11 +23,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Lead Packs', path: '/admin-crm/lead-packs', icon: Database, id: 'admin-crm/lead-packs' },
     { name: 'Discount Codes', path: '/admin-crm/discounts', icon: Ticket, id: 'admin-crm/discounts' },
     { name: 'Emails', path: '/admin-crm/emails', icon: Mail, id: 'admin-crm/emails' },
-    { name: 'Sales Tracker', path: '/admin-crm/tracker', icon: TrendingUp, id: 'admin-crm/tracker' },
-    { name: 'Monitoring', path: '/admin-crm/monitoring', icon: Activity, id: 'admin-crm/monitoring' },
+    { name: 'Sales Tracker', path: '/admin-crm/tracker', icon: TrendingUp, id: 'admin-crm/tracker', roles: ['super_admin'] },
+    { name: 'Monitoring', path: '/admin-crm/monitoring', icon: Activity, id: 'admin-crm/monitoring', roles: ['super_admin'] },
     { name: 'Partners', path: '/admin-crm/partners', icon: Briefcase, id: 'admin-crm/partners' },
     { name: 'Openlead Max', path: '/admin-crm/openlead-max', icon: Sparkles, id: 'admin-crm/openlead-max' },
-  ].filter(tab => profile?.role !== 'rep' || !tab.id || profile?.permissions?.includes(tab.id));
+  ].filter(tab => {
+    // Role-based filtering for specific tabs
+    if (tab.roles && !tab.roles.includes(profile?.role)) return false;
+    
+    // Permission-based filtering for reps
+    if (profile?.role === 'rep' && tab.id && !profile?.permissions?.includes(tab.id)) return false;
+    
+    return true;
+  });
 
   return (
     <ProtectedRoute allowedRoles={['admin', 'super_admin', 'rep']}>

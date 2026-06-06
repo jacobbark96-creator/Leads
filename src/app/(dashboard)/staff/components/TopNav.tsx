@@ -82,21 +82,24 @@ export const TopNav = ({ profile }: { profile: any }) => {
     { 
       label: 'Reports', 
       icon: BarChart2,
+      roles: ['super_admin'],
       subLinks: [
         { href: '/admin-crm/tracker', label: 'Sales Tracker' },
       ]
     },
   ];
 
-  const filteredLinks = navLinks.map(link => {
-    if (link.subLinks) {
-      return {
-        ...link,
-        subLinks: link.subLinks.filter(sub => !sub.roles || sub.roles.includes(profile?.role))
-      };
-    }
-    return link;
-  });
+  const filteredLinks = navLinks
+    .filter(link => !link.roles || link.roles.includes(profile?.role))
+    .map(link => {
+      if (link.subLinks) {
+        return {
+          ...link,
+          subLinks: link.subLinks.filter(sub => !sub.roles || sub.roles.includes(profile?.role))
+        };
+      }
+      return link;
+    });
 
   return (
     <>

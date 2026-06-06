@@ -30,7 +30,8 @@ export const BuyTwilioNumberModal: React.FC<BuyTwilioNumberModalProps> = ({
   const [searchParams, setSearchParams] = useState({
     countryCode: 'GB',
     areaCode: '',
-    contains: ''
+    contains: '',
+    type: 'local'
   });
   const [selectedNumber, setSelectedNumber] = useState<AvailableNumber | null>(null);
 
@@ -44,6 +45,7 @@ export const BuyTwilioNumberModal: React.FC<BuyTwilioNumberModalProps> = ({
       
       const params = new URLSearchParams({
         countryCode: searchParams.countryCode,
+        type: searchParams.type,
         ...(searchParams.areaCode && { areaCode: searchParams.areaCode }),
         ...(searchParams.contains && { contains: searchParams.contains })
       });
@@ -130,12 +132,38 @@ export const BuyTwilioNumberModal: React.FC<BuyTwilioNumberModalProps> = ({
                 </select>
               </div>
               <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Number Type</label>
+                <select 
+                  value={searchParams.type}
+                  onChange={e => setSearchParams({...searchParams, type: e.target.value, areaCode: e.target.value === 'mobile' ? '' : searchParams.areaCode})}
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-2 border"
+                >
+                  <option value="local">Local</option>
+                  <option value="mobile">Mobile</option>
+                  <option value="tollFree">Toll Free</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div>
                 <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Area Code (Optional)</label>
                 <input 
                   type="text"
                   placeholder="e.g. 0161"
                   value={searchParams.areaCode}
+                  disabled={searchParams.type === 'mobile'}
                   onChange={e => setSearchParams({...searchParams, areaCode: e.target.value})}
+                  className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-2 border disabled:bg-gray-50 disabled:text-gray-400"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1">Contains</label>
+                <input 
+                  type="text"
+                  placeholder="e.g. 789"
+                  value={searchParams.contains}
+                  onChange={e => setSearchParams({...searchParams, contains: e.target.value})}
                   className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm px-3 py-2 border"
                 />
               </div>

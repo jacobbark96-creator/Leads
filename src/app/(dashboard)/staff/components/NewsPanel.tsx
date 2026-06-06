@@ -96,18 +96,18 @@ export const NewsPanel = () => {
           )}
         </div>
       ) : (
-        <div className="flex-1 grid grid-cols-3 sm:grid-cols-1 gap-2 sm:gap-4 overflow-y-auto pr-1 sm:pr-2 custom-scrollbar">
+        <div className="flex-1 grid grid-cols-3 md:grid-cols-1 gap-2 md:gap-4 overflow-y-auto pr-1 md:pr-2 custom-scrollbar">
           {news.map((item, i) => (
-            <div key={i} className="flex flex-col sm:flex-row gap-1 sm:gap-3 group cursor-pointer bg-white/5 sm:bg-transparent p-1 sm:p-0 rounded-lg sm:rounded-none border border-white/5 sm:border-0 hover:bg-white/10 sm:hover:bg-transparent transition-all">
-              <div className="w-full sm:w-16 h-12 sm:h-12 rounded-md sm:rounded-lg overflow-hidden shrink-0 shadow-lg">
+            <div key={i} className="flex flex-col md:flex-row gap-1 md:gap-3 group cursor-pointer bg-white/5 md:bg-transparent p-1 md:p-0 rounded-lg md:rounded-none border border-white/5 md:border-0 hover:bg-white/10 md:hover:bg-transparent transition-all">
+              <div className="w-full md:w-16 h-12 md:h-12 rounded-md md:rounded-lg overflow-hidden shrink-0 shadow-lg">
                 <img src={item.img} alt={item.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
               </div>
               <div className="flex-1 min-w-0">
-                <span className={`text-[6px] sm:text-[10px] font-bold px-1 py-0.5 rounded-full text-white ${item.badgeColor} mb-0.5 sm:mb-1 inline-block uppercase tracking-wider`}>
+                <span className={`text-[6px] md:text-[10px] font-bold px-1 py-0.5 rounded-full text-white ${item.badgeColor} mb-0.5 md:mb-1 inline-block uppercase tracking-wider`}>
                   {item.badge}
                 </span>
-                <h3 className="text-[9px] sm:text-sm font-bold text-white mb-0.5 group-hover:text-blue-400 transition-colors line-clamp-2 sm:truncate leading-tight">{item.title}</h3>
-                <span className="text-[7px] sm:text-[10px] text-gray-500 font-medium">{item.time}</span>
+                <h3 className="text-[9px] md:text-sm font-bold text-white mb-0.5 group-hover:text-blue-400 transition-colors line-clamp-2 md:truncate leading-tight">{item.title}</h3>
+                <span className="text-[7px] md:text-[10px] text-gray-500 font-medium">{item.time}</span>
               </div>
             </div>
           ))}

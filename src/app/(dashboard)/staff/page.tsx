@@ -207,7 +207,10 @@ export default function StaffPortal() {
       <TopNav profile={profile} />
 
       {/* Main Dashboard Grid */}
-      <main className="relative z-10 px-4 pt-[100px] xl:pt-[135px] pb-4 min-h-screen overflow-hidden">
+      <main 
+        className="relative z-10 px-4 pt-[100px] xl:pt-[135px] pb-4 min-h-screen overflow-hidden"
+        style={{ zoom: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0.67 }}
+      >
         <div className="w-full max-w-[1600px] mx-auto">
           
           {/* Header & KPIs Row (4 Columns total) */}

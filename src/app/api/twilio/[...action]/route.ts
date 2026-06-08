@@ -140,7 +140,23 @@ async function handleMonitoring(request: Request) {
     let totalGlobalDuration = 0;
     const activeUserIds = new Set();
 
-    const normalizeNumber = (num: string) => num ? (num.startsWith('+') ? num : '+' + num) : '';
+    const normalizeNumber = (num: string) => {
+      if (!num) return '';
+      // Remove any non-digit characters except +
+      let cleaned = num.replace(/[^\d+]/g, '');
+      
+      // If it starts with 0 and no +, assume UK and replace with +44
+      if (cleaned.startsWith('0') && !cleaned.startsWith('+')) {
+        cleaned = '+44' + cleaned.substring(1);
+      }
+      
+      // If it doesn't have a +, prepend it
+      if (cleaned && !cleaned.startsWith('+')) {
+        cleaned = '+' + cleaned;
+      }
+      
+      return cleaned;
+    };
 
     const uniqueTargetNumbers = new Set<string>();
 

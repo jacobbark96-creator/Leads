@@ -36,7 +36,9 @@ import {
   Trash2,
   Linkedin,
   AlertTriangle,
-  Database
+  Database,
+  Eye,
+  CheckCircle
 } from 'lucide-react';
 
 import { AdminNotifications } from '@/components/AdminNotifications';
@@ -1464,22 +1466,22 @@ function LeadDetailsV2Content() {
           OL
         </div>
         <nav className="flex-1 flex flex-col gap-8 w-full items-center">
-          <Link href="/dashboard" className="text-gray-400 hover:text-white transition-colors">
+          <Link href="/staff" className="text-gray-400 hover:text-white transition-colors">
             <LayoutDashboard className="w-6 h-6" />
           </Link>
-          <Link href="/leads" className="text-white bg-white/10 p-3 rounded-xl transition-colors">
+          <Link href="/sales-crm" className="text-white bg-white/10 p-3 rounded-xl transition-colors">
             <Users className="w-6 h-6" />
           </Link>
-          <Link href="/companies" className="text-gray-400 hover:text-white transition-colors">
+          <Link href="/sales-crm/pipeline" className="text-gray-400 hover:text-white transition-colors">
             <Building2 className="w-6 h-6" />
           </Link>
-          <Link href="/contacts" className="text-gray-400 hover:text-white transition-colors">
-            <Contact className="w-6 h-6" />
+          <Link href="/sales-crm/qualified" className="text-gray-400 hover:text-white transition-colors">
+            <CheckCircle className="w-6 h-6" />
           </Link>
-          <Link href="/calendar" className="text-gray-400 hover:text-white transition-colors">
+          <Link href="/sales-crm" className="text-gray-400 hover:text-white transition-colors">
             <Calendar className="w-6 h-6" />
           </Link>
-          <Link href="/tasks" className="text-gray-400 hover:text-white transition-colors">
+          <Link href="/sales-crm" className="text-gray-400 hover:text-white transition-colors">
             <CheckSquare className="w-6 h-6" />
           </Link>
         </nav>

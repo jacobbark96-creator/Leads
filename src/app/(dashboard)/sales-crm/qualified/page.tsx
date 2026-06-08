@@ -12,6 +12,7 @@ import { AddLeadModal } from '@/components/AddLeadModal';
 import { MarketLeadModal } from '@/components/MarketLeadModal';
 import { SoldLeadModal } from '@/components/SoldLeadModal';
 import { MatchingContractorsModal } from '@/components/MatchingContractorsModal';
+import { PassToSalesModal } from '@/components/PassToSalesModal';
 import { motion, AnimatePresence } from 'framer-motion';
 
 // Helper function to get initials for avatar
@@ -51,6 +52,7 @@ function QualifiedLeadsContent() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [leadToMarket, setLeadToMarket] = useState<any>(null);
   const [leadForContractors, setLeadForContractors] = useState<Lead | null>(null);
+  const [leadForSales, setLeadForSales] = useState<Lead | null>(null);
   const [soldLeadDetails, setSoldLeadDetails] = useState<Lead | null>(null);
   const [staffUsers, setStaffUsers] = useState<any[]>([]);
   const [selectedLeads, setSelectedLeads] = useState<Set<string>>(new Set());
@@ -813,6 +815,13 @@ function QualifiedLeadsContent() {
                             >
                               Sold Details
                             </button>
+                          ) : lead.status === 'awaiting_sales' ? (
+                            <button
+                              onClick={() => setLeadForSales(lead)}
+                              className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-[10px] font-bold rounded shadow-sm text-white bg-orange-600 hover:bg-orange-700 transition-colors"
+                            >
+                              Pass to Sales
+                            </button>
                           ) : (
                             <>
                               {!lead.is_marketed && (
@@ -952,6 +961,13 @@ function QualifiedLeadsContent() {
                         >
                           Sold Details
                         </button>
+                      ) : lead.status === 'awaiting_sales' ? (
+                        <button
+                          onClick={() => setLeadForSales(lead)}
+                          className="flex-1 px-3 py-2 bg-orange-600 text-white rounded-lg text-xs font-bold hover:bg-orange-700 transition-colors"
+                        >
+                          Pass to Sales
+                        </button>
                       ) : (
                         <>
                           {!lead.is_marketed && (
@@ -1056,6 +1072,14 @@ function QualifiedLeadsContent() {
           isOpen={!!leadForContractors}
           onClose={() => setLeadForContractors(null)}
           lead={leadForContractors}
+        />
+      )}
+
+      {leadForSales && (
+        <PassToSalesModal
+          isOpen={!!leadForSales}
+          onClose={() => setLeadForSales(null)}
+          lead={leadForSales}
         />
       )}
 

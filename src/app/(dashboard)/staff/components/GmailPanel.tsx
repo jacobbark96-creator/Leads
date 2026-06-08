@@ -9,6 +9,10 @@ import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import { EmailModal } from '@/components/EmailModal';
 import { EmailDetailModal } from './EmailDetailModal';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 const decodeGmailBody = (data: string) => {
   try {
@@ -64,6 +68,19 @@ const GmailPanelContent = () => {
   const { profile, setProfile } = useAuthStore();
   const [signature, setSignature] = useState(profile?.email_signature || '');
   const [savingSignature, setSavingSignature] = useState(false);
+
+  const signatureModules = {
+    toolbar: [
+      ['bold', 'italic', 'underline'],
+      ['link', 'image'],
+      ['clean']
+    ],
+  };
+
+  const signatureFormats = [
+    'bold', 'italic', 'underline',
+    'link', 'image'
+  ];
 
   const fetchFullEmail = async (messageId: string) => {
     if (!accessToken) return;
@@ -351,12 +368,37 @@ const GmailPanelContent = () => {
                 <X className="w-4 h-4" />
               </button>
             </div>
-            <textarea
-              value={signature}
-              onChange={(e) => setSignature(e.target.value)}
-              placeholder="Kind Regards,&#10;John Smith"
-              className="flex-1 bg-white/5 border border-white/10 rounded-xl p-3 text-xs text-gray-200 focus:border-blue-500 outline-none resize-none mb-3 font-mono"
-            />
+            <div className="flex-1 bg-white rounded-xl overflow-hidden mb-3">
+              <ReactQuill
+                theme="snow"
+                value={signature}
+                onChange={setSignature}
+                modules={signatureModules}
+                formats={signatureFormats}
+                placeholder="Kind Regards, John Smith"
+                className="h-full signature-quill"
+              />
+            </div>
+            
+            <style jsx global>{`
+              .signature-quill .ql-container {
+                height: 150px;
+                font-size: 12px;
+                color: #374151;
+              }
+              .signature-quill .ql-editor {
+                padding: 12px;
+              }
+              .signature-quill .ql-toolbar {
+                border: none !important;
+                border-bottom: 1px solid #e5e7eb !important;
+                background: #f9fafb;
+                padding: 4px 8px !important;
+              }
+              .signature-quill .ql-container {
+                border: none !important;
+              }
+            `}</style>
             
             {profile?.divisions?.logo_url && (
               <div className="mb-3 p-2 bg-white/5 rounded-lg border border-white/5">

@@ -4,6 +4,10 @@ import React, { useState, useEffect } from 'react';
 import { Mail, Plus, Save, Trash2, Edit2, Check, X, FileText, Send, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 interface Template {
   id: string;
@@ -107,6 +111,23 @@ export default function EmailsPage() {
   };
 
   const filteredTemplates = templates.filter(t => t.type === activeTab);
+
+  const quillModules = {
+    toolbar: [
+      [{ 'header': [1, 2, false] }],
+      ['bold', 'italic', 'underline', 'strike', 'blockquote'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }, { 'indent': '-1' }, { 'indent': '+1' }],
+      ['link', 'image'],
+      ['clean']
+    ],
+  };
+
+  const quillFormats = [
+    'header',
+    'bold', 'italic', 'underline', 'strike', 'blockquote',
+    'list', 'bullet', 'indent',
+    'link', 'image'
+  ];
 
   return (
     <div className="p-6">
@@ -248,17 +269,21 @@ export default function EmailsPage() {
                     <div>
                       <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Email Body</label>
                       {editingId === template.id ? (
-                        <textarea 
-                          rows={8}
-                          className="w-full text-sm border-gray-200 rounded-lg focus:ring-blue-500 focus:border-blue-500 font-mono"
-                          value={editForm.body || ''}
-                          onChange={e => setEditForm({ ...editForm, body: e.target.value })}
-                          placeholder="Template body... Use {company_name} and {contact_name} as placeholders."
-                        />
-                      ) : (
-                        <div className="text-sm text-gray-600 whitespace-pre-wrap bg-gray-50/50 p-4 rounded-lg border border-gray-100 italic">
-                          {template.body}
+                        <div className="bg-white">
+                          <ReactQuill 
+                            theme="snow"
+                            value={editForm.body || ''}
+                            onChange={content => setEditForm({ ...editForm, body: content })}
+                            modules={quillModules}
+                            formats={quillFormats}
+                            className="rounded-lg h-64 mb-12"
+                          />
                         </div>
+                      ) : (
+                        <div 
+                          className="text-sm text-gray-600 bg-gray-50/50 p-4 rounded-lg border border-gray-100 italic quill-preview"
+                          dangerouslySetInnerHTML={{ __html: template.body }}
+                        />
                       )}
                     </div>
 

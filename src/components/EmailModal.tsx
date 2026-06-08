@@ -5,6 +5,10 @@ import { Mail, X, Send, Loader2, FileText, ChevronDown } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
+import dynamic from 'next/dynamic';
+import 'react-quill/dist/quill.snow.css';
+
+const ReactQuill = dynamic(() => import('react-quill'), { ssr: false });
 
 interface EmailModalProps {
   isOpen: boolean;
@@ -32,6 +36,21 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
   const [sending, setSending] = useState(false);
   const { profile } = useAuthStore();
 
+  const quillModules = {
+    toolbar: [
+      ['bold', 'italic', 'underline', 'strike'],
+      [{ 'list': 'ordered' }, { 'list': 'bullet' }],
+      ['link', 'image'],
+      ['clean']
+    ],
+  };
+
+  const quillFormats = [
+    'bold', 'italic', 'underline', 'strike',
+    'list', 'bullet',
+    'link', 'image'
+  ];
+
   useEffect(() => {
     if (isOpen) {
       fetchTemplates();
@@ -45,9 +64,9 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
       }
       
       if (!selectedTemplate) {
-        let initialBody = profile?.email_signature ? `\n\n${profile.email_signature}` : '';
+        let initialBody = profile?.email_signature ? `<br/><br/>${profile.email_signature.replace(/\n/g, '<br/>')}` : '';
         if (profile?.divisions?.logo_url) {
-          initialBody += `\n\n<img src="${profile.divisions.logo_url}" alt="Logo" style="max-height: 60px; width: auto; display: block; margin-top: 10px;" />`;
+          initialBody += `<br/><br/><img src="${profile.divisions.logo_url}" alt="Logo" style="max-height: 60px; width: auto; display: block; margin-top: 10px;" />`;
         }
         setBody(initialBody);
       }
@@ -96,9 +115,9 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
       .replace(/{Rep_Name}/gi, profile?.name || 'Your Representative');
 
     if (profile?.email_signature) {
-      parsedBody += `\n\n${profile.email_signature}`;
+      parsedBody += `<br/><br/>${profile.email_signature.replace(/\n/g, '<br/>')}`;
       if (profile?.divisions?.logo_url) {
-        parsedBody += `\n\n<img src="${profile.divisions.logo_url}" alt="Logo" style="max-height: 60px; width: auto; display: block; margin-top: 10px;" />`;
+        parsedBody += `<br/><br/><img src="${profile.divisions.logo_url}" alt="Logo" style="max-height: 60px; width: auto; display: block; margin-top: 10px;" />`;
       }
     }
 
@@ -114,9 +133,9 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
       if (template) applyTemplate(template);
     } else {
       setSubject('');
-      let resetBody = profile?.email_signature ? `\n\n${profile.email_signature}` : '';
+      let resetBody = profile?.email_signature ? `<br/><br/>${profile.email_signature.replace(/\n/g, '<br/>')}` : '';
       if (profile?.divisions?.logo_url) {
-        resetBody += `\n\n<img src="${profile.divisions.logo_url}" alt="Logo" style="max-height: 60px; width: auto; display: block; margin-top: 10px;" />`;
+        resetBody += `<br/><br/><img src="${profile.divisions.logo_url}" alt="Logo" style="max-height: 60px; width: auto; display: block; margin-top: 10px;" />`;
       }
       setBody(resetBody);
     }
@@ -243,17 +262,45 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
           </div>
 
           {/* Body */}
-          <div>
+          <div className="flex-1 flex flex-col min-h-0">
             <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1.5">Message</label>
-            <textarea 
-              rows={10}
-              value={body}
-              onChange={(e) => setBody(e.target.value)}
-              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-3 text-sm text-gray-700 focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all outline-none resize-none font-sans"
-              placeholder="Type your message here..."
-            />
+            <div className="flex-1 bg-white border border-gray-200 rounded-xl overflow-hidden flex flex-col">
+              <ReactQuill 
+                theme="snow"
+                value={body}
+                onChange={setBody}
+                modules={quillModules}
+                formats={quillFormats}
+                className="flex-1 flex flex-col"
+                placeholder="Type your message here..."
+              />
+            </div>
           </div>
         </div>
+
+        <style jsx global>{`
+          .ql-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-height: 200px;
+            font-size: 14px;
+          }
+          .ql-editor {
+            flex: 1;
+            overflow-y: auto;
+          }
+          .ql-toolbar {
+            border-top: none !important;
+            border-left: none !important;
+            border-right: none !important;
+            border-bottom: 1px solid #f3f4f6 !important;
+            background: #f9fafb;
+          }
+          .ql-container {
+            border: none !important;
+          }
+        `}</style>
 
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">

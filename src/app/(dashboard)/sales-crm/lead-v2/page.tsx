@@ -2745,9 +2745,10 @@ function LeadDetailsV2Content() {
               </button>
             </div>
             <div className="p-6">
-              <div className="text-sm text-gray-700 whitespace-pre-wrap bg-gray-50 p-4 rounded-xl border border-gray-100 italic max-h-[60vh] overflow-y-auto">
-                {selectedNote.content}
-              </div>
+              <div 
+                className="text-sm text-gray-700 bg-gray-50 p-4 rounded-xl border border-gray-100 max-h-[60vh] overflow-y-auto quill-preview"
+                dangerouslySetInnerHTML={{ __html: selectedNote.content.replace(/^✉️ Sent Email: .*?\n\n---\n\n/, '') }}
+              />
               <button 
                 onClick={() => setSelectedNote(null)}
                 className="w-full mt-6 bg-gray-900 text-white font-bold py-3 rounded-xl hover:bg-gray-800 transition-colors"

@@ -41,6 +41,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     name: user.name || '',
     role: user.role || 'client',
     user_phone: user.phone || '',
+    secondary_email: user.secondary_email || '',
     job_title: user.job_title || '',
     about: user.about || '',
     working_hours: user.working_hours || '',
@@ -311,6 +312,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           name: formData.name,
           role: formData.role,
           phone: formData.user_phone,
+          secondary_email: formData.secondary_email,
           twilio_number: formData.twilio_number,
           division_id: formData.division_id || null,
           job_title: formData.job_title,
@@ -566,6 +568,23 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                     />
                   </div>
                   <p className="mt-1 text-xs text-gray-500">Email cannot be changed here.</p>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700">Secondary Email (e.g. OpenEnergy)</label>
+                  <div className="mt-1 relative rounded-md shadow-sm">
+                    <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                      <Mail className="h-4 w-4 text-gray-400" />
+                    </div>
+                    <input
+                      type="email"
+                      value={formData.secondary_email}
+                      onChange={(e) => setFormData({...formData, secondary_email: e.target.value})}
+                      placeholder="e.g. name@openenergyservices.co.uk"
+                      className="block w-full pl-10 py-2 sm:text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                    />
+                  </div>
+                  <p className="mt-1 text-xs text-gray-500">Used as an alternative sender domain.</p>
                 </div>
 
                 <div>

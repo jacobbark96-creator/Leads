@@ -3,6 +3,7 @@ export type UserRole = 'client' | 'sales' | 'admin' | 'super_admin' | 'rep';
 export interface UserProfile {
   id: string;
   email: string;
+  secondary_email?: string | null;
   role: UserRole;
   name: string;
   phone?: string | null;

@@ -7,7 +7,7 @@ export async function POST(req: Request) {
   try {
     const bodyData = await req.json();
     console.log('Received email send request with body:', bodyData);
-    const { userId, to, subject, body, leadId } = bodyData;
+    const { userId, to, subject, body, leadId, fromEmail } = bodyData;
 
     if (!userId || !to || !subject || !body || !leadId) {
       console.error('Missing required fields in email send request');
@@ -78,7 +78,7 @@ export async function POST(req: Request) {
 
     const utf8Subject = `=?utf-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
     const messageParts = [
-      `From: ${user.name || 'Openlead User'} <${user.email}>`,
+      `From: ${user.name || 'Openlead User'} <${fromEmail || user.email}>`,
       `To: ${to}`,
       `Subject: ${utf8Subject}`,
       'MIME-Version: 1.0',

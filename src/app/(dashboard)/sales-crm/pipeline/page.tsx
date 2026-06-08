@@ -93,13 +93,20 @@ export default function PipelinePage() {
         const enhancedLeads = data.map(lead => {
           const isLeadShare = (lead.status === 'marketplace' || lead.purchase_count > 0) && (lead.is_exclusive_sold !== true);
           
-          const validPurchases = lead.lead_purchases?.filter((p: any) => 
-            p.clients?.users?.email !== 'test@example.com'
-          ) || [];
+          const getEmail = (p: any) => {
+            const client = Array.isArray(p.clients) ? p.clients[0] : p.clients;
+            const user = Array.isArray(client?.users) ? client.users[0] : client?.users;
+            return user?.email?.toLowerCase()?.trim() || '';
+          };
+
+          const validPurchases = lead.lead_purchases?.filter((p: any) => {
+            const email = getEmail(p);
+            return email !== 'test@example.com' && email !== '';
+          }) || [];
           
           const validPurchaseCount = validPurchases.length;
           const hasTestPurchase = lead.lead_purchases?.some((p: any) => 
-            p.clients?.users?.email === 'test@example.com'
+            getEmail(p) === 'test@example.com'
           );
 
           let commissionValue = 0;

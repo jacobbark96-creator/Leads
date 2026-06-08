@@ -83,6 +83,7 @@ export interface Lead {
   created_at: string;
   qualified_at?: string | null;
   marked_as_sold?: boolean;
+  sent_to_sales?: boolean;
   monthly_spend?: number;
   primary_need?: string;
   location?: string;

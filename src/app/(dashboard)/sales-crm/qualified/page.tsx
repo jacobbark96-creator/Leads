@@ -798,9 +798,14 @@ function QualifiedLeadsContent() {
                           ) : lead.status === 'awaiting_sales' ? (
                             <button
                               onClick={() => setLeadForSales(lead)}
-                              className="inline-flex items-center px-2.5 py-1.5 border border-transparent text-[10px] font-bold rounded shadow-sm text-white bg-orange-600 hover:bg-orange-700 transition-colors"
+                              disabled={lead.sent_to_sales}
+                              className={`inline-flex items-center px-2.5 py-1.5 border border-transparent text-[10px] font-bold rounded shadow-sm text-white transition-colors ${
+                                lead.sent_to_sales 
+                                  ? 'bg-emerald-600 cursor-default opacity-90' 
+                                  : 'bg-orange-600 hover:bg-orange-700'
+                              }`}
                             >
-                              Pass to Sales
+                              {lead.sent_to_sales ? 'Sent' : 'Pass to Sales'}
                             </button>
                           ) : (
                             <>
@@ -950,9 +955,14 @@ function QualifiedLeadsContent() {
                       ) : lead.status === 'awaiting_sales' ? (
                         <button
                           onClick={() => setLeadForSales(lead)}
-                          className="flex-1 px-3 py-2 bg-orange-600 text-white rounded-lg text-xs font-bold hover:bg-orange-700 transition-colors"
+                          disabled={lead.sent_to_sales}
+                          className={`flex-1 px-3 py-2 text-white rounded-lg text-xs font-bold transition-colors ${
+                            lead.sent_to_sales 
+                              ? 'bg-emerald-600 cursor-default opacity-90' 
+                              : 'bg-orange-600 hover:bg-orange-700'
+                          }`}
                         >
-                          Pass to Sales
+                          {lead.sent_to_sales ? 'Sent' : 'Pass to Sales'}
                         </button>
                       ) : (
                         <>
@@ -1066,6 +1076,9 @@ function QualifiedLeadsContent() {
           isOpen={!!leadForSales}
           onClose={() => setLeadForSales(null)}
           lead={leadForSales}
+          onSentToSales={() => {
+            setLeads(prev => prev.map(l => l.id === leadForSales.id ? { ...l, sent_to_sales: true } : l));
+          }}
         />
       )}
 

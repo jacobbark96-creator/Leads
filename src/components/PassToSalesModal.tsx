@@ -4,15 +4,18 @@ import { X, Copy, Check } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Lead } from '@/types';
 import toast from 'react-hot-toast';
+import { supabase } from '@/lib/supabase';
 
 interface PassToSalesModalProps {
   isOpen: boolean;
   onClose: () => void;
   lead: Lead;
+  onSentToSales?: () => void;
 }
 
-export const PassToSalesModal: React.FC<PassToSalesModalProps> = ({ isOpen, onClose, lead }) => {
+export const PassToSalesModal: React.FC<PassToSalesModalProps> = ({ isOpen, onClose, lead, onSentToSales }) => {
   const [copied, setCopied] = React.useState(false);
+  const [isSending, setIsSending] = React.useState(false);
 
   const leadDetailsText = `
 Contact Details
@@ -42,6 +45,26 @@ Est. System Size: ${lead.est_system_size || 'N/A'}
     setCopied(true);
     toast.success('Lead details copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleSentToSales = async () => {
+    try {
+      setIsSending(true);
+      const { error } = await supabase
+        .from('leads')
+        .update({ sent_to_sales: true })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+
+      toast.success('Lead marked as sent to sales');
+      onSentToSales?.();
+      onClose();
+    } catch (error: any) {
+      toast.error('Failed to mark lead as sent: ' + error.message);
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -74,20 +97,35 @@ Est. System Size: ${lead.est_system_size || 'N/A'}
               </div>
             </div>
 
-            <div className="bg-gray-50 p-4 border-t border-gray-100 flex justify-end gap-3">
+            <div className="bg-gray-50 p-4 border-t border-gray-100 flex items-center justify-between">
               <button
-                onClick={onClose}
-                className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700"
+                onClick={handleSentToSales}
+                disabled={isSending || lead.sent_to_sales}
+                className="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 disabled:bg-emerald-400 text-white text-sm font-bold rounded-xl shadow-lg shadow-emerald-500/20 transition-all active:scale-95 flex items-center gap-2"
               >
-                Close
+                {isSending ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <Check className="w-4 h-4" />
+                )}
+                {lead.sent_to_sales ? 'Already Sent' : 'Sent to Sales'}
               </button>
-              <button
-                onClick={handleCopy}
-                className="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
-              >
-                {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-                {copied ? 'Copied!' : 'Copy to Clipboard'}
-              </button>
+
+              <div className="flex gap-3">
+                <button
+                  onClick={onClose}
+                  className="px-4 py-2 text-sm font-bold text-gray-500 hover:text-gray-700"
+                >
+                  Close
+                </button>
+                <button
+                  onClick={handleCopy}
+                  className="inline-flex items-center gap-2 px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white text-sm font-bold rounded-xl shadow-lg shadow-blue-500/20 transition-all active:scale-95"
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                  {copied ? 'Copied!' : 'Copy to Clipboard'}
+                </button>
+              </div>
             </div>
           </motion.div>
         </div>

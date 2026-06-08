@@ -50,12 +50,15 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   }, [pathname, profile]);
 
   const sidebarItems = [
-    { name: 'Home', path: '/staff', icon: Home, exact: true },
-    { name: 'Pipeline', path: '/sales-crm/pipeline', icon: LayoutDashboard },
-    { name: 'Unqualified Leads', path: '/sales-crm', icon: Users, exact: true },
-    { name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle },
-    { name: 'Import Leads', path: '/sales-crm/import', icon: Upload },
-  ];
+    { id: 'staff', name: 'Home', path: '/staff', icon: Home, exact: true },
+    { id: 'sales-crm/pipeline', name: 'Pipeline', path: '/sales-crm/pipeline', icon: LayoutDashboard },
+    { id: 'sales-crm/fresh', name: 'Unqualified Leads', path: '/sales-crm', icon: Users, exact: true },
+    { id: 'sales-crm/qualified', name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle },
+    { id: 'sales-crm/import', name: 'Import Leads', path: '/sales-crm/import', icon: Upload },
+  ].filter(item => {
+    if (profile?.role !== 'rep') return true;
+    return profile.permissions?.includes(item.id);
+  });
 
   if (profile?.role === 'super_admin') {
     sidebarItems.push({ name: 'Archive', path: '/sales-crm/archive', icon: Archive });

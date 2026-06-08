@@ -641,6 +641,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                         id: 'sales-crm', 
                         label: 'Sales CRM',
                         subTabs: [
+                          { id: 'sales-crm/pipeline', label: 'Pipeline' },
                           { id: 'sales-crm/fresh', label: 'Fresh Leads' },
                           { id: 'sales-crm/qualified', label: 'Qualified Leads' },
                           { id: 'sales-crm/import', label: 'Import Leads' },

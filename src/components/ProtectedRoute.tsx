@@ -131,11 +131,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           if (perms.includes('sales-crm/fresh')) {
             hasAccess = true;
           } else if (perms.includes('sales-crm')) {
-            if (perms.includes('sales-crm/qualified')) router.replace('/sales-crm/qualified');
+            if (perms.includes('sales-crm/pipeline')) router.replace('/sales-crm/pipeline');
+            else if (perms.includes('sales-crm/qualified')) router.replace('/sales-crm/qualified');
             else if (perms.includes('sales-crm/import')) router.replace('/sales-crm/import');
             return;
           }
         }
+        if (path.startsWith('/sales-crm/pipeline') && perms.includes('sales-crm/pipeline')) hasAccess = true;
         if (path.startsWith('/sales-crm/qualified') && perms.includes('sales-crm/qualified')) hasAccess = true;
         if (path.startsWith('/sales-crm/import') && perms.includes('sales-crm/import')) hasAccess = true;
         if (path.startsWith('/sales-crm/lead') && perms.includes('sales-crm')) hasAccess = true; // viewing a lead

@@ -138,7 +138,7 @@ export default function CommissionsPage() {
 
             const validPurchases = lead.lead_purchases?.filter((p: any) => {
               const email = getEmail(p);
-              return email !== 'test@example.com' && email !== '';
+              return email && !email.includes('test@example.com') && email !== '';
             }) || [];
             
             const validPurchaseCount = validPurchases.length;

@@ -101,13 +101,14 @@ export default function PipelinePage() {
 
           const validPurchases = lead.lead_purchases?.filter((p: any) => {
             const email = getEmail(p);
-            return email !== 'test@example.com' && email !== '';
+            return email && !email.includes('test@example.com') && email !== '';
           }) || [];
           
           const validPurchaseCount = validPurchases.length;
-          const hasTestPurchase = lead.lead_purchases?.some((p: any) => 
-            getEmail(p) === 'test@example.com'
-          );
+          const hasTestPurchase = lead.lead_purchases?.some((p: any) => {
+            const email = getEmail(p);
+            return email && email.includes('test@example.com');
+          });
 
           let commissionValue = 0;
           if (isLeadShare) {

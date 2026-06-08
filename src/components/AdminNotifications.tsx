@@ -57,8 +57,9 @@ export function AdminNotifications() {
       if (['admin', 'super_admin'].includes(profile.role)) {
         const { data: clients } = await supabase
           .from('clients')
-          .select('id, company_name, contact_name, created_at')
+          .select('id, company_name, contact_name, created_at, users!inner(role)')
           .is('assigned_to', null)
+          .eq('users.role', 'client')
           .order('created_at', { ascending: false });
         setUnassignedClients(clients || []);
 
@@ -73,7 +74,7 @@ export function AdminNotifications() {
         const { data: staff } = await supabase
           .from('users')
           .select('id, name, role')
-          .in('role', ['sales', 'admin', 'super_admin'])
+          .in('role', ['sales', 'admin', 'super_admin', 'rep'])
           .order('name');
         setAdmins(staff || []);
       }

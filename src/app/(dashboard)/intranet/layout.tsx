@@ -97,7 +97,10 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
         </header>
 
         {/* Main Layout */}
-        <div className="flex-1 flex px-4 sm:px-6 lg:px-8 pb-8 gap-6">
+        <div 
+          className="flex-1 flex px-4 sm:px-6 lg:px-8 pb-8 gap-6"
+          style={{ zoom: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0.67 }}
+        >
           
           {/* Left Sidebar */}
           <aside className="w-56 flex-shrink-0 flex flex-col gap-4">

@@ -82,54 +82,60 @@ export async function POST(request: NextRequest) {
     }
 
     const batchErrors: any[] = [];
+    
+    // Process batches sequentially to prevent overloading and timeouts on large imports
+    for (const batch of batches) {
+      try {
+        const { data: insertedBatch, error } = await supabaseAdmin
+          .from('leads')
+          .insert(batch)
+          .select('id');
 
-    await Promise.all(batches.map(async (batch) => {
-      const { data: insertedBatch, error } = await supabaseAdmin
-        .from('leads')
-        .insert(batch)
-        .select('id');
+        if (error) {
+          console.error('Error inserting leads batch:', error);
+          batchErrors.push(error);
+          continue;
+        }
 
-      if (error) {
-        console.error('Error inserting leads batch:', error);
-        batchErrors.push(error);
-        return;
-      }
+        if (insertedBatch && insertedBatch.length > 0) {
+          insertedLeads.push(...insertedBatch);
 
-      if (insertedBatch && insertedBatch.length > 0) {
-        insertedLeads.push(...insertedBatch);
+          if (leadPackId) {
+            const memberships = insertedBatch.map(lead => ({
+              lead_pack_id: leadPackId,
+              lead_id: lead.id,
+              status: 'uncalled'
+            }));
 
-        if (leadPackId) {
-          const memberships = insertedBatch.map(lead => ({
-            lead_pack_id: leadPackId,
-            lead_id: lead.id,
-            status: 'uncalled'
-          }));
-
-          const { error: membershipError } = await supabaseAdmin
-            .from('lead_pack_memberships')
-            .insert(memberships);
-            
-          if (membershipError) {
-            console.error('Error adding batch of leads to pack:', membershipError);
+            const { error: membershipError } = await supabaseAdmin
+              .from('lead_pack_memberships')
+              .insert(memberships);
+              
+            if (membershipError) {
+              console.error('Error adding batch of leads to pack:', membershipError);
+              batchErrors.push(membershipError);
+            }
           }
         }
+      } catch (e: any) {
+        console.error('Unexpected batch error:', e);
+        batchErrors.push(e);
       }
-    }));
+    }
 
     if (leadPackId && insertedLeads.length > 0) {
-      // Get current counts to increment properly (this is simplistic, but works for now)
-      const { data: pack } = await supabaseAdmin
-        .from('lead_packs')
-        .select('total_leads, leads_remaining')
-        .eq('id', leadPackId)
-        .single();
+      // Get exact count from memberships table to ensure accuracy
+      const { count, error: countError } = await supabaseAdmin
+        .from('lead_pack_memberships')
+        .select('*', { count: 'exact', head: true })
+        .eq('lead_pack_id', leadPackId);
         
-      if (pack) {
+      if (!countError && count !== null) {
         await supabaseAdmin
           .from('lead_packs')
           .update({
-            total_leads: pack.total_leads + insertedLeads.length,
-            leads_remaining: pack.leads_remaining + insertedLeads.length
+            total_leads: count,
+            leads_remaining: count // Simplified: assumes all are uncalled for new imports
           })
           .eq('id', leadPackId);
       }

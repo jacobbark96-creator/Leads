@@ -147,8 +147,10 @@ function LeadProcessingContent() {
 
   const fetchLeads = async (pageNumber: number, isInitial: boolean) => {
     try {
-      // Only fetch leads if we have a search query (otherwise we show calendar)
-      if (!debouncedSearchQuery.trim()) {
+      // Only fetch leads if we have a search query OR if specific filters are active (otherwise we show calendar)
+      const isListOverpowerActive = statusFilter === 'myleads' || statusFilter === 'dnc';
+      
+      if (!debouncedSearchQuery.trim() && !isListOverpowerActive) {
         if (isInitial) {
           setLeads([]);
           setLoading(false);
@@ -360,20 +362,27 @@ function LeadProcessingContent() {
             { id: 'contacted', label: 'Contacted', value: kpiCounts.contacted, color: 'bg-amber-500', textColor: 'text-amber-500', icon: PhoneForwarded, bgClass: 'bg-amber-50/30 hover:bg-amber-50/50', borderClass: 'border-amber-100' },
             { id: 'myleads', label: 'My Leads', value: kpiCounts.myleads, color: 'bg-purple-500', textColor: 'text-purple-500', icon: User, bgClass: 'bg-purple-50/50 hover:bg-purple-50', borderClass: 'border-purple-100' },
             { id: 'dnc', label: 'DNC', value: kpiCounts.dnc, color: 'bg-red-500', textColor: 'text-red-500', icon: Ban, bgClass: 'bg-red-50/80 hover:bg-red-100/80', borderClass: 'border-red-200' },
-          ].map((kpi, idx) => (
-            <div 
-              key={idx} 
-              onClick={() => setStatusFilter(kpi.id)}
-              className={`relative overflow-hidden rounded-lg border ${kpi.borderClass} ${kpi.bgClass} px-2.5 py-1.5 min-w-0 sm:min-w-[100px] shadow-sm flex flex-col justify-between transition-all hover:shadow-md cursor-pointer group ${statusFilter === kpi.id ? 'ring-2 ring-inset ring-blue-500/50' : ''}`}
-            >
-              <kpi.icon className={`absolute -bottom-1 -right-1 w-6 h-6 opacity-10 group-hover:scale-110 transition-transform ${kpi.textColor}`} />
-              <div className="flex items-center justify-between mb-0.5 relative z-10">
-                <span className="text-[8px] font-bold text-gray-600 uppercase tracking-wider truncate mr-1">{kpi.label}</span>
-                <span className={`w-1 h-1 rounded-full shrink-0 ${kpi.color}`}></span>
+          ].map((kpi, idx) => {
+            const isClickable = kpi.id === 'myleads' || kpi.id === 'dnc';
+            return (
+              <div 
+                key={idx} 
+                onClick={() => {
+                  if (!isClickable) return;
+                  // Toggle filter: if already selected, go back to 'fresh' (default)
+                  setStatusFilter(statusFilter === kpi.id ? 'fresh' : kpi.id);
+                }}
+                className={`relative overflow-hidden rounded-lg border ${kpi.borderClass} ${kpi.bgClass} px-2.5 py-1.5 min-w-0 sm:min-w-[100px] shadow-sm flex flex-col justify-between transition-all ${isClickable ? 'hover:shadow-md cursor-pointer group' : 'cursor-default'} ${statusFilter === kpi.id ? 'ring-2 ring-inset ring-blue-500/50' : ''}`}
+              >
+                <kpi.icon className={`absolute -bottom-1 -right-1 w-6 h-6 opacity-10 ${isClickable ? 'group-hover:scale-110' : ''} transition-transform ${kpi.textColor}`} />
+                <div className="flex items-center justify-between mb-0.5 relative z-10">
+                  <span className="text-[8px] font-bold text-gray-600 uppercase tracking-wider truncate mr-1">{kpi.label}</span>
+                  <span className={`w-1 h-1 rounded-full shrink-0 ${kpi.color}`}></span>
+                </div>
+                <div className="text-xs font-extrabold text-gray-900 relative z-10">{kpi.value.toLocaleString()}</div>
               </div>
-              <div className="text-xs font-extrabold text-gray-900 relative z-10">{kpi.value.toLocaleString()}</div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       </div>
 
@@ -515,7 +524,7 @@ function LeadProcessingContent() {
 
       {/* CONTENT AREA: CALENDAR OR SEARCH RESULTS */}
       <div className="flex-1 min-h-[600px]">
-        {searchQuery.trim() ? (
+        {(searchQuery.trim() || statusFilter === 'myleads' || statusFilter === 'dnc') ? (
           <div className="bg-white rounded-xl border border-gray-200 shadow-sm overflow-hidden">
             {/* Table Toolbar (Bulk Actions) */}
             {profile?.role === 'super_admin' && (

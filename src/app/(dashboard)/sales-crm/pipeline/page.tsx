@@ -49,9 +49,17 @@ export default function PipelinePage() {
       .select(`
         *,
         categories!leads_category_id_fkey(name),
-        users!leads_assigned_to_fkey(name)
+        users!leads_assigned_to_fkey(name),
+        lead_purchases(
+          client_id,
+          clients(
+            user_id,
+            users(email)
+          )
+        )
       `)
-      .in('status', ['call back', 'qualified', 'marketplace', 'awaiting_sales', 'sold']);
+      .in('status', ['call back', 'qualified', 'marketplace', 'awaiting_sales', 'sold'])
+      .order('created_at', { ascending: false });
 
     if (profile?.role !== 'super_admin' || selectedUser === 'me') {
       query = query.eq('assigned_to', profile?.id);
@@ -82,11 +90,40 @@ export default function PipelinePage() {
           });
         }
         
-        const enhancedLeads = data.map(lead => ({
-          ...lead,
-          commission_value: calculateCommission(lead.exclusive_price || lead.price),
-          last_activity_at: latestActivities[lead.id] || lead.created_at,
-        }));
+        const enhancedLeads = data.map(lead => {
+          const isLeadShare = (lead.status === 'marketplace' || lead.purchase_count > 0) && (lead.is_exclusive_sold !== true);
+          
+          const validPurchases = lead.lead_purchases?.filter((p: any) => 
+            p.clients?.users?.email !== 'test@example.com'
+          ) || [];
+          
+          const validPurchaseCount = validPurchases.length;
+          const hasTestPurchase = lead.lead_purchases?.some((p: any) => 
+            p.clients?.users?.email === 'test@example.com'
+          );
+
+          let commissionValue = 0;
+          if (isLeadShare) {
+            commissionValue = validPurchaseCount * 33;
+          } else {
+            // Exclusive or Manual
+            const isManualSold = (lead.status === 'sold' || lead.marked_as_sold) && lead.purchase_count === 0;
+            const isExclusiveMarketplaceSold = lead.is_exclusive_sold && validPurchaseCount > 0;
+            
+            if (isManualSold || isExclusiveMarketplaceSold) {
+              commissionValue = calculateCommission(lead.exclusive_price || lead.price, false);
+            }
+          }
+
+          return {
+            ...lead,
+            is_leadshare: isLeadShare,
+            has_test_purchase: hasTestPurchase,
+            valid_purchase_count: validPurchaseCount,
+            commission_value: commissionValue,
+            last_activity_at: latestActivities[lead.id] || lead.created_at,
+          };
+        });
         setLeads(enhancedLeads);
       } else {
         setLeads([]);
@@ -146,21 +183,40 @@ export default function PipelinePage() {
 
   if (statusFilter !== 'all') {
     if (statusFilter === 'marketed') {
-      visibleLeads = visibleLeads.filter(l => l.status === 'marketplace' || (l.status === 'qualified' && !!l.is_marketed));
+      visibleLeads = visibleLeads.filter(l => 
+        (l.status === 'marketplace' || (l.status === 'qualified' && !!l.is_marketed)) && 
+        l.purchase_count === 0
+      );
     } else if (statusFilter === 'qualified') {
-      visibleLeads = visibleLeads.filter(l => l.status === 'qualified' && !l.is_marketed);
+      visibleLeads = visibleLeads.filter(l => l.status === 'qualified' && !l.is_marketed && l.purchase_count === 0);
+    } else if (statusFilter === 'sold') {
+      visibleLeads = visibleLeads.filter(l => 
+        (l.valid_purchase_count > 0) || 
+        ((l.status === 'sold' || l.marked_as_sold) && !l.has_test_purchase)
+      );
+    } else if (statusFilter === 'awaiting_sales') {
+      visibleLeads = visibleLeads.filter(l => 
+        l.status === 'awaiting_sales' || 
+        (l.purchase_count > 0 && l.valid_purchase_count === 0)
+      );
     } else {
-      visibleLeads = visibleLeads.filter(l => l.status === statusFilter);
+      visibleLeads = visibleLeads.filter(l => l.status === statusFilter && l.purchase_count === 0);
     }
   }
 
   const pipelineValue = visibleLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
-  const soldLeads = visibleLeads.filter(l => l.status === 'sold');
-  const soldValue = soldLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
+  const soldLeadsInView = visibleLeads.filter(l => 
+    (l.valid_purchase_count > 0) || 
+    ((l.status === 'sold' || l.marked_as_sold) && !l.has_test_purchase)
+  );
+  const soldValue = soldLeadsInView.reduce((acc, l) => acc + (l.commission_value || 0), 0);
   
-  const qualifiedAndSold = visibleLeads.filter(l => ['qualified', 'sold'].includes(l.status));
+  const qualifiedAndSold = visibleLeads.filter(l => 
+    (['qualified', 'sold'].includes(l.status) || l.purchase_count > 0 || l.marked_as_sold) && 
+    (l.valid_purchase_count > 0 || !l.has_test_purchase)
+  );
   const conversionRate = qualifiedAndSold.length > 0 
-    ? ((soldLeads.length / qualifiedAndSold.length) * 100).toFixed(1) 
+    ? ((soldLeadsInView.length / qualifiedAndSold.length) * 100).toFixed(1) 
     : '0.0';
 
   return (

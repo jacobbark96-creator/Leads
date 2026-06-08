@@ -1,344 +1,412 @@
 "use client";
+
 import React, { useState, useEffect } from 'react';
 import { useAuthStore } from '../../../../store/authStore';
 import { supabase } from '../../../../lib/supabase';
-import Papa from 'papaparse';
+import { calculateCommission } from '@/lib/commission';
+import { 
+  format, 
+  startOfMonth, 
+  isFriday, 
+  lastDayOfMonth, 
+  subDays, 
+  addMonths, 
+  isAfter, 
+  isSameDay,
+  parseISO
+} from 'date-fns';
+import { 
+  Banknote, 
+  TrendingUp, 
+  Calendar as CalendarIcon, 
+  User,
+  Clock,
+  CheckCircle2,
+  AlertCircle,
+  ChevronDown,
+  Loader2,
+  DollarSign,
+  Briefcase
+} from 'lucide-react';
 import toast from 'react-hot-toast';
-import { Save, Link as LinkIcon, RefreshCw, AlertTriangle } from 'lucide-react';
 
-export default function CommissionMatrix() {
+export default function CommissionsPage() {
   const { profile } = useAuthStore();
-  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
-  
   const [loading, setLoading] = useState(true);
-  const [sheetUrl, setSheetUrl] = useState('');
-  const [isEditing, setIsEditing] = useState(false);
-  const [saving, setSaving] = useState(false);
+  const [leads, setLeads] = useState<any[]>([]);
+  const [paidLeads, setPaidLeads] = useState<any[]>([]);
+  const [showPaidHistory, setShowPaidHistory] = useState(false);
+  const [users, setUsers] = useState<any[]>([]);
+  const [selectedUserId, setSelectedUserId] = useState<string>('');
   
-  const [headers, setHeaders] = useState<string[]>([]);
-  const [rows, setRows] = useState<any[]>([]);
-  const [fetchError, setFetchError] = useState<string | null>(null);
-
-  // Default fallback data if no sheet is provided
-  const fallbackData = [
-    { Category: 'Solar', Tier: 'Standard', 'Commission': '£15/lead', 'Bonus': '£50 for 10+ sales' },
-    { Category: 'Solar Cleaning', Tier: 'Standard', 'Commission': '£5/lead', 'Bonus': '£20 for 10+ sales' },
-    { Category: 'Roofing', Tier: 'Standard', 'Commission': '£20/lead', 'Bonus': '£100 for 10+ sales' },
-  ];
+  const isSuperAdmin = profile?.role === 'super_admin';
 
   useEffect(() => {
-    fetchSettings();
-  }, []);
+    if (profile) {
+      if (isSuperAdmin) {
+        fetchUsers();
+      }
+      setSelectedUserId(profile.id);
+    }
+  }, [profile, isSuperAdmin]);
 
-  const fetchSettings = async () => {
+  useEffect(() => {
+    if (selectedUserId) {
+      fetchCommissions();
+    }
+  }, [selectedUserId]);
+
+  const fetchUsers = async () => {
+    const { data } = await supabase
+      .from('users')
+      .select('id, name')
+      .neq('role', 'client')
+      .order('name');
+    if (data) setUsers(data);
+  };
+
+  const getPayDayInfo = (date: Date) => {
+    const getLastFriday = (d: Date) => {
+      let lastDay = lastDayOfMonth(d);
+      while (!isFriday(lastDay)) {
+        lastDay = subDays(lastDay, 1);
+      }
+      return lastDay;
+    };
+
+    const payday = getLastFriday(date);
+    const cutoff = subDays(payday, 14);
+    return { payday, cutoff };
+  };
+
+  const calculatePaymentDate = (soldDate: Date) => {
+    const { payday: currentPayday, cutoff: currentCutoff } = getPayDayInfo(soldDate);
+    
+    // If sold on or before cutoff, paid this month's payday
+    if (!isAfter(soldDate, currentCutoff)) {
+      return currentPayday;
+    }
+    
+    // Else paid next month's payday
+    const nextMonth = addMonths(soldDate, 1);
+    const { payday: nextPayday } = getPayDayInfo(nextMonth);
+    return nextPayday;
+  };
+
+  const fetchCommissions = async () => {
+    setLoading(true);
     try {
       const { data, error } = await supabase
-        .from('system_settings')
-        .select('value')
-        .eq('key', 'commission_sheet_url')
-        .single();
+        .from('leads')
+        .select(`
+          id, 
+          name, 
+          company, 
+          price, 
+          exclusive_price, 
+          purchase_date, 
+          created_at, 
+          status,
+          marked_as_sold,
+          purchase_count,
+          max_shares,
+          is_marketed,
+          is_exclusive_sold,
+          lead_purchases(
+            client_id,
+            clients(
+              users(email)
+            )
+          )
+        `)
+        .eq('assigned_to', selectedUserId)
+        .or('status.eq.sold,marked_as_sold.eq.true,status.eq.marketplace,purchase_count.gt.0');
+
+      if (error) throw error;
+
+      if (data) {
+        const now = new Date();
+        const allCommissions = data
+          .map(lead => {
+            const isLeadShare = (lead.status === 'marketplace' || lead.purchase_count > 0) && (lead.is_exclusive_sold !== true);
+            
+            const validPurchases = lead.lead_purchases?.filter((p: any) => 
+              p.clients?.users?.email !== 'test@example.com'
+            ) || [];
+            
+            const validPurchaseCount = validPurchases.length;
+
+            // Filter out leads with no actual valid sales
+            if (validPurchaseCount === 0 && !lead.marked_as_sold && lead.status !== 'sold') return null;
+            if (validPurchaseCount === 0 && (lead.status === 'marketplace')) return null;
+
+            const soldDate = lead.purchase_date ? parseISO(lead.purchase_date) : parseISO(lead.created_at);
+            
+            let commission = 0;
+            if (isLeadShare) {
+              commission = validPurchaseCount * 33;
+            } else {
+              commission = calculateCommission(lead.exclusive_price || lead.price, false);
+            }
+
+            if (commission === 0) return null;
+
+            const paymentDate = calculatePaymentDate(soldDate);
+            
+            return {
+              ...lead,
+              isLeadShare,
+              validPurchaseCount,
+              soldDate,
+              commission,
+              paymentDate,
+              isPaid: isAfter(now, paymentDate) && !isSameDay(now, paymentDate)
+            };
+          })
+          .filter(c => c !== null) as any[];
+
+        const pending = allCommissions
+          .filter(c => !c.isPaid)
+          .sort((a, b) => a.paymentDate.getTime() - b.paymentDate.getTime());
         
-      if (data?.value) {
-        setSheetUrl(data.value);
-        loadCsvData(data.value);
-      } else {
-        // Load fallback data
-        setHeaders(Object.keys(fallbackData[0]));
-        setRows(fallbackData);
-        setLoading(false);
+        const paid = allCommissions
+          .filter(c => c.isPaid)
+          .sort((a, b) => b.paymentDate.getTime() - a.paymentDate.getTime());
+
+        setLeads(pending);
+        setPaidLeads(paid);
       }
     } catch (err: any) {
-      console.error(err);
-      // Load fallback data on error
-      setHeaders(Object.keys(fallbackData[0]));
-      setRows(fallbackData);
+      toast.error('Failed to fetch commissions: ' + err.message);
+    } finally {
       setLoading(false);
     }
   };
 
-  const loadCsvData = async (url: string) => {
-    setLoading(true);
-    setFetchError(null);
+  const getNextPayday = () => {
+    const now = new Date();
+    const { payday } = getPayDayInfo(now);
     
-    try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error(`HTTP Error: ${response.status}`);
-      }
-      const text = await response.text();
-      
-      Papa.parse(text, {
-        header: true,
-        skipEmptyLines: true,
-        complete: (results) => {
-          if (results.data && results.data.length > 0) {
-            setHeaders(results.meta.fields || Object.keys(results.data[0]));
-            setRows(results.data);
-          } else {
-            setFetchError("No data found in the provided Google Sheet.");
-          }
-          setLoading(false);
-        },
-        error: (error: any) => {
-          console.error("PapaParse error:", error);
-          setFetchError("Failed to parse CSV data.");
-          setLoading(false);
-        }
-      });
-    } catch (err: any) {
-      console.error("Fetch error:", err);
-      setFetchError("Failed to fetch Google Sheet. Make sure the link is a published CSV format (File -> Share -> Publish to web -> CSV).");
-      setLoading(false);
+    if (isAfter(now, payday) && !isSameDay(now, payday)) {
+      return getPayDayInfo(addMonths(now, 1)).payday;
     }
+    return payday;
   };
 
-  const handleSaveUrl = async () => {
-    if (!sheetUrl.trim()) {
-      toast.error('Please enter a valid URL');
-      return;
-    }
-    
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('system_settings')
-        .upsert({ 
-          key: 'commission_sheet_url', 
-          value: sheetUrl.trim(),
-          updated_at: new Date().toISOString()
-        });
-        
-      if (error) throw error;
-      
-      toast.success('Commission Matrix source updated!');
-      setIsEditing(false);
-      loadCsvData(sheetUrl.trim());
-    } catch (err: any) {
-      toast.error('Failed to save: ' + err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
+  const nextPayday = getNextPayday();
+  const totalUpcoming = leads.reduce((sum, lead) => sum + lead.commission, 0);
+  const nextPaydayAmount = leads
+    .filter(lead => isSameDay(lead.paymentDate, nextPayday))
+    .reduce((sum, lead) => sum + lead.commission, 0);
 
-  const handleClearUrl = async () => {
-    setSaving(true);
-    try {
-      const { error } = await supabase
-        .from('system_settings')
-        .delete()
-        .eq('key', 'commission_sheet_url');
-        
-      if (error) throw error;
-      
-      toast.success('Custom source removed. Reverted to default.');
-      setSheetUrl('');
-      setIsEditing(false);
-      setHeaders(Object.keys(fallbackData[0]));
-      setRows(fallbackData);
-      setFetchError(null);
-    } catch (err: any) {
-      toast.error('Failed to clear: ' + err.message);
-    } finally {
-      setSaving(false);
-    }
-  };
+  if (!profile) return null;
+
+  const displayLeads = showPaidHistory ? paidLeads : leads;
 
   return (
-    <div>
-      <div className="sm:flex sm:items-center sm:justify-between mb-6">
+    <div className="space-y-6">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h2 className="text-xl font-medium text-gray-900">Commission Matrix</h2>
-          <p className="text-sm text-gray-500">Current commission rates and bonuses</p>
+          <h1 className="text-2xl font-bold text-gray-900 tracking-tight">Commissions</h1>
+          <p className="text-sm text-gray-500 mt-1">Track your earnings and upcoming pay dates.</p>
         </div>
-        
-        {isAdmin && !isEditing && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="mt-3 sm:mt-0 flex items-center justify-center gap-2 bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors shadow-sm"
-          >
-            <LinkIcon className="w-4 h-4" />
-            Link Google Sheet
-          </button>
+
+        {isSuperAdmin && (
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">Select Member</span>
+              <div className="relative mt-1">
+                <select
+                  value={selectedUserId}
+                  onChange={(e) => setSelectedUserId(e.target.value)}
+                  className="appearance-none pl-4 pr-10 py-2 bg-white border border-gray-200 rounded-xl text-sm font-semibold text-gray-900 focus:outline-none focus:ring-2 focus:ring-emerald-500 transition-all cursor-pointer shadow-sm min-w-[200px]"
+                >
+                  {users.map(u => (
+                    <option key={u.id} value={u.id}>{u.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-gray-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
+            </div>
+          </div>
         )}
       </div>
 
-      {isEditing && isAdmin && (
-        <div className="mb-8 bg-blue-50 border border-blue-100 rounded-xl p-5 shadow-sm">
-          <h3 className="text-sm font-bold text-blue-900 mb-2">Sync with Google Sheets</h3>
-          <p className="text-xs text-blue-700 mb-4">
-            To sync this table automatically, go to your Google Sheet &rarr; <strong>File</strong> &rarr; <strong>Share</strong> &rarr; <strong>Publish to web</strong>. 
-            Select the specific sheet, change "Web page" to <strong>"Comma-separated values (.csv)"</strong>, and click Publish. Paste that exact link below.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="url"
-              value={sheetUrl}
-              onChange={(e) => setSheetUrl(e.target.value)}
-              placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-.../pub?output=csv"
-              className="flex-1 rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-            />
-            <div className="flex gap-2">
-              <button
-                onClick={handleSaveUrl}
-                disabled={saving}
-                className="flex items-center justify-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 font-medium text-sm transition-colors disabled:opacity-50"
-              >
-                {saving ? <RefreshCw className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
-                Save
-              </button>
-              <button
-                onClick={() => setIsEditing(false)}
-                disabled={saving}
-                className="flex items-center justify-center px-4 py-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium text-sm transition-colors disabled:opacity-50"
-              >
-                Cancel
-              </button>
-              {sheetUrl && (
-                <button
-                  onClick={handleClearUrl}
-                  disabled={saving}
-                  className="flex items-center justify-center px-4 py-2 bg-white border border-red-200 text-red-600 rounded-lg hover:bg-red-50 font-medium text-sm transition-colors disabled:opacity-50"
-                >
-                  Clear
-                </button>
-              )}
+      {/* Summary Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Banknote className="w-16 h-16 text-emerald-600" />
+          </div>
+          <div className="flex items-center gap-3 mb-3 relative z-10">
+            <div className="w-10 h-10 rounded-xl bg-emerald-50 flex items-center justify-center text-emerald-600">
+              <Banknote className="w-5 h-5" />
             </div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Due Next Payday</p>
+          </div>
+          <p className="text-3xl font-black text-gray-900 tracking-tight relative z-10">£{nextPaydayAmount.toLocaleString()}</p>
+          <div className="mt-2 flex items-center gap-1.5 text-[10px] font-bold text-emerald-600 uppercase relative z-10">
+            <CalendarIcon className="w-3 h-3" />
+            {format(nextPayday, 'MMMM do, yyyy')}
           </div>
         </div>
-      )}
 
-      {fetchError && (
-        <div className="mb-6 bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
-          <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
-          <div>
-            <h4 className="text-sm font-bold text-red-900">Error Loading Commission Data</h4>
-            <p className="text-sm text-red-700 mt-1">{fetchError}</p>
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <TrendingUp className="w-16 h-16 text-blue-600" />
+          </div>
+          <div className="flex items-center gap-3 mb-3 relative z-10">
+            <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center text-blue-600">
+              <TrendingUp className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Total Pending Comm.</p>
+          </div>
+          <p className="text-3xl font-black text-gray-900 tracking-tight relative z-10">£{totalUpcoming.toLocaleString()}</p>
+          <p className="mt-2 text-[10px] font-bold text-gray-400 uppercase relative z-10">Across all future paydays</p>
+        </div>
+
+        <div className="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm relative overflow-hidden group">
+          <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition-opacity">
+            <Briefcase className="w-16 h-16 text-purple-600" />
+          </div>
+          <div className="flex items-center gap-3 mb-3 relative z-10">
+            <div className="w-10 h-10 rounded-xl bg-purple-50 flex items-center justify-center text-purple-600">
+              <Briefcase className="w-5 h-5" />
+            </div>
+            <p className="text-xs font-bold text-gray-500 uppercase tracking-wider">Pending Sales</p>
+          </div>
+          <p className="text-3xl font-black text-gray-900 tracking-tight relative z-10">{leads.length}</p>
+          <p className="mt-2 text-[10px] font-bold text-gray-400 uppercase relative z-10">Awaiting payment date</p>
+        </div>
+      </div>
+
+      {/* Commission List */}
+      <div className="bg-white rounded-3xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-gray-50 flex items-center justify-between bg-gray-50/30">
+          <div className="flex items-center gap-4">
+            <button 
+              onClick={() => setShowPaidHistory(false)}
+              className={`text-sm font-bold transition-colors ${!showPaidHistory ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              Pending Schedule
+            </button>
+            <button 
+              onClick={() => setShowPaidHistory(true)}
+              className={`text-sm font-bold transition-colors flex items-center gap-2 ${showPaidHistory ? 'text-gray-900' : 'text-gray-400 hover:text-gray-600'}`}
+            >
+              Paid History
+              <span className="px-1.5 py-0.5 bg-gray-100 text-gray-500 rounded text-[10px]">{paidLeads.length}</span>
+            </button>
+          </div>
+          <div className="flex items-center gap-2">
+            {!showPaidHistory ? (
+              <>
+                <span className="w-2 h-2 rounded-full bg-amber-400 animate-pulse"></span>
+                <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Upcoming Payment</span>
+              </>
+            ) : (
+              <>
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                <span className="text-[10px] font-bold text-emerald-600 uppercase tracking-wider">Successfully Paid</span>
+              </>
+            )}
           </div>
         </div>
-      )}
 
-      <div className="flex flex-col space-y-8">
-        {loading ? (
-          <div className="bg-white p-12 flex justify-center items-center shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-          </div>
-        ) : (
-          (() => {
-            // Find the category column (case-insensitive)
-            const categoryHeader = headers.find(h => h.toLowerCase() === 'category');
-            
-            if (!categoryHeader || rows.length === 0) {
-              // Fallback to single table if no category column exists
-              return (
-                <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                  <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            {headers.map((header, idx) => (
-                              <th key={idx} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {header}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {rows.length > 0 ? (
-                            rows.map((row, rowIdx) => (
-                              <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-blue-50/50 transition-colors'}>
-                                {headers.map((header, colIdx) => {
-                                  const isCommission = header.toLowerCase().includes('commission');
-                                  const isBonus = header.toLowerCase().includes('bonus');
-                                  return (
-                                    <td 
-                                      key={colIdx} 
-                                      className={`px-6 py-4 whitespace-nowrap text-sm ${
-                                        colIdx === 0 ? 'font-medium text-gray-900' :
-                                        isCommission ? 'text-gray-900 font-semibold' :
-                                        isBonus ? 'text-green-600 font-medium' :
-                                        'text-gray-500'
-                                      }`}
-                                    >
-                                      {row[header] || '-'}
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            ))
+        <div className="overflow-x-auto">
+          {loading ? (
+            <div className="py-20 flex flex-col items-center justify-center gap-3">
+              <Loader2 className="w-8 h-8 animate-spin text-emerald-500" />
+              <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">Fetching data...</p>
+            </div>
+          ) : displayLeads.length > 0 ? (
+            <table className="w-full text-left border-collapse">
+              <thead>
+                <tr className="bg-gray-50/50">
+                  <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lead Info</th>
+                  <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Sold Date</th>
+                  <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider">Pay Date</th>
+                  <th className="px-6 py-3 text-[10px] font-bold text-gray-400 uppercase tracking-wider text-right">Commission</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {displayLeads.map((lead) => {
+                  const isNextPayday = isSameDay(lead.paymentDate, nextPayday);
+                  return (
+                    <tr key={lead.id} className={`hover:bg-gray-50/50 transition-colors group ${isNextPayday && !showPaidHistory ? 'bg-emerald-50/20' : ''}`}>
+                      <td className="px-6 py-4">
+                        <div className="flex flex-col">
+                          <div className="flex items-center gap-2">
+                            <span className="text-sm font-bold text-gray-900 group-hover:text-emerald-600 transition-colors">
+                              {lead.company || lead.name || 'Unknown Lead'}
+                            </span>
+                            {lead.isLeadShare && (
+                              <span className="px-1.5 py-0.5 bg-amber-50 text-amber-700 rounded text-[8px] font-black uppercase tracking-tighter">
+                                Leadshare ({lead.validPurchaseCount}/{lead.max_shares || 3})
+                              </span>
+                            )}
+                            {isNextPayday && !showPaidHistory && (
+                              <span className="px-1.5 py-0.5 bg-emerald-100 text-emerald-700 rounded text-[8px] font-black uppercase tracking-tighter">
+                                Next Pay
+                              </span>
+                            )}
+                          </div>
+                          <span className="text-[10px] text-gray-500 mt-0.5 font-medium">ID: {lead.id.substring(0, 8)}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
+                          <span className="text-xs font-semibold text-gray-700">{format(lead.soldDate, 'MMM d, yyyy')}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <div className="flex items-center gap-2">
+                          {showPaidHistory ? (
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
                           ) : (
-                            <tr>
-                              <td colSpan={headers.length || 1} className="px-6 py-8 text-center text-sm text-gray-500">
-                                No commission data available.
-                              </td>
-                            </tr>
+                            <Clock className={`w-3.5 h-3.5 ${isNextPayday ? 'text-emerald-500' : 'text-amber-500'}`} />
                           )}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
-              );
-            }
-
-            // Group by category
-            const groupedRows = rows.reduce((acc: Record<string, any[]>, row) => {
-              const cat = row[categoryHeader] || 'Other';
-              if (!acc[cat]) acc[cat] = [];
-              acc[cat].push(row);
-              return acc;
-            }, {});
-
-            // Headers excluding the category column
-            const displayHeaders = headers.filter(h => h !== categoryHeader);
-
-            return Object.entries(groupedRows).map(([category, catRows]: [string, any[]]) => (
-              <div key={category} className="mb-2">
-                <h3 className="text-lg font-bold text-gray-900 mb-3 px-1">{category}</h3>
-                <div className="-my-2 overflow-x-auto sm:-mx-6 lg:-mx-8">
-                  <div className="py-2 align-middle inline-block min-w-full sm:px-6 lg:px-8">
-                    <div className="shadow overflow-hidden border-b border-gray-200 sm:rounded-lg">
-                      <table className="min-w-full divide-y divide-gray-200">
-                        <thead className="bg-gray-50">
-                          <tr>
-                            {displayHeaders.map((header, idx) => (
-                              <th key={idx} scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                {header}
-                              </th>
-                            ))}
-                          </tr>
-                        </thead>
-                        <tbody className="bg-white divide-y divide-gray-200">
-                          {catRows.map((row, rowIdx) => (
-                            <tr key={rowIdx} className={rowIdx % 2 === 0 ? 'bg-white' : 'bg-gray-50 hover:bg-blue-50/50 transition-colors'}>
-                              {displayHeaders.map((header, colIdx) => {
-                                const isCommission = header.toLowerCase().includes('commission');
-                                const isBonus = header.toLowerCase().includes('bonus');
-                                return (
-                                  <td 
-                                    key={colIdx} 
-                                    className={`px-6 py-4 whitespace-nowrap text-sm ${
-                                      colIdx === 0 ? 'font-medium text-gray-900' :
-                                      isCommission ? 'text-gray-900 font-semibold' :
-                                      isBonus ? 'text-green-600 font-medium' :
-                                      'text-gray-500'
-                                    }`}
-                                  >
-                                    {row[header] || '-'}
-                                  </td>
-                                );
-                              })}
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  </div>
-                </div>
+                          <span className={`text-xs font-bold ${isNextPayday && !showPaidHistory ? 'text-emerald-700' : 'text-gray-900'}`}>
+                            {format(lead.paymentDate, 'MMM d, yyyy')}
+                          </span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-right">
+                        <span className="text-sm font-black text-gray-900">£{lead.commission.toLocaleString()}</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          ) : (
+            <div className="py-20 flex flex-col items-center justify-center text-center px-6">
+              <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4">
+                <AlertCircle className="w-8 h-8 text-gray-300" />
               </div>
-            ));
-          })()
-        )}
+              <h4 className="text-base font-bold text-gray-900">
+                {showPaidHistory ? 'No Payment History' : 'No Pending Commissions'}
+              </h4>
+              <p className="text-xs text-gray-500 mt-1 max-w-[280px]">
+                {showPaidHistory 
+                  ? 'There are no records of past commission payments for this user.'
+                  : "You don't have any upcoming commission payments at the moment. Sales marked in the pipeline will appear here."}
+              </p>
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="bg-amber-50 rounded-2xl p-4 border border-amber-100 flex items-start gap-3">
+        <AlertCircle className="w-5 h-5 text-amber-500 shrink-0" />
+        <div>
+          <h4 className="text-sm font-bold text-amber-900">Commission Policy</h4>
+          <p className="text-xs text-amber-700 mt-1 leading-relaxed">
+            Sales made before the cut-off date (2 weeks before the last Friday of the month) are paid on that month's payday. 
+            Sales made after the cut-off are rolled over to the following month's payday.
+          </p>
+        </div>
       </div>
     </div>
   );

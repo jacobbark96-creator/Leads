@@ -19,12 +19,27 @@ const COLUMNS = [
 export default function PipelineBoard({ leads }: PipelineBoardProps) {
   const getLeadsByStatus = (status: string) => {
     if (status === 'marketed') {
-      return leads.filter(l => l.status === 'marketplace' || (l.status === 'qualified' && !!l.is_marketed));
+      return leads.filter(l => 
+        (l.status === 'marketplace' || (l.status === 'qualified' && !!l.is_marketed)) && 
+        l.purchase_count === 0
+      );
     }
     if (status === 'qualified') {
-      return leads.filter(l => l.status === 'qualified' && !l.is_marketed);
+      return leads.filter(l => l.status === 'qualified' && !l.is_marketed && l.purchase_count === 0);
     }
-    return leads.filter(l => l.status === status);
+    if (status === 'sold') {
+      return leads.filter(l => 
+        (l.valid_purchase_count > 0) || 
+        ((l.status === 'sold' || l.marked_as_sold) && !l.has_test_purchase)
+      );
+    }
+    if (status === 'awaiting_sales') {
+      return leads.filter(l => 
+        l.status === 'awaiting_sales' || 
+        (l.purchase_count > 0 && l.valid_purchase_count === 0)
+      );
+    }
+    return leads.filter(l => l.status === status && l.purchase_count === 0);
   };
 
   const getColumnColorClass = (color: string) => {
@@ -108,9 +123,17 @@ function PipelineCard({ lead, color }: { lead: any, color: string }) {
   return (
     <div className={`bg-white rounded-lg p-2 border shadow-sm transition-all ${getBorderColor()}`}>
       <div className="flex justify-between items-start mb-1.5">
-        <a href={`/sales-crm/lead-v2?id=${lead.id}&tab=pipeline`} className="font-bold text-blue-600 hover:text-blue-800 text-xs line-clamp-1 flex-1 pr-2 transition-colors" title={lead.company || lead.name}>
-          {lead.company || lead.name}
-        </a>
+        <div className="flex flex-col gap-0.5 overflow-hidden">
+          <a href={`/sales-crm/lead-v2?id=${lead.id}&tab=pipeline`} className="font-bold text-blue-600 hover:text-blue-800 text-xs line-clamp-1 flex-1 pr-2 transition-colors" title={lead.company || lead.name}>
+            {lead.company || lead.name}
+          </a>
+          {lead.is_leadshare && (
+             <span className="text-[9px] font-bold text-amber-600 uppercase tracking-tighter flex items-center gap-1">
+               <span className="w-1 h-1 rounded-full bg-amber-500 animate-pulse"></span>
+               Leadshare ({lead.valid_purchase_count ?? lead.purchase_count}/{lead.max_shares || 3})
+             </span>
+           )}
+        </div>
       </div>
 
       <div className="space-y-1">

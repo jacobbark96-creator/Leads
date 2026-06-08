@@ -1,4 +1,5 @@
-export function calculateCommission(leadPrice: number | null | undefined): number {
+export function calculateCommission(leadPrice: number | null | undefined, isLeadShare: boolean = false): number {
+  if (isLeadShare) return 33;
   if (!leadPrice) return 0;
   
   if (leadPrice >= 385) return 130;

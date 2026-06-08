@@ -65,7 +65,6 @@ function QualifiedLeadsContent() {
   const [mainFilter, setMainFilter] = useState<'marketed' | 'qualified' | 'sold' | 'sales'>('qualified');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [leadToPause, setLeadToPause] = useState<Lead | null>(null);
-  const [qualificationDates, setQualificationDates] = useState<Record<string, string>>({});
 
   const PAGE_SIZE = 25;
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
@@ -111,7 +110,7 @@ function QualifiedLeadsContent() {
       let query = supabase
         .from('leads')
         .select('*, clients(company_name, contact_name)')
-        .order('created_at', { ascending: false })
+        .order('qualified_at', { ascending: false, nullsFirst: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
       // Apply Main Filter (Slider)
@@ -249,27 +248,6 @@ function QualifiedLeadsContent() {
       const fetchedLeads = (data as unknown as Lead[]) || [];
       const hasNextPage = fetchedLeads.length > PAGE_SIZE;
       const leadsToRender = hasNextPage ? fetchedLeads.slice(0, PAGE_SIZE) : fetchedLeads;
-
-      // If missing bills filter is active, fetch qualification dates
-      if (filterParam === 'missing_bills' && leadsToRender.length > 0) {
-        const leadIds = leadsToRender.map(l => l.id);
-        const { data: activities } = await supabase
-          .from('activities')
-          .select('lead_id, created_at')
-          .eq('activity_type', 'qualified')
-          .in('lead_id', leadIds)
-          .order('created_at', { ascending: false });
-        
-        if (activities) {
-          const dateMap: Record<string, string> = {};
-          activities.forEach(a => {
-            if (!dateMap[a.lead_id]) {
-              dateMap[a.lead_id] = a.created_at;
-            }
-          });
-          setQualificationDates(prev => ({ ...prev, ...dateMap }));
-        }
-      }
 
       if (isInitial) {
         setLeads(leadsToRender);
@@ -679,7 +657,7 @@ function QualifiedLeadsContent() {
                   <>
                     <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Type</th>
                     <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Location</th>
-                    <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Added</th>
+                    <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Qualified</th>
                   </>
                 )}
                 <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Status</th>
@@ -733,9 +711,9 @@ function QualifiedLeadsContent() {
                         <>
                           <td className="py-3 px-4">
                             <span className="text-xs text-gray-900 font-medium">
-                              {qualificationDates[lead.id] 
-                                ? new Date(qualificationDates[lead.id]).toLocaleDateString() 
-                                : 'Unknown'}
+                              {lead.qualified_at 
+                                ? new Date(lead.qualified_at).toLocaleDateString() 
+                                : lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'Unknown'}
                             </span>
                           </td>
                           <td className="py-3 px-4">
@@ -769,7 +747,9 @@ function QualifiedLeadsContent() {
                           <td className="py-3 px-4">
                             <div className="flex flex-col">
                               <span className="text-xs text-gray-900 font-medium">
-                                {new Date(lead.created_at).toLocaleDateString()}
+                                {lead.qualified_at 
+                                  ? new Date(lead.qualified_at).toLocaleDateString() 
+                                  : new Date(lead.created_at).toLocaleDateString()}
                               </span>
                             </div>
                           </td>
@@ -934,14 +914,20 @@ function QualifiedLeadsContent() {
 
                     <div className="grid grid-cols-2 gap-4 mb-4 pt-3 border-t border-gray-50">
                       <div>
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Added</p>
-                        <p className="text-xs text-gray-700 font-medium">{new Date(lead.created_at).toLocaleDateString()}</p>
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Qualified</p>
+                        <p className="text-xs text-gray-700 font-medium">
+                          {lead.qualified_at 
+                            ? new Date(lead.qualified_at).toLocaleDateString() 
+                            : new Date(lead.created_at).toLocaleDateString()}
+                        </p>
                       </div>
                       {filterParam === 'missing_bills' && (
                         <div>
                           <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Qualified</p>
                           <p className="text-xs text-gray-700 font-medium">
-                            {qualificationDates[lead.id] ? new Date(qualificationDates[lead.id]).toLocaleDateString() : 'Unknown'}
+                            {lead.qualified_at 
+                              ? new Date(lead.qualified_at).toLocaleDateString() 
+                              : lead.created_at ? new Date(lead.created_at).toLocaleDateString() : 'Unknown'}
                           </p>
                         </div>
                       )}

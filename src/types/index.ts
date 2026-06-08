@@ -80,6 +80,7 @@ export interface Lead {
   csv_data: any | null;
   assigned_to: string | null;
   created_at: string;
+  qualified_at?: string | null;
   marked_as_sold?: boolean;
   monthly_spend?: number;
   primary_need?: string;

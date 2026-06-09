@@ -64,7 +64,7 @@ export default function MyOpenlead() {
         .single();
 
       if (clientError) {
-        if (clientError.code === 'PGRST116') {
+        if (clientError.code === 'PGRST116' && profile?.role === 'client') {
           // If no client profile exists yet (new signup), create one
           const meta = user?.user_metadata || {};
           const { data: newClient, error: insertError } = await supabase

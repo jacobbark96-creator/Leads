@@ -76,15 +76,12 @@ export const WhatsAppMonitor = () => {
             const cleanChunk = chunk.map(n => (n as string).replace(/[^\d]/g, '').slice(-10)).filter(n => n.length >= 7);
             if (cleanChunk.length === 0) continue;
 
-            // Generate fuzzy pattern (digit-by-digit) to handle spaces/formatting
-            const getFuzzyPattern = (num: string) => `%${num.split('').join('%')}%`;
-
-            const orQuery = cleanChunk.map(num => `phone.ilike.${getFuzzyPattern(num)}`).join(',');
-            const orQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.${getFuzzyPattern(num)}`).join(',');
+            const orQuery = cleanChunk.map(num => `phone.ilike.%${num}%`).join(',');
+            const orQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
             
-            const contractorOrQuery = cleanChunk.map(num => `phone.ilike.${getFuzzyPattern(num)}`).join(',');
-            const contractorOrQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.${getFuzzyPattern(num)}`).join(',');
-            const contractorOrQueryOther = cleanChunk.map(num => `other_contact_numbers.ilike.${getFuzzyPattern(num)}`).join(',');
+            const contractorOrQuery = cleanChunk.map(num => `phone.ilike.%${num}%`).join(',');
+            const contractorOrQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
+            const contractorOrQueryOther = cleanChunk.map(num => `other_contact_numbers.ilike.%${num}%`).join(',');
 
             // Run only 2 parallel queries instead of 5 to reduce DB load
             const [leadsData, contractorsData] = await Promise.all([

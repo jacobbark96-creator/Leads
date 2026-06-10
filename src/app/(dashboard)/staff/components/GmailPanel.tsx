@@ -12,6 +12,7 @@ import { EmailDetailModal } from './EmailDetailModal';
 import dynamic from 'next/dynamic';
 import 'react-quill-new/dist/quill.snow.css';
 
+// Updated to react-quill-new for React 18 compatibility
 const ReactQuill = dynamic(() => import('react-quill-new'), { ssr: false });
 
 const decodeGmailBody = (data: string) => {

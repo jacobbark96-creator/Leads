@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { Search, MapPin, Building, Calendar, FileText, CheckCircle } from 'lucide-react';
 import { MarketplaceLeadModal } from '../../../components/MarketplaceLeadModal';
 import { OrderSummaryModal } from '../../../components/OrderSummaryModal';
-import { extractTown } from '../../../lib/utils';
+import { extractTown, getVagueLocation } from '../../../lib/utils';
 import { trackLeadEvent } from '../../../utils/tracking';
 import { RecentlySoldCarousel } from '../../../components/RecentlySoldCarousel';
 
@@ -412,6 +412,11 @@ export default function MarketplacePage() {
                       <MapPin className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                       <span className="truncate">{extractTown(lead.location)}</span>
                     </h3>
+                    {getVagueLocation(lead.latitude, lead.longitude) && (
+                      <p className="text-[10px] text-gray-400 font-medium italic mt-0.5 ml-5">
+                        {getVagueLocation(lead.latitude, lead.longitude)}
+                      </p>
+                    )}
                   </div>
                   <div className="text-right shrink-0">
                     <span className="block text-[10px] uppercase tracking-wider font-semibold text-gray-500">Price</span>

@@ -7,7 +7,7 @@ import {
   ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, 
   Battery, TrendingUp, ChevronRight, Check, Building
 } from 'lucide-react';
-import { extractTown } from '../lib/utils';
+import { extractTown, getVagueLocation } from '../lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { trackLeadEvent } from '../utils/tracking';
 import { MagicCheckoutModal } from './MagicCheckoutModal';
@@ -271,9 +271,16 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <Home className="w-3.5 h-3.5 text-gray-400" /> Property & Installation
                   </h3>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> Location</span>
-                      <DisplayValue value={extractTown(lead.location)} />
+                    <div className="flex justify-between items-start border-b border-gray-50 pb-1">
+                      <span className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" /> Location</span>
+                      <div className="text-right">
+                        <DisplayValue value={extractTown(lead.location)} />
+                        {getVagueLocation(lead.latitude, lead.longitude) && (
+                          <p className="text-[9px] text-gray-400 font-medium italic leading-none mt-0.5">
+                            {getVagueLocation(lead.latitude, lead.longitude)}
+                          </p>
+                        )}
+                      </div>
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><LayoutGrid className="w-3 h-3" /> Roof Size</span>

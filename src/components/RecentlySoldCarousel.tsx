@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { MapPin, Building, Calendar } from 'lucide-react';
 import { Lead } from '@/types';
+import { getVagueLocation } from '@/lib/utils';
 
 interface RecentlySoldCarouselProps {
   soldLeads: Lead[];
@@ -55,6 +56,8 @@ export const RecentlySoldCarousel: React.FC<RecentlySoldCarouselProps> = ({ sold
             <Building className="w-12 h-12 opacity-30" />
           </div>
         )}
+        
+        {/* Vague location moved to content area */}
       </div>
       
       {/* Content Area */}
@@ -65,6 +68,11 @@ export const RecentlySoldCarousel: React.FC<RecentlySoldCarouselProps> = ({ sold
               <MapPin className="w-3.5 h-3.5 text-blue-300 shrink-0" />
               <span className="truncate">{extractTown(lead.location)}</span>
             </h3>
+            {getVagueLocation(lead.latitude, lead.longitude) && (
+              <p className="text-[10px] text-blue-200/70 font-medium italic mt-0.5 ml-5">
+                {getVagueLocation(lead.latitude, lead.longitude)}
+              </p>
+            )}
           </div>
           <div className="text-right shrink-0">
             <span className="text-xs font-bold text-white/90 leading-none line-through decoration-red-500/80 decoration-2">

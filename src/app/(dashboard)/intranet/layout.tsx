@@ -5,7 +5,8 @@ import Link from 'next/link';
 import { 
   Home, Database, Map as MapIcon, BookOpen, 
   Bell, Mail, ChevronDown, DollarSign, Banknote, 
-  Award, LineChart, Folder, ExternalLink, MessageSquare, FileText 
+  Award, LineChart, Folder, ExternalLink, MessageSquare, FileText,
+  Briefcase
 } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
@@ -25,10 +26,11 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
     { name: 'Grants Info', path: '/intranet/grants', icon: Award, id: 'intranet/grants' },
     { name: 'Tracker', path: '/intranet/tracker', icon: LineChart, id: 'intranet/tracker' },
     { name: 'Resources', path: '/intranet/resources', icon: Folder, id: 'intranet/resources' },
-  ].filter(tab => profile?.role !== 'rep' || profile?.permissions?.includes(tab.id));
+    { name: 'Careers', path: '/intranet/careers', icon: Briefcase, id: 'intranet/careers' },
+  ].filter(tab => !['rep', 'growth_manager'].includes(profile?.role || '') || profile?.permissions?.includes(tab.id));
 
   return (
-    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>
+    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager']}>
       <div className="min-h-screen bg-[#f4f7f6] font-sans text-gray-900 selection:bg-emerald-500/30 flex flex-col">
         
         {/* Top Navigation */}
@@ -72,7 +74,7 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
             </div>
 
             <div className="flex items-center gap-2">
-              {(profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'sales' || profile?.role === 'rep') && (
+              {(profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'sales' || profile?.role === 'rep' || profile?.role === 'growth_manager') && (
                 <AdminNotifications />
               )}
               

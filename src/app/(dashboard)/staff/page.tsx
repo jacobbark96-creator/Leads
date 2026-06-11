@@ -16,6 +16,7 @@ import { TeamMessages } from './components/TeamMessages';
 import { LiveFeed } from './components/LiveFeed';
 import { GmailPanel } from './components/GmailPanel';
 import { RepPerformanceCard } from './components/RepPerformanceCard';
+import { GMPerformanceCard } from './components/GMPerformanceCard';
 
 export default function StaffPortal() {
   const { profile } = useAuthStore();
@@ -297,7 +298,13 @@ export default function StaffPortal() {
                 <TasksPanel />
               </div>
               <div className="h-1/2 overflow-hidden">
-                {isAdmin ? <LiveFeed /> : <RepPerformanceCard />}
+                {isAdmin ? (
+                  <LiveFeed />
+                ) : profile.role === 'growth_manager' ? (
+                  <GMPerformanceCard />
+                ) : (
+                  <RepPerformanceCard />
+                )}
               </div>
             </div>
 

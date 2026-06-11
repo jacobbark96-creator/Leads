@@ -27,18 +27,19 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Monitoring', path: '/admin-crm/monitoring', icon: Activity, id: 'admin-crm/monitoring', roles: ['super_admin'] },
     { name: 'Partners', path: '/admin-crm/partners', icon: Briefcase, id: 'admin-crm/partners' },
     { name: 'Openlead Max', path: '/admin-crm/openlead-max', icon: Sparkles, id: 'admin-crm/openlead-max' },
+    { name: 'Recruitment', path: '/admin-crm/recruitment', icon: Briefcase, id: 'admin-crm/recruitment' },
   ].filter(tab => {
     // Role-based filtering for specific tabs
     if (tab.roles && !tab.roles.includes(profile?.role)) return false;
     
-    // Permission-based filtering for reps
-    if (profile?.role === 'rep' && tab.id && !profile?.permissions?.includes(tab.id)) return false;
+    // Permission-based filtering for reps and growth managers
+    if (['rep', 'growth_manager'].includes(profile?.role || '') && tab.id && !profile?.permissions?.includes(tab.id)) return false;
     
     return true;
   });
 
   return (
-    <ProtectedRoute allowedRoles={['admin', 'super_admin', 'rep']}>
+    <ProtectedRoute allowedRoles={['admin', 'super_admin', 'rep', 'growth_manager']}>
       <div className="min-h-screen bg-[#F9FAFB] flex font-sans text-gray-900">
         {/* LEFT SIDEBAR */}
         <aside className="fixed inset-y-0 left-0 w-56 bg-white border-r border-gray-200 flex flex-col z-20 hidden md:flex">

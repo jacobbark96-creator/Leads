@@ -130,7 +130,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
       const { data: usersData } = await supabase
         .from('users')
         .select('id, name, role, email, last_active_at')
-        .in('role', ['admin', 'super_admin', 'rep', 'sales'])
+        .in('role', ['admin', 'super_admin', 'rep', 'sales', 'growth_manager'])
         .neq('id', profile.id);
       if (usersData) {
         setUsers(usersData);

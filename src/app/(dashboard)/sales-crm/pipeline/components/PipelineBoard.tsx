@@ -2,10 +2,11 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { PhoneCall, CheckCircle, Megaphone, Trophy, Briefcase } from 'lucide-react';
+import { PhoneCall, CheckCircle, Megaphone, Trophy, Briefcase, FileText, UserCheck } from 'lucide-react';
 
 interface PipelineBoardProps {
   leads: any[];
+  role?: string;
 }
 
 const COLUMNS = [
@@ -16,8 +17,21 @@ const COLUMNS = [
   { id: 'sold', label: 'Sold', color: 'yellow', icon: Trophy },
 ];
 
-export default function PipelineBoard({ leads }: PipelineBoardProps) {
+const GM_COLUMNS = [
+  { id: 'Callbacks', label: 'Callbacks', color: 'blue', icon: PhoneCall },
+  { id: 'To Sign', label: 'To Sign', color: 'orange', icon: FileText },
+  { id: 'Signed Up', label: 'Signed Up', color: 'green', icon: UserCheck },
+];
+
+export default function PipelineBoard({ leads, role }: PipelineBoardProps) {
+  const isGM = role === 'growth_manager';
+  const columns = isGM ? GM_COLUMNS : COLUMNS;
+
   const getLeadsByStatus = (status: string) => {
+    if (isGM) {
+      return leads.filter(l => l.gm_pipeline_status === status);
+    }
+
     if (status === 'marketed') {
       return leads.filter(l => 
         (l.status === 'marketplace' || (l.status === 'qualified' && !!l.is_marketed)) && 
@@ -66,7 +80,7 @@ export default function PipelineBoard({ leads }: PipelineBoardProps) {
 
   return (
     <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar items-start snap-x snap-mandatory">
-      {COLUMNS.map(col => {
+      {columns.map(col => {
         const columnLeads = getLeadsByStatus(col.id);
         const columnValue = columnLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
         const Icon = col.icon;

@@ -55,8 +55,16 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
     { id: 'sales-crm/fresh', name: 'Unqualified Leads', path: '/sales-crm', icon: Users, exact: true },
     { id: 'sales-crm/qualified', name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle },
     { id: 'sales-crm/import', name: 'Import Leads', path: '/sales-crm/import', icon: Upload },
+    { id: 'sales-crm/my-clients', name: 'My Clients', path: '/sales-crm/my-clients', icon: Users },
+    { id: 'sales-crm/my-sales', name: 'My Sales', path: '/sales-crm/my-sales', icon: BarChart2 },
   ].filter(item => {
-    if (profile?.role !== 'rep') return true;
+    if (profile?.role === 'growth_manager') {
+      return ['staff', 'sales-crm/my-clients', 'sales-crm/my-sales', 'sales-crm/pipeline'].includes(item.id || '');
+    }
+    if (profile?.role !== 'rep') {
+      // Reps and Growth Managers see specific tabs, others see all except growth manager specific ones unless defined
+      return !['sales-crm/my-clients', 'sales-crm/my-sales'].includes(item.id);
+    }
     return profile.permissions?.includes(item.id);
   });
 
@@ -66,11 +74,11 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
 
   // If on lead-v2 or calling-workspace, render exactly what was there (bypassing layout)
   if (pathname === '/sales-crm/lead-v2' || pathname === '/sales-crm/calling-workspace') {
-    return <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>{children}</ProtectedRoute>;
+    return <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager']}>{children}</ProtectedRoute>;
   }
 
   return (
-    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>
+    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager']}>
       <div className="min-h-screen bg-[#F9FAFB] flex font-sans text-gray-900 overflow-hidden">
         {/* MOBILE SIDEBAR OVERLAY */}
         <AnimatePresence>

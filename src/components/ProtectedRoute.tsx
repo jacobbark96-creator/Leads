@@ -115,7 +115,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         router.replace('/pending-approval');
       } else if (profile.role === 'client' && !isProfileComplete && pathname !== '/my-openlead') {
         router.replace('/my-openlead');
-      } else if (profile.role === 'rep') {
+      } else if (['rep', 'growth_manager'].includes(profile.role)) {
         const perms = profile.permissions || [];
         const path = pathname || '';
         let hasAccess = false;
@@ -127,20 +127,32 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         if (path === '/contractor-crm/map' && perms.includes('map')) hasAccess = true;
 
         // Sales CRM
-        if (path === '/sales-crm') {
-          if (perms.includes('sales-crm/fresh')) {
+        if (profile.role === 'growth_manager') {
+          if (path === '/sales-crm/my-clients' || path === '/sales-crm/my-sales' || path.startsWith('/sales-crm/pipeline')) {
             hasAccess = true;
-          } else if (perms.includes('sales-crm')) {
-            if (perms.includes('sales-crm/pipeline')) router.replace('/sales-crm/pipeline');
-            else if (perms.includes('sales-crm/qualified')) router.replace('/sales-crm/qualified');
-            else if (perms.includes('sales-crm/import')) router.replace('/sales-crm/import');
+          } else if (path.startsWith('/sales-crm/lead')) {
+            hasAccess = true; // viewing a lead
+          } else if (path.startsWith('/sales-crm')) {
+            // Redirect growth manager to pipeline if they try to access other sales-crm paths
+            router.replace('/sales-crm/pipeline');
             return;
           }
+        } else {
+          if (path === '/sales-crm') {
+            if (perms.includes('sales-crm/fresh')) {
+              hasAccess = true;
+            } else if (perms.includes('sales-crm')) {
+              if (perms.includes('sales-crm/pipeline')) router.replace('/sales-crm/pipeline');
+              else if (perms.includes('sales-crm/qualified')) router.replace('/sales-crm/qualified');
+              else if (perms.includes('sales-crm/import')) router.replace('/sales-crm/import');
+              return;
+            }
+          }
+          if (path.startsWith('/sales-crm/pipeline') && perms.includes('sales-crm/pipeline')) hasAccess = true;
+          if (path.startsWith('/sales-crm/qualified') && perms.includes('sales-crm/qualified')) hasAccess = true;
+          if (path.startsWith('/sales-crm/import') && perms.includes('sales-crm/import')) hasAccess = true;
+          if (path.startsWith('/sales-crm/lead') && perms.includes('sales-crm')) hasAccess = true; // viewing a lead
         }
-        if (path.startsWith('/sales-crm/pipeline') && perms.includes('sales-crm/pipeline')) hasAccess = true;
-        if (path.startsWith('/sales-crm/qualified') && perms.includes('sales-crm/qualified')) hasAccess = true;
-        if (path.startsWith('/sales-crm/import') && perms.includes('sales-crm/import')) hasAccess = true;
-        if (path.startsWith('/sales-crm/lead') && perms.includes('sales-crm')) hasAccess = true; // viewing a lead
 
         // Contractor CRM
         if (path === '/contractor-crm') {

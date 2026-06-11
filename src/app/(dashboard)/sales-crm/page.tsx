@@ -6,7 +6,7 @@ import { supabase } from '../../../lib/supabase';
 import { Lead } from '../../../types';
 import toast from 'react-hot-toast';
 import { Phone, Mail, Building, User, Users, Calendar as CalendarIcon, MapPin, Search, Trash2, Filter, Clock, Eye, MoreHorizontal, LayoutGrid, CheckCircle2, XCircle, Flame, Plus, ChevronLeft, ChevronRight, MessageSquare, Leaf, Ban, PhoneForwarded, Hash, Database } from 'lucide-react';
-import { useSearchParams } from 'next/navigation';
+import { useSearchParams, useRouter } from 'next/navigation';
 import { AddLeadModal } from '@/components/AddLeadModal';
 import { QualifyLeadModal } from '@/components/QualifyLeadModal';
 import { useAuthStore } from '@/store/authStore';
@@ -33,7 +33,14 @@ const extractTown = (location: string) => {
 
 function LeadProcessingContent() {
   const { profile } = useAuthStore();
+  const router = useRouter();
   const searchParams = useSearchParams();
+
+  useEffect(() => {
+    if (profile?.role === 'growth_manager') {
+      router.replace('/sales-crm/pipeline');
+    }
+  }, [profile, router]);
   const assignedToMe = searchParams.get('assignedToMe') === 'true';
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);

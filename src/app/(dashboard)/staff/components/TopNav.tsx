@@ -72,7 +72,10 @@ export const TopNav = ({ profile }: { profile: any }) => {
       label: 'CRM', 
       icon: Database,
       subLinks: [
-        { href: '/sales-crm', label: 'Sales CRM' },
+        { 
+          href: profile?.role === 'growth_manager' ? '/sales-crm/pipeline' : '/sales-crm', 
+          label: 'Sales CRM' 
+        },
         { href: '/contractor-crm', label: 'Contractor CRM' },
         { href: '/admin-crm', label: 'Admin CRM', roles: ['admin', 'super_admin'] },
       ]
@@ -152,7 +155,7 @@ export const TopNav = ({ profile }: { profile: any }) => {
 
         <div className="flex items-center gap-2 md:gap-4">
           <div className="flex items-center gap-1 md:gap-3">
-            {(profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'sales' || profile?.role === 'rep') && (
+            {(profile?.role === 'admin' || profile?.role === 'super_admin' || profile?.role === 'sales' || profile?.role === 'rep' || profile?.role === 'growth_manager') && (
               <div className="flex items-center text-gray-300 hover:text-white transition-colors scale-90 md:scale-110">
                 <AdminNotifications />
               </div>

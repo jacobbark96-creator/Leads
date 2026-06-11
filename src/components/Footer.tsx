@@ -24,6 +24,7 @@ export const Footer = () => {
               <li><a href="/about" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">About Us</a></li>
               <li><a href="/morals" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Our Morals</a></li>
               <li><a href="/press" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Press Centre</a></li>
+              <li><a href="/careers" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Careers</a></li>
               <li><a href="/login" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Partner Login</a></li>
             </ul>
           </div>

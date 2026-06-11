@@ -1,7 +1,8 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { X, Sparkles } from 'lucide-react';
+import { X, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '@/store/authStore';
 
 interface AddLeadModalProps {
   isOpen: boolean;
@@ -21,6 +22,7 @@ interface AddLeadModalProps {
 }
 
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onLeadAdded, isContractor = false, editData = null }) => {
+  const { profile } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [aiMode, setAiMode] = useState(false);
   const [profileMode, setProfileMode] = useState(false);
@@ -35,9 +37,54 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
     location: '',
     other_contacts: '',
     other_contact_numbers: '',
+    gm_pipeline_status: 'Callbacks',
   });
 
-  React.useEffect(() => {
+  const [duplicates, setDuplicates] = useState<{ leads: any[], contractors: any[] }>({ leads: [], contractors: [] });
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
+
+  useEffect(() => {
+    const checkDuplicates = async () => {
+      if (!formData.phone && !formData.email) {
+        setDuplicates({ leads: [], contractors: [] });
+        return;
+      }
+
+      setCheckingDuplicates(true);
+      try {
+        const phone = formData.phone.trim();
+        const email = formData.email.trim();
+
+        let leadQuery = supabase.from('leads').select('id, name, company, status');
+        let contractorQuery = supabase.from('contractors').select('id, name, company, status');
+
+        const filters = [];
+        if (phone) filters.push(`phone.eq.${phone}`);
+        if (email) filters.push(`email.eq.${email}`);
+
+        if (filters.length > 0) {
+          const filterStr = filters.join(',');
+          leadQuery = leadQuery.or(filterStr);
+          contractorQuery = contractorQuery.or(filterStr);
+        }
+
+        const [leadsRes, contractorsRes] = await Promise.all([leadQuery, contractorQuery]);
+
+        setDuplicates({
+          leads: (leadsRes.data || []).filter(l => l.id !== editData?.id),
+          contractors: (contractorsRes.data || []).filter(c => c.id !== editData?.id)
+        });
+      } catch (e) {
+        console.error('Error checking duplicates:', e);
+      } finally {
+        setCheckingDuplicates(false);
+      }
+    };
+
+    const timer = setTimeout(checkDuplicates, 500);
+    return () => clearTimeout(timer);
+  }, [formData.phone, formData.email, editData]);
+  useEffect(() => {
     if (isOpen && editData) {
       setFormData({
         name: editData.name || '',
@@ -47,6 +94,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         location: editData.location || '',
         other_contacts: editData.other_contacts || '',
         other_contact_numbers: editData.other_contact_numbers || '',
+        gm_pipeline_status: (editData as any).gm_pipeline_status || 'Callbacks',
       });
     } else if (isOpen) {
       setFormData({
@@ -57,13 +105,15 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         location: '',
         other_contacts: '',
         other_contact_numbers: '',
+        gm_pipeline_status: 'Callbacks',
       });
       setAiMode(false);
       setProfileMode(false);
+      setDuplicates({ leads: [], contractors: [] });
     }
   }, [isOpen, editData]);
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen && profileMode) {
       fetchClientsWithoutContractor();
     }
@@ -155,6 +205,10 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           other_contacts: formData.other_contacts || null,
           other_contact_numbers: formData.other_contact_numbers || null,
         };
+
+        if (profile?.role === 'growth_manager' && !isContractor) {
+          updatePayload.gm_pipeline_status = formData.gm_pipeline_status;
+        }
         
         if (isContractor) {
           updatePayload.contact_name = formData.name;
@@ -201,6 +255,12 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           status: status,
           ...(isContractor ? {} : { is_in_pack: true })
         };
+
+        if (profile?.role === 'growth_manager' && !isContractor) {
+          insertPayload.gm_pipeline_status = formData.gm_pipeline_status;
+          insertPayload.is_private = true;
+          insertPayload.assigned_to = profile.id;
+        }
 
         if (isContractor) {
           insertPayload.contact_name = formData.name;
@@ -281,6 +341,12 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         payment_options: parsed.payment_options || null,
         qualification_notes: parsed.qualification_notes || null
       };
+
+      if (profile?.role === 'growth_manager') {
+        insertPayload.gm_pipeline_status = 'Callbacks';
+        insertPayload.is_private = true;
+        insertPayload.assigned_to = profile.id;
+      }
 
       const { data, error } = await supabase
         .from('leads')
@@ -396,6 +462,38 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
               </div>
             ) : (
               <form id="add-lead-form" onSubmit={handleSubmit} className="space-y-4">
+                {/* Duplicate Alert */}
+                {(duplicates.leads.length > 0 || duplicates.contractors.length > 0) && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-800 font-bold text-xs uppercase tracking-wider">
+                      <AlertCircle className="w-4 h-4" />
+                      Potential Duplicate Found
+                    </div>
+                    <div className="space-y-1 text-sm text-amber-700">
+                      {duplicates.leads.map(l => (
+                        <div key={l.id} className="flex items-center justify-between bg-white/50 p-1.5 rounded border border-amber-100">
+                          <span>Lead: <strong>{l.company || l.name}</strong> ({l.status})</span>
+                          <span className="text-[10px] font-bold bg-amber-200 px-1.5 py-0.5 rounded">CRM</span>
+                        </div>
+                      ))}
+                      {duplicates.contractors.map(c => (
+                        <div key={c.id} className="flex items-center justify-between bg-white/50 p-1.5 rounded border border-amber-100">
+                          <span>Contractor: <strong>{c.company || c.name}</strong> ({c.status})</span>
+                          <span className="text-[10px] font-bold bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded">ONBOARDED</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No Duplicate Found Indicator */}
+                {(formData.phone || formData.email) && !checkingDuplicates && duplicates.leads.length === 0 && duplicates.contractors.length === 0 && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-bold uppercase tracking-wider pl-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    No duplicates found
+                  </div>
+                )}
+
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name *</label>
                 <input
@@ -479,6 +577,23 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
+
+              {profile?.role === 'growth_manager' && !isContractor && (
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <label htmlFor="gm_status" className="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-1.5">Growth Manager Pipeline Category</label>
+                  <select
+                    id="gm_status"
+                    value={formData.gm_pipeline_status}
+                    onChange={(e) => setFormData({...formData, gm_pipeline_status: e.target.value})}
+                    className="block w-full border border-blue-200 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+                  >
+                    <option value="Callbacks">Callbacks</option>
+                    <option value="To Sign">To Sign</option>
+                    <option value="Signed Up">Signed Up</option>
+                  </select>
+                  <p className="mt-1.5 text-[10px] text-blue-600 font-medium italic">* This lead will be private to you and super admins.</p>
+                </div>
+              )}
 
               <div className="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse">
                 <button

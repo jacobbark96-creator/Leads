@@ -214,6 +214,7 @@ export default function UserManagement() {
 
   const adminCount = users.filter(u => u.role === 'admin' || u.role === 'super_admin').length;
   const repCount = users.filter(u => u.role === 'rep').length;
+  const growthManagerCount = users.filter(u => u.role === 'growth_manager').length;
   const clientCount = users.filter(u => u.role === 'client').length;
 
   const filteredUsers = users.filter(u => {
@@ -291,7 +292,7 @@ export default function UserManagement() {
       {activeTab === 'users' && (
         <>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1 grid grid-cols-3 gap-4">
+        <div className="flex-1 grid grid-cols-4 gap-4">
           <button 
             onClick={() => setRoleFilter(roleFilter === 'admin' ? 'all' : 'admin')}
             className={`bg-white shadow-sm border rounded-lg p-4 flex items-center justify-between text-left transition-all ${roleFilter === 'admin' ? 'border-purple-500 ring-1 ring-purple-500 bg-purple-50/30' : 'border-gray-200 hover:border-purple-300'}`}
@@ -315,6 +316,19 @@ export default function UserManagement() {
             </div>
             <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
                <Briefcase className="w-4 h-4" />
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setRoleFilter(roleFilter === 'growth_manager' ? 'all' : 'growth_manager')}
+            className={`bg-white shadow-sm border rounded-lg p-4 flex items-center justify-between text-left transition-all ${roleFilter === 'growth_manager' ? 'border-green-500 ring-1 ring-green-500 bg-green-50/30' : 'border-gray-200 hover:border-green-300'}`}
+          >
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Growth Mgr</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{growthManagerCount}</p>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+               <BarChart2 className="w-4 h-4" />
             </div>
           </button>
           
@@ -373,6 +387,7 @@ export default function UserManagement() {
                   <select value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
                     <option value="client">Client / Contractor</option>
                     <option value="rep">Representative</option>
+                    <option value="growth_manager">Growth Manager</option>
                     <option value="sales">Sales Staff</option>
                     <option value="admin">Admin</option>
                   </select>
@@ -434,10 +449,12 @@ export default function UserManagement() {
                           user.role === 'admin' ? 'bg-red-50 text-red-700 border-red-200' : 
                           user.role === 'sales' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
                           user.role === 'rep' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
+                          user.role === 'growth_manager' ? 'bg-green-50 text-green-700 border-green-200' :
                           'bg-gray-50 text-gray-700 border-gray-200'}`}
                     >
                       <option value="client">Contractor / Client</option>
                       <option value="rep">Representative</option>
+                      <option value="growth_manager">Growth Manager</option>
                       <option value="sales">Sales Staff</option>
                       <option value="admin">Admin</option>
                       {profile?.role === 'super_admin' && <option value="super_admin">Super Admin</option>}

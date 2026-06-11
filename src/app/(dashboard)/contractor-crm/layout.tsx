@@ -25,11 +25,11 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
   ].filter(tab => profile?.role !== 'rep' || !tab.id || profile?.permissions?.includes(tab.id));
 
   if (pathname === '/contractor-crm/contractor-v2' || pathname === '/contractor-crm/map') {
-    return <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>{children}</ProtectedRoute>;
+    return <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager']}>{children}</ProtectedRoute>;
   }
 
   return (
-    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep']}>
+    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager']}>
       <div className="min-h-screen bg-[#F9FAFB] flex font-sans text-gray-900">
         {/* LEFT SIDEBAR */}
         <aside className="fixed inset-y-0 left-0 w-56 bg-white border-r border-gray-200 flex flex-col z-20 hidden md:flex">
@@ -128,7 +128,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
             </div>
 
             <div className="flex items-center gap-3">
-              {profile?.role && ['admin', 'super_admin', 'rep'].includes(profile.role) && (
+              {profile?.role && ['admin', 'super_admin', 'rep', 'growth_manager'].includes(profile.role) && (
                 <button
                   onClick={() => {
                     const url = new URL(window.location.href);

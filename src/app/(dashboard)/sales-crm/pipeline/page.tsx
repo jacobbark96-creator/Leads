@@ -36,108 +36,118 @@ export default function PipelinePage() {
   const fetchUsers = async () => {
     const { data } = await supabase
       .from('users')
-      .select('id, name')
+      .select('id, name, role')
       .neq('role', 'client')
       .order('name');
     if (data) setUsers(data);
   };
 
   const fetchPipeline = async () => {
-    setLoading(true);
-    let query = supabase
-      .from('leads')
-      .select(`
-        *,
-        categories!leads_category_id_fkey(name),
-        users!leads_assigned_to_fkey(name),
-        lead_purchases(
-          client_id,
-          clients(
-            user_id,
-            users(email)
+    try {
+      setLoading(true);
+      let query = supabase
+        .from('leads')
+        .select(`
+          *,
+          categories!leads_category_id_fkey(name),
+          users!leads_assigned_to_fkey(name),
+          lead_purchases(
+            client_id,
+            clients(
+              user_id,
+              users(email)
+            )
           )
-        )
-      `)
-      .in('status', ['call back', 'qualified', 'marketplace', 'awaiting_sales', 'sold'])
-      .order('created_at', { ascending: false });
+        `)
+        .order('created_at', { ascending: false });
 
-    if (profile?.role !== 'super_admin' || selectedUser === 'me') {
-      query = query.eq('assigned_to', profile?.id);
-    } else if (selectedUser !== 'all') {
-      query = query.eq('assigned_to', selectedUser);
-    }
-
-    const { data, error } = await query;
-    if (error) {
-      console.error('Error fetching pipeline:', error);
-    } else if (data) {
-      // Fetch latest activity for each lead to get "time since last activity"
-      // We can fetch activities that match these leads.
-      const leadIds = data.map(l => l.id);
-      if (leadIds.length > 0) {
-        const { data: actData } = await supabase
-          .from('activities')
-          .select('lead_id, created_at')
-          .in('lead_id', leadIds)
-          .order('created_at', { ascending: false });
-        
-        const latestActivities: Record<string, string> = {};
-        if (actData) {
-          actData.forEach(act => {
-            if (!latestActivities[act.lead_id]) {
-              latestActivities[act.lead_id] = act.created_at;
-            }
-          });
-        }
-        
-        const enhancedLeads = data.map(lead => {
-          const isLeadShare = (lead.status === 'marketplace' || lead.purchase_count > 0) && (lead.is_exclusive_sold !== true);
-          
-          const getEmail = (p: any) => {
-            const client = Array.isArray(p.clients) ? p.clients[0] : p.clients;
-            const user = Array.isArray(client?.users) ? client.users[0] : client?.users;
-            return user?.email?.toLowerCase()?.trim() || '';
-          };
-
-          const validPurchases = lead.lead_purchases?.filter((p: any) => {
-            const email = getEmail(p);
-            return email && !email.includes('test@example.com') && email !== '';
-          }) || [];
-          
-          const validPurchaseCount = validPurchases.length;
-          const hasTestPurchase = lead.lead_purchases?.some((p: any) => {
-            const email = getEmail(p);
-            return email && email.includes('test@example.com');
-          });
-
-          let commissionValue = 0;
-          if (isLeadShare) {
-            commissionValue = validPurchaseCount * 33;
-          } else {
-            // Exclusive or Manual
-            const isManualSold = (lead.status === 'sold' || lead.marked_as_sold) && lead.purchase_count === 0;
-            const isExclusiveMarketplaceSold = lead.is_exclusive_sold && validPurchaseCount > 0;
-            
-            if (isManualSold || isExclusiveMarketplaceSold) {
-              commissionValue = calculateCommission(lead.exclusive_price || lead.price, false);
-            }
-          }
-
-          return {
-            ...lead,
-            is_leadshare: isLeadShare,
-            has_test_purchase: hasTestPurchase,
-            valid_purchase_count: validPurchaseCount,
-            commission_value: commissionValue,
-            last_activity_at: latestActivities[lead.id] || lead.created_at,
-          };
-        });
-        setLeads(enhancedLeads);
+      if (profile?.role === 'growth_manager') {
+        // Growth Managers see their leads (private or not)
+        query = query.eq('assigned_to', profile.id);
       } else {
-        setLeads([]);
+        query = query.in('status', ['call back', 'qualified', 'marketplace', 'awaiting_sales', 'sold']);
+        
+        if (profile?.role !== 'super_admin' || selectedUser === 'me') {
+          query = query.eq('assigned_to', profile?.id);
+        } else if (selectedUser !== 'all') {
+          query = query.eq('assigned_to', selectedUser);
+        }
       }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error fetching pipeline:', error);
+      } else if (data) {
+        // Fetch latest activity for each lead to get "time since last activity"
+        const leadIds = data.map(l => l.id);
+        if (leadIds.length > 0) {
+          const { data: actData } = await supabase
+            .from('activities')
+            .select('lead_id, created_at')
+            .in('lead_id', leadIds)
+            .order('created_at', { ascending: false });
+          
+          const latestActivities: Record<string, string> = {};
+          if (actData) {
+            actData.forEach(act => {
+              if (!latestActivities[act.lead_id]) {
+                latestActivities[act.lead_id] = act.created_at;
+              }
+            });
+          }
+          
+          const enhancedLeads = data.map(lead => {
+            const isLeadShare = (lead.status === 'marketplace' || lead.purchase_count > 0) && (lead.is_exclusive_sold !== true);
+            
+            const getEmail = (p: any) => {
+              const client = Array.isArray(p.clients) ? p.clients[0] : p.clients;
+              const user = Array.isArray(client?.users) ? client.users[0] : client?.users;
+              return user?.email?.toLowerCase()?.trim() || '';
+            };
+
+            const validPurchases = lead.lead_purchases?.filter((p: any) => {
+              const email = getEmail(p);
+              return email && !email.includes('test@example.com') && email !== '';
+            }) || [];
+            
+            const validPurchaseCount = validPurchases.length;
+            const hasTestPurchase = lead.lead_purchases?.some((p: any) => {
+              const email = getEmail(p);
+              return email && email.includes('test@example.com');
+            });
+
+            let commissionValue = 0;
+            if (isLeadShare) {
+              commissionValue = validPurchaseCount * 33;
+            } else {
+              // Exclusive or Manual
+              const isManualSold = (lead.status === 'sold' || lead.marked_as_sold) && lead.purchase_count === 0;
+              const isExclusiveMarketplaceSold = lead.is_exclusive_sold && validPurchaseCount > 0;
+              
+              if (isManualSold || isExclusiveMarketplaceSold) {
+                commissionValue = calculateCommission(lead.exclusive_price || lead.price, false);
+              }
+            }
+
+            return {
+              ...lead,
+              is_leadshare: isLeadShare,
+              has_test_purchase: hasTestPurchase,
+              valid_purchase_count: validPurchaseCount,
+              commission_value: commissionValue,
+              last_activity_at: latestActivities[lead.id] || lead.created_at,
+            };
+          });
+          setLeads(enhancedLeads);
+        } else {
+          setLeads([]);
+        }
+      }
+    } catch (err) {
+      console.error('Pipeline fetch failed:', err);
+    } finally {
+      setLoading(false);
     }
-    setLoading(false);
   };
 
   if (!profile) return null;
@@ -226,6 +236,10 @@ export default function PipelinePage() {
   const conversionRate = qualifiedAndSold.length > 0 
     ? ((soldLeadsInView.length / qualifiedAndSold.length) * 100).toFixed(1) 
     : '0.0';
+
+  const viewingRole = selectedUser === 'me' 
+    ? profile.role 
+    : users.find(u => u.id === selectedUser)?.role || 'rep';
 
   return (
     <div className="space-y-6">
@@ -380,7 +394,7 @@ export default function PipelinePage() {
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         </div>
       ) : (
-        <PipelineBoard leads={visibleLeads} />
+        <PipelineBoard leads={visibleLeads} role={viewingRole} />
       )}
     </div>
   );

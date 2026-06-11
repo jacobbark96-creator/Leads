@@ -122,6 +122,20 @@ export async function POST(req: Request) {
               console.error('Error adding topup balance:', error);
             } else {
               console.log(`Successfully added £${amount} to client ${clientId}`);
+              
+              // Record top-up transaction
+              await supabaseAdmin
+                .from('client_transactions')
+                .insert({
+                  client_id: clientId,
+                  amount: amount,
+                  type: 'topup',
+                  description: 'Stripe top-up',
+                  metadata: {
+                    stripe_session_id: session.id,
+                    amount: amount
+                  }
+                });
             }
           }
         } else {

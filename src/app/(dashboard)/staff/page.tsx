@@ -17,6 +17,7 @@ import { LiveFeed } from './components/LiveFeed';
 import { GmailPanel } from './components/GmailPanel';
 import { RepPerformanceCard } from './components/RepPerformanceCard';
 import { GMPerformanceCard } from './components/GMPerformanceCard';
+import { RepMonitoringCard } from './components/RepMonitoringCard';
 
 export default function StaffPortal() {
   const { profile } = useAuthStore();
@@ -189,6 +190,7 @@ export default function StaffPortal() {
   if (!profile) return null;
 
   const isAdmin = ['admin', 'super_admin'].includes(profile.role);
+  const canMonitor = profile.permissions?.includes('can_monitor_calls');
 
   return (
     <div className="min-h-screen bg-black overflow-x-hidden font-sans selection:bg-blue-500/30">
@@ -310,12 +312,12 @@ export default function StaffPortal() {
 
             {/* Column 2: News & Conditional Component */}
             <div className="flex flex-col gap-4 h-[500px] xl:h-full min-h-0">
-              <div className={`${isAdmin ? "h-1/2" : "h-full"} overflow-hidden`}>
+              <div className={`${(isAdmin || canMonitor) ? "h-1/2" : "h-full"} overflow-hidden`}>
                 <NewsPanel />
               </div>
-              {isAdmin && (
+              {(isAdmin || canMonitor) && (
                 <div className="h-1/2 overflow-hidden">
-                  <GmailPanel />
+                  {isAdmin ? <GmailPanel /> : <RepMonitoringCard />}
                 </div>
               )}
             </div>

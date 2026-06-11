@@ -665,7 +665,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                           { id: 'sales-crm/fresh', label: 'Fresh Leads' },
                           { id: 'sales-crm/qualified', label: 'Qualified Leads' },
                           { id: 'sales-crm/import', label: 'Import Leads' },
-                          { id: 'can_add_leads', label: 'Allow Add Lead Button' }
+                          { id: 'can_add_leads', label: 'Allow Add Lead Button' },
+                          { id: 'can_monitor_calls', label: 'Allow Call Monitoring' }
                         ]
                       },
                       { 

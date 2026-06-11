@@ -187,20 +187,23 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
         // Intranet
         if (path === '/intranet') {
-          if (perms.includes('intranet/pricing')) {
+          if (perms.includes('intranet/pricing') || perms.includes('intranet/leaderboard')) {
             hasAccess = true;
           } else if (perms.includes('intranet')) {
             if (perms.includes('intranet/commission')) router.replace('/intranet/commission');
             else if (perms.includes('intranet/grants')) router.replace('/intranet/grants');
             else if (perms.includes('intranet/tracker')) router.replace('/intranet/tracker');
             else if (perms.includes('intranet/resources')) router.replace('/intranet/resources');
+            else if (perms.includes('intranet/careers')) router.replace('/intranet/careers');
             return;
           }
         }
+        if (path.startsWith('/intranet/leaderboard') && perms.includes('intranet/leaderboard')) hasAccess = true;
         if (path.startsWith('/intranet/commission') && perms.includes('intranet/commission')) hasAccess = true;
         if (path.startsWith('/intranet/grants') && perms.includes('intranet/grants')) hasAccess = true;
         if (path.startsWith('/intranet/tracker') && perms.includes('intranet/tracker')) hasAccess = true;
         if (path.startsWith('/intranet/resources') && perms.includes('intranet/resources')) hasAccess = true;
+        if (path.startsWith('/intranet/careers') && perms.includes('intranet/careers')) hasAccess = true;
         
         if (!hasAccess && path !== '/staff' && path !== '/') {
           router.replace('/staff');

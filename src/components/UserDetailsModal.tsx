@@ -694,6 +694,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                         id: 'intranet', 
                         label: 'Intranet',
                         subTabs: [
+                          { id: 'intranet/leaderboard', label: 'Leaderboard' },
                           { id: 'intranet/pricing', label: 'Pricing Matrix' },
                           { id: 'intranet/commission', label: 'Commission' },
                           { id: 'intranet/grants', label: 'Grants Info' },

@@ -71,8 +71,6 @@ export function RepMonitoringCard() {
   const canMonitor = profile?.role === 'super_admin' || profile?.permissions?.includes('can_monitor_calls');
 
   useEffect(() => {
-    if (!canMonitor) return;
-
     const fetchMonitoringData = async (isBackground = false) => {
       try {
         if (!isBackground) setLoading(true);
@@ -82,10 +80,16 @@ export function RepMonitoringCard() {
         
         const data = await res.json();
         if (data.representatives) {
-          setRepresentatives(data.representatives);
+          // 1. Filter out Super Admins
+          // 2. Sort by total duration descending
+          const filteredAndSorted = data.representatives
+            .filter((rep: any) => rep.role !== 'super_admin')
+            .sort((a: any, b: any) => (b.totalDuration || 0) - (a.totalDuration || 0));
+
+          setRepresentatives(filteredAndSorted);
           
           if (selectedRep) {
-            const updated = data.representatives.find((r: any) => r.id === selectedRep.id);
+            const updated = filteredAndSorted.find((r: any) => r.id === selectedRep.id);
             if (updated) setSelectedRep(updated);
           }
         }
@@ -99,9 +103,7 @@ export function RepMonitoringCard() {
     fetchMonitoringData();
     const interval = setInterval(() => fetchMonitoringData(true), 30000); // Update every 30s
     return () => clearInterval(interval);
-  }, [canMonitor]);
-
-  if (!canMonitor) return null;
+  }, []);
 
   return (
     <GlassCard className="h-full flex flex-col overflow-hidden">
@@ -191,15 +193,20 @@ export function RepMonitoringCard() {
             {representatives.map((rep) => (
               <button
                 key={rep.id}
-                onClick={() => setSelectedRep(rep)}
-                className="w-full p-3 flex items-center justify-between bg-white/[0.02] hover:bg-white/[0.05] border border-transparent hover:border-white/10 rounded-xl transition-all group"
+                onClick={() => canMonitor && setSelectedRep(rep)}
+                disabled={!canMonitor}
+                className={`w-full p-3 flex items-center justify-between bg-white/[0.02] border border-transparent rounded-xl transition-all group ${
+                  canMonitor ? 'hover:bg-white/[0.05] hover:border-white/10 cursor-pointer' : 'cursor-default'
+                }`}
               >
                 <div className="flex items-center gap-3 text-left">
                   <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center text-blue-400 font-black text-xs">
                     {rep.name.charAt(0)}
                   </div>
                   <div>
-                    <p className="text-xs font-bold text-white group-hover:text-blue-400 transition-colors">{rep.name}</p>
+                    <p className={`text-xs font-bold text-white transition-colors ${canMonitor ? 'group-hover:text-blue-400' : ''}`}>
+                      {rep.name}
+                    </p>
                     <div className="flex items-center gap-2 mt-0.5">
                       <div className="flex items-center gap-1 text-[10px] text-gray-500 font-bold">
                         <Phone className="w-2.5 h-2.5" />
@@ -213,9 +220,12 @@ export function RepMonitoringCard() {
                     </div>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="text-xs font-black text-white">{rep.formattedDuration}</p>
-                  <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Time</p>
+                <div className="flex items-center gap-3">
+                  <div className="text-right">
+                    <p className="text-xs font-black text-white">{rep.formattedDuration}</p>
+                    <p className="text-[10px] text-gray-500 font-bold uppercase tracking-wider">Total Time</p>
+                  </div>
+                  {canMonitor && <ChevronRight className="w-4 h-4 text-gray-700 group-hover:text-gray-400 transition-colors" />}
                 </div>
               </button>
             ))}

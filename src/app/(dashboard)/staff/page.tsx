@@ -312,14 +312,12 @@ export default function StaffPortal() {
 
             {/* Column 2: News & Conditional Component */}
             <div className="flex flex-col gap-4 h-[500px] xl:h-full min-h-0">
-              <div className={`${(isAdmin || canMonitor) ? "h-1/2" : "h-full"} overflow-hidden`}>
+              <div className="h-1/2 overflow-hidden">
                 <NewsPanel />
               </div>
-              {(isAdmin || canMonitor) && (
-                <div className="h-1/2 overflow-hidden">
-                  {isAdmin ? <GmailPanel /> : <RepMonitoringCard />}
-                </div>
-              )}
+              <div className="h-1/2 overflow-hidden">
+                {isAdmin ? <GmailPanel /> : <RepMonitoringCard />}
+              </div>
             </div>
 
             {/* Column 3: WhatsApp/Gmail Monitor (Double Height) */}

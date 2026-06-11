@@ -1,30 +1,44 @@
 import { MetadataRoute } from 'next';
+import { supabase } from '@/lib/supabase';
 
-export const dynamic = 'force-static';
+export const revalidate = 3600; // Revalidate every hour
 
-export default function sitemap(): MetadataRoute.Sitemap {
-  // Use the production URL explicitly for SEO
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = 'https://openlead.co.uk';
 
   // Core static public routes
-  const routes = [
-    '',          // Home page
-    '/about',    // About Us page
-    '/services', // Services / What We Do page
-    '/morals',   // Our Morals page
-    '/login',    // Login page
+  const staticRoutes = [
+    '',
+    '/about',
+    '/services',
+    '/morals',
+    '/careers',
+    '/press',
+    '/privacy',
+    '/terms',
+    '/anti-bribery',
+    '/login',
   ];
 
-  const sitemapEntries = routes.map((route) => ({
+  const staticEntries = staticRoutes.map((route) => ({
     url: `${baseUrl}${route}`,
-    lastModified: new Date().toISOString().split('T')[0], // typically sitemaps use YYYY-MM-DD
-    changeFrequency: 'weekly' as const,
+    lastModified: new Date().toISOString().split('T')[0],
+    changeFrequency: 'daily' as const,
     priority: route === '' ? 1.0 : 0.8,
   }));
 
-  // If you ever add a public blog or public lead directory in the future,
-  // you would fetch those dynamic items from Supabase here and append them
-  // to the `sitemapEntries` array before returning.
+  // Fetch dynamic press posts
+  const { data: posts } = await supabase
+    .from('press_posts')
+    .select('slug, updated_at')
+    .eq('is_published', true);
 
-  return sitemapEntries;
+  const pressEntries = (posts || []).map((post) => ({
+    url: `${baseUrl}/press/${post.slug}`,
+    lastModified: new Date(post.updated_at || new Date()).toISOString().split('T')[0],
+    changeFrequency: 'weekly' as const,
+    priority: 0.6,
+  }));
+
+  return [...staticEntries, ...pressEntries];
 }

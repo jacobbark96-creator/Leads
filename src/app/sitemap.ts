@@ -40,5 +40,19 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     priority: 0.6,
   }));
 
-  return [...staticEntries, ...pressEntries];
+  // Fetch dynamic job posts (strictly public and published only)
+  const { data: jobs } = await supabase
+    .from('jobs')
+    .select('id, updated_at')
+    .eq('status', 'published')
+    .eq('is_internal', false);
+
+  const jobEntries = (jobs || []).map((job) => ({
+    url: `${baseUrl}/careers/${job.id}`,
+    lastModified: new Date(job.updated_at || new Date()).toISOString().split('T')[0],
+    changeFrequency: 'weekly' as const,
+    priority: 0.7,
+  }));
+
+  return [...staticEntries, ...pressEntries, ...jobEntries];
 }

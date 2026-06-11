@@ -3,6 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Briefcase, MapPin, Clock, ArrowRight } from 'lucide-react';
 
+import Link from 'next/link';
+
 interface Job {
   id: string;
   title: string;
@@ -76,10 +78,10 @@ export default function CareersPage() {
                   {job.description}
                 </p>
               </div>
-              <button className="w-full inline-flex items-center justify-center px-6 py-3 border border-openlead-blue text-openlead-blue font-bold rounded-xl hover:bg-openlead-blue hover:text-white transition-all group">
-                Apply Now
+              <Link href={`/careers/${job.id}`} className="w-full inline-flex items-center justify-center px-6 py-3 border border-openlead-blue text-openlead-blue font-bold rounded-xl hover:bg-openlead-blue hover:text-white transition-all group">
+                View Details & Apply
                 <ArrowRight className="ml-2 w-4 h-4 group-hover:translate-x-1 transition-transform" />
-              </button>
+              </Link>
             </div>
           ))}
         </div>

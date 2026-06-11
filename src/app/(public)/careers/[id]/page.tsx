@@ -15,9 +15,15 @@ import {
   ShieldCheck, 
   Zap,
   Globe,
-  Wallet
+  Wallet,
+  Building2,
+  Calendar,
+  Users2
 } from 'lucide-react';
 import Link from 'next/link';
+import { JobPageClient } from './JobPageClient';
+import { ShareButton } from './ShareButton';
+import { HeroImage } from './HeroImage';
 
 interface Props {
   params: Promise<{ id: string }>;
@@ -65,148 +71,202 @@ export default async function JobPage({ params }: Props) {
     notFound();
   }
 
-  const heroImageUrl = `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent('A modern, high-tech office environment with natural light, collaborative workspace, professional and minimalist aesthetic, soft bokeh, high resolution, photography')}&image_size=landscape_16_9`;
+  // Improved AI Image Prompt - Simplified for reliability
+  const heroImageUrl = "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Modern+minimalist+tech+office+collaborative+workspace+luxury+lighting+high+resolution&image_size=landscape_16_9";
 
   return (
-    <div className="min-h-screen bg-slate-50/50">
-      {/* Hero Header */}
-      <div className="relative h-[40vh] min-h-[400px] w-full overflow-hidden bg-slate-900">
-        <img 
-          src={heroImageUrl} 
-          alt="Office Environment" 
-          className="absolute inset-0 h-full w-full object-cover opacity-60 mix-blend-overlay"
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/40 to-transparent" />
-        
-        <div className="relative h-full max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col justify-end pb-12">
-          <Link 
-            href="/careers" 
-            className="inline-flex items-center text-sm font-bold text-white/70 hover:text-white transition-colors mb-8 group w-fit"
-          >
-            <ArrowLeft className="w-4 h-4 mr-2 group-hover:-translate-x-1 transition-transform" />
-            Back to Careers
-          </Link>
-          
-          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-            <div className="max-w-2xl">
-              <div className="flex items-center gap-3 mb-4">
-                <span className="px-3 py-1 rounded-full bg-openlead-blue/20 border border-openlead-blue/30 text-openlead-blue text-[10px] font-black uppercase tracking-widest">
-                  {job.type}
-                </span>
-                <span className="flex items-center gap-1.5 text-white/60 text-xs font-medium">
-                  <Globe className="w-3.5 h-3.5" />
-                  Openlead Global
-                </span>
+    <div className="min-h-screen bg-[#F8FAFC]">
+      {/* Dynamic Background Elements */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-openlead-blue/5 blur-[120px] rounded-full animate-pulse" />
+        <div className="absolute top-[20%] -right-[10%] w-[30%] h-[30%] bg-emerald-400/5 blur-[100px] rounded-full" />
+      </div>
+
+      <div className="relative z-10">
+        {/* Modern SaaS Hero */}
+        <div className="relative pt-12 pb-24 overflow-hidden">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <Link 
+              href="/careers" 
+              className="inline-flex items-center text-sm font-bold text-slate-400 hover:text-openlead-blue transition-all mb-12 group"
+            >
+              <div className="p-2 rounded-full bg-white shadow-sm border border-slate-100 mr-3 group-hover:bg-openlead-blue/5 transition-colors">
+                <ArrowLeft className="w-4 h-4 group-hover:-translate-x-0.5 transition-transform" />
               </div>
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tight leading-none mb-6">
-                {job.title}
-              </h1>
-              <div className="flex flex-wrap gap-6">
-                <div className="flex items-center gap-2 text-white/80 font-bold text-sm">
-                  <MapPin className="w-4 h-4 text-openlead-blue" />
-                  {job.location}
+              Back to Careers
+            </Link>
+
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+              <div className="space-y-8">
+                <div className="space-y-4">
+                  <div className="flex flex-wrap gap-3">
+                    <span className="px-4 py-1.5 rounded-full bg-openlead-blue text-white text-[10px] font-black uppercase tracking-widest shadow-lg shadow-blue-500/20">
+                      {job.type}
+                    </span>
+                    <span className="px-4 py-1.5 rounded-full bg-white border border-slate-100 text-slate-500 text-[10px] font-black uppercase tracking-widest flex items-center gap-2">
+                      <div className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      Actively Hiring
+                    </span>
+                  </div>
+                  <h1 className="text-5xl md:text-6xl lg:text-7xl font-black text-slate-900 tracking-tight leading-[1.1]">
+                    {job.title}
+                  </h1>
+                  <div className="flex flex-wrap gap-8 pt-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                        <MapPin className="w-5 h-5 text-openlead-blue" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Location</p>
+                        <p className="text-sm font-black text-slate-900">{job.location}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                        <Wallet className="w-5 h-5 text-emerald-500" />
+                      </div>
+                      <div>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Salary</p>
+                        <p className="text-sm font-black text-slate-900">{job.salary_range}</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
-                <div className="flex items-center gap-2 text-white/80 font-bold text-sm">
-                  <Wallet className="w-4 h-4 text-openlead-blue" />
-                  {job.salary_range}
+
+                <div className="flex flex-col md:flex-row md:items-center gap-6">
+                  <JobPageClient job={{ id: job.id, title: job.title }} variant="hero" />
+                </div>
+              </div>
+
+              <div className="relative">
+                <div className="absolute -inset-4 bg-gradient-to-tr from-openlead-blue/20 to-emerald-400/20 blur-3xl rounded-[40px] opacity-50" />
+                <div className="relative aspect-[16/10] rounded-[40px] overflow-hidden border-[8px] border-white shadow-2xl">
+                  <HeroImage src={heroImageUrl} alt="Openlead Culture" />
+                  <div className="absolute inset-0 bg-gradient-to-t from-slate-900/40 to-transparent" />
+                  <div className="absolute bottom-6 left-6 right-6 p-6 bg-white/10 backdrop-blur-md border border-white/20 rounded-2xl text-white">
+                    <div className="flex items-center gap-4">
+                      <div className="flex -space-x-3">
+                        {[1,2,3].map(i => (
+                          <div key={i} className="w-10 h-10 rounded-full border-2 border-white bg-slate-200 overflow-hidden">
+                            <img src={`https://i.pravatar.cc/100?u=${i + 10}`} alt="Team" />
+                          </div>
+                        ))}
+                      </div>
+                      <div>
+                        <p className="text-xs font-bold">Join 50+ teammates</p>
+                        <p className="text-[10px] opacity-70 uppercase tracking-widest">at Openlead Global</p>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>
-            
-            <button className="md:hidden w-full py-4 bg-openlead-blue text-white font-black rounded-2xl shadow-2xl shadow-blue-500/20 active:scale-[0.98] transition-all">
-              Apply Now
-            </button>
           </div>
         </div>
-      </div>
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-          {/* Left Column: Details */}
-          <div className="lg:col-span-8 space-y-16">
-            {/* About Section */}
-            <section className="bg-white rounded-[32px] p-8 md:p-12 shadow-sm border border-slate-100">
-              <div className="flex items-center gap-3 mb-8">
-                <div className="p-2 rounded-xl bg-blue-50">
-                  <Sparkles className="w-6 h-6 text-openlead-blue" />
-                </div>
-                <h2 className="text-2xl font-black text-slate-900 tracking-tight">About the Role</h2>
-              </div>
-              <div className="prose prose-slate max-w-none">
-                <p className="text-lg text-slate-600 leading-relaxed whitespace-pre-wrap">
-                  {job.description}
-                </p>
-              </div>
-            </section>
-
-            {/* Requirements Section */}
-            {job.requirements && (
-              <section className="bg-white rounded-[32px] p-8 md:p-12 shadow-sm border border-slate-100">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="p-2 rounded-xl bg-amber-50">
-                    <Zap className="w-6 h-6 text-amber-500" />
+        {/* Content Section */}
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-32">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+            <div className="lg:col-span-8 space-y-12">
+              {/* Modern Bento-style Sections */}
+              <div className="bg-white rounded-[40px] p-10 md:p-14 shadow-sm border border-slate-100 hover:shadow-md transition-shadow duration-500">
+                <div className="flex items-center gap-4 mb-10">
+                  <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center">
+                    <Sparkles className="w-6 h-6 text-openlead-blue" />
                   </div>
-                  <h2 className="text-2xl font-black text-slate-900 tracking-tight">What You'll Need</h2>
+                  <h2 className="text-3xl font-black text-slate-900 tracking-tight">The Opportunity</h2>
                 </div>
-                <div className="text-lg text-slate-600 leading-relaxed whitespace-pre-wrap">
-                  {job.requirements}
-                </div>
-              </section>
-            )}
-
-            {/* Benefits Section */}
-            {job.benefits && (
-              <section className="bg-emerald-50/50 rounded-[32px] p-8 md:p-12 border border-emerald-100">
-                <div className="flex items-center gap-3 mb-8">
-                  <div className="p-2 rounded-xl bg-emerald-100">
-                    <ShieldCheck className="w-6 h-6 text-emerald-600" />
-                  </div>
-                  <h2 className="text-2xl font-black text-emerald-900 tracking-tight">The Perks</h2>
-                </div>
-                <div className="text-lg text-emerald-800 leading-relaxed whitespace-pre-wrap">
-                  {job.benefits}
-                </div>
-              </section>
-            )}
-          </div>
-
-          {/* Right Column: Sticky CTA */}
-          <div className="lg:col-span-4">
-            <div className="sticky top-32 space-y-6">
-              <div className="bg-white rounded-[32px] p-8 shadow-xl shadow-slate-200/50 border border-slate-100">
-                <h3 className="text-xl font-black text-slate-900 mb-2">Ready to apply?</h3>
-                <p className="text-sm text-slate-500 mb-8">Join our fast-growing team and help us build the future of lead generation.</p>
-                
-                <div className="space-y-4">
-                  <button className="w-full py-5 bg-openlead-blue text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-openlead-blue/90 hover:-translate-y-1 active:scale-[0.98] transition-all flex items-center justify-center gap-2">
-                    Submit Application
-                    <ArrowLeft className="w-4 h-4 rotate-180" />
-                  </button>
-                  <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">
-                    Takes less than 5 minutes
+                <div className="prose prose-slate max-w-none">
+                  <p className="text-lg text-slate-600 leading-relaxed whitespace-pre-wrap font-medium">
+                    {job.description}
                   </p>
                 </div>
+              </div>
 
-                <div className="mt-8 pt-8 border-t border-slate-50 space-y-4">
-                  <div className="flex items-center gap-3 text-slate-600">
-                    <CheckCircle className="w-5 h-5 text-emerald-500" />
-                    <span className="text-sm font-bold">Fast-track response</span>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                {job.requirements && (
+                  <div className="bg-white rounded-[40px] p-10 shadow-sm border border-slate-100 group hover:border-openlead-blue/20 transition-all duration-500">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-50 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                      <Zap className="w-6 h-6 text-amber-500" />
+                    </div>
+                    <h3 className="text-2xl font-black text-slate-900 mb-6 tracking-tight">Requirements</h3>
+                    <div className="text-slate-600 leading-relaxed whitespace-pre-wrap text-sm font-medium">
+                      {job.requirements}
+                    </div>
                   </div>
-                  <div className="flex items-center gap-3 text-slate-600">
-                    <CheckCircle className="w-5 h-5 text-emerald-500" />
-                    <span className="text-sm font-bold">Remote friendly</span>
+                )}
+
+                <div className="bg-slate-900 rounded-[40px] p-10 text-white relative overflow-hidden group">
+                  <div className="absolute -right-8 -bottom-8 w-32 h-32 bg-openlead-blue/20 blur-3xl rounded-full" />
+                  <div className="w-12 h-12 rounded-2xl bg-white/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-transform">
+                    <Building2 className="w-6 h-6 text-openlead-blue" />
                   </div>
+                  <h3 className="text-2xl font-black mb-6 tracking-tight">Our Culture</h3>
+                  <p className="text-sm text-slate-400 leading-relaxed font-medium">
+                    We're a team of innovators, thinkers, and builders. We value transparency, high-autonomy, and speed. Join us in shaping the future of lead generation.
+                  </p>
                 </div>
               </div>
 
-              {/* Share Card */}
-              <div className="bg-slate-900 rounded-[32px] p-8 text-white">
-                <h4 className="text-sm font-black uppercase tracking-widest mb-4">Know someone?</h4>
-                <p className="text-xs text-white/60 mb-6">Share this opportunity with your network and help them find their next big role.</p>
-                <button className="w-full py-3 bg-white/10 hover:bg-white/20 text-white text-xs font-bold rounded-xl transition-all">
-                  Copy Link
-                </button>
+              {job.benefits && (
+                <div className="bg-emerald-50/50 rounded-[40px] p-10 md:p-14 border border-emerald-100 relative overflow-hidden">
+                  <div className="absolute top-0 right-0 p-12 opacity-5">
+                    <ShieldCheck className="w-48 h-48 text-emerald-600" />
+                  </div>
+                  <div className="flex items-center gap-4 mb-10">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-100 flex items-center justify-center">
+                      <ShieldCheck className="w-6 h-6 text-emerald-600" />
+                    </div>
+                    <h2 className="text-3xl font-black text-emerald-900 tracking-tight">Perks & Benefits</h2>
+                  </div>
+                  <div className="text-lg text-emerald-800 leading-relaxed whitespace-pre-wrap font-bold">
+                    {job.benefits}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            <div className="lg:col-span-4">
+              <div className="sticky top-32 space-y-6">
+                <div className="bg-white rounded-[40px] p-10 shadow-2xl shadow-slate-200/60 border border-slate-100 relative overflow-hidden">
+                  <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-openlead-blue to-emerald-400" />
+                  
+                  <div className="space-y-8">
+                    <div>
+                      <h3 className="text-2xl font-black text-slate-900 tracking-tight">Apply Today</h3>
+                      <p className="text-sm text-slate-500 mt-2 font-medium">Be part of the next chapter of Openlead's growth.</p>
+                    </div>
+
+                    <JobPageClient job={{ id: job.id, title: job.title }} />
+
+                    <div className="pt-8 border-t border-slate-50 space-y-4">
+                      <div className="flex items-center gap-4 text-slate-600">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                          <CheckCircle className="w-4 h-4 text-emerald-600" />
+                        </div>
+                        <span className="text-sm font-bold">48h response time</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-slate-600">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 flex items-center justify-center">
+                          <Users2 className="w-4 h-4 text-openlead-blue" />
+                        </div>
+                        <span className="text-sm font-bold">Multiple openings</span>
+                      </div>
+                      <div className="flex items-center gap-4 text-slate-600">
+                        <div className="w-8 h-8 rounded-lg bg-purple-50 flex items-center justify-center">
+                          <Calendar className="w-4 h-4 text-purple-600" />
+                        </div>
+                        <span className="text-sm font-bold">Immediate start</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gradient-to-br from-slate-800 to-slate-900 rounded-[40px] p-10 text-white shadow-xl shadow-slate-900/20">
+                  <h4 className="text-lg font-black tracking-tight mb-4">Refer a Friend</h4>
+                  <p className="text-sm text-slate-400 mb-8 font-medium leading-relaxed">Know the perfect candidate? Share this role with them and help us find great talent.</p>
+                  <ShareButton />
+                </div>
               </div>
             </div>
           </div>

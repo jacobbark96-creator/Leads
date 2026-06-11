@@ -71,8 +71,8 @@ export default async function JobPage({ params }: Props) {
     notFound();
   }
 
-  // Improved AI Image Prompt - Fully URL encoded for maximum compatibility
-  const heroImageUrl = `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent('Modern minimalist tech office collaborative workspace luxury lighting high resolution professional photography')}&image_size=landscape_16_9`;
+  // High-quality Unsplash image for a modern, professional office aesthetic
+  const heroImageUrl = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2069";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">

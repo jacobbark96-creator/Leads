@@ -13,7 +13,7 @@ export function HeroImage({ src, alt }: HeroImageProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
 
-  const fallbackUrl = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2069";
+  const fallbackUrl = "https://images.unsplash.com/photo-1504384308090-c894fdcc538d?auto=format&fit=crop&q=80&w=2070";
 
   useEffect(() => {
     setImgSrc(src);
@@ -48,13 +48,6 @@ export function HeroImage({ src, alt }: HeroImageProps) {
         onLoad={handleLoad}
         onError={handleError}
       />
-
-      {hasError && !isLoading && (
-        <div className="absolute bottom-4 right-4 flex items-center gap-2 px-3 py-1.5 bg-black/20 backdrop-blur-md rounded-full text-[10px] text-white/60 font-bold uppercase tracking-widest border border-white/10">
-          <ImageIcon className="w-3 h-3" />
-          Stock Visual
-        </div>
-      )}
     </div>
   );
 }

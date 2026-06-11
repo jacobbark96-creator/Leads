@@ -140,7 +140,7 @@ export default async function CareersPage() {
           <div className="hidden md:block">
             <div className="aspect-square rounded-[32px] overflow-hidden border-8 border-white/5 shadow-2xl">
               <img 
-                src="https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Modern+minimalist+office+collaborative+workspace+luxury+lighting+high+resolution&image_size=square" 
+                src="https://images.unsplash.com/photo-1522071820081-009f0129c71c?auto=format&fit=crop&q=80&w=2070" 
                 alt="Openlead Culture" 
                 className="w-full h-full object-cover"
               />

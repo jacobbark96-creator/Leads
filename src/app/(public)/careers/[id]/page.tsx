@@ -71,8 +71,8 @@ export default async function JobPage({ params }: Props) {
     notFound();
   }
 
-  // Improved AI Image Prompt - Simplified for reliability
-  const heroImageUrl = "https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=Modern+minimalist+tech+office+collaborative+workspace+luxury+lighting+high+resolution&image_size=landscape_16_9";
+  // Improved AI Image Prompt - Fully URL encoded for maximum compatibility
+  const heroImageUrl = `https://coresg-normal.trae.ai/api/ide/v1/text_to_image?prompt=${encodeURIComponent('Modern minimalist tech office collaborative workspace luxury lighting high resolution professional photography')}&image_size=landscape_16_9`;
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">

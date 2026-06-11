@@ -105,6 +105,8 @@ export function RepMonitoringCard() {
     return () => clearInterval(interval);
   }, []);
 
+  if (!profile?.permissions?.includes('staff/monitoring') && profile?.role !== 'super_admin') return null;
+
   return (
     <GlassCard className="h-full flex flex-col overflow-hidden">
       <div className="p-4 border-b border-white/5 flex items-center justify-between">

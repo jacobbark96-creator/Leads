@@ -90,6 +90,8 @@ export const GMPerformanceCard = () => {
     };
   }, [profile]);
 
+  if (!profile?.permissions?.includes('staff/performance') && profile?.role !== 'super_admin') return null;
+
   return (
     <GlassCard delay={0.3} className="flex flex-col h-full overflow-hidden">
       <div className="p-4 border-b border-white/10 flex items-center justify-between bg-white/[0.02]">

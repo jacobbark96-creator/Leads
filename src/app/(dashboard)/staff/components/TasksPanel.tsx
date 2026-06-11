@@ -168,6 +168,8 @@ export const TasksPanel = () => {
     }
   };
 
+  if (!profile?.permissions?.includes('staff/tasks') && profile?.role !== 'super_admin') return null;
+
   return (
     <GlassCard delay={0.2} className="p-4 flex flex-col h-full">
       <div className="flex items-center justify-between mb-4">

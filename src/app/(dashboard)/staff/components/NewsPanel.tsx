@@ -59,6 +59,8 @@ export const NewsPanel = () => {
     setIsSubmitting(false);
   };
 
+  if (!profile?.permissions?.includes('staff/news') && profile?.role !== 'super_admin') return null;
+
   return (
     <>
     <GlassCard delay={0.3} className="p-4 flex flex-col h-full">

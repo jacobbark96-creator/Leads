@@ -698,11 +698,21 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                           { id: 'intranet/commission', label: 'Commission' },
                           { id: 'intranet/grants', label: 'Grants Info' },
                           { id: 'intranet/tracker', label: 'Tracker' },
-                          { id: 'intranet/resources', label: 'Resources' }
+                          { id: 'intranet/resources', label: 'Resources' },
+                          { id: 'intranet/careers', label: 'Internal Careers' }
                         ]
                       },
                       { id: 'map', label: 'Map (Global)' },
-                      { id: 'staff', label: 'Staff Hub (Dashboard)' }
+                      { 
+                        id: 'staff', 
+                        label: 'Staff Hub (Dashboard)',
+                        subTabs: [
+                          { id: 'staff/performance', label: 'Performance Card' },
+                          { id: 'staff/monitoring', label: 'Rep Monitoring' },
+                          { id: 'staff/news', label: 'News Panel' },
+                          { id: 'staff/tasks', label: 'Tasks Panel' }
+                        ]
+                      }
                     ].map(section => (
                       <div key={section.id} className="bg-gray-50 p-3 rounded-lg border border-gray-200">
                         <label className="flex items-center font-bold text-sm text-gray-900 mb-2">

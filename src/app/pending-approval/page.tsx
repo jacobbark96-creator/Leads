@@ -1,11 +1,11 @@
 "use client";
 import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { ArrowLeft, Clock, ShieldCheck, CheckCircle2 } from 'lucide-react';
+import { ArrowLeft, Clock, ShieldCheck, CheckCircle2, LogOut } from 'lucide-react';
 import Image from 'next/image';
 
 export default function PendingApproval() {
-  const { user, profile } = useAuthStore();
+  const { user, profile, signOut } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
@@ -54,13 +54,19 @@ export default function PendingApproval() {
             </div>
           </div>
 
-          <div className="space-y-3">
+          <div className="flex gap-3">
             <a
               href="/"
-              className="w-full flex justify-center items-center py-3.5 px-4 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 transition-all duration-200"
+              className="flex-1 flex justify-center items-center py-3.5 px-4 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 transition-all duration-200"
             >
               <ArrowLeft className="w-4 h-4 mr-2" /> Return to Home
             </a>
+            <button
+              onClick={() => signOut()}
+              className="flex-1 flex justify-center items-center py-3.5 px-4 border border-transparent rounded-xl text-sm font-bold text-white bg-openlead-blue hover:opacity-90 transition-all duration-200 shadow-[0_4px_14px_0_rgba(57,204,204,0.39)]"
+            >
+              <LogOut className="w-4 h-4 mr-2" /> Sign Out
+            </button>
           </div>
 
         </div>

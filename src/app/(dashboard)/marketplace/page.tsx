@@ -135,10 +135,12 @@ export default function MarketplacePage() {
         else if (sortBy === 'highest_spend') query = query.order('monthly_spend', { ascending: false });
         else if (sortBy === 'timeframe') {
           // Fallback to client-side sorting since timeframe logic is complex for simple supabase queries.
-          // Or just order by created_at since it's admin view, but let's try to match it or just fetch then sort.
-          // Since it's admin, they probably just want it sorted roughly. We'll just fetch normally and sort below.
-          query = query.order('created_at', { ascending: false });
-        } else query = query.order('created_at', { ascending: false });
+          // Or just order by qualified_at since it's admin view, but let's try to match it or just fetch then sort.
+          query = query.order('qualified_at', { ascending: false, nullsFirst: false });
+        } else query = query.order('qualified_at', { ascending: false, nullsFirst: false });
+
+        // Final fallback if qualified_at is missing
+        query = query.order('created_at', { ascending: false });
 
         const res = await query.range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 

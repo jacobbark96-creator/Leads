@@ -150,12 +150,12 @@ function ModalContent({
   setResumeFile
 }: any) {
   return (
-    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-slate-900/60 backdrop-blur-md">
-      <div className="min-h-screen px-4 py-24 md:py-32 flex items-start justify-center">
+    <div className="fixed inset-0 z-[9999] bg-slate-900/60 backdrop-blur-md">
+      <div className="h-full px-4 pt-28 pb-12 flex items-start justify-center overflow-hidden">
         {/* Backdrop overlay for closing */}
         <div className="fixed inset-0" onClick={onClose}></div>
 
-        <div className="relative bg-white rounded-[32px] w-full max-w-xl shadow-2xl animate-in fade-in zoom-in duration-300">
+        <div className="relative bg-white rounded-[32px] w-full max-w-xl max-h-full overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-300 no-scrollbar">
           <div className="p-8 md:p-10">
             <div className="flex justify-between items-center mb-6">
               <div>

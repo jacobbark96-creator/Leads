@@ -93,8 +93,10 @@ export const PressCentreTab = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
+      const { author, id, created_at, ...baseData } = editingPost as any;
+      
       const postData = {
-        ...editingPost,
+        ...baseData,
         author_id: user.id,
         updated_at: new Date().toISOString()
       };

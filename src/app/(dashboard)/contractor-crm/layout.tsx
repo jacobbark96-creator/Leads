@@ -16,6 +16,12 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
   const [crmDropdownOpen, setCrmDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
 
+  const getHomePath = () => {
+    if (!profile) return '/';
+    if (profile.role === 'client') return '/my-openlead';
+    return '/staff';
+  };
+
   const sidebarItems = [
     { name: 'Home', path: '/staff', icon: Home, exact: true, id: 'staff-home' },
     { name: 'Potential Contractors', path: '/contractor-crm', icon: Users, exact: true, id: 'contractor-crm/potential' },
@@ -34,7 +40,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
         {/* LEFT SIDEBAR */}
         <aside className="fixed inset-y-0 left-0 w-56 bg-white border-r border-gray-200 flex flex-col z-20 hidden md:flex">
           <div className="h-12 flex items-center px-5 border-b border-gray-100 shrink-0">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href={getHomePath()} className="flex items-center gap-2">
               {profile?.divisions?.logo_url ? (
                 <img src={profile.divisions.logo_url} alt="Division Logo" className="h-6 w-auto object-contain" />
               ) : (

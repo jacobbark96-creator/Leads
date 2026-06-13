@@ -38,10 +38,21 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
     other_contacts: '',
     other_contact_numbers: '',
     gm_pipeline_status: 'Callbacks',
+    lead_type: profile?.role?.includes('Residential') ? 'residential' : 'commercial' as 'residential' | 'commercial',
+    division_id: profile?.division_id || '',
   });
 
   const [duplicates, setDuplicates] = useState<{ leads: any[], contractors: any[] }>({ leads: [], contractors: [] });
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
+  const [divisions, setDivisions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDivisions = async () => {
+      const { data } = await supabase.from('divisions').select('*').order('name');
+      setDivisions(data || []);
+    };
+    fetchDivisions();
+  }, []);
 
   useEffect(() => {
     const checkDuplicates = async () => {
@@ -95,6 +106,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         other_contacts: editData.other_contacts || '',
         other_contact_numbers: editData.other_contact_numbers || '',
         gm_pipeline_status: (editData as any).gm_pipeline_status || 'Callbacks',
+        lead_type: (editData as any).lead_type || 'commercial',
+        division_id: (editData as any).division_id || '',
       });
     } else if (isOpen) {
       setFormData({
@@ -106,6 +119,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         other_contacts: '',
         other_contact_numbers: '',
         gm_pipeline_status: 'Callbacks',
+        lead_type: profile?.role?.includes('Residential') ? 'residential' : 'commercial' as 'residential' | 'commercial',
+        division_id: profile?.division_id || '',
       });
       setAiMode(false);
       setProfileMode(false);
@@ -204,6 +219,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           location: formData.location || null,
           other_contacts: formData.other_contacts || null,
           other_contact_numbers: formData.other_contact_numbers || null,
+          lead_type: formData.lead_type,
+          division_id: formData.division_id || null,
         };
 
         if (profile?.role === 'growth_manager' && !isContractor) {
@@ -253,6 +270,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           other_contacts: formData.other_contacts || null,
           other_contact_numbers: formData.other_contact_numbers || null,
           status: status,
+          lead_type: formData.lead_type,
+          division_id: formData.division_id || null,
           ...(isContractor ? {} : { is_in_pack: true })
         };
 
@@ -286,6 +305,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           location: '',
           other_contacts: '',
           other_contact_numbers: '',
+          gm_pipeline_status: 'Callbacks',
+          lead_type: 'commercial',
+          division_id: '',
         });
         
         onLeadAdded(data);
@@ -339,7 +361,9 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         cover_skylights: parsed.cover_skylights || false,
         ground_mount: parsed.ground_mount || false,
         payment_options: parsed.payment_options || null,
-        qualification_notes: parsed.qualification_notes || null
+        qualification_notes: parsed.qualification_notes || null,
+        lead_type: formData.lead_type,
+        division_id: formData.division_id || null,
       };
 
       if (profile?.role === 'growth_manager') {
@@ -577,6 +601,37 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
                   className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
                 />
               </div>
+
+              {!isContractor && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="lead_type" className="block text-sm font-medium text-gray-700">Lead Type</label>
+                    <select
+                      id="lead_type"
+                      value={formData.lead_type}
+                      onChange={(e) => setFormData({...formData, lead_type: e.target.value as any})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                      <option value="commercial">Commercial</option>
+                      <option value="residential">Residential</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="division_id" className="block text-sm font-medium text-gray-700">Division</label>
+                    <select
+                      id="division_id"
+                      value={formData.division_id}
+                      onChange={(e) => setFormData({...formData, division_id: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                      <option value="">No Division</option>
+                      {divisions.map(d => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
 
               {profile?.role === 'growth_manager' && !isContractor && (
                 <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">

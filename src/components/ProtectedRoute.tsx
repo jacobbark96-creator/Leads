@@ -115,13 +115,13 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         router.replace('/pending-approval');
       } else if (profile.role === 'client' && !isProfileComplete && pathname !== '/my-openlead') {
         router.replace('/my-openlead');
-      } else if (['rep', 'growth_manager'].includes(profile.role)) {
+      } else if (['rep', 'growth_manager', 'Residential Rep', 'Residential Sales', 'Commercial Sales'].includes(profile.role)) {
         const perms = profile.permissions || [];
         const path = pathname || '';
         let hasAccess = false;
         
         // Exact matching for specific tabs
-        if (path === '/staff' && perms.includes('staff')) hasAccess = true;
+        if (path === '/staff' && (perms.includes('staff') || profile.role.includes('Sales') || profile.role === 'Residential Rep' || profile.role === 'rep')) hasAccess = true;
         
         // Map
         if (path === '/contractor-crm/map' && perms.includes('map')) hasAccess = true;
@@ -137,9 +137,20 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
             router.replace('/sales-crm/pipeline');
             return;
           }
+        } else if (profile.role.includes('Sales')) {
+          // Residential/Commercial Sales only see Pipeline and Calendar
+          if (path.startsWith('/sales-crm/pipeline') || path === '/sales-crm/calendar') {
+            hasAccess = true;
+          } else if (path.startsWith('/sales-crm/lead')) {
+            hasAccess = true; // viewing a lead
+          } else if (path.startsWith('/sales-crm')) {
+            router.replace('/sales-crm/pipeline');
+            return;
+          }
         } else {
+          // Standard Rep or Residential Rep
           if (path === '/sales-crm') {
-            if (perms.includes('sales-crm/fresh')) {
+            if (perms.includes('sales-crm/fresh') || profile.role === 'Residential Rep') {
               hasAccess = true;
             } else if (perms.includes('sales-crm')) {
               if (perms.includes('sales-crm/pipeline')) router.replace('/sales-crm/pipeline');
@@ -148,46 +159,51 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
               return;
             }
           }
-          if (path.startsWith('/sales-crm/pipeline') && perms.includes('sales-crm/pipeline')) hasAccess = true;
-          if (path.startsWith('/sales-crm/qualified') && perms.includes('sales-crm/qualified')) hasAccess = true;
-          if (path.startsWith('/sales-crm/import') && perms.includes('sales-crm/import')) hasAccess = true;
-          if (path.startsWith('/sales-crm/lead') && perms.includes('sales-crm')) hasAccess = true; // viewing a lead
+          if (path.startsWith('/sales-crm/pipeline') && (perms.includes('sales-crm/pipeline') || profile.role === 'Residential Rep')) hasAccess = true;
+          if (path.startsWith('/sales-crm/calendar') && (perms.includes('sales-crm/calendar') || profile.role === 'Residential Rep')) hasAccess = true;
+          if (path.startsWith('/sales-crm/qualified') && (perms.includes('sales-crm/qualified') || profile.role === 'Residential Rep')) hasAccess = true;
+          if (path.startsWith('/sales-crm/import') && (perms.includes('sales-crm/import') || profile.role === 'Residential Rep')) hasAccess = true;
+          if (path.startsWith('/sales-crm/lead') && (perms.includes('sales-crm') || profile.role === 'Residential Rep')) hasAccess = true; // viewing a lead
         }
 
-        // Contractor CRM
-        if (path === '/contractor-crm') {
-          if (perms.includes('contractor-crm/potential')) {
-            hasAccess = true;
-          } else if (perms.includes('contractor-crm')) {
-            if (perms.includes('contractor-crm/onboarded')) router.replace('/contractor-crm/onboarded');
-            else if (perms.includes('contractor-crm/marketplace')) router.replace('/contractor-crm/marketplace');
-            else if (perms.includes('contractor-crm/import')) router.replace('/contractor-crm/import');
-            return;
+        // Contractor CRM (Residential Sales/Commercial Sales don't have access)
+        if (!profile.role.includes('Sales')) {
+          if (path === '/contractor-crm') {
+            if (perms.includes('contractor-crm/potential')) {
+              hasAccess = true;
+            } else if (perms.includes('contractor-crm')) {
+              if (perms.includes('contractor-crm/onboarded')) router.replace('/contractor-crm/onboarded');
+              else if (perms.includes('contractor-crm/marketplace')) router.replace('/contractor-crm/marketplace');
+              else if (perms.includes('contractor-crm/import')) router.replace('/contractor-crm/import');
+              return;
+            }
           }
+          if (path.startsWith('/contractor-crm/onboarded') && perms.includes('contractor-crm/onboarded')) hasAccess = true;
+          if (path.startsWith('/contractor-crm/marketplace') && perms.includes('contractor-crm/marketplace')) hasAccess = true;
+          if (path.startsWith('/contractor-crm/import') && perms.includes('contractor-crm/import')) hasAccess = true;
+          if (path.startsWith('/contractor-crm/contractor') && perms.includes('contractor-crm')) hasAccess = true; // viewing a contractor
         }
-        if (path.startsWith('/contractor-crm/onboarded') && perms.includes('contractor-crm/onboarded')) hasAccess = true;
-        if (path.startsWith('/contractor-crm/marketplace') && perms.includes('contractor-crm/marketplace')) hasAccess = true;
-        if (path.startsWith('/contractor-crm/import') && perms.includes('contractor-crm/import')) hasAccess = true;
-        if (path.startsWith('/contractor-crm/contractor') && perms.includes('contractor-crm')) hasAccess = true; // viewing a contractor
 
-        // Admin CRM
-        if (path === '/admin-crm') {
-          if (perms.includes('admin-crm/users')) {
-            hasAccess = true;
-          } else if (perms.includes('admin-crm')) {
-            if (perms.includes('admin-crm/categories')) router.replace('/admin-crm/categories');
-            else if (perms.includes('admin-crm/discounts')) router.replace('/admin-crm/discounts');
-            else if (perms.includes('admin-crm/tracker')) router.replace('/admin-crm/tracker');
-            return;
+        // Admin CRM (Residential Sales/Commercial Sales don't have access)
+        if (!profile.role.includes('Sales')) {
+          if (path === '/admin-crm') {
+            if (perms.includes('admin-crm/users')) {
+              hasAccess = true;
+            } else if (perms.includes('admin-crm')) {
+              if (perms.includes('admin-crm/categories')) router.replace('/admin-crm/categories');
+              else if (perms.includes('admin-crm/discounts')) router.replace('/admin-crm/discounts');
+              else if (perms.includes('admin-crm/tracker')) router.replace('/admin-crm/tracker');
+              return;
+            }
           }
+          if (path.startsWith('/admin-crm/categories') && perms.includes('admin-crm/categories')) hasAccess = true;
+          if (path.startsWith('/admin-crm/discounts') && perms.includes('admin-crm/discounts')) hasAccess = true;
+          if (path.startsWith('/admin-crm/tracker') && perms.includes('admin-crm/tracker')) hasAccess = true;
         }
-        if (path.startsWith('/admin-crm/categories') && perms.includes('admin-crm/categories')) hasAccess = true;
-        if (path.startsWith('/admin-crm/discounts') && perms.includes('admin-crm/discounts')) hasAccess = true;
-        if (path.startsWith('/admin-crm/tracker') && perms.includes('admin-crm/tracker')) hasAccess = true;
 
         // Intranet
         if (path === '/intranet') {
-          if (perms.includes('intranet/pricing') || perms.includes('intranet/leaderboard')) {
+          if (perms.includes('intranet/pricing') || perms.includes('intranet/leaderboard') || profile.role.includes('Sales') || profile.role === 'Residential Rep') {
             hasAccess = true;
           } else if (perms.includes('intranet')) {
             if (perms.includes('intranet/commission')) router.replace('/intranet/commission');
@@ -198,12 +214,12 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
             return;
           }
         }
-        if (path.startsWith('/intranet/leaderboard') && perms.includes('intranet/leaderboard')) hasAccess = true;
-        if (path.startsWith('/intranet/commission') && perms.includes('intranet/commission')) hasAccess = true;
-        if (path.startsWith('/intranet/grants') && perms.includes('intranet/grants')) hasAccess = true;
-        if (path.startsWith('/intranet/tracker') && perms.includes('intranet/tracker')) hasAccess = true;
-        if (path.startsWith('/intranet/resources') && perms.includes('intranet/resources')) hasAccess = true;
-        if (path.startsWith('/intranet/careers') && perms.includes('intranet/careers')) hasAccess = true;
+        if (path.startsWith('/intranet/leaderboard') && (perms.includes('intranet/leaderboard') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/commission') && (perms.includes('intranet/commission') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/grants') && (perms.includes('intranet/grants') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/tracker') && (perms.includes('intranet/tracker') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/resources') && (perms.includes('intranet/resources') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/careers') && (perms.includes('intranet/careers') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
         
         if (!hasAccess && path !== '/staff' && path !== '/') {
           router.replace('/staff');

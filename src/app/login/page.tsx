@@ -40,6 +40,12 @@ export default function Login() {
 
   const router = useRouter();
 
+  const getHomePath = () => {
+    if (!profile) return '/';
+    if (profile.role === 'client') return '/my-openlead';
+    return '/staff';
+  };
+
   // Redirect if already logged in
   useEffect(() => {
     if (user && profile) {
@@ -154,7 +160,7 @@ export default function Login() {
       {/* Left Side - Form */}
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 relative">
         <div className="absolute top-8 left-8">
-          <a href="/" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+          <a href={getHomePath()} className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
           </a>
         </div>

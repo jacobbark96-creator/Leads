@@ -8,6 +8,12 @@ export default function PendingApproval() {
   const { user, profile, signOut } = useAuthStore();
   const [mounted, setMounted] = useState(false);
 
+  const getHomePath = () => {
+    if (!profile) return '/';
+    if (profile.role === 'client') return '/'; // Usually clients stay on home or portal, but here home is safer
+    return '/staff';
+  };
+
   useEffect(() => {
     setMounted(true);
   }, []);
@@ -56,7 +62,7 @@ export default function PendingApproval() {
 
           <div className="flex gap-3">
             <a
-              href="/"
+              href={getHomePath()}
               className="flex-1 flex justify-center items-center py-3.5 px-4 border border-slate-200 rounded-xl text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 transition-all duration-200"
             >
               <ArrowLeft className="w-4 h-4 mr-2" /> Return to Home

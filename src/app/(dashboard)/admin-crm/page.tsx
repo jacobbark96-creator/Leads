@@ -22,12 +22,23 @@ export default function UserManagement() {
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [roleFilter, setRoleFilter] = useState('all');
-  const [newUser, setNewUser] = useState({ email: '', name: '', role: 'client', password: '' });
+  const [newUser, setNewUser] = useState({ email: '', name: '', role: 'client', password: '', division_id: '' });
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
   const [clientBalances, setClientBalances] = useState<Record<string, number>>({});
   const [addingBalanceId, setAddingBalanceId] = useState<string | null>(null);
   const [balanceAmount, setBalanceAmount] = useState<string>('');
+  const [divisions, setDivisions] = useState<any[]>([]);
+
+  const fetchDivisions = async () => {
+    try {
+      const { data, error } = await supabase.from('divisions').select('*').order('name');
+      if (error) throw error;
+      setDivisions(data || []);
+    } catch (error: any) {
+      console.error('Failed to fetch divisions:', error);
+    }
+  };
 
   const fetchUsers = async () => {
     try {
@@ -65,6 +76,7 @@ export default function UserManagement() {
 
   useEffect(() => {
     fetchUsers();
+    fetchDivisions();
   }, []);
 
   const handleRoleChange = async (userId: string, newRole: string) => {
@@ -133,6 +145,28 @@ export default function UserManagement() {
     }
   };
 
+  useEffect(() => {
+    if (newUser.role === 'Commercial Sales' && !newUser.division_id) {
+      // Default to OpenEnergy division for Commercial Sales
+      const openEnergy = divisions.find(d => d.name === 'OpenEnergy');
+      if (openEnergy) {
+        setNewUser(prev => ({ ...prev, division_id: openEnergy.id }));
+      }
+    } else if (newUser.role === 'Residential Sales' && !newUser.division_id) {
+      // Default to Open Energy residential for Residential Sales
+      const residential = divisions.find(d => d.name === 'Open Energy residential');
+      if (residential) {
+        setNewUser(prev => ({ ...prev, division_id: residential.id }));
+      }
+    } else if (newUser.role === 'Residential Rep' && !newUser.division_id) {
+      // Default to Open Energy residential for Residential Rep
+      const residential = divisions.find(d => d.name === 'Open Energy residential');
+      if (residential) {
+        setNewUser(prev => ({ ...prev, division_id: residential.id }));
+      }
+    }
+  }, [newUser.role, divisions]);
+
   const handleCreateUser = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newUser.email || !newUser.name || !newUser.password) {
@@ -151,7 +185,8 @@ export default function UserManagement() {
         options: {
           data: {
             name: newUser.name,
-            role: newUser.role
+            role: newUser.role,
+            division_id: newUser.division_id || null
           }
         }
       });
@@ -159,7 +194,7 @@ export default function UserManagement() {
       if (error) throw error;
       
       toast.success('User created successfully. They will need to verify their email.');
-      setNewUser({ email: '', name: '', role: 'client', password: '' });
+      setNewUser({ email: '', name: '', role: 'client', password: '', division_id: '' });
       setShowCreateModal(false);
       fetchUsers();
     } catch (error: any) {
@@ -213,13 +248,16 @@ export default function UserManagement() {
   }
 
   const adminCount = users.filter(u => u.role === 'admin' || u.role === 'super_admin').length;
-  const repCount = users.filter(u => u.role === 'rep').length;
+  const repCount = users.filter(u => u.role === 'rep' || u.role === 'Residential Rep').length;
+  const salesCount = users.filter(u => u.role === 'Residential Sales' || u.role === 'Commercial Sales').length;
   const growthManagerCount = users.filter(u => u.role === 'growth_manager').length;
   const clientCount = users.filter(u => u.role === 'client').length;
 
   const filteredUsers = users.filter(u => {
     if (roleFilter === 'all') return true;
     if (roleFilter === 'admin') return u.role === 'admin' || u.role === 'super_admin';
+    if (roleFilter === 'rep') return u.role === 'rep' || u.role === 'Residential Rep';
+    if (roleFilter === 'Residential Sales') return u.role === 'Residential Sales' || u.role === 'Commercial Sales';
     return u.role === roleFilter;
   });
 
@@ -292,7 +330,7 @@ export default function UserManagement() {
       {activeTab === 'users' && (
         <>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-        <div className="flex-1 grid grid-cols-4 gap-4">
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
           <button 
             onClick={() => setRoleFilter(roleFilter === 'admin' ? 'all' : 'admin')}
             className={`bg-white shadow-sm border rounded-lg p-4 flex items-center justify-between text-left transition-all ${roleFilter === 'admin' ? 'border-purple-500 ring-1 ring-purple-500 bg-purple-50/30' : 'border-gray-200 hover:border-purple-300'}`}
@@ -316,6 +354,19 @@ export default function UserManagement() {
             </div>
             <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
                <Briefcase className="w-4 h-4" />
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setRoleFilter(roleFilter === 'Residential Sales' || roleFilter === 'Commercial Sales' ? 'all' : 'Residential Sales')}
+            className={`bg-white shadow-sm border rounded-lg p-4 flex items-center justify-between text-left transition-all ${roleFilter.includes('Sales') ? 'border-blue-500 ring-1 ring-blue-500 bg-blue-50/30' : 'border-gray-200 hover:border-blue-300'}`}
+          >
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Sales Staff</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{salesCount}</p>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+               <Users className="w-4 h-4" />
             </div>
           </button>
 
@@ -385,11 +436,23 @@ export default function UserManagement() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Role</label>
                   <select value={newUser.role} onChange={e => setNewUser({...newUser, role: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
-                    <option value="client">Client / Contractor</option>
+                    <option value="client">Contractor / Client</option>
                     <option value="rep">Representative</option>
+                    <option value="Residential Rep">Residential Rep</option>
+                    <option value="Residential Sales">Residential Sales</option>
+                    <option value="Commercial Sales">Commercial Sales</option>
                     <option value="growth_manager">Growth Manager</option>
-                    <option value="sales">Sales Staff</option>
                     <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Division</label>
+                  <select value={newUser.division_id} onChange={e => setNewUser({...newUser, division_id: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm">
+                    <option value="">No Division</option>
+                    {divisions.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
                   </select>
                 </div>
                 <div className="sm:col-span-2 pt-2">
@@ -447,15 +510,19 @@ export default function UserManagement() {
                       className={`text-[11px] font-bold rounded-full px-2 py-1 border shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500
                         ${user.role === 'super_admin' ? 'bg-purple-50 text-purple-700 border-purple-200' : 
                           user.role === 'admin' ? 'bg-red-50 text-red-700 border-red-200' : 
-                          user.role === 'sales' ? 'bg-blue-50 text-blue-700 border-blue-200' : 
                           user.role === 'rep' ? 'bg-amber-50 text-amber-700 border-amber-200' : 
                           user.role === 'growth_manager' ? 'bg-green-50 text-green-700 border-green-200' :
+                          user.role === 'Residential Rep' ? 'bg-amber-100 text-amber-800 border-amber-300' :
+                          user.role === 'Residential Sales' ? 'bg-blue-100 text-blue-800 border-blue-300' :
+                          user.role === 'Commercial Sales' ? 'bg-indigo-100 text-indigo-800 border-indigo-300' :
                           'bg-gray-50 text-gray-700 border-gray-200'}`}
                     >
                       <option value="client">Contractor / Client</option>
                       <option value="rep">Representative</option>
+                      <option value="Residential Rep">Residential Rep</option>
+                      <option value="Residential Sales">Residential Sales</option>
+                      <option value="Commercial Sales">Commercial Sales</option>
                       <option value="growth_manager">Growth Manager</option>
-                      <option value="sales">Sales Staff</option>
                       <option value="admin">Admin</option>
                       {profile?.role === 'super_admin' && <option value="super_admin">Super Admin</option>}
                     </select>

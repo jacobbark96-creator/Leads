@@ -37,6 +37,12 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const isFullScreenPage = pathname?.startsWith('/sales-crm') || pathname?.startsWith('/staff') || pathname?.startsWith('/contractor-crm') || pathname?.startsWith('/admin-crm') || pathname?.startsWith('/intranet');
   const isDetailsPage = pathname === '/contractor-crm/contractor-v2';
 
+  const getHomePath = () => {
+    if (!profile) return '/';
+    if (profile.role === 'client') return '/my-openlead';
+    return '/staff';
+  };
+
   if (!profile) return <>{children}</>;
 
   if (isFullScreenPage) {
@@ -63,25 +69,26 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           { name: 'Openlead Max', path: '/openlead-max', icon: Sparkles },
         ];
       case 'sales':
+      case 'Residential Sales':
+      case 'Commercial Sales':
         return [
-          { name: 'Staff Hub', path: '/staff', icon: Home },
+          { name: 'Home', path: '/staff', icon: Home },
           { 
             name: 'CRM', 
             path: '#',
             icon: Database,
             children: [
               { name: 'Sales CRM', path: '/sales-crm', icon: Database },
-              { name: 'Contractor CRM', path: '/contractor-crm', icon: Briefcase },
             ]
           },
-          { name: 'Map', path: '/contractor-crm/map', icon: MapIcon },
           { name: 'Intranet', path: '/intranet', icon: BookOpen },
         ];
       case 'rep':
+      case 'Residential Rep':
         const repTabs: any[] = [];
         const perms = profile.permissions || [];
         
-        if (perms.includes('staff')) repTabs.push({ name: 'Staff Hub', path: '/staff', icon: Home });
+        if (perms.includes('staff') || profile.role === 'Residential Rep') repTabs.push({ name: 'Home', path: '/staff', icon: Home });
         
         const crmChildren = [];
         if (perms.includes('admin-crm')) {
@@ -107,7 +114,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
       case 'admin':
       case 'super_admin':
         return [
-          { name: 'Staff Hub', path: '/staff', icon: Home },
+          { name: 'Home', path: '/staff', icon: Home },
           { 
             name: 'CRM', 
             path: '#',
@@ -136,7 +143,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           <div className="relative bg-white/80 backdrop-blur-xl border border-[#39CCCC]/45 rounded-2xl shadow-lg shadow-gray-200/40">
             <div className="flex justify-between h-20 px-3 sm:px-4">
                 <div className="flex items-center">
-                  <Link href="/" className="flex-shrink-0 flex items-center mr-6 sm:mr-8">
+                  <Link href={getHomePath()} className="flex-shrink-0 flex items-center mr-6 sm:mr-8">
                     <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
                   </Link>
                   <div className="hidden sm:flex sm:space-x-2">

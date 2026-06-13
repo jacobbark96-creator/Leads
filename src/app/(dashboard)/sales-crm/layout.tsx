@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home, Archive, ChevronLeft } from 'lucide-react';
+import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home, Archive, ChevronLeft, Calendar } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
@@ -19,6 +19,12 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [crmDropdownOpen, setCrmDropdownOpen] = useState(false);
   const [userDropdownOpen, setUserDropdownOpen] = useState(false);
+  
+  const getHomePath = () => {
+    if (!profile) return '/';
+    if (profile.role === 'client') return '/my-openlead';
+    return '/staff';
+  };
   
   // Close mobile menu on path change
   useEffect(() => {
@@ -52,6 +58,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   const sidebarItems = [
     { id: 'staff', name: 'Home', path: '/staff', icon: Home, exact: true },
     { id: 'sales-crm/pipeline', name: 'Pipeline', path: '/sales-crm/pipeline', icon: LayoutDashboard },
+    { id: 'sales-crm/calendar', name: 'Calendar', path: '/sales-crm/calendar', icon: Calendar },
     { id: 'sales-crm/fresh', name: 'Unqualified Leads', path: '/sales-crm', icon: Users, exact: true },
     { id: 'sales-crm/qualified', name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle },
     { id: 'sales-crm/import', name: 'Import Leads', path: '/sales-crm/import', icon: Upload },
@@ -61,7 +68,16 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
     if (profile?.role === 'growth_manager') {
       return ['staff', 'sales-crm/my-clients', 'sales-crm/my-sales', 'sales-crm/pipeline'].includes(item.id || '');
     }
-    if (profile?.role !== 'rep') {
+    if (profile?.role === 'Residential Sales' || profile?.role === 'Commercial Sales') {
+      return ['staff', 'sales-crm/pipeline', 'sales-crm/calendar'].includes(item.id || '');
+    }
+    if (profile?.role === 'Residential Rep') {
+      return ['staff', 'sales-crm/pipeline', 'sales-crm/calendar', 'sales-crm/fresh', 'sales-crm/qualified', 'sales-crm/import'].includes(item.id || '');
+    }
+    if (profile?.role === 'rep' || profile?.role === 'Residential Rep') {
+      return profile.permissions?.includes(item.id) || ['sales-crm/pipeline', 'sales-crm/calendar'].includes(item.id || '');
+    }
+    if (profile?.role !== 'rep' && profile?.role !== 'Residential Rep') {
       // Reps and Growth Managers see specific tabs, others see all except growth manager specific ones unless defined
       return !['sales-crm/my-clients', 'sales-crm/my-sales'].includes(item.id);
     }
@@ -69,16 +85,16 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   });
 
   if (profile?.role === 'super_admin') {
-    sidebarItems.push({ name: 'Archive', path: '/sales-crm/archive', icon: Archive });
+    sidebarItems.push({ id: 'sales-crm/archive', name: 'Archive', path: '/sales-crm/archive', icon: Archive });
   }
 
   // If on lead-v2 or calling-workspace, render exactly what was there (bypassing layout)
   if (pathname === '/sales-crm/lead-v2' || pathname === '/sales-crm/calling-workspace') {
-    return <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager']}>{children}</ProtectedRoute>;
+    return <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager', 'Residential Rep', 'Residential Sales', 'Commercial Sales']}>{children}</ProtectedRoute>;
   }
 
   return (
-    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager']}>
+    <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager', 'Residential Rep', 'Residential Sales', 'Commercial Sales']}>
       <div className="min-h-screen bg-[#F9FAFB] flex font-sans text-gray-900 overflow-hidden">
         {/* MOBILE SIDEBAR OVERLAY */}
         <AnimatePresence>
@@ -99,7 +115,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
                 className="fixed inset-y-0 left-0 w-64 bg-white shadow-2xl z-40 md:hidden flex flex-col"
               >
                 <div className="h-14 flex items-center justify-between px-5 border-b border-gray-100">
-                  <Link href="/" className="flex items-center gap-2">
+                  <Link href={getHomePath()} className="flex items-center gap-2">
                     {profile?.divisions?.logo_url ? (
                       <img src={profile.divisions.logo_url} alt="Division Logo" className="h-6 w-auto object-contain" />
                     ) : (
@@ -180,7 +196,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
         {/* LEFT SIDEBAR (DESKTOP) */}
         <aside className="fixed inset-y-0 left-0 w-56 bg-white border-r border-gray-200 flex flex-col z-20 hidden md:flex">
           <div className="h-12 flex items-center px-5 border-b border-gray-100 shrink-0">
-            <Link href="/" className="flex items-center gap-2">
+            <Link href={getHomePath()} className="flex items-center gap-2">
               {profile?.divisions?.logo_url ? (
                 <img src={profile.divisions.logo_url} alt="Division Logo" className="h-6 w-auto object-contain" />
               ) : (
@@ -298,7 +314,9 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
                 {crmDropdownOpen && (
                   <div className="absolute top-full left-0 mt-1 w-48 bg-white rounded-xl shadow-lg border border-gray-100 py-1">
                     <Link href="/sales-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-blue-700 bg-blue-50 font-medium"><Database className="w-4 h-4" /> Sales CRM</Link>
-                    <Link href="/contractor-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 font-medium"><Users className="w-4 h-4" /> Contractor CRM</Link>
+                    {!(profile?.role === 'Residential Sales' || profile?.role === 'Commercial Sales') && (
+                      <Link href="/contractor-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 font-medium"><Users className="w-4 h-4" /> Contractor CRM</Link>
+                    )}
                     {(profile?.role === 'admin' || profile?.role === 'super_admin') && (
                       <Link href="/admin-crm" className="flex items-center gap-2 px-4 py-2 text-sm text-gray-600 hover:bg-gray-50 font-medium"><Settings className="w-4 h-4" /> Admin CRM</Link>
                     )}

@@ -620,17 +620,19 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                       onChange={(e) => setFormData({...formData, role: e.target.value as any})}
                       className="block w-full pl-10 py-2 sm:text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     >
-                      <option value="client">Client / Contractor</option>
+                      <option value="client">Contractor / Client</option>
                       <option value="rep">Representative</option>
+                      <option value="Residential Rep">Residential Rep</option>
+                      <option value="Residential Sales">Residential Sales</option>
+                      <option value="Commercial Sales">Commercial Sales</option>
                       <option value="growth_manager">Growth Manager</option>
-                      <option value="sales">Sales Staff</option>
                       <option value="admin">Admin</option>
                       <option value="super_admin">Super Admin</option>
                     </select>
                   </div>
                 </div>
 
-                {['rep', 'sales', 'admin', 'super_admin', 'growth_manager'].includes(formData.role) && (
+                {['rep', 'sales', 'admin', 'super_admin', 'growth_manager', 'Residential Rep', 'Residential Sales', 'Commercial Sales'].includes(formData.role) && (
                   <div className={hasClientProfile ? "md:col-span-2" : ""}>
                     <label className="block text-sm font-medium text-gray-700">Division</label>
                     <div className="mt-1 relative rounded-md shadow-sm">
@@ -652,9 +654,13 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                 )}
               </div>
 
-              {['rep', 'growth_manager'].includes(formData.role) && (
+              {['rep', 'growth_manager', 'Residential Rep', 'Residential Sales', 'Commercial Sales'].includes(formData.role) && (
                 <div className="pt-4 border-t border-gray-200">
-                  <h4 className="text-sm font-bold text-gray-900 mb-3">{formData.role === 'growth_manager' ? 'GM Accessible Tabs' : 'Rep Accessible Tabs'}</h4>
+                  <h4 className="text-sm font-bold text-gray-900 mb-3">
+                    {formData.role === 'growth_manager' ? 'GM Accessible Tabs' : 
+                     formData.role.includes('Sales') ? 'Sales Accessible Tabs' :
+                     'Rep Accessible Tabs'}
+                  </h4>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     {[
                       { 

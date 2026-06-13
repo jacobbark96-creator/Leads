@@ -26,7 +26,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-4">
           <div className="relative bg-white/80 backdrop-blur-xl border border-[#39CCCC]/45 rounded-2xl shadow-lg shadow-gray-200/40">
             <div className="flex justify-between h-20 items-center px-3 sm:px-4">
-              <a href="/" className="flex-shrink-0 flex items-center gap-2">
+              <a href={user && mounted ? getDashboardLink() : "/"} className="flex-shrink-0 flex items-center gap-2">
                 <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
               </a>
 
@@ -34,6 +34,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 <a href="/services" className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-full font-medium transition-all duration-200">What We Do</a>
                 <a href="/about" className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-full font-medium transition-all duration-200">About Us</a>
                 <a href="/morals" className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-full font-medium transition-all duration-200">Our Morals</a>
+                <a href="/careers" className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-full font-medium transition-all duration-200">Careers</a>
               </div>
 
               <div className="hidden md:flex items-center space-x-4">
@@ -65,6 +66,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
                 <a href="/services" onClick={() => setMobileMenuOpen(false)} className="text-gray-600 hover:text-blue-600 font-medium transition-colors py-2 border-b border-gray-50">What We Do</a>
                 <a href="/about" onClick={() => setMobileMenuOpen(false)} className="text-gray-600 hover:text-blue-600 font-medium transition-colors py-2 border-b border-gray-50">About Us</a>
                 <a href="/morals" onClick={() => setMobileMenuOpen(false)} className="text-gray-600 hover:text-blue-600 font-medium transition-colors py-2 border-b border-gray-50">Our Morals</a>
+                <a href="/careers" onClick={() => setMobileMenuOpen(false)} className="text-gray-600 hover:text-blue-600 font-medium transition-colors py-2 border-b border-gray-50">Careers</a>
                 <div className="pt-2">
                   <a
                     onClick={() => setMobileMenuOpen(false)}

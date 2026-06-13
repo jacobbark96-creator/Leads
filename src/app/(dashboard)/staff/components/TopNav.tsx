@@ -66,8 +66,14 @@ export const TopNav = ({ profile }: { profile: any }) => {
     }
   };
 
+  const getHomePath = () => {
+    if (!profile) return '/';
+    if (profile.role === 'client') return '/my-openlead';
+    return '/staff';
+  };
+
   const navLinks = [
-    { href: '/staff', label: 'Staff Hub', icon: Home },
+    { href: '/staff', label: 'Home', icon: Home },
     { 
       label: 'CRM', 
       icon: Database,
@@ -120,7 +126,7 @@ export const TopNav = ({ profile }: { profile: any }) => {
             {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
 
-          <Link href="/" className="flex items-center">
+          <Link href={getHomePath()} className="flex items-center">
             {profile?.divisions?.logo_url ? (
               <img src={profile.divisions.logo_url} alt="Division Logo" className="h-6 md:h-8 w-auto object-contain" />
             ) : (

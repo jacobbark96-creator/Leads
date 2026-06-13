@@ -335,6 +335,12 @@ function LeadDetailsV2Content() {
 
   const [isMarketConfirmOpen, setIsMarketConfirmOpen] = useState(false);
   const [isInHouseConfirmOpen, setIsInHouseConfirmOpen] = useState(false);
+  const [salesStaff, setSalesStaff] = useState<any[]>([]);
+  const [selectedSalesmanId, setSelectedSalesmanId] = useState<string | null>(null);
+  const [isScheduling, setIsScheduling] = useState(false);
+  const [availableSlots, setAvailableSlots] = useState<Date[]>([]);
+  const [loadingSlots, setLoadingSlots] = useState(false);
+  const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
   const [isWriteupOpen, setIsWriteupOpen] = useState(false);
   const [isSmsChatOpen, setIsSmsChatOpen] = useState(false);
   const [matchedContractors, setMatchedContractors] = useState<any[]>([]);
@@ -930,23 +936,129 @@ function LeadDetailsV2Content() {
     }
   };
 
+  useEffect(() => {
+    if (isInHouseConfirmOpen && profile) {
+      const fetchSalesStaff = async () => {
+        let roleToFilter = lead?.lead_type === 'residential' ? 'Residential Sales' : 'Commercial Sales';
+        
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, name, role, division_id')
+          .eq('role', roleToFilter)
+          .eq('division_id', lead?.division_id || profile.division_id);
+        
+        if (!error && data) {
+          setSalesStaff(data);
+        }
+      };
+      fetchSalesStaff();
+    }
+  }, [isInHouseConfirmOpen, profile, lead?.division_id]);
+
+  const fetchAvailability = async (userId: string) => {
+    setLoadingSlots(true);
+    try {
+      const start = new Date();
+      start.setHours(0, 0, 0, 0);
+      const end = new Date();
+      end.setDate(end.getDate() + 7); // Check next 7 days
+
+      const res = await fetch(`/api/google/calendar/events?userId=${userId}&timeMin=${start.toISOString()}&timeMax=${end.toISOString()}`);
+      if (!res.ok) throw new Error('Failed to fetch events');
+      const events = await res.json();
+
+      // Generate slots: 9 AM to 6 PM, 1 hour each, 15 min buffer
+      const slots: Date[] = [];
+      for (let i = 0; i < 7; i++) {
+        const day = new Date();
+        day.setDate(day.getDate() + i);
+        day.setMinutes(0, 0, 0);
+        
+        // Skip weekends
+        if (day.getDay() === 0 || day.getDay() === 6) continue;
+
+        for (let hour = 9; hour < 18; hour++) {
+          const slotStart = new Date(day);
+          slotStart.setHours(hour, 0, 0, 0);
+          
+          const slotEnd = new Date(slotStart);
+          slotEnd.setHours(hour + 1, 0, 0, 0);
+
+          // Check for conflicts (including 15 min buffer)
+          const bufferStart = new Date(slotStart);
+          bufferStart.setMinutes(-15);
+          const bufferEnd = new Date(slotEnd);
+          bufferEnd.setMinutes(15);
+
+          const hasConflict = events.some((event: any) => {
+            const eventStart = new Date(event.start?.dateTime || event.start?.date);
+            const eventEnd = new Date(event.end?.dateTime || event.end?.date);
+            return (eventStart < bufferEnd && eventEnd > bufferStart);
+          });
+
+          if (!hasConflict && slotStart > new Date()) {
+            slots.push(slotStart);
+          }
+        }
+      }
+      setAvailableSlots(slots);
+    } catch (err) {
+      console.error('Error fetching availability:', err);
+      toast.error('Could not fetch salesman availability. Make sure they have connected Google Calendar.');
+    } finally {
+      setLoadingSlots(false);
+    }
+  };
+
   const handleSendInHouse = async () => {
-    if (!lead) return;
+    if (!lead || !selectedSalesmanId || !selectedSlot) return;
     try {
       setLoading(true);
+      
+      // 1. Create Google Calendar event for the salesman
+      const slotEnd = new Date(selectedSlot);
+      slotEnd.setHours(slotEnd.getHours() + 1);
+
+      const eventRes = await fetch('/api/google/calendar/events', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId: selectedSalesmanId,
+          summary: `Lead: ${lead.company || lead.name}`,
+          description: `Appointment for lead ${lead.id}. Location: ${lead.location || 'N/A'}. Phone: ${lead.phone}`,
+          start: { dateTime: selectedSlot.toISOString() },
+          end: { dateTime: slotEnd.toISOString() }
+        })
+      });
+
+      if (!eventRes.ok) {
+        const errData = await eventRes.json();
+        throw new Error(errData.error || 'Failed to create calendar event');
+      }
+
+      // 2. Update lead status and assignment
       const { error } = await supabase
         .from('leads')
-        .update({ status: 'awaiting_sales' })
+        .update({ 
+          status: 'awaiting_sales',
+          sales_pipeline_status: 'Upcoming',
+          assigned_to: selectedSalesmanId,
+          booking_date: selectedSlot.toISOString()
+        })
         .eq('id', lead.id);
 
       if (error) throw error;
 
       await fetchLeadAndNotes();
       setIsInHouseConfirmOpen(false);
-      toast.success('Lead sent to In-House Sales');
+      setIsScheduling(false);
+      setSelectedSalesmanId(null);
+      setSelectedSlot(null);
+      toast.success('Lead sent to In-House Sales and appointment booked!');
     } catch (err: any) {
       console.error('Error sending in-house:', err);
-      toast.error('Failed to send lead in-house');
+      toast.error(err.message || 'Failed to send lead in-house');
+    } finally {
       setLoading(false);
     }
   };
@@ -2693,12 +2805,118 @@ function LeadDetailsV2Content() {
 
       {isInHouseConfirmOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
-          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Send In-House</h3>
-            <p className="text-sm text-gray-500 mb-6">Are you sure you dont want to send to marketplace instead?</p>
-            <div className="flex gap-3 justify-center">
-              <button onClick={() => setIsInHouseConfirmOpen(false)} className="px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50 w-full">Cancel</button>
-              <button onClick={handleSendInHouse} className="px-4 py-2 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 w-full">Yes, Send In-House</button>
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden flex flex-col max-h-[90vh]">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900">
+                {isScheduling ? 'Select Appointment Slot' : 'Send In-House'}
+              </h3>
+              <button 
+                onClick={() => {
+                  setIsInHouseConfirmOpen(false);
+                  setIsScheduling(false);
+                  setSelectedSalesmanId(null);
+                  setSelectedSlot(null);
+                }} 
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="p-6 overflow-y-auto">
+              {!isScheduling ? (
+                <div className="space-y-4">
+                  <p className="text-sm text-gray-500">Select a salesman from your division to assign this lead to.</p>
+                  <div className="space-y-2 max-h-60 overflow-y-auto">
+                    {salesStaff.map(staff => (
+                      <button
+                        key={staff.id}
+                        onClick={() => setSelectedSalesmanId(staff.id)}
+                        className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
+                          selectedSalesmanId === staff.id 
+                            ? 'border-blue-500 bg-blue-50 text-blue-700 shadow-sm' 
+                            : 'border-gray-200 hover:border-blue-200 hover:bg-gray-50'
+                        }`}
+                      >
+                        <div className="flex justify-between items-center">
+                          <span className="font-bold">{staff.name}</span>
+                          <span className="text-[10px] uppercase tracking-wider font-semibold opacity-60">{staff.role}</span>
+                        </div>
+                      </button>
+                    ))}
+                    {salesStaff.length === 0 && (
+                      <p className="text-sm text-gray-400 italic text-center py-4">No sales staff found in your division.</p>
+                    )}
+                  </div>
+                  <button
+                    disabled={!selectedSalesmanId}
+                    onClick={() => {
+                      setIsScheduling(true);
+                      if (selectedSalesmanId) fetchAvailability(selectedSalesmanId);
+                    }}
+                    className="w-full py-3 bg-emerald-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-emerald-700 transition-all disabled:opacity-50"
+                  >
+                    Confirm Salesman & View Availability
+                  </button>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {loadingSlots ? (
+                    <div className="flex flex-col items-center justify-center py-12 gap-3">
+                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <p className="text-sm text-gray-500 font-medium">Fetching salesman's availability...</p>
+                    </div>
+                  ) : (
+                    <>
+                      <p className="text-sm text-gray-500">Select a 1-hour slot. We've included a 15-minute buffer between appointments.</p>
+                      <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto p-1">
+                        {availableSlots.map((slot, i) => (
+                          <button
+                            key={i}
+                            onClick={() => setSelectedSlot(slot)}
+                            className={`px-3 py-2 rounded-lg text-xs font-bold border transition-all ${
+                              selectedSlot?.getTime() === slot.getTime()
+                                ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-[1.02]'
+                                : 'bg-white text-gray-700 border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                            }`}
+                          >
+                            {slot.toLocaleDateString('en-GB', { weekday: 'short', day: 'numeric', month: 'short' })}
+                            <br />
+                            {slot.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' })}
+                          </button>
+                        ))}
+                        {availableSlots.length === 0 && (
+                          <div className="col-span-2 py-8 text-center">
+                            <p className="text-sm text-gray-400 italic">No available slots found in the next 7 days.</p>
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex gap-3 pt-2">
+                        <button
+                          onClick={() => {
+                            setIsScheduling(false);
+                            setSelectedSlot(null);
+                          }}
+                          className="flex-1 py-3 border border-gray-300 rounded-xl text-sm font-bold text-gray-700 hover:bg-gray-50 transition-all"
+                        >
+                          Back
+                        </button>
+                        <button
+                          disabled={!selectedSlot || loading}
+                          onClick={handleSendInHouse}
+                          className="flex-[2] py-3 bg-blue-600 text-white rounded-xl text-sm font-bold shadow-md hover:bg-blue-700 transition-all disabled:opacity-50 flex items-center justify-center gap-2"
+                        >
+                          {loading ? (
+                            <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                          ) : (
+                            <>Book & Send In-House</>
+                          )}
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         </div>

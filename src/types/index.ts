@@ -1,4 +1,4 @@
-export type UserRole = 'client' | 'sales' | 'admin' | 'super_admin' | 'rep' | 'growth_manager';
+export type UserRole = 'client' | 'sales' | 'admin' | 'super_admin' | 'rep' | 'growth_manager' | 'Residential Rep' | 'Residential Sales' | 'Commercial Sales';
 
 export interface UserProfile {
   id: string;
@@ -146,6 +146,9 @@ export interface Lead {
   shading?: string;
   marketplace_notes?: string;
   orientation?: string;
+  lead_type?: 'residential' | 'commercial';
+  division_id?: string | null;
+  sales_pipeline_status?: 'Upcoming' | 'Pitched' | 'No Show' | 'Sold' | 'Lost';
 }
 
 export interface LeadNote {

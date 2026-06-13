@@ -5,9 +5,18 @@ import { Mail, Send, ArrowLeft, Quote, CheckCircle2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
 
 export default function CheckEmail() {
   const router = useRouter();
+  const { profile } = useAuthStore();
+
+  const getHomePath = () => {
+    if (!profile) return '/';
+    if (profile.role === 'client') return '/my-openlead';
+    return '/staff';
+  };
+
   const [isResending, setIsResending] = useState(false);
   const [resendCooldown, setResendCooldown] = useState(0);
 
@@ -142,7 +151,7 @@ export default function CheckEmail() {
       {/* Left Side - Content */}
       <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 relative">
         <div className="absolute top-8 left-8">
-          <a href="/" className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
+          <a href={getHomePath()} className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
             <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
           </a>
         </div>

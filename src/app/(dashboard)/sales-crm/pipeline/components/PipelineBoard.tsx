@@ -23,13 +23,26 @@ const GM_COLUMNS = [
   { id: 'Signed Up', label: 'Signed Up', color: 'green', icon: UserCheck },
 ];
 
+const SALES_COLUMNS = [
+  { id: 'Upcoming', label: 'Upcoming', color: 'blue', icon: PhoneCall },
+  { id: 'Pitched', label: 'Pitched', color: 'purple', icon: Megaphone },
+  { id: 'No Show', label: 'No Show', color: 'red', icon: PhoneCall },
+  { id: 'Sold', label: 'Sold', color: 'green', icon: Trophy },
+  { id: 'Lost', label: 'Lost', color: 'gray', icon: FileText },
+];
+
 export default function PipelineBoard({ leads, role }: PipelineBoardProps) {
   const isGM = role === 'growth_manager';
-  const columns = isGM ? GM_COLUMNS : COLUMNS;
+  const isSales = role === 'Residential Sales' || role === 'Commercial Sales';
+  const columns = isGM ? GM_COLUMNS : isSales ? SALES_COLUMNS : COLUMNS;
 
   const getLeadsByStatus = (status: string) => {
     if (isGM) {
       return leads.filter(l => l.gm_pipeline_status === status);
+    }
+
+    if (isSales) {
+      return leads.filter(l => l.sales_pipeline_status === status);
     }
 
     if (status === 'marketed') {
@@ -63,6 +76,8 @@ export default function PipelineBoard({ leads, role }: PipelineBoardProps) {
       case 'purple': return 'bg-purple-50 border-purple-200 text-purple-800';
       case 'orange': return 'bg-orange-50 border-orange-200 text-orange-800';
       case 'yellow': return 'bg-yellow-50 border-yellow-200 text-yellow-800';
+      case 'red': return 'bg-red-50 border-red-200 text-red-800';
+      case 'gray': return 'bg-gray-50 border-gray-200 text-gray-800';
       default: return 'bg-gray-50 border-gray-200 text-gray-800';
     }
   };
@@ -74,6 +89,8 @@ export default function PipelineBoard({ leads, role }: PipelineBoardProps) {
       case 'purple': return 'bg-purple-100 text-purple-900 border-purple-200';
       case 'orange': return 'bg-orange-100 text-orange-900 border-orange-200';
       case 'yellow': return 'bg-yellow-100 text-yellow-900 border-yellow-200';
+      case 'red': return 'bg-red-100 text-red-900 border-red-200';
+      case 'gray': return 'bg-gray-100 text-gray-900 border-gray-200';
       default: return 'bg-gray-100 text-gray-900 border-gray-200';
     }
   };
@@ -130,6 +147,8 @@ function PipelineCard({ lead, color }: { lead: any, color: string }) {
       case 'purple': return 'border-purple-200 hover:border-purple-300';
       case 'orange': return 'border-orange-200 hover:border-orange-300';
       case 'yellow': return 'border-yellow-200 hover:border-yellow-300';
+      case 'red': return 'border-red-200 hover:border-red-300';
+      case 'gray': return 'border-gray-200 hover:border-gray-300';
       default: return 'border-gray-200 hover:border-gray-300';
     }
   };

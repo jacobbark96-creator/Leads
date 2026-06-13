@@ -25,15 +25,36 @@ export function JobPageClient({ job, variant = 'sidebar' }: { job: Job, variant?
     name: '',
     email: '',
     phone: '',
-    cover_letter: '',
-    resume_url: ''
+    cover_letter: ''
   });
+  const [resumeFile, setResumeFile] = useState<File | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!resumeFile) {
+      toast.error('Please upload your resume');
+      return;
+    }
     setLoading(true);
 
     try {
+      // 1. Upload Resume
+      const fileExt = resumeFile.name.split('.').pop();
+      const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
+      const filePath = `${job.id}/${fileName}`;
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
+        .from('resumes')
+        .upload(filePath, resumeFile);
+
+      if (uploadError) throw uploadError;
+
+      // 2. Get Public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('resumes')
+        .getPublicUrl(filePath);
+
+      // 3. Insert Application
       const { error } = await supabase
         .from('job_applications')
         .insert([{
@@ -42,7 +63,7 @@ export function JobPageClient({ job, variant = 'sidebar' }: { job: Job, variant?
           email: formData.email,
           phone: formData.phone,
           cover_letter: formData.cover_letter,
-          resume_url: formData.resume_url,
+          resume_url: publicUrl,
           status: 'pending'
         }]);
 
@@ -50,9 +71,9 @@ export function JobPageClient({ job, variant = 'sidebar' }: { job: Job, variant?
 
       setSubmitted(true);
       toast.success('Application submitted successfully!');
-    } catch (error) {
+    } catch (error: any) {
       console.error('Error submitting application:', error);
-      toast.error('Failed to submit application. Please try again.');
+      toast.error(error.message || 'Failed to submit application. Please try again.');
     } finally {
       setLoading(false);
     }
@@ -77,6 +98,8 @@ export function JobPageClient({ job, variant = 'sidebar' }: { job: Job, variant?
             submitted={submitted}
             formData={formData}
             setFormData={setFormData}
+            resumeFile={resumeFile}
+            setResumeFile={setResumeFile}
           />
         )}
       </>
@@ -107,6 +130,8 @@ export function JobPageClient({ job, variant = 'sidebar' }: { job: Job, variant?
           submitted={submitted}
           formData={formData}
           setFormData={setFormData}
+          resumeFile={resumeFile}
+          setResumeFile={setResumeFile}
         />
       )}
     </>
@@ -120,11 +145,13 @@ function ModalContent({
   loading, 
   submitted, 
   formData, 
-  setFormData 
+  setFormData,
+  resumeFile,
+  setResumeFile
 }: any) {
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
-      <div className="bg-white rounded-[32px] w-full max-w-xl overflow-hidden shadow-2xl animate-in fade-in zoom-in duration-300">
+      <div className="bg-white rounded-[32px] w-full max-w-xl max-h-[calc(100vh-2rem)] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-300 no-scrollbar">
         <div className="p-8 md:p-10">
           <div className="flex justify-between items-center mb-8">
             <div>
@@ -195,17 +222,30 @@ function ModalContent({
               </div>
 
               <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Resume Link (URL)</label>
+                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Resume / CV</label>
                 <div className="relative">
-                  <Paperclip className="absolute left-5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
                   <input 
                     required
-                    type="url"
-                    placeholder="Link to your CV (Google Drive, Dropbox, etc.)"
-                    className="w-full pl-12 pr-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 transition-all"
-                    value={formData.resume_url}
-                    onChange={(e) => setFormData({...formData, resume_url: e.target.value})}
+                    type="file"
+                    accept=".pdf,.doc,.docx"
+                    onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                    className="hidden"
+                    id="resume-upload"
                   />
+                  <label 
+                    htmlFor="resume-upload"
+                    className="flex items-center gap-3 w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm cursor-pointer hover:bg-slate-100 transition-all"
+                  >
+                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                      <Paperclip className={`w-5 h-5 ${resumeFile ? 'text-openlead-blue' : 'text-slate-400'}`} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-bold truncate ${resumeFile ? 'text-slate-900' : 'text-slate-400'}`}>
+                        {resumeFile ? resumeFile.name : 'Upload your CV (PDF, DOC)'}
+                      </p>
+                      <p className="text-[10px] text-slate-400 font-medium">Max size: 5MB</p>
+                    </div>
+                  </label>
                 </div>
               </div>
 

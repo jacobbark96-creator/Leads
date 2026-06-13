@@ -150,21 +150,25 @@ function ModalContent({
   setResumeFile
 }: any) {
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md">
-      <div className="bg-white rounded-[32px] w-full max-w-xl max-h-[calc(100vh-2rem)] overflow-y-auto shadow-2xl animate-in fade-in zoom-in duration-300 no-scrollbar">
-        <div className="p-8 md:p-10">
-          <div className="flex justify-between items-center mb-8">
-            <div>
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">Apply Now</h2>
-              <p className="text-sm text-slate-500 mt-1">Applying for <span className="text-openlead-blue font-bold">{job.title}</span></p>
+    <div className="fixed inset-0 z-[9999] overflow-y-auto bg-slate-900/60 backdrop-blur-md">
+      <div className="min-h-screen px-4 py-12 flex items-center justify-center">
+        {/* Backdrop overlay for closing */}
+        <div className="fixed inset-0" onClick={onClose}></div>
+
+        <div className="relative bg-white rounded-[32px] w-full max-w-xl shadow-2xl animate-in fade-in zoom-in duration-300">
+          <div className="p-8 md:p-10">
+            <div className="flex justify-between items-center mb-8">
+              <div>
+                <h2 className="text-2xl font-black text-slate-900 tracking-tight">Apply Now</h2>
+                <p className="text-sm text-slate-500 mt-1">Applying for <span className="text-openlead-blue font-bold">{job.title}</span></p>
+              </div>
+              <button 
+                onClick={onClose}
+                className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+              >
+                <X className="w-6 h-6 text-slate-400" />
+              </button>
             </div>
-            <button 
-              onClick={onClose}
-              className="p-2 hover:bg-slate-100 rounded-full transition-colors"
-            >
-              <X className="w-6 h-6 text-slate-400" />
-            </button>
-          </div>
 
           {submitted ? (
             <div className="py-12 text-center space-y-6">
@@ -282,5 +286,6 @@ function ModalContent({
         </div>
       </div>
     </div>
-  );
+  </div>
+);
 }

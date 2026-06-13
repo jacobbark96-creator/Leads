@@ -22,6 +22,18 @@ async function getPost(slug: string) {
   return data;
 }
 
+async function getRelatedPosts(currentId: string) {
+  const { data } = await supabase
+    .from('press_posts')
+    .select('id, title, slug, image_url, created_at')
+    .eq('is_published', true)
+    .neq('id', currentId)
+    .order('created_at', { ascending: false })
+    .limit(3);
+
+  return data || [];
+}
+
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { slug } = await params;
   const post = await getPost(slug);
@@ -51,5 +63,7 @@ export default async function PressPostPage({ params }: Props) {
     notFound();
   }
 
-  return <PressPostClient post={post} />;
+  const relatedPosts = await getRelatedPosts(post.id);
+
+  return <PressPostClient post={post} relatedPosts={relatedPosts} />;
 }

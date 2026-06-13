@@ -3,7 +3,8 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-export const runtime = 'edge';
+// Standard Node.js runtime for better compatibility with client components
+export const dynamic = 'force-dynamic';
 
 import { 
   Briefcase, 
@@ -21,7 +22,7 @@ import {
   Users2
 } from 'lucide-react';
 import Link from 'next/link';
-import { JobPageClient } from './JobPageClient';
+import JobPageClient from './JobPageClient';
 import { ShareButton } from './ShareButton';
 import { HeroImage } from './HeroImage';
 

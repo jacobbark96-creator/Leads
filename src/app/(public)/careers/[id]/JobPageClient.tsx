@@ -17,7 +17,7 @@ interface Job {
   title: string;
 }
 
-export function JobPageClient({ job, variant = 'sidebar' }: { job: Job, variant?: 'sidebar' | 'hero' }) {
+export default function JobPageClient({ job, variant = 'sidebar' }: { job: Job, variant?: 'sidebar' | 'hero' }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
@@ -43,7 +43,7 @@ export function JobPageClient({ job, variant = 'sidebar' }: { job: Job, variant?
       const fileName = `${Math.random().toString(36).substring(2)}-${Date.now()}.${fileExt}`;
       const filePath = `${job.id}/${fileName}`;
 
-      const { error: uploadError, data: uploadData } = await supabase.storage
+      const { error: uploadError } = await supabase.storage
         .from('resumes')
         .upload(filePath, resumeFile);
 
@@ -170,122 +170,122 @@ function ModalContent({
               </button>
             </div>
 
-          {submitted ? (
-            <div className="py-12 text-center space-y-6">
-              <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-100 rounded-full">
-                <CheckCircle2 className="w-10 h-10 text-emerald-600" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-bold text-slate-900">Application Received!</h3>
-                <p className="text-slate-500">Thank you for applying. Our recruitment team will review your application and get back to you soon.</p>
-              </div>
-              <button 
-                onClick={onClose}
-                className="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors"
-              >
-                Close Window
-              </button>
-            </div>
-          ) : (
-            <form onSubmit={onSubmit} className="space-y-6">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Full Name</label>
-                  <input 
-                    required
-                    type="text"
-                    placeholder="John Doe"
-                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 transition-all"
-                    value={formData.name}
-                    onChange={(e) => setFormData({...formData, name: e.target.value})}
-                  />
+            {submitted ? (
+              <div className="py-12 text-center space-y-6">
+                <div className="inline-flex items-center justify-center w-20 h-20 bg-emerald-100 rounded-full">
+                  <CheckCircle2 className="w-10 h-10 text-emerald-600" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Email Address</label>
+                  <h3 className="text-xl font-bold text-slate-900">Application Received!</h3>
+                  <p className="text-slate-500">Thank you for applying. Our recruitment team will review your application and get back to you soon.</p>
+                </div>
+                <button 
+                  onClick={onClose}
+                  className="px-8 py-3 bg-slate-900 text-white font-bold rounded-xl hover:bg-slate-800 transition-colors"
+                >
+                  Close Window
+                </button>
+              </div>
+            ) : (
+              <form onSubmit={onSubmit} className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Full Name</label>
+                    <input 
+                      required
+                      type="text"
+                      placeholder="John Doe"
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 transition-all"
+                      value={formData.name}
+                      onChange={(e) => setFormData({...formData, name: e.target.value})}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Email Address</label>
+                    <input 
+                      required
+                      type="email"
+                      placeholder="john@example.com"
+                      className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 transition-all"
+                      value={formData.email}
+                      onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Phone Number</label>
                   <input 
                     required
-                    type="email"
-                    placeholder="john@example.com"
+                    type="tel"
+                    placeholder="+44 7000 000000"
                     className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 transition-all"
-                    value={formData.email}
-                    onChange={(e) => setFormData({...formData, email: e.target.value})}
+                    value={formData.phone}
+                    onChange={(e) => setFormData({...formData, phone: e.target.value})}
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Phone Number</label>
-                <input 
-                  required
-                  type="tel"
-                  placeholder="+44 7000 000000"
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 transition-all"
-                  value={formData.phone}
-                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Resume / CV</label>
-                <div className="relative">
-                  <input 
-                    required
-                    type="file"
-                    accept=".pdf,.doc,.docx"
-                    onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
-                    className="hidden"
-                    id="resume-upload"
-                  />
-                  <label 
-                    htmlFor="resume-upload"
-                    className="flex items-center gap-3 w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm cursor-pointer hover:bg-slate-100 transition-all"
-                  >
-                    <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
-                      <Paperclip className={`w-5 h-5 ${resumeFile ? 'text-openlead-blue' : 'text-slate-400'}`} />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <p className={`font-bold truncate ${resumeFile ? 'text-slate-900' : 'text-slate-400'}`}>
-                        {resumeFile ? resumeFile.name : 'Upload your CV (PDF, DOC)'}
-                      </p>
-                      <p className="text-[10px] text-slate-400 font-medium">Max size: 5MB</p>
-                    </div>
-                  </label>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Resume / CV</label>
+                  <div className="relative">
+                    <input 
+                      required
+                      type="file"
+                      accept=".pdf,.doc,.docx"
+                      onChange={(e) => setResumeFile(e.target.files?.[0] || null)}
+                      className="hidden"
+                      id="resume-upload"
+                    />
+                    <label 
+                      htmlFor="resume-upload"
+                      className="flex items-center gap-3 w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm cursor-pointer hover:bg-slate-100 transition-all"
+                    >
+                      <div className="w-10 h-10 rounded-xl bg-white border border-slate-100 flex items-center justify-center shadow-sm">
+                        <Paperclip className={`w-5 h-5 ${resumeFile ? 'text-openlead-blue' : 'text-slate-400'}`} />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={`font-bold truncate ${resumeFile ? 'text-slate-900' : 'text-slate-400'}`}>
+                          {resumeFile ? resumeFile.name : 'Upload your CV (PDF, DOC)'}
+                        </p>
+                        <p className="text-[10px] text-slate-400 font-medium">Max size: 5MB</p>
+                      </div>
+                    </label>
+                  </div>
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Cover Letter (Optional)</label>
-                <textarea 
-                  rows={4}
-                  placeholder="Tell us why you're a great fit..."
-                  className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 transition-all resize-none"
-                  value={formData.cover_letter}
-                  onChange={(e) => setFormData({...formData, cover_letter: e.target.value})}
-                />
-              </div>
+                <div className="space-y-2">
+                  <label className="text-[10px] font-bold text-slate-400 uppercase tracking-widest px-1">Cover Letter (Optional)</label>
+                  <textarea 
+                    rows={4}
+                    placeholder="Tell us why you're a great fit..."
+                    className="w-full px-5 py-4 bg-slate-50 border border-slate-100 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 transition-all resize-none"
+                    value={formData.cover_letter}
+                    onChange={(e) => setFormData({...formData, cover_letter: e.target.value})}
+                  />
+                </div>
 
-              <button 
-                disabled={loading}
-                type="submit"
-                className="w-full py-5 bg-openlead-blue text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-openlead-blue/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 mt-4"
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="w-5 h-5 animate-spin" />
-                    Submitting...
-                  </>
-                ) : (
-                  <>
-                    <Send className="w-5 h-5" />
-                    Send Application
-                  </>
-                )}
-              </button>
-            </form>
-          )}
+                <button 
+                  disabled={loading}
+                  type="submit"
+                  className="w-full py-5 bg-openlead-blue text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-openlead-blue/90 disabled:opacity-50 disabled:cursor-not-allowed transition-all flex items-center justify-center gap-3 mt-4"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                      Submitting...
+                    </>
+                  ) : (
+                    <>
+                      <Send className="w-5 h-5" />
+                      Send Application
+                    </>
+                  )}
+                </button>
+              </form>
+            )}
+          </div>
         </div>
       </div>
     </div>
-  </div>
-);
+  );
 }

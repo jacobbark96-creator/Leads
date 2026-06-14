@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lead } from '../types';
-import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard, ShieldCheck, MapPin, Tag, Wallet, Info as InfoIcon } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard, ShieldCheck, MapPin, Tag, Wallet, Info as InfoIcon, Zap } from 'lucide-react';
 import { extractTown } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
@@ -245,7 +245,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                         onClick={() => {
                           const currentLimit = Number(profile.trade_limit_setting) || 0;
                           if (currentLimit <= 0) {
-                            toast.error('Please set your Trade Limit in the dashboard first');
+                            toast.error('Please set your Flex Limit in the dashboard first');
                             return;
                           }
                           setUseTradeAccount(!useTradeAccount);
@@ -260,20 +260,20 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
                             useTradeAccount ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'
                           }`}>
-                            <Wallet className="w-5 h-5" />
+                            <Zap className="w-5 h-5" />
                           </div>
                           <div>
-                            <p className="text-sm font-bold text-gray-900 leading-tight">Add to Invoice</p>
+                            <p className="text-sm font-bold text-gray-900 leading-tight">Add to Flex Invoice</p>
                             <div className="space-y-0.5 mt-0.5">
                               <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
                                 { (profile.trade_limit_setting || 0) > 0 
-                                  ? `Trade Account Limit: £${(profile.trade_limit_setting || 0).toLocaleString()}`
-                                  : 'Trade Limit Not Set'
+                                  ? `Flex Limit: £${(profile.trade_limit_setting || 0).toLocaleString()}`
+                                  : 'Flex Limit Not Set'
                                 }
                               </p>
                               { (profile.trade_limit_setting || 0) > 0 && (
                                 <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
-                                  Remaining Limit: £{Math.max(0, (profile.trade_limit_setting || 0) - (profile.current_trade_usage || 0)).toLocaleString()}
+                                  Remaining Flex: £{Math.max(0, (profile.trade_limit_setting || 0) - (profile.current_trade_usage || 0)).toLocaleString()}
                                 </p>
                               )}
                             </div>
@@ -369,7 +369,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                     }`}
                   >
                     {useTradeAccount 
-                      ? 'Add to Invoice' 
+                      ? 'Add to Flex Invoice' 
                       : (totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay')}
                   </button>
                   <p className="text-[10px] text-center text-gray-500 mt-2.5 flex items-center justify-center gap-1">

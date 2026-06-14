@@ -22,6 +22,7 @@ export interface UserProfile {
   approved_trade_amount?: number;
   current_trade_usage?: number;
   trade_limit_setting?: number;
+  flex_terms_accepted_at?: string | null;
   created_at: string;
 }
 

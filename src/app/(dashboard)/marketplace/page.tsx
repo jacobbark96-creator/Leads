@@ -305,7 +305,7 @@ export default function MarketplacePage() {
 
         if (purchaseError) throw purchaseError;
         
-        toast.success('Lead purchased successfully via Trade Account!');
+        toast.success('Lead purchased successfully via Flex!');
         trackLeadEvent(leadId, profile.id, 'purchase_complete');
         
         // Refresh leads and balance

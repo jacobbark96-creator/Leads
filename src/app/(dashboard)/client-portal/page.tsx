@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Calendar as CalendarIcon, Filter, Search, Phone, Mail, Building, MapPin, User, ChevronDown, CheckSquare, ShoppingCart, List, TrendingUp, Gift, Users, X } from 'lucide-react';
+import { Calendar as CalendarIcon, Filter, Search, Phone, Mail, Building, MapPin, User, ChevronDown, CheckSquare, ShoppingCart, List, TrendingUp, Gift, Users, X, Zap } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 import { Lead, Category } from '../../../types';
@@ -248,9 +248,9 @@ export default function ClientDashboard() {
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-1.5">
             <div className="w-6 h-6 bg-gradient-to-br from-emerald-500/10 to-emerald-50 rounded flex items-center justify-center text-emerald-600 shrink-0">
-              <TrendingUp className="w-3 h-3" />
+              <Zap className="w-3 h-3" />
             </div>
-            <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 truncate">Trade Credit</span>
+            <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 truncate">Flex Credit</span>
           </div>
           <div className="text-right">
             <div className="text-[8px] text-gray-400 font-bold uppercase tracking-wider leading-none mb-0.5">Left to spend</div>

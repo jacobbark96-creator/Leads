@@ -3,7 +3,8 @@ import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 
-// Standard Node.js runtime for better compatibility with client components
+// Cloudflare Pages requires edge runtime for non-static routes
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 import { 

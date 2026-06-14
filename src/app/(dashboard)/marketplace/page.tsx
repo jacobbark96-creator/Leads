@@ -25,7 +25,7 @@ export default function MarketplacePage() {
   const [allowedCategoryIds, setAllowedCategoryIds] = useState<string[] | null>(null);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [sortBy, setSortBy] = useState<string>('newest');
-  const { profile } = useAuthStore();
+  const { profile, refreshProfile } = useAuthStore();
   const PAGE_SIZE = 24;
   const lastFetchKey = useRef<string>('');
   const allowedCategoryIdsRef = useRef<string[] | null>(null);
@@ -261,7 +261,7 @@ export default function MarketplacePage() {
     fetchMarketplaceLeads(nextPage, false);
   };
 
-  const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive', discountedPrice?: number) => {
+  const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive', discountedPrice?: number, useTradeAccount: boolean = false) => {
     if (!profile) return;
     try {
       trackLeadEvent(leadId, profile.id, 'checkout');
@@ -287,13 +287,35 @@ export default function MarketplacePage() {
         throw new Error('No valid client ID found to assign this lead to.');
       }
 
-      // Find the lead details to pass to Stripe
       const lead = leads.find(l => l.id === leadId);
       if (!lead) throw new Error('Lead details not found');
 
       const targetPrice = discountedPrice !== undefined ? discountedPrice : (purchaseType === 'exclusive' ? (lead.exclusive_price || 135) : (lead.share_price || 45));
 
-      // Create checkout session via our API
+      if (useTradeAccount) {
+        setLoading(true);
+        const { data, error: purchaseError } = await supabase.rpc('purchase_lead', {
+          p_lead_id: leadId,
+          p_client_id: clientId,
+          p_purchase_type: purchaseType,
+          p_price_paid: discountedPrice - creditToUse,
+          p_credit_used: creditToUse,
+          p_use_trade_account: true
+        });
+
+        if (purchaseError) throw purchaseError;
+        
+        toast.success('Lead purchased successfully via Trade Account!');
+        trackLeadEvent(leadId, profile.id, 'purchase_complete');
+        
+        // Refresh leads and balance
+        await refreshProfile();
+        fetchMarketplaceLeads(0, true);
+        setLeadToPurchase(null);
+        return;
+      }
+
+      // Create checkout session via our API (existing logic)
       const res = await fetch('/api/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -514,7 +536,7 @@ export default function MarketplacePage() {
           onClose={() => setLeadToPurchase(null)}
           lead={leadToPurchase}
           creditBalance={creditBalance}
-          onProceedToPay={(creditToUse, purchaseType, discountedPrice) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType, discountedPrice)}
+          onProceedToPay={(creditToUse, purchaseType, discountedPrice, useTradeAccount) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType, discountedPrice, useTradeAccount)}
         />
       )}
     </ProtectedRoute>

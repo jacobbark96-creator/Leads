@@ -168,6 +168,34 @@ export async function POST(req: Request) {
       
       break;
     }
+    case 'invoice.paid': {
+      const invoice = event.data.object as any;
+      const userId = invoice.metadata?.userId || invoice.subscription_details?.metadata?.userId;
+      const localInvoiceId = invoice.metadata?.localInvoiceId;
+      
+      // If this was a trade account invoice, reset usage
+      if (invoice.metadata?.type === 'trade_account' && userId) {
+        console.log(`Resetting trade usage for user ${userId} following paid invoice ${invoice.id}`);
+        
+        // 1. Reset usage on user profile
+        const { error: userError } = await supabaseAdmin
+          .from('users')
+          .update({ current_trade_usage: 0 })
+          .eq('id', userId);
+          
+        if (userError) console.error('Error resetting trade usage:', userError);
+
+        // 2. Update local invoice status to 'paid'
+        if (localInvoiceId) {
+          const { error: invError } = await supabaseAdmin
+            .from('invoices')
+            .update({ status: 'paid', paid_at: new Date().toISOString() })
+            .eq('id', localInvoiceId);
+          if (invError) console.error('Error updating local invoice status:', invError);
+        }
+      }
+      break;
+    }
     // You can handle other events like invoice.paid, customer.subscription.deleted etc. here.
     default:
       console.log(`Unhandled event type ${event.type}`);

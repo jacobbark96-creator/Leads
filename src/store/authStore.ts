@@ -14,6 +14,7 @@ interface AuthState {
   setProfile: (profile: UserProfile | null) => void;
   setLoading: (loading: boolean) => void;
   initialize: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -28,6 +29,23 @@ export const useAuthStore = create<AuthState>()(
       setUser: (user) => set({ user }),
       setProfile: (profile) => set({ profile }),
       setLoading: (loading) => set({ loading }),
+      refreshProfile: async () => {
+        const { user } = get();
+        if (!user) return;
+        
+        try {
+          const { data: profile, error } = await supabase
+            .from('users')
+            .select('*, divisions(*)')
+            .eq('id', user.id)
+            .single();
+            
+          if (error) throw error;
+          if (profile) set({ profile });
+        } catch (error) {
+          console.error('Error refreshing profile:', error);
+        }
+      },
       initialize: async () => {
         // Prevent multiple simultaneous initializations
         if (get().isInitializing || get().initialized) return;

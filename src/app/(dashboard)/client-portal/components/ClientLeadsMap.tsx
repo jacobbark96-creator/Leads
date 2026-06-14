@@ -21,15 +21,19 @@ if (typeof window !== 'undefined') {
     (L.Map.prototype as any)._initContainer = function (id: string | HTMLElement) {
       const container = typeof id === 'string' ? document.getElementById(id) : id;
       if (container) {
+        // Clear the leaflet ID to prevent "Map container is being reused" error
         if ((container as any)._leaflet_id) {
           (container as any)._leaflet_id = null;
         }
-        // Instead of emptying innerHTML which destroys react's references, just ensure
-        // any existing leaflet panes are removed or let leaflet reuse the container safely.
+        
+        // Remove existing leaflet elements if they exist
         const children = Array.from(container.childNodes);
         children.forEach(child => {
-          if ((child as HTMLElement).classList?.contains('leaflet-pane') || 
-              (child as HTMLElement).classList?.contains('leaflet-control-container')) {
+          const el = child as HTMLElement;
+          if (el.classList?.contains('leaflet-pane') || 
+              el.classList?.contains('leaflet-control-container') ||
+              el.classList?.contains('leaflet-top') ||
+              el.classList?.contains('leaflet-bottom')) {
             container.removeChild(child);
           }
         });
@@ -59,16 +63,17 @@ interface ClientLeadsMapProps {
 export default function ClientLeadsMap({ leads, onLeadClick }: ClientLeadsMapProps) {
   // Center of UK
   const defaultCenter: [number, number] = [54.0, -2.5];
-  const [mapId, setMapId] = useState<string | null>(null);
+  
+  // Use a ref for the map ID to keep it stable across re-renders
+  const mapIdRef = React.useRef(`map-${Math.random().toString(36).substr(2, 9)}`);
+  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
-    const timer = setTimeout(() => {
-      setMapId('map-' + Math.random().toString(36).substr(2, 9));
-    }, 50);
-    return () => clearTimeout(timer);
+    setIsMounted(true);
+    return () => setIsMounted(false);
   }, []);
 
-  if (!mapId) {
+  if (!isMounted) {
     return <div className="w-full h-[500px] lg:h-full bg-blue-50/50 flex items-center justify-center rounded-xl border border-blue-100/50">Loading map...</div>;
   }
 
@@ -77,14 +82,13 @@ export default function ClientLeadsMap({ leads, onLeadClick }: ClientLeadsMapPro
 
   return (
     <div className="w-full h-[500px] lg:h-full rounded-xl overflow-hidden border border-gray-200 relative z-0">
-      {mapId && (
-        <MapContainer 
-          id={mapId}
-          center={defaultCenter} 
-          zoom={6} 
-          style={{ height: '100%', width: '100%', zIndex: 0 }}
-          zoomControl={true}
-        >
+      <MapContainer 
+        id={mapIdRef.current}
+        center={defaultCenter} 
+        zoom={6} 
+        style={{ height: '100%', width: '100%', zIndex: 0 }}
+        zoomControl={true}
+      >
         <TileLayer
           attribution='&copy; OpenStreetMap'
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
@@ -113,7 +117,6 @@ export default function ClientLeadsMap({ leads, onLeadClick }: ClientLeadsMapPro
           </Marker>
         ))}
       </MapContainer>
-      )}
     </div>
   );
 }

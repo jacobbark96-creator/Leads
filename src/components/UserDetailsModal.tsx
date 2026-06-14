@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserProfile, Division } from '../types';
-import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin, Briefcase } from 'lucide-react';
+import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin, Briefcase, CreditCard } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 
@@ -48,6 +48,10 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     twilio_number: user.twilio_number || '',
     division_id: user.division_id || '',
     permissions: user.permissions || [],
+    trade_account_enabled: user.trade_account_enabled || false,
+    approved_trade_amount: user.approved_trade_amount || 0,
+    current_trade_usage: user.current_trade_usage || 0,
+    trade_limit_setting: user.trade_limit_setting || 0,
     company_name: '',
     phone: '',
     other_contacts: '',
@@ -318,7 +322,11 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           job_title: formData.job_title,
           about: formData.about,
           working_hours: formData.working_hours,
-          permissions: formData.permissions
+          permissions: formData.permissions,
+          trade_account_enabled: formData.trade_account_enabled,
+          approved_trade_amount: formData.approved_trade_amount,
+          current_trade_usage: formData.current_trade_usage,
+          trade_limit_setting: formData.trade_limit_setting
         })
         .eq('id', user.id);
 
@@ -631,6 +639,64 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                     </select>
                   </div>
                 </div>
+
+                {formData.role === 'client' && (
+                  <div className="md:col-span-2 pt-4 border-t border-gray-100">
+                    <div className="flex items-center justify-between p-4 bg-blue-50 rounded-xl border border-blue-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-blue-600 shadow-sm">
+                          <CreditCard className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900">Trade Account</h4>
+                          <p className="text-xs text-gray-500">Enable credit-based lead purchasing</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, trade_account_enabled: !formData.trade_account_enabled})}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${formData.trade_account_enabled ? 'bg-blue-600' : 'bg-gray-200'}`}
+                      >
+                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.trade_account_enabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+
+                    {formData.trade_account_enabled && (
+                      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4 animate-in fade-in slide-in-from-top-2 duration-300">
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Approved Credit Amount (£)</label>
+                          <input
+                            type="number"
+                            value={formData.approved_trade_amount}
+                            onChange={(e) => setFormData({...formData, approved_trade_amount: parseFloat(e.target.value) || 0})}
+                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            placeholder="e.g. 5000"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Client Set Limit (£)</label>
+                          <input
+                            type="number"
+                            value={formData.trade_limit_setting}
+                            onChange={(e) => setFormData({...formData, trade_limit_setting: parseFloat(e.target.value) || 0})}
+                            className="w-full px-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            placeholder="Limit set by client"
+                          />
+                        </div>
+                        <div className="md:col-span-2">
+                          <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Current Usage (£)</label>
+                          <input
+                            type="number"
+                            value={formData.current_trade_usage}
+                            onChange={(e) => setFormData({...formData, current_trade_usage: parseFloat(e.target.value) || 0})}
+                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 transition-all"
+                            placeholder="Current week spend"
+                          />
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
 
                 {['rep', 'sales', 'admin', 'super_admin', 'growth_manager', 'Residential Rep', 'Residential Sales', 'Commercial Sales'].includes(formData.role) && (
                   <div className={hasClientProfile ? "md:col-span-2" : ""}>

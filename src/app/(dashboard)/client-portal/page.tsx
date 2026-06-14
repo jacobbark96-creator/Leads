@@ -219,7 +219,7 @@ export default function ClientDashboard() {
             <p className="text-[10px] sm:text-[11px] text-slate-400">{leads.length} leads in portfolio</p>
           </div>
         </div>
-        <div className="hidden md:flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
+        <div className="hidden lg:flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
           <div className="w-6 h-6 bg-gradient-to-br from-openlead-blue to-blue-600 rounded flex items-center justify-center text-white shrink-0">
             <MapPin className="w-3 h-3" />
           </div>
@@ -237,6 +237,37 @@ export default function ClientDashboard() {
     </div>
   );
 
+  const getLeftToSpendCard = () => {
+    const limit = Number(profile?.trade_limit_setting) || 0;
+    const usage = Number(profile?.current_trade_usage) || 0;
+    const remaining = Math.max(0, limit - usage);
+
+    return (
+      <div className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 p-2.5 h-full flex flex-col justify-between relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full"></div>
+        <div className="relative z-10 flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <div className="w-6 h-6 bg-gradient-to-br from-emerald-500/10 to-emerald-50 rounded flex items-center justify-center text-emerald-600 shrink-0">
+              <TrendingUp className="w-3 h-3" />
+            </div>
+            <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 truncate">Trade Credit</span>
+          </div>
+          <div className="text-right">
+            <div className="text-[8px] text-gray-400 font-bold uppercase tracking-wider leading-none mb-0.5">Left to spend</div>
+            <div className="text-sm sm:text-base font-black text-gray-900 leading-none">
+              £{remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+            </div>
+          </div>
+        </div>
+        
+        <div className="relative z-10 flex items-center justify-between mt-auto pt-1.5 border-t border-gray-100">
+          <span className="text-[9px] sm:text-[10px] text-gray-500 truncate">Limit: £{limit.toLocaleString()}</span>
+          <span className="text-[9px] sm:text-[10px] font-black text-emerald-600 uppercase">Weekly</span>
+        </div>
+      </div>
+    );
+  };
+
   const getTopUpCard = () => (
     <div className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 p-2.5 h-full flex flex-col justify-between relative overflow-hidden">
       <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-openlead-blue/5 to-transparent rounded-bl-full"></div>
@@ -247,13 +278,14 @@ export default function ClientDashboard() {
           </div>
           <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 truncate">Credit</span>
         </div>
-        <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full shadow shadow-emerald-500/50 shrink-0"></div>
-      </div>
-      <div className="relative z-10">
-        <div className="text-lg sm:text-xl font-black text-gray-900 truncate">
-          £{creditBalance.toFixed(2)}
+        <div className="text-right">
+          <div className="text-[8px] text-gray-400 font-bold uppercase tracking-wider leading-none mb-0.5">Current Balance</div>
+          <div className="text-sm sm:text-base font-black text-gray-900 leading-none">
+            £{creditBalance.toFixed(2)}
+          </div>
         </div>
       </div>
+      
       <div className="relative z-10 flex items-center justify-between mt-auto pt-1.5 border-t border-gray-100">
         <span className="text-[9px] sm:text-[10px] text-gray-500 truncate">{leads.length} leads</span>
         <button 
@@ -287,9 +319,12 @@ export default function ClientDashboard() {
     <div className="flex flex-col h-auto lg:h-[calc(100vh-160px)] gap-4 lg:gap-5 pt-2 lg:pt-4">
       {/* TOP ROW - Direct layout */}
       <div className="flex-none flex gap-3 lg:gap-4 h-auto lg:h-[90px]">
-        <div className="w-[55%] lg:w-[58%] h-full">{getWelcomeBanner()}</div>
-        <div className="flex-1 h-full grid grid-cols-2 gap-2 lg:gap-3">
+        <div className={`${profile?.trade_account_enabled ? 'w-[35%] lg:w-[40%]' : 'w-[55%] lg:w-[58%]'} h-full transition-all duration-300`}>
+          {getWelcomeBanner()}
+        </div>
+        <div className="flex-1 h-full grid grid-cols-2 sm:grid-cols-3 gap-2 lg:gap-3">
           {getTopUpCard()}
+          {profile?.trade_account_enabled && getLeftToSpendCard()}
           {getNextInvoiceCard()}
         </div>
       </div>
@@ -301,7 +336,11 @@ export default function ClientDashboard() {
         <div className="lg:col-span-3 bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
           <div className="h-full relative">
             {leads.length > 0 ? (
-              <DynamicMap leads={leads} onLeadClick={setSelectedLead} />
+              <DynamicMap 
+                key={`map-container-${profile?.id}`}
+                leads={leads} 
+                onLeadClick={setSelectedLead} 
+              />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-gradient-to-br from-gray-50 to-white">
                 <div className="w-24 h-24 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl flex items-center justify-center mb-4 shadow-inner border border-blue-100/50">

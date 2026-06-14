@@ -2,19 +2,21 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
 import { AdminNotifications } from './AdminNotifications';
 import { SmsNotifications } from './SmsNotifications';
 import { supabase } from '../lib/supabase';
+import { TradeModal } from './TradeModal';
 
 export const MainLayout = ({ children }: { children: React.ReactNode }) => {
-  const { profile, signOut } = useAuthStore();
+  const { profile, signOut, refreshProfile } = useAuthStore();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [clientName, setClientName] = useState<string | null>(null);
   const [clientCompanyName, setClientCompanyName] = useState<string | null>(null);
+  const [showTradeModal, setShowTradeModal] = useState(false);
 
   useEffect(() => {
     if (profile?.role === 'client') {
@@ -208,6 +210,15 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
               </div>
 
               <div className="hidden sm:ml-6 sm:flex sm:items-center">
+                {profile.role === 'client' && profile.trade_account_enabled && (
+                  <button 
+                    onClick={() => setShowTradeModal(true)}
+                    className="mr-4 flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-full text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20"
+                  >
+                    <CreditCard className="w-4 h-4" />
+                    Trade
+                  </button>
+                )}
                 {(profile.role === 'admin' || profile.role === 'super_admin' || profile.role === 'sales' || profile.role === 'rep') && (
                   <div className="mr-2">
                     <AdminNotifications />
@@ -356,6 +367,20 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
       <main className={`flex-1 w-full mx-auto ${pathname?.startsWith('/staff') ? 'px-0 pt-0 pb-0' : 'max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-8'}`}>
         {children}
       </main>
+
+      {showTradeModal && profile && (
+        <TradeModal
+          isOpen={showTradeModal}
+          onClose={() => setShowTradeModal(false)}
+          userId={profile.id}
+          approvedAmount={profile.approved_trade_amount || 0}
+          currentSetting={profile.trade_limit_setting || 0}
+          onUpdate={async () => {
+            // Refresh the profile data from Supabase
+            await refreshProfile();
+          }}
+        />
+      )}
     </div>
   );
 };

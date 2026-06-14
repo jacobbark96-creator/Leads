@@ -1,6 +1,6 @@
 import { supabase } from '../lib/supabase';
 
-export type LeadEventType = 'view' | 'order_summary' | 'checkout';
+export type LeadEventType = 'view' | 'order_summary' | 'checkout' | 'purchase_complete';
 
 export const trackLeadEvent = async (leadId: string, userId: string, eventType: LeadEventType) => {
   try {

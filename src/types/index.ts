@@ -18,6 +18,10 @@ export interface UserProfile {
   email_signature?: string | null;
   division_id?: string | null;
   divisions?: Division | null;
+  trade_account_enabled?: boolean;
+  approved_trade_amount?: number;
+  current_trade_usage?: number;
+  trade_limit_setting?: number;
   created_at: string;
 }
 

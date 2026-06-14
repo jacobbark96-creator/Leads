@@ -1,23 +1,26 @@
 import React, { useState } from 'react';
 import { Lead } from '../types';
-import { X, CreditCard, ShieldCheck, MapPin, Tag } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard, ShieldCheck, MapPin, Tag, Wallet, Info as InfoIcon } from 'lucide-react';
 import { extractTown } from '../lib/utils';
 import { supabase } from '../lib/supabase';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../store/authStore';
 
 interface OrderSummaryModalProps {
   isOpen: boolean;
   onClose: () => void;
   lead: Lead;
   creditBalance: number;
-  onProceedToPay: (creditToUse: number, purchaseType: 'exclusive' | 'share', discountedPrice: number) => void;
+  onProceedToPay: (creditToUse: number, purchaseType: 'exclusive' | 'share', discountedPrice: number, useTradeAccount: boolean) => void;
 }
 
 export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, onClose, lead, creditBalance, onProceedToPay }) => {
+  const { profile } = useAuthStore();
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<{code: string, amount: number} | null>(null);
   const [isApplying, setIsApplying] = useState(false);
   const [purchaseType, setPurchaseType] = useState<'exclusive' | 'share'>('exclusive');
+  const [useTradeAccount, setUseTradeAccount] = useState(false);
 
   if (!isOpen) return null;
 
@@ -32,7 +35,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
   const basePrice = purchaseType === 'exclusive' ? (lead.exclusive_price || 135) : (lead.share_price || 45);
   const discountedPrice = Math.max(0, basePrice - (appliedDiscount?.amount || 0));
   const creditToUse = Math.min(creditBalance, discountedPrice);
-  const totalToPay = Math.max(0, discountedPrice - creditToUse);
+  const totalToPay = useTradeAccount ? 0 : Math.max(0, discountedPrice - creditToUse);
 
   const handleApplyDiscount = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -236,6 +239,55 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
 
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Payment Summary</h3>
                   
+                  {profile?.trade_account_enabled && (
+                    <div className="mb-4">
+                      <label 
+                        onClick={() => {
+                          const currentLimit = Number(profile.trade_limit_setting) || 0;
+                          if (currentLimit <= 0) {
+                            toast.error('Please set your Trade Limit in the dashboard first');
+                            return;
+                          }
+                          setUseTradeAccount(!useTradeAccount);
+                        }}
+                        className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                          useTradeAccount 
+                            ? 'border-blue-600 bg-blue-50 shadow-md' 
+                            : 'border-gray-200 hover:border-blue-300'
+                        } ${((profile.trade_limit_setting || 0) <= 0) ? 'opacity-60 grayscale' : ''}`}
+                      >
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                            useTradeAccount ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'
+                          }`}>
+                            <Wallet className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-sm font-bold text-gray-900 leading-tight">Add to Invoice</p>
+                            <div className="space-y-0.5 mt-0.5">
+                              <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
+                                { (profile.trade_limit_setting || 0) > 0 
+                                  ? `Trade Account Limit: £${(profile.trade_limit_setting || 0).toLocaleString()}`
+                                  : 'Trade Limit Not Set'
+                                }
+                              </p>
+                              { (profile.trade_limit_setting || 0) > 0 && (
+                                <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
+                                  Remaining Limit: £{Math.max(0, (profile.trade_limit_setting || 0) - (profile.current_trade_usage || 0)).toLocaleString()}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                        <div className={`w-5 h-5 rounded-full border-2 flex items-center justify-center transition-colors ${
+                          useTradeAccount ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                        }`}>
+                          {useTradeAccount && <div className="w-2 h-2 rounded-full bg-white" />}
+                        </div>
+                      </label>
+                    </div>
+                  )}
+
                   <div className="space-y-4">
                     <div className="flex justify-between text-sm">
                       <span className="text-gray-600">Current Credit Balance</span>
@@ -300,18 +352,38 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
 
                 <div className="p-5">
                   <div className="flex justify-between items-end mb-5">
-                    <span className="text-sm font-bold text-gray-900 uppercase tracking-wider">Total to pay</span>
-                    <span className="text-2xl font-black text-gray-900">£{totalToPay.toFixed(2)}</span>
+                    <span className="text-sm font-bold text-gray-900 uppercase tracking-wider">
+                      {useTradeAccount ? 'To be Invoiced' : 'Total to pay'}
+                    </span>
+                    <span className="text-2xl font-black text-gray-900">
+                      £{(useTradeAccount ? (discountedPrice - creditToUse) : totalToPay).toFixed(2)}
+                    </span>
                   </div>
 
                   <button
-                    onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice)}
-                    className="w-full flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white bg-blue-600 hover:bg-blue-700 shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 transition-colors"
+                    onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice, useTradeAccount)}
+                    className={`w-full flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+                      useTradeAccount 
+                        ? 'bg-slate-900 hover:bg-slate-800 focus:ring-slate-500' 
+                        : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                    }`}
                   >
-                    {totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay'}
+                    {useTradeAccount 
+                      ? 'Add to Invoice' 
+                      : (totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay')}
                   </button>
                   <p className="text-[10px] text-center text-gray-500 mt-2.5 flex items-center justify-center gap-1">
-                    <ShieldCheck className="w-3 h-3" /> Secure payment via Stripe
+                    {useTradeAccount ? (
+                      <>
+                        <InfoIcon className="w-3 h-3" />
+                        This will be added to your weekly invoice
+                      </>
+                    ) : (
+                      <>
+                        <ShieldCheck className="w-3 h-3" />
+                        Secure payment via Stripe
+                      </>
+                    )}
                   </p>
                 </div>
               </div>

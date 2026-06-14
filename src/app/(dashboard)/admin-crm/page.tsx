@@ -13,9 +13,10 @@ import { BackgroundTab } from './components/BackgroundTab';
 import { PressCentreTab } from './components/PressCentreTab';
 import { FeedbackTab } from './components/FeedbackTab';
 import { DivisionsTab } from './components/DivisionsTab';
+import { FinanceTab } from './components/FinanceTab';
 
 export default function UserManagement() {
-  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'lead_monitoring' | 'pack_monitoring' | 'background' | 'press' | 'feedback' | 'divisions'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'lead_monitoring' | 'pack_monitoring' | 'background' | 'press' | 'feedback' | 'divisions' | 'finance'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuthStore();
@@ -209,8 +210,8 @@ export default function UserManagement() {
     if (!addingBalanceId || !balanceAmount) return;
     
     const amount = parseFloat(balanceAmount);
-    if (isNaN(amount) || amount <= 0) {
-      toast.error('Please enter a valid positive amount');
+    if (isNaN(amount)) {
+      toast.error('Please enter a valid amount');
       return;
     }
     
@@ -226,6 +227,11 @@ export default function UserManagement() {
       
       const newBalance = (clientData.credit_balance || 0) + amount;
       
+      if (newBalance < 0) {
+        toast.error('Balance cannot be negative');
+        return;
+      }
+      
       // Update balance
       const { error: updateError } = await supabase
         .from('clients')
@@ -234,7 +240,7 @@ export default function UserManagement() {
         
       if (updateError) throw updateError;
       
-      toast.success(`Successfully added £${amount} to balance`);
+      toast.success(`Successfully updated balance by £${amount}`);
       setClientBalances(prev => ({...prev, [addingBalanceId]: newBalance}));
       setAddingBalanceId(null);
       setBalanceAmount('');
@@ -316,6 +322,12 @@ export default function UserManagement() {
           className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'feedback' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
         >
           <div className="flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Feedback</div>
+        </button>
+        <button
+          onClick={() => setActiveTab('finance')}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'finance' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+        >
+          <div className="flex items-center gap-2"><PoundSterling className="w-4 h-4" /> Finance</div>
         </button>
         {profile?.role === 'super_admin' && (
           <button
@@ -633,14 +645,13 @@ export default function UserManagement() {
             <div className="p-6">
               <form onSubmit={handleAddBalanceSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-1">Amount to Add (£)</label>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Adjustment Amount (£)</label>
                   <div className="relative">
                     <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                       <span className="text-gray-500 sm:text-sm">£</span>
                     </div>
                     <input
                       type="number"
-                      min="1"
                       step="0.01"
                       required
                       value={balanceAmount}
@@ -649,8 +660,8 @@ export default function UserManagement() {
                       placeholder="100.00"
                     />
                   </div>
-                  <p className="mt-2 text-xs text-gray-500">
-                    This amount will be added to the client's current balance.
+                  <p className="mt-2 text-[10px] text-gray-500 font-bold uppercase tracking-wider">
+                    Use positive numbers to add credit, or negative (e.g. -50) to reduce it.
                   </p>
                 </div>
                 <div className="pt-2 flex gap-3">
@@ -665,7 +676,7 @@ export default function UserManagement() {
                     type="submit"
                     className="flex-1 bg-green-600 text-white py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 transition-colors"
                   >
-                    Add Balance
+                    Update Balance
                   </button>
                 </div>
               </form>
@@ -682,6 +693,7 @@ export default function UserManagement() {
       {activeTab === 'background' && <BackgroundTab />}
       {activeTab === 'press' && <PressCentreTab />}
       {activeTab === 'feedback' && <FeedbackTab />}
+      {activeTab === 'finance' && <FinanceTab />}
       {activeTab === 'divisions' && profile?.role === 'super_admin' && <DivisionsTab />}
     </div>
   );

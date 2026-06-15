@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const host = req.headers.get('host') || 'localhost:3000';
     const protocol = host.includes('localhost') ? 'http' : 'https';
     
-    const statusCallbackUrl = `${protocol}://${host}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName)}&entityType=${encodeURIComponent(entityType)}`;
+    const statusCallbackUrl = `${protocol}://${host}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&amp;userName=${encodeURIComponent(userName)}&amp;entityType=${encodeURIComponent(entityType)}`;
     const actionAttr = entityId ? ` action="${statusCallbackUrl}"` : '';
     const fallbackAttr = entityId ? ` statusCallback="${statusCallbackUrl}" statusCallbackEvent="completed"` : '';
 

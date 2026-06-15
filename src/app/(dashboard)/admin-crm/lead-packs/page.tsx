@@ -20,11 +20,13 @@ interface LeadPack {
   created_at: string;
   last_dialled_at?: string;
   assigned_users?: string[];
+  division_id?: string;
 }
 
 export default function LeadPacksPage() {
   const [packs, setPacks] = useState<LeadPack[]>([]);
   const [users, setUsers] = useState<any[]>([]);
+  const [divisions, setDivisions] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState<LeadPack | null>(null);
@@ -36,7 +38,8 @@ export default function LeadPacksPage() {
     description: '',
     color: '#3B82F6',
     icon: '📦',
-    assigned_users: [] as string[]
+    assigned_users: [] as string[],
+    division_id: ''
   });
 
   const EMOJI_LIBRARY = ['📦','🏭','🏢','🏨','🌾','⚡️','☀️','🔨','🔧','💰','📈','🔥','🧊','💧','🚜','🚚','✈️','📞','🎯','🏆','🥇','🚀','💼','🤝'];
@@ -45,6 +48,13 @@ export default function LeadPacksPage() {
     try {
       const { data } = await supabase.rpc('get_staff_users');
       if (data) setUsers(data);
+    } catch (e) {}
+  };
+
+  const fetchDivisions = async () => {
+    try {
+      const { data } = await supabase.from('divisions').select('*');
+      if (data) setDivisions(data);
     } catch (e) {}
   };
 
@@ -68,6 +78,7 @@ export default function LeadPacksPage() {
   useEffect(() => {
     fetchPacks();
     fetchUsers();
+    fetchDivisions();
   }, []);
 
   const handleUpdatePack = async (e: React.FormEvent) => {
@@ -86,7 +97,8 @@ export default function LeadPacksPage() {
           description: showEditModal.description,
           color: showEditModal.color,
           icon: showEditModal.icon,
-          assigned_users: showEditModal.assigned_users || []
+          assigned_users: showEditModal.assigned_users || [],
+          division_id: showEditModal.division_id || null
         })
         .eq('id', showEditModal.id);
         
@@ -116,14 +128,15 @@ export default function LeadPacksPage() {
           color: newPack.color,
           icon: newPack.icon || '📦',
           created_by: profile?.id,
-          assigned_users: newPack.assigned_users
+          assigned_users: newPack.assigned_users,
+          division_id: newPack.division_id || null
         }]);
         
       if (error) throw error;
       
       toast.success('Lead pack created successfully');
       setShowCreateModal(false);
-      setNewPack({ name: '', description: '', color: '#3B82F6', icon: '📦', assigned_users: [] });
+      setNewPack({ name: '', description: '', color: '#3B82F6', icon: '📦', assigned_users: [], division_id: '' });
       fetchPacks();
     } catch (error: any) {
       toast.error('Failed to create pack: ' + error.message);
@@ -431,9 +444,35 @@ export default function LeadPacksPage() {
                   </div>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Division</label>
+                  <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                    <button
+                      type="button"
+                      onClick={() => setNewPack({...newPack, division_id: '', assigned_users: []})}
+                      className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${!newPack.division_id ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'}`}
+                    >
+                      All Divisions
+                    </button>
+                    {divisions.map(div => (
+                      <button
+                        key={div.id}
+                        type="button"
+                        onClick={() => setNewPack({...newPack, division_id: div.id, assigned_users: []})}
+                        className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${newPack.division_id === div.id ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'}`}
+                      >
+                        {div.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Users</label>
                   <div className="border border-gray-300 rounded-lg p-2 max-h-32 overflow-y-auto bg-white space-y-1">
-                    {users.filter(u => ['rep', 'representative', 'sales'].includes(u.role?.toLowerCase())).map(u => (
+                    {users
+                      .filter(u => ['rep', 'representative', 'sales'].includes(u.role?.toLowerCase()))
+                      .filter(u => !newPack.division_id || u.division_id === newPack.division_id)
+                      .map(u => (
                       <label key={u.id} className="flex items-center gap-2 text-sm p-1 hover:bg-gray-50 rounded cursor-pointer">
                         <input
                           type="checkbox"
@@ -450,7 +489,10 @@ export default function LeadPacksPage() {
                         <span>{u.name || 'Unnamed User'} <span className="text-xs text-gray-400">({u.role})</span></span>
                       </label>
                     ))}
-                    {users.filter(u => ['rep', 'representative', 'sales'].includes(u.role?.toLowerCase())).length === 0 && <span className="text-xs text-gray-500 p-1">No representatives found</span>}
+                    {users
+                      .filter(u => ['rep', 'representative', 'sales'].includes(u.role?.toLowerCase()))
+                      .filter(u => !newPack.division_id || u.division_id === newPack.division_id)
+                      .length === 0 && <span className="text-xs text-gray-500 p-1">No representatives found in this division</span>}
                   </div>
                 </div>
                 <div className="pt-4 flex justify-end gap-3">
@@ -535,9 +577,35 @@ export default function LeadPacksPage() {
                   </div>
                 </div>
                 <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Division</label>
+                  <div className="flex gap-2 overflow-x-auto pb-2 no-scrollbar">
+                    <button
+                      type="button"
+                      onClick={() => setShowEditModal({...showEditModal, division_id: '', assigned_users: []})}
+                      className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${!showEditModal.division_id ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'}`}
+                    >
+                      All Divisions
+                    </button>
+                    {divisions.map(div => (
+                      <button
+                        key={div.id}
+                        type="button"
+                        onClick={() => setShowEditModal({...showEditModal, division_id: div.id, assigned_users: []})}
+                        className={`px-4 py-2 rounded-full text-xs font-bold whitespace-nowrap border transition-all ${showEditModal.division_id === div.id ? 'bg-blue-600 border-blue-600 text-white shadow-md' : 'bg-white border-gray-200 text-gray-600 hover:border-blue-300'}`}
+                      >
+                        {div.name}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Assign to Users</label>
                   <div className="border border-gray-300 rounded-lg p-2 max-h-32 overflow-y-auto bg-white space-y-1">
-                    {users.filter(u => ['rep', 'representative', 'sales'].includes(u.role?.toLowerCase())).map(u => (
+                    {users
+                      .filter(u => ['rep', 'representative', 'sales'].includes(u.role?.toLowerCase()))
+                      .filter(u => !showEditModal.division_id || u.division_id === showEditModal.division_id)
+                      .map(u => (
                       <label key={u.id} className="flex items-center gap-2 text-sm p-1 hover:bg-gray-50 rounded cursor-pointer">
                         <input
                           type="checkbox"
@@ -555,7 +623,10 @@ export default function LeadPacksPage() {
                         <span>{u.name || 'Unnamed User'} <span className="text-xs text-gray-400">({u.role})</span></span>
                       </label>
                     ))}
-                    {users.filter(u => ['rep', 'representative', 'sales'].includes(u.role?.toLowerCase())).length === 0 && <span className="text-xs text-gray-500 p-1">No representatives found</span>}
+                    {users
+                      .filter(u => ['rep', 'representative', 'sales'].includes(u.role?.toLowerCase()))
+                      .filter(u => !showEditModal.division_id || u.division_id === showEditModal.division_id)
+                      .length === 0 && <span className="text-xs text-gray-500 p-1">No representatives found in this division</span>}
                   </div>
                 </div>
                 <div className="pt-4 flex justify-end gap-3">

@@ -1,7 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
@@ -150,26 +149,25 @@ export async function GET(request: Request) {
         chunks.push(last10Digits.slice(i, i + 10));
       }
       
-      const chunkPromises = chunks.flatMap(chunk => {
+      for (const chunk of chunks) {
         const orQuery = chunk.map(num => `phone.ilike.%${num}%`).join(',');
         const orQuerySecondary = chunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
         const orQueryContractorPhone = chunk.map(num => `phone.ilike.%${num}%`).join(',');
         const orQueryContractorSecondary = chunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
         const orQueryContractorOther = chunk.map(num => `other_contact_numbers.ilike.%${num}%`).join(',');
 
-        return [
+        const results = await Promise.all([
           supabaseAdmin.from('leads').select('id, name, company, phone').or(orQuery),
           supabaseAdmin.from('leads').select('id, name, company, phone:secondary_phone').or(orQuerySecondary),
           supabaseAdmin.from('contractors').select('id, name:contact_name, company:company_name, phone').or(orQueryContractorPhone),
           supabaseAdmin.from('contractors').select('id, name:contact_name, company:company_name, phone:secondary_phone').or(orQueryContractorSecondary),
           supabaseAdmin.from('contractors').select('id, name:contact_name, company:company_name, phone:other_contact_numbers').or(orQueryContractorOther)
-        ];
-      });
-      
-      const results = await Promise.all(chunkPromises);
-      for (const res of results) {
-        if (res.data) {
-          matchedEntities = matchedEntities.concat(res.data);
+        ]);
+        
+        for (const res of results) {
+          if (res.data) {
+            matchedEntities = matchedEntities.concat(res.data);
+          }
         }
       }
     }

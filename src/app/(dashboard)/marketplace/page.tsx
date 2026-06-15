@@ -10,6 +10,7 @@ import { MarketplaceLeadModal } from '../../../components/MarketplaceLeadModal';
 import { OrderSummaryModal } from '../../../components/OrderSummaryModal';
 import { extractTown, getVagueLocation } from '../../../lib/utils';
 import { trackLeadEvent } from '../../../utils/tracking';
+import { trackClientActivity } from '@/lib/activityTracker';
 import { RecentlySoldCarousel } from '../../../components/RecentlySoldCarousel';
 
 export default function MarketplacePage() {
@@ -261,6 +262,14 @@ export default function MarketplacePage() {
     fetchMarketplaceLeads(nextPage, false);
   };
 
+  const handleLeadClick = (lead: Lead) => {
+    setSelectedLead(lead);
+    if (profile?.id) {
+      trackClientActivity(profile.id, 'view_lead', { lead_id: lead.id, lead_name: lead.name, location: lead.location });
+      trackLeadEvent(lead.id, profile.id, 'view');
+    }
+  };
+
   const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive', discountedPrice?: number, useTradeAccount: boolean = false) => {
     if (!profile) return;
     try {
@@ -409,7 +418,7 @@ export default function MarketplacePage() {
               {/* Photo Area */}
               <div 
                 className="h-48 bg-gray-100 relative cursor-pointer group"
-                onClick={() => setSelectedLead(lead)}
+                onClick={() => handleLeadClick(lead)}
               >
                 {lead.photos && lead.photos.length > 0 ? (
                   <img src={lead.photos[0]} alt="Lead property" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
@@ -486,7 +495,7 @@ export default function MarketplacePage() {
                 </div>
 
                 <button
-                  onClick={() => setSelectedLead(lead)}
+                  onClick={() => handleLeadClick(lead)}
                   className="mt-4 w-full flex items-center justify-center px-3 py-2 border border-transparent text-xs font-bold rounded-md text-white bg-gray-900 hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-900 transition-colors"
                 >
                   View Details

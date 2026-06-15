@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState, useEffect } from 'react';
-import { Mail, Plus, Save, Trash2, Edit2, Check, X, FileText, Send, Clock } from 'lucide-react';
+import { Mail, Plus, Save, Trash2, Edit2, Check, X, FileText, Send, Clock, Image as ImageIcon } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
+import { ImageHostingModal } from '@/components/ImageHostingModal';
 import 'react-quill-new/dist/quill.snow.css';
 
 // Force rebuild with react-quill-new
@@ -25,6 +26,7 @@ export default function EmailsPage() {
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Template>>({});
+  const [showImageHosting, setShowImageHosting] = useState(false);
 
   useEffect(() => {
     fetchTemplates();
@@ -137,12 +139,20 @@ export default function EmailsPage() {
           <h1 className="text-2xl font-bold text-gray-900">Email Templates</h1>
           <p className="text-gray-500 text-sm">Manage templates for bill requests and automated chases.</p>
         </div>
-        <button 
-          onClick={handleCreateTemplate}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-sm"
-        >
-          <Plus className="w-4 h-4" /> Create Template
-        </button>
+        <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowImageHosting(true)}
+            className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-sm"
+          >
+            <ImageIcon className="w-4 h-4 text-blue-500" /> Image Hosting
+          </button>
+          <button 
+            onClick={handleCreateTemplate}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-sm"
+          >
+            <Plus className="w-4 h-4" /> Create Template
+          </button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
@@ -301,6 +311,11 @@ export default function EmailsPage() {
           )}
         </div>
       </div>
+
+      <ImageHostingModal 
+        isOpen={showImageHosting} 
+        onClose={() => setShowImageHosting(false)} 
+      />
     </div>
   );
 }

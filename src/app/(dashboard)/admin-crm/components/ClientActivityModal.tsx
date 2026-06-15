@@ -48,35 +48,35 @@ export const ClientActivityModal: React.FC<ClientActivityModalProps> = ({ userId
         return (
           <div className="flex items-center gap-2">
             <Eye className="w-4 h-4 text-blue-500" />
-            <span className="text-sm">Viewed lead: <span className="font-semibold">{act.details.lead_name || 'Unknown'}</span></span>
+            <span className="text-sm">Viewed lead: <span className="font-semibold">{act.details?.lead_name || 'Unknown'}</span></span>
           </div>
         );
       case 'openlead_max_area_select':
         return (
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-green-500" />
-            <span className="text-sm">Selected OpenLead Max Area: <span className="font-semibold">{act.details.area}</span> (£{act.details.price})</span>
+            <span className="text-sm">Selected OpenLead Max Area: <span className="font-semibold">{act.details?.area}</span> (£{act.details?.price})</span>
           </div>
         );
       case 'openlead_max_area_deselect':
         return (
           <div className="flex items-center gap-2">
             <MapPin className="w-4 h-4 text-red-500" />
-            <span className="text-sm">Deselected OpenLead Max Area: <span className="font-semibold">{act.details.area}</span></span>
+            <span className="text-sm">Deselected OpenLead Max Area: <span className="font-semibold">{act.details?.area}</span></span>
           </div>
         );
       case 'button_click':
         return (
           <div className="flex items-center gap-2">
             <MousePointer className="w-4 h-4 text-purple-500" />
-            <span className="text-sm">Clicked Button: <span className="font-semibold">{act.details.button}</span></span>
+            <span className="text-sm">Clicked Button: <span className="font-semibold">{act.details?.button}</span></span>
           </div>
         );
       case 'page_view':
         return (
           <div className="flex items-center gap-2">
             <Search className="w-4 h-4 text-gray-500" />
-            <span className="text-sm">Viewed Page: <span className="font-semibold">{act.details.page}</span></span>
+            <span className="text-sm">Viewed Page: <span className="font-semibold">{act.details?.page}</span></span>
           </div>
         );
       default:

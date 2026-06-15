@@ -106,7 +106,7 @@ export default function ClientDashboard() {
 
       const { data: purchasesData, error: purchasesError } = await supabase
         .from('lead_purchases')
-        .select('id, status, purchase_type, price_paid, purchased_at, leads(*)')
+        .select('id, status, purchase_type, price_paid, purchased_at, leads(*, buildings(*))')
         .eq('client_id', clientData.id)
         .order('purchased_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);

@@ -38,9 +38,11 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [updating, setUpdating] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
+  const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
 
   useEffect(() => {
     if (!isOpen || !lead?.id) return;
+    setActiveBuildingIndex(0);
     const fetchDocuments = async () => {
       const { data } = await supabase.from('files').select('*').eq('lead_id', lead.id);
       if (data) {
@@ -77,6 +79,19 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
   };
   const billUrls = getBillsArray();
   const hasBills = billUrls.length > 0;
+
+  const buildings = (lead as any).buildings || [];
+  const activeBuilding = activeBuildingIndex > 0 ? buildings[activeBuildingIndex - 1] : null;
+
+  // Derive values based on active building
+  const displayLocation = activeBuilding ? activeBuilding.address : lead.location;
+  const displayRoofSize = activeBuilding ? activeBuilding.roof_area_estimate : lead.roof_size;
+  const displayBuildingType = activeBuilding ? activeBuilding.building_type : lead.building_type;
+  const displayRoofMaterial = activeBuilding ? activeBuilding.roof_type : lead.roof_material;
+  const displayRoofCondition = activeBuilding ? activeBuilding.roof_condition : lead.roof_condition;
+  const displayAnnConsump = activeBuilding ? activeBuilding.annual_consumption : lead.est_ann_consumption;
+  const displayMarketplaceNotes = activeBuilding && !activeBuilding.use_primary_notes ? activeBuilding.marketplace_notes : (lead as any).marketplace_notes;
+  const displayPhotos = activeBuilding && activeBuilding.satellite_image_url ? [activeBuilding.satellite_image_url] : lead.photos;
 
   return (
     <>
@@ -193,6 +208,35 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
           </div>
 
           <div className="flex flex-col gap-3">
+            {/* Building Tabs */}
+            {buildings.length > 0 && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide shrink-0 mt-2">
+                <button
+                  onClick={() => setActiveBuildingIndex(0)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                    activeBuildingIndex === 0 
+                      ? 'bg-blue-600 text-white shadow-md' 
+                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                  }`}
+                >
+                  Primary Location
+                </button>
+                {buildings.map((b: any, idx: number) => (
+                  <button
+                    key={b.id}
+                    onClick={() => setActiveBuildingIndex(idx + 1)}
+                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                      activeBuildingIndex === idx + 1 
+                        ? 'bg-blue-600 text-white shadow-md' 
+                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
+                    }`}
+                  >
+                    Site {idx + 2}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* ROW 1: Top section with images, property details, insights */}
             <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr] gap-3 items-stretch">
               {/* Top Col 1 */}
@@ -205,11 +249,11 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2">
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> Location</span>
-                      <DisplayValue value={extractTown(lead.location)} />
+                      <DisplayValue value={extractTown(displayLocation)} />
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
-                      <DisplayValue value={lead.roof_size} />
+                      <DisplayValue value={displayRoofSize} />
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><User className="w-3 h-3" /> Ownership</span>
@@ -217,7 +261,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Roof Material</span>
-                      <DisplayValue value={lead.roof_material} />
+                      <DisplayValue value={displayRoofMaterial} />
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Zap className="w-3 h-3" /> Elec Supply</span>
@@ -233,7 +277,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Roof Condition</span>
-                      <DisplayValue value={lead.roof_condition} />
+                      <DisplayValue value={displayRoofCondition} />
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Day Unit Rate</span>
@@ -249,7 +293,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1 col-span-2">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Battery className="w-3 h-3" /> Ann. Consump.</span>
-                      <DisplayValue value={lead.est_ann_consumption} />
+                      <DisplayValue value={displayAnnConsump} />
                     </div>
                   </div>
                 </div>
@@ -266,7 +310,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                     <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-50 flex flex-col items-center text-center">
                       <Building className="w-3.5 h-3.5 text-purple-500 mb-1" />
                       <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Property Type</span>
-                      <DisplayValue value={lead.building_type || 'Commercial'} />
+                      <DisplayValue value={displayBuildingType || 'Commercial'} />
                     </div>
                     <div className="bg-indigo-50/50 p-2 rounded-lg border border-indigo-50 flex flex-col items-center text-center">
                       <Globe className="w-3.5 h-3.5 text-indigo-500 mb-1" />
@@ -278,9 +322,9 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                     <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-1 shrink-0">Notes</span>
                     <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar pr-1">
                       <p className={`text-gray-700 whitespace-pre-wrap leading-relaxed ${
-                        (lead as any).marketplace_notes?.length > 400 ? 'text-[8px]' :
-                        (lead as any).marketplace_notes?.length > 200 ? 'text-[8.5px]' : 'text-[9.5px]'
-                      }`}>{(lead as any).marketplace_notes || <MissingValue />}</p>
+                        displayMarketplaceNotes?.length > 400 ? 'text-[8px]' :
+                        displayMarketplaceNotes?.length > 200 ? 'text-[8.5px]' : 'text-[9.5px]'
+                      }`}>{displayMarketplaceNotes || <MissingValue />}</p>
                     </div>
                   </div>
                 </div>
@@ -290,43 +334,43 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
               <div className="flex flex-col gap-3">
                 {/* Property Images */}
                 <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm h-full flex flex-col">
-                  {lead.photos && lead.photos.length > 0 ? (
-                    lead.photos.length === 1 ? (
+                  {displayPhotos && displayPhotos.length > 0 ? (
+                    displayPhotos.length === 1 ? (
                       <div 
                         className="rounded-lg overflow-hidden cursor-pointer flex-1"
-                        onClick={() => setLightboxUrl(lead.photos![0])}
+                        onClick={() => setLightboxUrl(displayPhotos![0])}
                       >
-                        <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                        <img src={displayPhotos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
                       </div>
-                    ) : lead.photos.length === 2 ? (
+                    ) : displayPhotos.length === 2 ? (
                       <div className="grid grid-cols-2 gap-2 flex-1">
                         <div 
                           className="rounded-lg overflow-hidden cursor-pointer"
-                          onClick={() => setLightboxUrl(lead.photos![0])}
+                          onClick={() => setLightboxUrl(displayPhotos![0])}
                         >
-                          <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                          <img src={displayPhotos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
                         </div>
                         <div 
                           className="rounded-lg overflow-hidden cursor-pointer"
-                          onClick={() => setLightboxUrl(lead.photos![1])}
+                          onClick={() => setLightboxUrl(displayPhotos![1])}
                         >
-                          <img src={lead.photos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                          <img src={displayPhotos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
                         </div>
                       </div>
                     ) : (
                       <div className="grid grid-cols-3 gap-2 flex-1">
                         <div 
                           className="col-span-2 rounded-lg overflow-hidden cursor-pointer"
-                          onClick={() => setLightboxUrl(lead.photos![0])}
+                          onClick={() => setLightboxUrl(displayPhotos![0])}
                         >
-                          <img src={lead.photos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                          <img src={displayPhotos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
                         </div>
                         <div className="grid grid-rows-2 gap-2 h-full">
-                          <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(lead.photos![1])}>
-                            <img src={lead.photos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                          <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(displayPhotos![1])}>
+                            <img src={displayPhotos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
                           </div>
-                          <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(lead.photos![2])}>
-                            <img src={lead.photos[2]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                          <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(displayPhotos![2])}>
+                            <img src={displayPhotos[2]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
                           </div>
                         </div>
                       </div>
@@ -386,7 +430,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                   <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <CheckCircle className="w-4 h-4 text-green-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Roof Suitability</span>
-                    <DisplayValue value={(lead as any).roof_suitability} className="text-[10px] text-center" />
+                    <DisplayValue value={activeBuilding ? activeBuilding.suitability_score : (lead as any).roof_suitability} className="text-[10px] text-center" />
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <Sun className="w-4 h-4 text-amber-500 mb-1" />
@@ -396,12 +440,12 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                   <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <Activity className="w-4 h-4 text-green-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Shading</span>
-                    <DisplayValue value={(lead as any).shading} className="text-[10px] text-center" />
+                    <DisplayValue value={activeBuilding ? activeBuilding.shading_score : (lead as any).shading} className="text-[10px] text-center" />
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <Globe className="w-4 h-4 text-blue-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Orientation</span>
-                    <DisplayValue value={(lead as any).orientation || lead.solar_location} className="text-[10px] text-center" />
+                    <DisplayValue value={activeBuilding ? activeBuilding.orientation : ((lead as any).orientation || lead.solar_location)} className="text-[10px] text-center" />
                   </div>
                 </div>
               </div>

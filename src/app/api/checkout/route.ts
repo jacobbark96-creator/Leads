@@ -18,13 +18,21 @@ const extractTown = (address: string) => {
 export async function POST(req: Request) {
   try {
     const stripeKey = process.env.STRIPE_SECRET_KEY;
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+    const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
     
     if (!stripeKey) {
       console.error('STRIPE_SECRET_KEY is missing');
       return NextResponse.json({ error: 'Stripe is not configured' }, { status: 500 });
     }
 
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Supabase configuration is missing');
+      return NextResponse.json({ error: 'Database is not configured' }, { status: 500 });
+    }
+
     const body = await req.json();
+    console.log('Checkout Request Body:', body);
     const { checkoutType } = body;
 
     const origin = req.headers.get('origin');
@@ -55,38 +63,66 @@ export async function POST(req: Request) {
         body: formData.toString()
       });
 
-      if (!stripeRes.ok) throw new Error('Failed to create subscription session');
       const session = await stripeRes.json();
+      
+      if (!stripeRes.ok) {
+        console.error('Stripe Subscription Error:', session.error);
+        throw new Error(session.error?.message || 'Failed to create subscription session');
+      }
+
       return NextResponse.json({ url: session.url });
     } 
     
     else if (checkoutType === 'lead') {
       const { userId, email, leadId, clientId, leadLocation, leadCategory, leadPrice, creditToUse, purchaseType } = body;
-      if (!userId || !email || !leadId || !clientId || !purchaseType) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      if (!userId || !email || !leadId || !clientId || !purchaseType) {
+        return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      }
 
       const parsedPrice = parseFloat(leadPrice);
       const fullPrice = !isNaN(parsedPrice) ? parsedPrice : 135;
       const appliedCredit = parseFloat(creditToUse) || 0;
-      const remainingPrice = fullPrice - appliedCredit;
+      
+      // Crucial: Use Math.max(0, ...) to avoid negative prices
+      const remainingPrice = Math.max(0, fullPrice - appliedCredit);
       const isExclusive = purchaseType === 'exclusive';
 
-      if (remainingPrice <= 0) {
-        const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-        const { error: purchaseError } = await supabaseAdmin.rpc('purchase_lead', {
-          p_lead_id: leadId,
-          p_client_id: clientId,
-          p_purchase_type: purchaseType,
-          p_price_paid: fullPrice,
-          p_credit_used: appliedCredit
-        });
-        if (purchaseError) return NextResponse.json({ error: purchaseError.message }, { status: 500 });
-        return NextResponse.json({ skipStripe: true, url: `${appUrl}/my-openlead?purchase_success=true` });
+      // If price is 0 (fully covered by credit), bypass Stripe
+      if (remainingPrice < 0.5) { // Stripe minimum is usually 50p, so anything less is "free"
+        const creditUsed = Math.round((fullPrice - remainingPrice) * 100) / 100;
+        console.log('Bypassing Stripe, purchasing with credit:', { leadId, clientId, remainingPrice, creditUsed });
+        
+        try {
+          const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+          const { data: purchaseResult, error: purchaseError } = await supabaseAdmin.rpc('purchase_lead', {
+            p_lead_id: leadId,
+            p_client_id: clientId,
+            p_purchase_type: purchaseType,
+            p_price_paid: Math.round(remainingPrice * 100) / 100,
+            p_credit_used: creditUsed,
+            p_use_trade_account: false
+          });
+
+          if (purchaseError) {
+            console.error('Purchase RPC Error:', purchaseError);
+            return NextResponse.json({ 
+              error: purchaseError.message || 'Database error during purchase',
+              details: purchaseError,
+              context: 'purchase_lead_rpc'
+            }, { status: 500 });
+          }
+          
+          console.log('Purchase successful:', purchaseResult);
+          return NextResponse.json({ skipStripe: true, url: `${appUrl}/my-openlead?purchase_success=true` });
+        } catch (rpcErr: any) {
+          console.error('RPC Exception:', rpcErr);
+          throw new Error('Failed to execute purchase: ' + rpcErr.message);
+        }
       }
 
       const formData = new URLSearchParams();
       formData.append('payment_method_types[0]', 'card');
       formData.append('mode', 'payment');
-      formData.append('invoice_creation[enabled]', 'true');
       formData.append('customer_email', email);
       formData.append('client_reference_id', userId);
       formData.append('line_items[0][price_data][currency]', 'gbp');
@@ -110,8 +146,20 @@ export async function POST(req: Request) {
         body: formData.toString()
       });
 
-      if (!stripeRes.ok) throw new Error('Failed to create lead checkout session');
-      const session = await stripeRes.json();
+      const responseText = await stripeRes.text();
+      let session;
+      try {
+        session = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse Stripe Lead response:', responseText);
+        throw new Error('Stripe returned an invalid response');
+      }
+
+      if (!stripeRes.ok) {
+        console.error('Stripe Lead Checkout Error:', session.error || session);
+        throw new Error(session.error?.message || 'Failed to create lead checkout session');
+      }
+
       return NextResponse.json({ url: session.url });
     } 
     
@@ -122,7 +170,7 @@ export async function POST(req: Request) {
       let finalAmount = amount;
 
       if (discountCode) {
-        const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
         const { data: discount, error: discountError } = await supabaseAdmin
           .from('discount_codes')
           .select('*')
@@ -151,13 +199,13 @@ export async function POST(req: Request) {
         // Increment current_uses
         await supabaseAdmin
           .from('discount_codes')
-          .update({ current_uses: discount.current_uses + 1 })
+          .update({ current_uses: (discount.current_uses || 0) + 1 })
           .eq('id', discount.id);
       }
 
-      if (finalAmount <= 0) {
+      if (finalAmount < 0.5) { // Stripe minimum
         // If discount makes it free, just update the balance directly
-        const supabaseAdmin = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+        const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
         
         const { data: currentClient } = await supabaseAdmin
           .from('clients')
@@ -190,7 +238,6 @@ export async function POST(req: Request) {
       const formData = new URLSearchParams();
       formData.append('payment_method_types[0]', 'card');
       formData.append('mode', 'payment');
-      formData.append('invoice_creation[enabled]', 'true');
       formData.append('customer_email', email);
       formData.append('client_reference_id', userId);
       formData.append('line_items[0][price_data][currency]', 'gbp');
@@ -213,8 +260,20 @@ export async function POST(req: Request) {
         body: formData.toString()
       });
 
-      if (!stripeRes.ok) throw new Error('Failed to create topup checkout session');
-      const session = await stripeRes.json();
+      const responseText = await stripeRes.text();
+      let session;
+      try {
+        session = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse Stripe Topup response:', responseText);
+        throw new Error('Stripe returned an invalid response');
+      }
+
+      if (!stripeRes.ok) {
+        console.error('Stripe Topup Error:', session.error || session);
+        throw new Error(session.error?.message || 'Failed to create topup checkout session');
+      }
+
       return NextResponse.json({ url: session.url });
     }
 
@@ -222,6 +281,10 @@ export async function POST(req: Request) {
 
   } catch (err: any) {
     console.error('Error creating checkout session:', err);
-    return NextResponse.json({ error: err.message }, { status: 500 });
+    const errorMessage = err instanceof Error ? err.message : (typeof err === 'string' ? err : JSON.stringify(err));
+    return NextResponse.json({ 
+      error: errorMessage || 'An unexpected error occurred',
+      stack: process.env.NODE_ENV === 'development' ? err.stack : undefined
+    }, { status: 500 });
   }
 }

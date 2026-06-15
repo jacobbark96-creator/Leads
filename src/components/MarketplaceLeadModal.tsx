@@ -43,8 +43,42 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
   const [hasBills, setHasBills] = useState<boolean>(false);
   const [showMagicLink, setShowMagicLink] = useState(false);
   const [scale, setScale] = useState(1);
+  const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
+  const [buildings, setBuildings] = useState<any[]>(lead.buildings || []);
+  const [isLoadingBuildings, setIsLoadingBuildings] = useState(false);
   const { profile } = useAuthStore();
   const hasTrackedView = useRef(false);
+
+  useEffect(() => {
+    const fetchBuildings = async () => {
+      if (!isOpen || !lead?.id) return;
+      if (lead.buildings && lead.buildings.length > 0) {
+        setBuildings(lead.buildings);
+        return;
+      }
+
+      setIsLoadingBuildings(true);
+      try {
+        const { data, error } = await supabase
+          .from('buildings')
+          .select('*')
+          .eq('lead_id', lead.id)
+          .order('created_at', { ascending: true });
+
+        if (!error && data) {
+          setBuildings(data);
+        }
+      } catch (err) {
+        console.error('Error fetching buildings:', err);
+      } finally {
+        setIsLoadingBuildings(false);
+      }
+    };
+
+    fetchBuildings();
+  }, [isOpen, lead?.id, lead.buildings]);
+
+  const activeBuilding = activeBuildingIndex > 0 ? buildings[activeBuildingIndex - 1] : null;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -261,6 +295,35 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
           </div>
 
           <div className="flex flex-col gap-3">
+            {/* Building Tabs */}
+            {(buildings.length > 0) && (
+              <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-hide">
+                <button
+                  onClick={() => setActiveBuildingIndex(0)}
+                  className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap shadow-sm border ${
+                    activeBuildingIndex === 0 
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-blue-200' 
+                      : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600'
+                  }`}
+                >
+                  Primary Location
+                </button>
+                {buildings.map((b, idx) => (
+                  <button
+                    key={b.id || idx}
+                    onClick={() => setActiveBuildingIndex(idx + 1)}
+                    className={`px-4 py-2 rounded-xl text-xs font-bold transition-all whitespace-nowrap shadow-sm border ${
+                      activeBuildingIndex === idx + 1 
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-blue-200' 
+                        : 'bg-white text-gray-500 border-gray-200 hover:border-blue-300 hover:text-blue-600'
+                    }`}
+                  >
+                    Location {idx + 2}
+                  </button>
+                ))}
+              </div>
+            )}
+
             {/* ROW 1: Top section with images, property details, insights */}
             <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr] gap-3 items-stretch">
               {/* Top Col 1 */}
@@ -274,17 +337,17 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <div className="flex justify-between items-start border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1 mt-0.5"><MapPin className="w-3 h-3" /> Location</span>
                       <div className="text-right">
-                        <DisplayValue value={extractTown(lead.location)} />
-                        {getVagueLocation(lead.latitude, lead.longitude) && (
+                        <DisplayValue value={extractTown(activeBuildingIndex === 0 ? lead.location : activeBuilding?.address)} />
+                        {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude) && (
                           <p className="text-[9px] text-gray-400 font-medium italic leading-none mt-0.5">
-                            {getVagueLocation(lead.latitude, lead.longitude)}
+                            {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude)}
                           </p>
                         )}
                       </div>
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
-                      <DisplayValue value={lead.roof_size} />
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_size : (activeBuilding?.roof_area_estimate ? `${activeBuilding.roof_area_estimate} m²` : null)} />
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><User className="w-3 h-3" /> Ownership</span>
@@ -292,15 +355,15 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Roof Material</span>
-                      <DisplayValue value={lead.roof_material} />
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_type} />
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Zap className="w-3 h-3" /> Elec Supply</span>
-                      <DisplayValue value={lead.electrical_supply} />
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.electrical_supply : activeBuilding?.grid_connection} />
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Sun className="w-3 h-3" /> Solar Location</span>
-                      <DisplayValue value={lead.solar_location} />
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.solar_location : activeBuilding?.orientation} />
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Ground Mount</span>
@@ -308,7 +371,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Roof Condition</span>
-                      <DisplayValue value={lead.roof_condition} />
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_condition : activeBuilding?.roof_condition} />
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Day Unit Rate</span>
@@ -324,7 +387,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     </div>
                     <div className="flex justify-between items-center border-b border-gray-50 pb-1 col-span-2">
                       <span className="text-[11px] text-gray-500 flex items-center gap-1"><Battery className="w-3 h-3" /> Ann. Consump.</span>
-                      <DisplayValue value={lead.est_ann_consumption} />
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.est_ann_consumption : activeBuilding?.annual_consumption} />
                     </div>
                   </div>
                 </div>
@@ -341,7 +404,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-50 flex flex-col items-center text-center">
                       <Building className="w-3.5 h-3.5 text-purple-500 mb-1" />
                       <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Property Type</span>
-                      <DisplayValue value={lead.building_type || 'Commercial'} />
+                      <DisplayValue value={activeBuildingIndex === 0 ? (lead.building_type || 'Commercial') : (activeBuilding?.property_type || activeBuilding?.building_type || 'Commercial')} />
                     </div>
                     <div className="bg-indigo-50/50 p-2 rounded-lg border border-indigo-50 flex flex-col items-center text-center">
                       <Globe className="w-3.5 h-3.5 text-indigo-500 mb-1" />
@@ -353,9 +416,15 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-1 shrink-0">Notes</span>
                     <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar pr-1">
                       <p className={`text-gray-700 whitespace-pre-wrap leading-relaxed ${
-                        (lead as any).marketplace_notes?.length > 400 ? 'text-[8px]' :
-                        (lead as any).marketplace_notes?.length > 200 ? 'text-[8.5px]' : 'text-[9.5px]'
-                      }`}>{(lead as any).marketplace_notes || <MissingValue />}</p>
+                        (activeBuildingIndex === 0 || activeBuilding?.use_primary_notes)
+                          ? ((lead as any).marketplace_notes?.length > 400 ? 'text-[8px]' : (lead as any).marketplace_notes?.length > 200 ? 'text-[8.5px]' : 'text-[9.5px]')
+                          : (activeBuilding?.marketplace_notes?.length > 400 ? 'text-[8px]' : activeBuilding?.marketplace_notes?.length > 200 ? 'text-[8.5px]' : 'text-[9.5px]')
+                      }`}>
+                        {(activeBuildingIndex === 0 || activeBuilding?.use_primary_notes)
+                          ? ((lead as any).marketplace_notes || <MissingValue />)
+                          : (activeBuilding?.marketplace_notes || <MissingValue />)
+                        }
+                      </p>
                     </div>
                   </div>
                 </div>
@@ -440,22 +509,22 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                   <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <CheckCircle className="w-4 h-4 text-green-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Roof Suitability</span>
-                    <DisplayValue value={(lead as any).roof_suitability} className="text-[10px] text-center" />
+                    <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).roof_suitability : (activeBuilding?.suitability_score ? `${activeBuilding.suitability_score}/100` : null)} className="text-[10px] text-center" />
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <Sun className="w-4 h-4 text-amber-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Solar Exposure</span>
-                    <DisplayValue value={(lead as any).solar_exposure} className="text-[10px] text-center" />
+                    <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).solar_exposure : (activeBuilding?.solar_potential_score ? `${activeBuilding.solar_potential_score}/100` : null)} className="text-[10px] text-center" />
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <Activity className="w-4 h-4 text-green-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Shading</span>
-                    <DisplayValue value={(lead as any).shading} className="text-[10px] text-center" />
+                    <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).shading : (activeBuilding?.shading_score !== null ? `${activeBuilding.shading_score}/10` : null)} className="text-[10px] text-center" />
                   </div>
                   <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
                     <Globe className="w-4 h-4 text-blue-500 mb-1" />
                     <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Orientation</span>
-                    <DisplayValue value={(lead as any).orientation || lead.solar_location} className="text-[10px] text-center" />
+                    <DisplayValue value={activeBuildingIndex === 0 ? ((lead as any).orientation || lead.solar_location) : activeBuilding?.orientation} className="text-[10px] text-center" />
                   </div>
                 </div>
               </div>

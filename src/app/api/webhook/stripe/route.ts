@@ -152,7 +152,8 @@ export async function POST(req: Request) {
               p_client_id: clientId,
               p_purchase_type: purchaseType,
               p_price_paid: pricePaid,
-              p_credit_used: usedCredit
+              p_credit_used: usedCredit,
+              p_use_trade_account: false
             });
               
             if (purchaseError) {

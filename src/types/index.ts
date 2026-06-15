@@ -154,6 +154,49 @@ export interface Lead {
   lead_type?: 'residential' | 'commercial';
   division_id?: string | null;
   sales_pipeline_status?: 'Upcoming' | 'Pitched' | 'No Show' | 'Sold' | 'Lost';
+  buildings?: Building[];
+}
+
+export interface Building {
+  id: string;
+  lead_id: string | null;
+  company_id: string | null;
+  address: string | null;
+  building_type: string | null;
+  property_type?: string | null;
+  roof_type: string | null;
+  roof_condition: string | null;
+  total_roof_area: number | null;
+  usable_roof_area: number | null;
+  annual_consumption: number | null;
+  peak_demand: number | null;
+  grid_connection: string | null;
+  shading_score: number | null;
+  orientation: string | null;
+  suitability_score: number | null;
+  estimated_kwp: number | null;
+  estimated_generation: number | null;
+  estimated_savings: number | null;
+  estimated_payback: number | null;
+  battery_potential: boolean | null;
+  ev_potential: boolean | null;
+  planning_required: boolean | null;
+  dno_required: boolean | null;
+  status_chips: string[] | null;
+  created_at: string;
+  updated_at: string;
+  roof_area_estimate: number | null;
+  solar_potential_score: number | null;
+  epc_rating: string | null;
+  estimated_energy_usage: number | null;
+  installation_complexity: string | null;
+  max_array_panels_count: number | null;
+  max_sunshine_hours_per_year: number | null;
+  satellite_image_url: string | null;
+  latitude: number | null;
+  longitude: number | null;
+  marketplace_notes?: string | null;
+  use_primary_notes?: boolean;
 }
 
 export interface LeadNote {

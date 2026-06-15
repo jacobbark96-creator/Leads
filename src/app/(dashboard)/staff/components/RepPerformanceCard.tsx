@@ -21,7 +21,7 @@ export const RepPerformanceCard = () => {
         .from('activities')
         .select('lead_id')
         .eq('activity_type', 'qualified')
-        .eq('created_by', profile.id)
+        .eq('user_id', profile.id)
         .gte('created_at', startOfMonth);
         
       if (activities && activities.length > 0) {
@@ -45,7 +45,7 @@ export const RepPerformanceCard = () => {
     // Listen for updates
     const sub = supabase.channel('rep-perf-stats')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, fetchMTD)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'activities', filter: `created_by=eq.${profile?.id}` }, fetchMTD)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activities', filter: `user_id=eq.${profile?.id}` }, fetchMTD)
       .subscribe();
 
     return () => {

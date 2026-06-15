@@ -47,6 +47,17 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'No valid records found in CSV' }, { status: 400 });
     }
 
+    // 1b. If importing to a pack, get the pack's division_id to ensure leads are visible to the assigned reps
+    let packDivisionId = null;
+    if (leadPackId) {
+      const { data: pack } = await supabaseAdmin
+        .from('lead_packs')
+        .select('division_id')
+        .eq('id', leadPackId)
+        .single();
+      if (pack) packDivisionId = pack.division_id;
+    }
+
     const insertedLeads = [];
 
     // 2. Insert leads into Supabase in batches
@@ -71,6 +82,7 @@ export async function POST(request: NextRequest) {
         status: uploadTarget,
         upload_name: uploadName,
         is_in_pack: !!leadPackId,
+        division_id: packDivisionId, // Set division_id from pack
         csv_data: rawData,
         enrichment_status: 'pending' // Just mark as pending, an external worker script will poll for these
       };

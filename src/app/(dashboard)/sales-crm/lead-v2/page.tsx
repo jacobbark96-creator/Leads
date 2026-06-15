@@ -198,6 +198,63 @@ const AddContactModal = ({ isOpen, onClose, onAdd, name, setName, role, setRole,
   );
 };
 
+const AddBuildingModal = ({ isOpen, onClose, onAdd, isLoaded, onLoadAutocomplete, onPlaceChanged, address, setAddress }: any) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
+      <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
+        <div className="p-6 border-b border-gray-100 flex justify-between items-center">
+          <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+            <Building2 className="w-5 h-5 text-blue-600" /> Add Additional Location
+          </h3>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+        <div className="p-6 space-y-4">
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Address</label>
+            {isLoaded ? (
+              <Autocomplete
+                onLoad={onLoadAutocomplete}
+                onPlaceChanged={onPlaceChanged}
+                options={{
+                  types: [],
+                  componentRestrictions: { country: "gb" },
+                  fields: ['formatted_address', 'geometry', 'name']
+                }}
+              >
+                <input 
+                  type="text" 
+                  value={address} 
+                  onChange={(e) => setAddress(e.target.value)}
+                  className="w-full border border-gray-300 px-3 py-2 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                  placeholder="Start typing address..."
+                />
+              </Autocomplete>
+            ) : (
+              <input 
+                type="text" 
+                value={address} 
+                onChange={(e) => setAddress(e.target.value)}
+                className="w-full border border-gray-300 px-3 py-2 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                placeholder="Start typing address..."
+              />
+            )}
+          </div>
+          <button
+            onClick={onAdd}
+            disabled={!address.trim()}
+            className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 mt-2"
+          >
+            Add Location
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const EditPrimaryContactModal = ({ isOpen, onClose, onSave, form, setForm }: any) => {
   if (!isOpen) return null;
   return (
@@ -332,6 +389,9 @@ function LeadDetailsV2Content() {
   
   const [isPrimaryContactModalOpen, setIsPrimaryContactModalOpen] = useState(false);
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
+  const [isAddBuildingModalOpen, setIsAddBuildingModalOpen] = useState(false);
+  const [newBuildingAddress, setNewBuildingAddress] = useState('');
+  const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
 
   const [isMarketConfirmOpen, setIsMarketConfirmOpen] = useState(false);
   const [isInHouseConfirmOpen, setIsInHouseConfirmOpen] = useState(false);
@@ -357,7 +417,9 @@ function LeadDetailsV2Content() {
   });
 
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  const [buildingAutocomplete, setBuildingAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const onLoadAutocomplete = (autoC: google.maps.places.Autocomplete) => setAutocomplete(autoC);
+  const onLoadBuildingAutocomplete = (autoC: google.maps.places.Autocomplete) => setBuildingAutocomplete(autoC);
   
   const onPlaceChanged = () => {
     if (autocomplete !== null) {
@@ -377,6 +439,19 @@ function LeadDetailsV2Content() {
           latitude: lat,
           longitude: lng
         }));
+      }
+    }
+  };
+
+  const onBuildingPlaceChanged = () => {
+    if (buildingAutocomplete !== null) {
+      const place = buildingAutocomplete.getPlace();
+      if (place) {
+        let finalAddress = place.formatted_address || place.name || '';
+        if (place.name && place.formatted_address && !place.formatted_address.includes(place.name)) {
+          finalAddress = `${place.name}, ${place.formatted_address}`;
+        }
+        setNewBuildingAddress(finalAddress);
       }
     }
   };
@@ -626,7 +701,7 @@ function LeadDetailsV2Content() {
             )
           ),
           buildings!buildings_lead_id_fkey (
-            id, property_type, roof_type, roof_area_estimate, solar_potential_score, epc_rating, orientation, estimated_energy_usage, installation_complexity, max_array_panels_count, max_sunshine_hours_per_year, satellite_image_url, latitude, longitude
+            id, property_type, roof_type, roof_area_estimate, solar_potential_score, epc_rating, orientation, estimated_energy_usage, installation_complexity, max_array_panels_count, max_sunshine_hours_per_year, satellite_image_url, latitude, longitude, marketplace_notes, use_primary_notes, address, building_type, roof_condition, annual_consumption, grid_connection, shading_score, suitability_score
           )
         `)
         .eq('id', id)
@@ -794,7 +869,26 @@ function LeadDetailsV2Content() {
     } else {
       // Enter edit mode
       setEditingCard(cardName);
-      setEditForm(lead || {});
+      if (cardName === 'building' && activeBuildingIndex > 0 && buildings.length >= activeBuildingIndex) {
+        // Populating edit form with non-primary building data
+        const b = buildings[activeBuildingIndex - 1];
+        setEditForm({
+          ...lead,
+          location: b.address,
+          building_type: b.building_type,
+          roof_material: b.roof_type,
+          roof_condition: b.roof_condition,
+          est_ann_consumption: b.annual_consumption,
+          electrical_supply: b.grid_connection,
+          solar_location: b.orientation,
+          roof_size: b.roof_area_estimate ? `${b.roof_area_estimate}` : null,
+          epc_rating: b.epc_rating,
+          marketplace_notes: b.marketplace_notes,
+          use_primary_notes: b.use_primary_notes
+        } as any);
+      } else {
+        setEditForm(lead || {});
+      }
     }
   };
 
@@ -831,7 +925,7 @@ function LeadDetailsV2Content() {
             )
           ),
           buildings!buildings_lead_id_fkey (
-            id, property_type, roof_type, roof_area_estimate, solar_potential_score, epc_rating, orientation, estimated_energy_usage, installation_complexity, max_array_panels_count, max_sunshine_hours_per_year, satellite_image_url, latitude, longitude
+            id, property_type, roof_type, roof_area_estimate, solar_potential_score, epc_rating, orientation, estimated_energy_usage, installation_complexity, max_array_panels_count, max_sunshine_hours_per_year, satellite_image_url, latitude, longitude, marketplace_notes, use_primary_notes, address, building_type, roof_condition, annual_consumption, grid_connection, shading_score, suitability_score
           )
         `)
         .eq('id', lead.id)
@@ -859,13 +953,40 @@ function LeadDetailsV2Content() {
   const confirmSaveEdit = async () => {
     if (!lead) return;
     try {
-      const { id, created_at, clients, lead_notes, other_contacts, csv_data, companies, buildings, categories, ...updatePayload } = editForm as any;
-      const { error } = await supabase
-        .from('leads')
-        .update(updatePayload)
-        .eq('id', lead.id);
+      const { id, created_at, clients, lead_notes, other_contacts, csv_data, companies, buildings: leadBuildings, categories, ...updatePayload } = editForm as any;
+      
+      if (editingCard === 'building' && activeBuildingIndex > 0 && buildings.length >= activeBuildingIndex) {
+        // Saving to non-primary building
+        const b = buildings[activeBuildingIndex - 1];
+        const buildingUpdate = {
+          address: updatePayload.location,
+          building_type: updatePayload.building_type,
+          roof_type: updatePayload.roof_material,
+          roof_condition: updatePayload.roof_condition,
+          annual_consumption: updatePayload.est_ann_consumption,
+          grid_connection: updatePayload.electrical_supply,
+          orientation: updatePayload.solar_location,
+          roof_area_estimate: updatePayload.roof_size ? parseFloat(updatePayload.roof_size) : null,
+          epc_rating: updatePayload.epc_rating,
+          marketplace_notes: updatePayload.marketplace_notes,
+          use_primary_notes: updatePayload.use_primary_notes
+        };
 
-      if (error) throw error;
+        const { error: buildingError } = await supabase
+          .from('buildings')
+          .update(buildingUpdate)
+          .eq('id', b.id);
+
+        if (buildingError) throw buildingError;
+      } else {
+        // Saving to primary lead record
+        const { error } = await supabase
+          .from('leads')
+          .update(updatePayload)
+          .eq('id', lead.id);
+
+        if (error) throw error;
+      }
       
       // Add activity if status changed to qualified
       if (updatePayload.status === 'qualified' && lead.status !== 'qualified' && profile) {
@@ -1444,6 +1565,37 @@ function LeadDetailsV2Content() {
     }
   };
 
+  const handleAddBuilding = async () => {
+    if (!lead || !newBuildingAddress.trim()) return;
+
+    try {
+      toast.loading('Adding location...', { id: 'add-building' });
+      
+      const { data, error } = await supabase
+        .from('buildings')
+        .insert([{
+          lead_id: lead.id,
+          address: newBuildingAddress,
+          use_primary_notes: true
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      // Refresh lead to get new buildings array
+      await fetchLeadAndNotes();
+      
+      setNewBuildingAddress('');
+      setIsAddBuildingModalOpen(false);
+      setActiveBuildingIndex(buildings.length + 1); // Switch to the new building
+      
+      toast.success('Additional location added', { id: 'add-building' });
+    } catch (error: any) {
+      toast.error('Failed to add location: ' + error.message, { id: 'add-building' });
+    }
+  };
+
   const onNoteInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setNewNote(e.target.value);
     handleTyping(true);
@@ -1534,7 +1686,8 @@ function LeadDetailsV2Content() {
 
   // Extract enriched data safely
   const companyEnrichment = (lead as any)?.companies && (lead as any).companies.length > 0 ? (lead as any).companies[0] : null;
-  const buildingEnrichment = (lead as any)?.buildings && (lead as any).buildings.length > 0 ? (lead as any).buildings[0] : null;
+  const buildings = (lead as any)?.buildings || [];
+  const buildingEnrichment = activeBuildingIndex > 0 ? buildings[activeBuildingIndex - 1] : null;
   const additionalContacts = companyEnrichment?.contacts || [];
 
   return (
@@ -2265,11 +2418,49 @@ function LeadDetailsV2Content() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 flex-1 min-h-0">
               <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col h-auto md:h-full min-h-0">
                 <div className="flex items-center justify-between mb-4 shrink-0">
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Building Details</h3>
+                  <div className="flex items-center gap-3">
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Building Details</h3>
+                    <button 
+                      onClick={() => setIsAddBuildingModalOpen(true)}
+                      className="p-1 rounded-md bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors"
+                      title="Add another location"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
                   <button onClick={() => handleEditClick('building')} className="text-gray-400 hover:text-blue-600 transition-colors">
                     {editingCard === 'building' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
                   </button>
                 </div>
+
+                {/* Building Tabs */}
+                {buildings.length > 0 && (
+                  <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2 scrollbar-hide shrink-0">
+                    <button
+                      onClick={() => setActiveBuildingIndex(0)}
+                      className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                        activeBuildingIndex === 0 
+                          ? 'bg-blue-600 text-white shadow-md' 
+                          : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                      }`}
+                    >
+                      Primary Location
+                    </button>
+                    {buildings.map((b: any, idx: number) => (
+                      <button
+                        key={b.id}
+                        onClick={() => setActiveBuildingIndex(idx + 1)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
+                          activeBuildingIndex === idx + 1 
+                            ? 'bg-blue-600 text-white shadow-md' 
+                            : 'bg-gray-100 text-gray-500 hover:bg-gray-200'
+                        }`}
+                      >
+                        Location {idx + 2}
+                      </button>
+                    ))}
+                  </div>
+                )}
                 <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
                   <div className="w-full md:w-[45%] h-48 md:h-full shrink-0 bg-gray-200 rounded-lg overflow-hidden relative group cursor-pointer">
                   <img src={buildingEnrichment?.satellite_image_url || (lead.photos && lead.photos.length > 0 ? lead.photos[currentImageIndex] : "https://images.unsplash.com/photo-1613545325278-f24b0cae1224?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")} alt="Building Aerial" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
@@ -2534,16 +2725,35 @@ function LeadDetailsV2Content() {
                     )}
                   </div>
                   <div className="flex flex-col col-span-2 mt-2">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider mb-1">Marketplace Notes</span>
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-gray-500 text-[11px] uppercase tracking-wider">Marketplace Notes</span>
+                      {editingCard === 'building' && activeBuildingIndex > 0 && (
+                        <label className="flex items-center gap-1.5 cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={(editForm as any).use_primary_notes || false} 
+                            onChange={e => setEditForm({...editForm, use_primary_notes: e.target.checked} as any)}
+                            className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5"
+                          />
+                          <span className="text-[10px] font-medium text-gray-600">Same notes as other location</span>
+                        </label>
+                      )}
+                    </div>
                     {editingCard === 'building' ? (
                       <textarea 
                         value={(editForm as any).marketplace_notes || ''} 
                         onChange={e => setEditForm({...editForm, marketplace_notes: e.target.value} as any)} 
-                        className="border rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-blue-500 w-full min-h-[60px]"
+                        className={`border rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-blue-500 w-full min-h-[60px] ${(editForm as any).use_primary_notes && activeBuildingIndex > 0 ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : ''}`}
                         placeholder="These notes will be visible to contractors on the marketplace..."
+                        disabled={(editForm as any).use_primary_notes && activeBuildingIndex > 0}
                       />
                     ) : (
-                      <p className="text-gray-900 text-sm bg-gray-50 p-2 rounded border border-gray-100 min-h-[60px] whitespace-pre-wrap">{(lead as any).marketplace_notes || 'No marketplace notes added.'}</p>
+                      <p className="text-gray-900 text-sm bg-gray-50 p-2 rounded border border-gray-100 min-h-[60px] whitespace-pre-wrap">
+                        {activeBuildingIndex > 0 && (buildingEnrichment as any)?.use_primary_notes 
+                          ? (lead as any).marketplace_notes 
+                          : (buildingEnrichment as any)?.marketplace_notes || (lead as any).marketplace_notes || 'No marketplace notes added.'
+                        }
+                      </p>
                     )}
                   </div>
                 </div>
@@ -2733,18 +2943,28 @@ function LeadDetailsV2Content() {
         onSetReminder={setReminder}
       />
 
-      <AddContactModal
-        isOpen={isAddContactModalOpen}
-        onClose={() => setIsAddContactModalOpen(false)}
-        onAdd={handleAddContact}
-        name={newContactName}
-        setName={setNewContactName}
-        role={newContactRole}
-        setRole={setNewContactRole}
-        email={newContactEmail}
-        setEmail={setNewContactEmail}
-        phone={newContactPhone}
-        setPhone={setNewContactPhone}
+      <AddBuildingModal 
+        isOpen={isAddBuildingModalOpen}
+        onClose={() => setIsAddBuildingModalOpen(false)}
+        onAdd={handleAddBuilding}
+        isLoaded={isLoaded}
+        onLoadAutocomplete={onLoadBuildingAutocomplete}
+        onPlaceChanged={onBuildingPlaceChanged}
+        address={newBuildingAddress}
+        setAddress={setNewBuildingAddress}
+      />
+      <AddContactModal 
+        isOpen={isAddContactModalOpen} 
+        onClose={() => setIsAddContactModalOpen(false)} 
+        onAdd={handleAddContact} 
+        name={newContactName} 
+        setName={setNewContactName} 
+        role={newContactRole} 
+        setRole={setNewContactRole} 
+        email={newContactEmail} 
+        setEmail={setNewContactEmail} 
+        phone={newContactPhone} 
+        setPhone={setNewContactPhone} 
       />
       <EditPrimaryContactModal
         isOpen={isPrimaryContactModalOpen}

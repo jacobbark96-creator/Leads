@@ -10,7 +10,6 @@ import { Contractor, StaffUser } from '@/types';
 export interface ContractorNote { id: string; contractor_id: string; user_id: string; author_name: string; content: string; is_pinned: boolean; created_at: string; }
 import toast from 'react-hot-toast';
 import { useDialer } from '@/contexts/DialerContext';
-import { SmsChatModal } from '@/components/SmsChatModal';
 
 import { 
   LayoutDashboard, 
@@ -295,9 +294,6 @@ function ContractorDetailsV2Content() {
   });
 
   const { makeCall, activeCall } = useDialer();
-  const [isSmsChatOpen, setIsSmsChatOpen] = useState(false);
-  const [smsChatNumber, setSmsChatNumber] = useState<string | null>(null);
-  const [smsChatName, setSmsChatName] = useState<string | null>(null);
   
   const notesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
@@ -1228,17 +1224,6 @@ function ContractorDetailsV2Content() {
                 <button onClick={() => onCallClick(contractor.phone || '')} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title="Primary Phone">
                   <Phone className="w-3.5 h-3.5" /> Call
                 </button>
-                <button 
-                  onClick={() => {
-                    setSmsChatNumber(contractor.phone || null);
-                    setSmsChatName(contractor.company_name || contractor.company || contractor.contact_name || contractor.name || null);
-                    setIsSmsChatOpen(true);
-                  }} 
-                  className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" 
-                  title="Send SMS"
-                >
-                  <MessageSquare className="w-3.5 h-3.5" /> SMS
-                </button>
                 {contractor.secondary_phone && (
                   <button onClick={() => onCallClick(contractor.secondary_phone || '')} className="flex-none px-3 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm" title="Secondary Phone">
                     <Phone className="w-3.5 h-3.5" />
@@ -1379,23 +1364,9 @@ function ContractorDetailsV2Content() {
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
                         {contact.phone && (
-                          <>
-                            <button onClick={(e) => { e.stopPropagation(); onCallClick(contact.phone); }} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Call">
-                              <Phone className="w-3 h-3" />
-                            </button>
-                            <button 
-                              onClick={(e) => { 
-                                e.stopPropagation(); 
-                                setSmsChatNumber(contact.phone);
-                                setSmsChatName(contact.name || contact.contact_name || null);
-                                setIsSmsChatOpen(true);
-                              }} 
-                              className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" 
-                              title="SMS"
-                            >
-                              <MessageSquare className="w-3 h-3" />
-                            </button>
-                          </>
+                          <button onClick={(e) => { e.stopPropagation(); onCallClick(contact.phone); }} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Call">
+                            <Phone className="w-3 h-3" />
+                          </button>
                         )}
                         {contact.email && (
                           <a href={`mailto:${contact.email}`} onClick={e => e.stopPropagation()} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Email">
@@ -1882,21 +1853,6 @@ function ContractorDetailsV2Content() {
           form={editForm}
           setForm={setEditForm}
         />
-
-        {isSmsChatOpen && smsChatNumber && (
-          <SmsChatModal
-            isOpen={isSmsChatOpen}
-            onClose={() => {
-              setIsSmsChatOpen(false);
-              setSmsChatNumber(null);
-              setSmsChatName(null);
-            }}
-            contactNumber={smsChatNumber}
-            contactName={smsChatName || 'Contractor'}
-            entityId={id as string}
-            entityType="contractor"
-          />
-        )}
       </div>
     </div>
   );

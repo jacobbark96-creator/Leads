@@ -152,35 +152,23 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           codecPreferences: ['opus', 'pcmu'] as any,
           enableRingingState: true,
           // Explicitly set edges to optimize routing and avoid high-latency "global" jumps
-          // For UK/Europe users, 'dublin' is the best. 'ashburn' is a good US fallback.
-          edge: ['dublin', 'ashburn'],
+          // This includes US East, Europe West (Dublin), and Singapore for global coverage
+          edge: ['ashburn', 'dublin', 'singapore'],
           // Enhance audio quality via WebRTC constraints
           audioConstraints: {
             autoGainControl: true,   // Helps with "quiet" voice issues
             echoCancellation: true,  // Reduces background echo
             noiseSuppression: true,  // Filters out background noise
-            highpassFilter: true,    // Helps filter low-frequency hums
           },
           // Increase logging for quality troubleshooting if needed
           logLevel: 'error',
         } as any);
 
-        // --- Quality & Connectivity Monitoring ---
-        newDevice.on('registered', () => {
-          console.log('Dialer registered and ready');
-          setCallStatus('Ready');
-        });
-
-        newDevice.on('unregistered', () => {
-          console.log('Dialer unregistered');
-          setCallStatus('Offline');
-        });
-
         newDevice.on('error', (twilioError: any) => {
           console.error('Twilio Error:', twilioError);
           
           // Suppress noisy token and connection errors from popping up toasts
-          const ignoredCodes = [20104, 20101, 31009];
+          const ignoredCodes = [20104, 20101, 31009, 31005];
           if (ignoredCodes.includes(twilioError.code)) {
             // If token expired, clear device to force re-init next time
             if (twilioError.code === 20104 || twilioError.code === 20101) {
@@ -216,16 +204,6 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           const callerNameParam = call.parameters.callerName;
           setCurrentNumber(callerNameParam ? `${callerNameParam} (${fromNum})` : fromNum);
           setActiveCall(call);
-
-          // --- Quality Monitoring for Inbound ---
-          call.on('warning', (warningName: string) => {
-            console.warn(`Call Quality Warning: ${warningName}`);
-            if (warningName === 'high-rtt') toast.error('High latency detected', { id: 'quality-warning' });
-            if (warningName === 'high-jitter') toast.error('Poor connection quality', { id: 'quality-warning' });
-          });
-
-          call.on('reconnecting', () => setCallStatus('Reconnecting...'));
-          call.on('reconnected', () => setCallStatus('Connected'));
 
           // Attempt to resolve name from DB if not passed in parameters
           if (!callerNameParam && fromNum !== 'Unknown Caller') {
@@ -406,29 +384,6 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           UserName: String(userName || profile.name || ''),
           EntityType: String(entityType || 'lead')
         }
-      });
-
-      // --- Call Quality Monitoring ---
-      call.on('warning', (warningName: string) => {
-        console.warn(`Call Quality Warning: ${warningName}`);
-        if (warningName === 'high-rtt') toast.error('High latency detected - you may experience delay', { id: 'quality-warning' });
-        if (warningName === 'high-jitter') toast.error('Poor connection quality - audio may be choppy', { id: 'quality-warning' });
-        if (warningName === 'low-mos') toast.error('Significant call quality drop detected', { id: 'quality-warning' });
-      });
-
-      call.on('warning-cleared', (warningName: string) => {
-        console.log(`Call Quality Warning Cleared: ${warningName}`);
-        toast.success('Connection quality stabilized', { id: 'quality-warning' });
-      });
-
-      call.on('reconnecting', (error: any) => {
-        setCallStatus('Reconnecting...');
-        console.log('Call is reconnecting due to network drop', error);
-      });
-
-      call.on('reconnected', () => {
-        setCallStatus('Connected');
-        toast.success('Call reconnected');
       });
 
       call.on('accept', () => {

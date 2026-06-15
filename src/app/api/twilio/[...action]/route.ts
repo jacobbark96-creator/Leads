@@ -24,24 +24,16 @@ export async function POST(req: Request, { params }: { params: Promise<{ action:
   const resolvedParams = await params;
   const actionPath = resolvedParams.action.join('/');
 
-  if (actionPath === 'token') {
-    return handleToken(req);
-  } else if (actionPath === 'voice') {
-    return handleVoice(req);
-  } else if (actionPath === 'voice/inbound') {
+  if (actionPath === 'voice/inbound') {
     return handleVoiceInbound(req);
   } else if (actionPath === 'voice/inbound/fallback') {
     return handleVoiceInboundFallback(req);
   } else if (actionPath === 'voice/recording') {
     return handleVoiceRecording(req);
-  } else if (actionPath === 'status') {
-    return handleStatus(req);
   } else if (actionPath === 'sms') {
     return handleSmsWebhook(req);
   } else if (actionPath === 'sms-status') {
     return handleSmsStatus(req);
-  } else if (actionPath === 'send-sms') {
-    return handleSendSms(req);
   } else if (actionPath === 'buy-number') {
     return handleBuyNumber(req);
   }

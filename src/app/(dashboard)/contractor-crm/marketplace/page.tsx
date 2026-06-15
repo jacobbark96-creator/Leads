@@ -28,6 +28,7 @@ function MarketplaceAdminContent() {
         .select('*')
         .in('status', ['qualified', 'marketplace'])
         .is('client_id', null)
+        .order('qualified_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 

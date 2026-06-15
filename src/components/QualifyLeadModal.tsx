@@ -362,6 +362,7 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
         phone: formData.phone,
         email: formData.email,
         status: lead.status === 'fresh' ? 'qualified' : lead.status,
+        qualified_at: lead.status === 'fresh' ? new Date().toISOString() : lead.qualified_at,
         assigned_to: lead.assigned_to || profile?.id,
         category_id: formData.category_id || null,
         monthly_spend: formData.monthly_spend ? Number(formData.monthly_spend.toString().replace(/,/g, '')) : null,

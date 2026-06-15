@@ -849,9 +849,14 @@ function LeadDetailsV2Content() {
   const updateLeadStatus = async (newStatus: string) => {
     if (!lead) return;
     try {
+      const updatePayload: any = { status: newStatus };
+      if (newStatus === 'qualified' || newStatus === 'marketplace') {
+        updatePayload.qualified_at = new Date().toISOString();
+      }
+      
       const { error } = await supabase
         .from('leads')
-        .update({ status: newStatus })
+        .update(updatePayload)
         .eq('id', lead.id);
 
       if (error) throw error;
@@ -1190,7 +1195,12 @@ function LeadDetailsV2Content() {
       setLoading(true);
       const { error } = await supabase
         .from('leads')
-        .update({ is_marketed: true, status: 'marketplace', push_to_whatsapp: pushToWhatsapp })
+        .update({ 
+          is_marketed: true, 
+          status: 'marketplace', 
+          push_to_whatsapp: pushToWhatsapp,
+          qualified_at: new Date().toISOString()
+        })
         .eq('id', lead.id);
 
       if (error) throw error;

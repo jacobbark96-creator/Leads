@@ -3,8 +3,9 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
-import { Activity, Clock, Eye, Target, LogIn } from 'lucide-react';
+import { Activity, Clock, Eye, Target, LogIn, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { ClientActivityModal } from './ClientActivityModal';
 
 interface ClientStats {
   user_id: string;
@@ -22,6 +23,7 @@ export const ClientMonitoringTab = () => {
   const [stats, setStats] = useState<ClientStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
+  const [selectedActivityUser, setSelectedActivityUser] = useState<{id: string, name: string} | null>(null);
 
   const fetchStats = async () => {
     try {
@@ -159,24 +161,41 @@ export const ClientMonitoringTab = () => {
                   )}
                 </td>
                 <td className="py-3 px-4 text-right">
-                  <button
-                    onClick={() => handleImpersonate(stat.user_id)}
-                    disabled={impersonatingId === stat.user_id}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-700 text-xs font-bold border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-50"
-                  >
-                    {impersonatingId === stat.user_id ? (
-                      <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-700"></div>
-                    ) : (
-                      <LogIn className="w-3 h-3" />
-                    )}
-                    Log In As
-                  </button>
+                  <div className="flex items-center justify-end gap-2">
+                    <button
+                      onClick={() => setSelectedActivityUser({ id: stat.user_id, name: stat.company_name || 'Unknown Company' })}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-blue-50 text-blue-700 text-xs font-bold border border-blue-200 hover:bg-blue-100 transition-colors"
+                    >
+                      <Search className="w-3 h-3" />
+                      24h Activity
+                    </button>
+                    <button
+                      onClick={() => handleImpersonate(stat.user_id)}
+                      disabled={impersonatingId === stat.user_id}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 text-gray-700 text-xs font-bold border border-gray-200 hover:bg-gray-100 transition-colors disabled:opacity-50"
+                    >
+                      {impersonatingId === stat.user_id ? (
+                        <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-gray-700"></div>
+                      ) : (
+                        <LogIn className="w-3 h-3" />
+                      )}
+                      Log In As
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
       </div>
+
+      {selectedActivityUser && (
+        <ClientActivityModal 
+          userId={selectedActivityUser.id} 
+          companyName={selectedActivityUser.name} 
+          onClose={() => setSelectedActivityUser(null)} 
+        />
+      )}
     </div>
   );
 };

@@ -8,6 +8,7 @@ import { format, startOfMonth, addDays, isSameDay } from 'date-fns';
 import dynamic from 'next/dynamic';
 import { toast } from 'react-hot-toast';
 import { TopUpModal } from '@/components/TopUpModal';
+import { trackClientActivity } from '@/lib/activityTracker';
 
 // Dynamic import for the Map component to avoid SSR issues with Leaflet
 const PostcodeMap = dynamic(() => import('@/components/OpenleadMax/PostcodeMap'), {
@@ -53,6 +54,12 @@ export default function OpenleadMaxPage() {
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showHowItWorks, setShowHowItWorks] = useState(false);
   const [howItWorksContent, setHowItWorksContent] = useState<any>(null);
+
+  useEffect(() => {
+    if (profile?.id) {
+      trackClientActivity(profile.id, 'page_view', { page: 'OpenLead Max' });
+    }
+  }, [profile?.id]);
 
   useEffect(() => {
     if (profile) {
@@ -101,7 +108,13 @@ export default function OpenleadMaxPage() {
       toast.error(`${areaCode} is currently unavailable for this period.`);
       return;
     }
-    setSelectedAreas(prev => prev.includes(areaCode) ? prev.filter(a => a !== areaCode) : [...prev, areaCode]);
+    setSelectedAreas(prev => {
+      const isSelected = prev.includes(areaCode);
+      if (profile?.id) {
+        trackClientActivity(profile.id, isSelected ? 'openlead_max_area_deselect' : 'openlead_max_area_select', { area: areaCode, price: pricing[areaCode] });
+      }
+      return isSelected ? prev.filter(a => a !== areaCode) : [...prev, areaCode];
+    });
   };
 
   return (

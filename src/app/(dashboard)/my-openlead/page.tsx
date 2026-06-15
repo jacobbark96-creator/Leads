@@ -4,6 +4,7 @@ import { supabase } from '@/lib/supabase';
 
 import { useAuthStore } from '../../../store/authStore';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
+import { trackClientActivity } from '@/lib/activityTracker';
 import { User, Phone, Mail, Building, MapPin, Briefcase, Plus, Users, ShieldCheck, AlertTriangle, Check } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { Client } from '../../../types';
@@ -33,6 +34,12 @@ export default function MyOpenlead() {
   });
 
   const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    if (profile?.id) {
+      trackClientActivity(profile.id, 'page_view', { page: 'My OpenLead' });
+    }
+  }, [profile?.id]);
 
   useEffect(() => {
     // Check URL for purchase success parameter

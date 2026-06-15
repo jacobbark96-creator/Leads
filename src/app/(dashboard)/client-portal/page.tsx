@@ -12,6 +12,7 @@ import { AdvisorModal } from './components/AdvisorModal';
 import { TopUpModal } from '../../../components/TopUpModal';
 import { InvoicesModal } from '../../../components/InvoicesModal';
 import { ClientFeedbackButton } from './components/ClientFeedbackButton';
+import { trackClientActivity } from '@/lib/activityTracker';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -44,6 +45,13 @@ export default function ClientDashboard() {
 
   const [activeTab, setActiveTab] = useState<'new' | 'sat' | 'won' | 'archive'>('new');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
+
+  const handleLeadClick = (lead: Lead) => {
+    setSelectedLead(lead);
+    if (profile?.id) {
+      trackClientActivity(profile.id, 'view_lead', { lead_id: lead.id, lead_name: lead.name, purchase_status: lead.purchase_status });
+    }
+  };
 
   const fetchDashboardData = async (pageNumber: number, isInitial: boolean) => {
     try {
@@ -135,6 +143,12 @@ export default function ClientDashboard() {
       setLoadingMore(false);
     }
   };
+
+  useEffect(() => {
+    if (profile?.id) {
+      trackClientActivity(profile.id, 'page_view', { page: 'Client Portal Dashboard' });
+    }
+  }, [profile?.id]);
 
   useEffect(() => {
     if (profile?.id) {
@@ -289,7 +303,10 @@ export default function ClientDashboard() {
       <div className="relative z-10 flex items-center justify-between mt-auto pt-1.5 border-t border-gray-100">
         <span className="text-[9px] sm:text-[10px] text-gray-500 truncate">{leads.length} leads</span>
         <button 
-          onClick={() => setShowTopUpModal(true)}
+          onClick={() => {
+            if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Top Up' });
+            setShowTopUpModal(true);
+          }}
           className="text-[9px] sm:text-[10px] font-bold bg-gradient-to-r from-openlead-blue to-blue-600 text-white px-2 py-0.5 rounded shadow shadow-blue-600/20 hover:shadow-blue-600/40 transition-all shrink-0"
         >
           Top Up
@@ -300,7 +317,10 @@ export default function ClientDashboard() {
 
   const getNextInvoiceCard = () => (
     <button
-      onClick={() => setShowInvoicesModal(true)}
+      onClick={() => {
+        if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Invoices' });
+        setShowInvoicesModal(true);
+      }}
       className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 p-2.5 h-full flex flex-col justify-center items-center relative overflow-hidden group hover:border-blue-500/30 hover:shadow-blue-500/20 transition-all w-full"
     >
       <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-openlead-blue/5 to-transparent rounded-bl-full transition-transform group-hover:scale-110"></div>
@@ -339,7 +359,7 @@ export default function ClientDashboard() {
               <DynamicMap 
                 key={`map-container-${profile?.id}`}
                 leads={leads} 
-                onLeadClick={setSelectedLead} 
+                onLeadClick={handleLeadClick} 
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-gradient-to-br from-gray-50 to-white">
@@ -383,7 +403,7 @@ export default function ClientDashboard() {
                 ) : (
                   <div className="divide-y divide-gray-50">
                     {leads.filter(l => l.purchase_status === 'new').slice(0, 5).map((lead) => (
-                      <div key={lead.id} onClick={() => setSelectedLead(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
+                      <div key={lead.id} onClick={() => handleLeadClick(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
                         {lead.photos && lead.photos.length > 0 && (
                           <img src={lead.photos[0]} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
                         )}
@@ -424,7 +444,7 @@ export default function ClientDashboard() {
                 ) : (
                   <div className="divide-y divide-gray-50">
                     {leads.filter(l => l.purchase_status === 'sat').slice(0, 5).map((lead) => (
-                      <div key={lead.id} onClick={() => setSelectedLead(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
+                      <div key={lead.id} onClick={() => handleLeadClick(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
                         {lead.photos && lead.photos.length > 0 && (
                           <img src={lead.photos[0]} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
                         )}
@@ -465,7 +485,7 @@ export default function ClientDashboard() {
                 ) : (
                   <div className="divide-y divide-gray-50">
                     {leads.filter(l => l.purchase_status === 'won').slice(0, 5).map((lead) => (
-                      <div key={lead.id} onClick={() => setSelectedLead(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
+                      <div key={lead.id} onClick={() => handleLeadClick(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
                         {lead.photos && lead.photos.length > 0 && (
                           <img src={lead.photos[0]} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
                         )}
@@ -506,7 +526,7 @@ export default function ClientDashboard() {
                 ) : (
                   <div className="divide-y divide-gray-50">
                     {leads.filter(l => l.purchase_status === 'archive').slice(0, 5).map((lead) => (
-                      <div key={lead.id} onClick={() => setSelectedLead(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
+                      <div key={lead.id} onClick={() => handleLeadClick(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
                         {lead.photos && lead.photos.length > 0 && (
                           <img src={lead.photos[0]} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
                         )}

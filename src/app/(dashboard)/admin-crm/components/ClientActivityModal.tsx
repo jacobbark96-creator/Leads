@@ -48,7 +48,7 @@ export const ClientActivityModal: React.FC<ClientActivityModalProps> = ({ userId
         return (
           <div className="flex items-center gap-2">
             <Eye className="w-4 h-4 text-blue-500" />
-            <span className="text-sm">Viewed lead: <span className="font-semibold">{act.details?.lead_name || 'Unknown'}</span></span>
+            <span className="text-sm">Viewed lead: <span className="font-semibold">{act.details?.company_name || act.details?.lead_name || 'Unknown'}</span></span>
           </div>
         );
       case 'openlead_max_area_select':

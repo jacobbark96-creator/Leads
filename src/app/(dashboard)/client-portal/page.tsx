@@ -49,7 +49,7 @@ export default function ClientDashboard() {
   const handleLeadClick = (lead: Lead) => {
     setSelectedLead(lead);
     if (profile?.id) {
-      trackClientActivity(profile.id, 'view_lead', { lead_id: lead.id, lead_name: lead.name, purchase_status: lead.purchase_status });
+      trackClientActivity(profile.id, 'view_lead', { lead_id: lead.id, lead_name: lead.name, company_name: lead.company, purchase_status: lead.purchase_status });
     }
   };
 

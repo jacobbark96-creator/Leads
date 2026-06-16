@@ -265,7 +265,7 @@ export default function MarketplacePage() {
   const handleLeadClick = (lead: Lead) => {
     setSelectedLead(lead);
     if (profile?.id) {
-      trackClientActivity(profile.id, 'view_lead', { lead_id: lead.id, lead_name: lead.name, location: lead.location });
+      trackClientActivity(profile.id, 'view_lead', { lead_id: lead.id, lead_name: lead.name, company_name: lead.company, location: lead.location });
       trackLeadEvent(lead.id, profile.id, 'view');
     }
   };

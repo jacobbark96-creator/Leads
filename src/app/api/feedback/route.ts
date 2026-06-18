@@ -22,6 +22,63 @@ export async function POST(request: Request) {
 
     if (feedbackError) throw feedbackError;
 
+    // Get the client user to show their name in the message
+    const { data: clientUser } = await supabaseAdmin
+      .from('users')
+      .select('name')
+      .eq('id', user_id)
+      .single();
+
+    const clientName = clientUser?.name || 'A Client';
+
+    // Get all super_admins and admins
+    const { data: admins } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .in('role', ['admin', 'super_admin']);
+
+    if (admins && admins.length > 0) {
+      // Find or create "Client Feedback" group
+      let groupId = null;
+      const { data: existingGroup } = await supabaseAdmin
+        .from('internal_group_chats')
+        .select('id')
+        .eq('name', 'Client Feedback')
+        .limit(1)
+        .single();
+
+      if (existingGroup) {
+        groupId = existingGroup.id;
+      } else {
+        const { data: newGroup, error: groupError } = await supabaseAdmin
+          .from('internal_group_chats')
+          .insert({
+            name: 'Client Feedback',
+            created_by: admins[0].id,
+          })
+          .select('id')
+          .single();
+        
+        if (newGroup) groupId = newGroup.id;
+      }
+
+      if (groupId) {
+        // Ensure all admins are in the group
+        const groupMembers = admins.map(admin => ({
+          group_id: groupId,
+          user_id: admin.id,
+        }));
+        await supabaseAdmin.from('internal_group_members').upsert(groupMembers, { onConflict: 'group_id,user_id' });
+
+        // Insert into internal_messages
+        await supabaseAdmin.from('internal_messages').insert({
+          sender_id: user_id, // The client
+          group_id: groupId,
+          content: `🚨 New Feedback from ${clientName}:\n\n"${feedback}"`,
+        });
+      }
+    }
+
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Feedback submission error:', error);

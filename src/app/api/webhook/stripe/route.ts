@@ -95,6 +95,40 @@ export async function POST(req: Request) {
       if (session.mode === 'subscription') {
         // This is legacy subscription handling. If they somehow hit this, we log it.
         console.log('Legacy subscription event received');
+      } else if (session.mode === 'setup') {
+        // Handle Direct Debit setup success
+        const type = session.metadata?.type;
+        const metaUserId = session.metadata?.userId;
+        const actualUserId = userId || metaUserId;
+
+        if (type === 'direct_debit_setup' && actualUserId && session.setup_intent) {
+          try {
+            const stripeKey = process.env.STRIPE_SECRET_KEY!;
+            const stripe = require('stripe')(stripeKey);
+            
+            // Retrieve setup intent to get payment method
+            const setupIntent = await stripe.setupIntents.retrieve(session.setup_intent as string);
+            if (setupIntent.payment_method && session.customer) {
+              // Update customer's default payment method for invoices
+              await stripe.customers.update(session.customer as string, {
+                invoice_settings: {
+                  default_payment_method: setupIntent.payment_method as string
+                }
+              });
+
+              // Mark user as having active DD in Supabase
+              const { error } = await supabaseAdmin
+                .from('users')
+                .update({ has_active_dd: true })
+                .eq('id', actualUserId);
+
+              if (error) console.error('Error updating user has_active_dd:', error);
+              else console.log(`Successfully setup Direct Debit for user ${actualUserId}`);
+            }
+          } catch (err) {
+            console.error('Error processing setup mode webhook:', err);
+          }
+        }
       } else if (session.mode === 'payment') {
         const type = session.metadata?.type;
         const clientId = session.metadata?.clientId;

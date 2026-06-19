@@ -16,6 +16,7 @@ export interface UserProfile {
   permissions?: string[] | null;
   google_refresh_token?: string | null;
   email_signature?: string | null;
+  has_active_dd?: boolean;
   division_id?: string | null;
   divisions?: Division | null;
   trade_account_enabled?: boolean;

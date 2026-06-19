@@ -157,6 +157,20 @@ export default function ClientDashboard() {
     }
   }, [profile?.id]);
 
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      if (urlParams.get('dd_setup') === 'success') {
+        toast.success('Direct Debit successfully set up! Your 10% discount is now active.', { duration: 5000 });
+        // Clean up URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+      } else if (urlParams.get('dd_setup') === 'cancelled') {
+        toast.error('Direct Debit setup was cancelled.');
+        window.history.replaceState({}, document.title, window.location.pathname);
+      }
+    }
+  }, []);
+
   const loadMore = () => {
     const nextPage = page + 1;
     setPage(nextPage);

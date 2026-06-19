@@ -76,7 +76,7 @@ export const FlexTermsModal: React.FC<FlexTermsModalProps> = ({ isOpen, onClose,
               <section className="space-y-3">
                 <h4 className="text-lg font-black text-slate-900">6. Weekly Invoicing</h4>
                 <p className="text-sm text-slate-600 leading-relaxed font-medium">
-                  Lead purchases made through OpenLead Flex are invoiced weekly. Monday to Sunday activity is invoiced on Tuesday, with payment due within 7 days unless otherwise agreed.
+                  Lead purchases made through OpenLead Flex are invoiced weekly. Monday to Friday activity is invoiced on Friday evening, with payment due within agreed terms.
                 </p>
               </section>
 

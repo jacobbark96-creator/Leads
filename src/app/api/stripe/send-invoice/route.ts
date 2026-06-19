@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     // 1. Fetch invoice details
     const { data: invoice, error: invoiceError } = await supabaseAdmin
       .from('invoices')
-      .select('*, users(id, email, name)')
+      .select('*, users(id, email, name, has_active_dd)')
       .eq('id', invoiceId)
       .single();
 
@@ -73,16 +73,25 @@ export async function POST(req: Request) {
     console.log('Using Stripe customerId:', customerId);
 
     // b. Create the draft invoice
-    const stripeInvoice = await stripe.invoices.create({
+    const hasActiveDD = invoice.users.has_active_dd === true;
+
+    const invoiceParams: Stripe.InvoiceCreateParams = {
       customer: customerId,
-      collection_method: 'send_invoice',
-      days_until_due: 7,
+      collection_method: hasActiveDD ? 'charge_automatically' : 'send_invoice',
       metadata: { 
         userId: invoice.users.id, 
         type: 'trade_account', 
         localInvoiceId: invoice.id 
       }
-    });
+    };
+
+    // If sending invoice manually, specify due date. If charging automatically, it charges immediately by default unless we set a specific behavior.
+    // For direct debit, we typically charge automatically immediately, which takes a few days to clear.
+    if (!hasActiveDD) {
+      invoiceParams.days_until_due = 7;
+    }
+
+    const stripeInvoice = await stripe.invoices.create(invoiceParams);
 
     if (!stripeInvoice || !stripeInvoice.id) {
       throw new Error('Failed to create Stripe invoice object');
@@ -108,6 +117,19 @@ export async function POST(req: Request) {
         metadata: { purchaseId: p.id, invoiceId: invoice.id }
       }));
 
+      // Add Direct Debit Discount Item if applicable (10%)
+      if (hasActiveDD) {
+        const discountAmount = fullPrice * 0.10;
+        items.push(stripe.invoiceItems.create({
+          customer: customerId,
+          invoice: stripeInvoiceId,
+          amount: -Math.round(discountAmount * 100),
+          currency: 'gbp',
+          description: `Direct Debit 10% Discount: ${p.leads?.name || 'Lead'}`,
+          metadata: { purchaseId: p.id, type: 'item_dd_discount' }
+        }));
+      }
+
       // Add Credit Deduction Item if used
       if (p.credit_used > 0) {
         items.push(stripe.invoiceItems.create({
@@ -125,7 +147,15 @@ export async function POST(req: Request) {
     await Promise.all(itemPromises);
     console.log('All invoice items created successfully');
 
-    const totalNetInvoiced = purchases.reduce((sum, p) => sum + (p.price_paid || 0), 0);
+    let totalNetInvoiced = purchases.reduce((sum, p) => sum + (p.price_paid || 0), 0);
+    
+    // Apply discount to local tracking variable so status isn't incorrectly set to paid if 0
+    if (hasActiveDD) {
+      const totalFullPrice = purchases.reduce((sum, p) => sum + ((p.price_paid || 0) + (p.credit_used || 0)), 0);
+      const discountTotal = totalFullPrice * 0.10;
+      totalNetInvoiced = Math.max(0, totalNetInvoiced - discountTotal);
+    }
+
     console.log(`Finalizing invoice ${invoiceId}: totalNetInvoiced=${totalNetInvoiced}`);
 
     // 4. Send the Invoice (if there's a balance)

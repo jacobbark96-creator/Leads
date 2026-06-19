@@ -2988,7 +2988,7 @@ function LeadDetailsV2Content() {
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
             <h3 className="text-lg font-bold text-gray-900 mb-2">Market Lead</h3>
-            <p className="text-sm text-gray-500 mb-4">Do you want to notify eligible contractors via WhatsApp about this lead?</p>
+            <p className="text-sm text-gray-500 mb-4">You are about to push this lead to the marketplace. Below are the eligible contractors in this area:</p>
             
             {isFetchingMatches ? (
               <div className="flex justify-center mb-6">
@@ -3015,15 +3015,8 @@ function LeadDetailsV2Content() {
             )}
 
             <div className="flex flex-col gap-3">
-              <button 
-                onClick={() => handleMarketLead(true)} 
-                disabled={isFetchingMatches || matchedContractors.length === 0}
-                className="w-full px-4 py-3 bg-blue-600 text-white rounded-lg text-sm font-bold hover:bg-blue-700 disabled:bg-blue-300 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                Yes, Notify via WhatsApp
-              </button>
               <button onClick={() => handleMarketLead(false)} className="w-full px-4 py-3 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700">
-                No, Just Push to Marketplace
+                Yes, Push it
               </button>
               <button onClick={() => setIsMarketConfirmOpen(false)} className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">
                 Cancel

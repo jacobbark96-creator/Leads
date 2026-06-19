@@ -213,11 +213,12 @@ export const sendReceiptEmail = async (email: string, leadId: string, amount: nu
   }
 };
 
-export const sendCustomHtmlEmail = async (to: string[], subject: string, html: string) => {
+export const sendCustomHtmlEmail = async (recipients: string[], subject: string, html: string) => {
   try {
     return await sendResendEmail({
       from: `Openlead <${defaultFromEmail}>`,
-      to,
+      to: [defaultFromEmail], // To the sender so recipients don't see each other
+      bcc: recipients,        // BCC all actual recipients
       subject,
       html,
     });

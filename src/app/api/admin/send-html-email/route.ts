@@ -14,7 +14,7 @@ export async function POST(req: Request) {
       );
     }
 
-    const chunkSize = 50;
+    const chunkSize = 49; // Max 50 total recipients per Resend request (1 TO + 49 BCC)
     const errors = [];
     
     for (let i = 0; i < to.length; i += chunkSize) {

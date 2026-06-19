@@ -213,6 +213,20 @@ export const sendReceiptEmail = async (email: string, leadId: string, amount: nu
   }
 };
 
+export const sendCustomHtmlEmail = async (to: string[], subject: string, html: string) => {
+  try {
+    return await sendResendEmail({
+      from: `Openlead <${defaultFromEmail}>`,
+      to,
+      subject,
+      html,
+    });
+  } catch (err: any) {
+    console.error('Failed to send custom html email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
 /**
  * Add contact to Audience for Marketing Emails (e.g. weekly newsletters)
  * Note: Requires you to create an Audience in Resend and grab the Audience ID

@@ -6,6 +6,7 @@ import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
 import dynamic from 'next/dynamic';
 import { ImageHostingModal } from '@/components/ImageHostingModal';
+import { CustomHtmlEmailModal } from '@/components/CustomHtmlEmailModal';
 import 'react-quill-new/dist/quill.snow.css';
 
 // Force rebuild with react-quill-new
@@ -27,6 +28,7 @@ export default function EmailsPage() {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState<Partial<Template>>({});
   const [showImageHosting, setShowImageHosting] = useState(false);
+  const [showSendCustomEmail, setShowSendCustomEmail] = useState(false);
 
   useEffect(() => {
     fetchTemplates();
@@ -140,6 +142,12 @@ export default function EmailsPage() {
           <p className="text-gray-500 text-sm">Manage templates for bill requests and automated chases.</p>
         </div>
         <div className="flex items-center gap-3">
+          <button 
+            onClick={() => setShowSendCustomEmail(true)}
+            className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-sm"
+          >
+            <Send className="w-4 h-4 text-blue-500" /> Send Email
+          </button>
           <button 
             onClick={() => setShowImageHosting(true)}
             className="bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 px-4 py-2 rounded-lg flex items-center gap-2 transition-colors font-medium shadow-sm"
@@ -315,6 +323,10 @@ export default function EmailsPage() {
       <ImageHostingModal 
         isOpen={showImageHosting} 
         onClose={() => setShowImageHosting(false)} 
+      />
+      <CustomHtmlEmailModal
+        isOpen={showSendCustomEmail}
+        onClose={() => setShowSendCustomEmail(false)}
       />
     </div>
   );

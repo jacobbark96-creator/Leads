@@ -207,6 +207,8 @@ export interface LeadNote {
   author_name: string;
   content: string;
   is_pinned: boolean;
+  call_sid?: string | null;
+  recording_url?: string | null;
   created_at: string;
 }
 

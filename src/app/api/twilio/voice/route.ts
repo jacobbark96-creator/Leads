@@ -36,8 +36,9 @@ export async function POST(req: Request) {
     const statusCallbackUrl = `${protocol}://${host}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&amp;userName=${encodeURIComponent(userName)}&amp;entityType=${encodeURIComponent(entityType)}`;
     const actionAttr = entityId ? ` action="${statusCallbackUrl}"` : '';
     const fallbackAttr = entityId ? ` statusCallback="${statusCallbackUrl}" statusCallbackEvent="completed"` : '';
+    const recordingAttr = entityId ? ` recordingStatusCallback="${statusCallbackUrl}" recordingStatusCallbackEvent="completed"` : '';
 
-    const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Dial${callerIdAttr}${actionAttr}${fallbackAttr} record="record-from-answer"><Number>${to}</Number></Dial></Response>`;
+    const twiml = `<?xml version="1.0" encoding="UTF-8"?><Response><Dial${callerIdAttr}${actionAttr}${fallbackAttr}${recordingAttr} record="record-from-answer"><Number>${to}</Number></Dial></Response>`;
     
     return new NextResponse(twiml, { 
       headers: { 'Content-Type': 'text/xml' } 

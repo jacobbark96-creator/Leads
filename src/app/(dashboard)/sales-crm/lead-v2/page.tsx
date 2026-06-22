@@ -48,6 +48,42 @@ import { MarketplaceLeadModal } from '@/components/MarketplaceLeadModal';
 import { SmsChatModal } from '@/components/SmsChatModal';
 import { EmailModal } from '@/components/EmailModal';
 
+const noteTimestampFormatter = new Intl.DateTimeFormat(undefined, {
+  dateStyle: 'medium',
+  timeStyle: 'short'
+});
+
+const RECORDING_RETENTION_MS = 29 * 24 * 60 * 60 * 1000;
+
+const formatNoteTimestamp = (value: string) => {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? '' : noteTimestampFormatter.format(date);
+};
+
+const getCallRecordingState = (note: Pick<LeadNote, 'content' | 'created_at' | 'recording_url'>) => {
+  if (!note.content.startsWith('📞') || !note.content.includes(': Answered ')) {
+    return null;
+  }
+
+  const createdAt = new Date(note.created_at);
+  if (Number.isNaN(createdAt.getTime())) {
+    return null;
+  }
+
+  if (Date.now() - createdAt.getTime() >= RECORDING_RETENTION_MS) {
+    return { label: 'Recording expired', href: null };
+  }
+
+  if (!note.recording_url) {
+    return { label: 'Recording processing...', href: null };
+  }
+
+  return {
+    label: 'Listen to recording',
+    href: `/api/twilio/media?url=${encodeURIComponent(note.recording_url)}`
+  };
+};
+
 const CalendarModal = ({ isOpen, onClose, onSetReminder }: any) => {
   const [date, setDate] = useState('');
   const [time, setTime] = useState('');
@@ -2787,7 +2823,7 @@ function LeadDetailsV2Content() {
                           <div className="flex items-center justify-between mb-1">
                             <div className="flex items-center gap-2">
                               <span className="text-sm font-bold text-gray-900">{note.author_name}</span>
-                              <span className="text-xs text-gray-400">{new Date(note.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</span>
+                              <span className="text-xs text-gray-400">{formatNoteTimestamp(note.created_at)}</span>
                             </div>
                             <button onClick={() => togglePinNote(note.id, !!note.is_pinned)} className={`p-1 rounded hover:bg-gray-100 ${note.is_pinned ? 'text-amber-500' : 'text-gray-400'}`}>
                               <Pin className="w-3.5 h-3.5" />
@@ -2904,6 +2940,7 @@ function LeadDetailsV2Content() {
                   const isSMS = note.content.startsWith('✉️');
                   const isTask = note.content.startsWith('📅');
                   const isSystem = note.author_name === 'System';
+                  const recordingState = getCallRecordingState(note);
                   
                   let icon = <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>;
                   let bgClass = "bg-purple-100 text-purple-600";
@@ -2935,7 +2972,23 @@ function LeadDetailsV2Content() {
                           </span>
                           {isSMS && <Eye className="w-3 h-3 text-gray-400 opacity-0 group-hover:opacity-100 transition-opacity" />}
                         </div>
-                        <span className="text-[10px] text-gray-500">{new Date(note.created_at).toLocaleString()}</span>
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-[10px] text-gray-500">{formatNoteTimestamp(note.created_at)}</span>
+                          {recordingState && (
+                            recordingState.href ? (
+                              <a
+                                href={recordingState.href}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="text-[10px] font-medium text-blue-600 hover:text-blue-700"
+                              >
+                                {recordingState.label}
+                              </a>
+                            ) : (
+                              <span className="text-[10px] text-gray-500">{recordingState.label}</span>
+                            )
+                          )}
+                        </div>
                       </div>
                     </div>
                   );

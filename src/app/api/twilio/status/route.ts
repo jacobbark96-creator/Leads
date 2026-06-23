@@ -21,11 +21,14 @@ export async function POST(req: Request) {
       params.get('CallSid'),
       params.get('ParentCallSid')
     ].filter((value): value is string => Boolean(value))));
+    const preferredCallSid = params.get('CallSid') || params.get('ParentCallSid') || params.get('DialCallSid');
 
     if (recordingUrl && entityId && candidateCallSids.length > 0) {
       const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
       const tableName = entityType === 'contractor' ? 'contractor_notes' : 'lead_notes';
+      const idField = entityType === 'contractor' ? 'contractor_id' : 'lead_id';
       const normalizedRecordingUrl = recordingUrl.endsWith('.mp3') ? recordingUrl : `${recordingUrl}.mp3`;
+      let updated = false;
 
       for (const callSid of candidateCallSids) {
         const { data: updatedRows, error } = await supabase
@@ -40,7 +43,37 @@ export async function POST(req: Request) {
         }
 
         if (updatedRows && updatedRows.length > 0) {
+          updated = true;
           break;
+        }
+      }
+
+      // Twilio recording callbacks use the parent-leg CallSid for <Dial> recordings.
+      // If the original note stored a child leg SID, fall back to the most recent
+      // answered system call note for this entity that still lacks a recording.
+      if (!updated) {
+        const { data: fallbackNote, error: fallbackError } = await supabase
+          .from(tableName)
+          .select('id')
+          .eq(idField, entityId)
+          .eq('author_name', 'System')
+          .like('content', '📞 Call by %: Answered (%)')
+          .is('recording_url', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+
+        if (fallbackError) {
+          console.error('Recording Callback Fallback Lookup Error:', fallbackError);
+        } else if (fallbackNote?.id) {
+          const { error: fallbackUpdateError } = await supabase
+            .from(tableName)
+            .update({ recording_url: normalizedRecordingUrl, call_sid: preferredCallSid || candidateCallSids[0] || null })
+            .eq('id', fallbackNote.id);
+
+          if (fallbackUpdateError) {
+            console.error('Recording Callback Fallback Update Error:', fallbackUpdateError);
+          }
         }
       }
 
@@ -67,7 +100,7 @@ export async function POST(req: Request) {
       const noteContent = `📞 Call by ${userName}: ${statusText} (${duration} seconds)`;
       const tableName = entityType === 'contractor' ? 'contractor_notes' : 'lead_notes';
       const idField = entityType === 'contractor' ? 'contractor_id' : 'lead_id';
-      const callSid = candidateCallSids[0] || null;
+      const callSid = preferredCallSid || null;
 
       await supabase.from(tableName).insert([{
         [idField]: entityId,

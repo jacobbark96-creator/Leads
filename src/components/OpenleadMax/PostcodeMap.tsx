@@ -35,6 +35,9 @@ interface PostcodeMapProps {
   onAreaClick: (areaCode: string) => void;
 }
 
+const getAreaCode = (feature: any) =>
+  feature?.properties?.name || feature?.properties?.PC_AREA || feature?.properties?.area_code;
+
 // Map bounds for the UK
 const UK_BOUNDS: L.LatLngBoundsExpression = [
   [49.5, -9.5], // Southwest
@@ -53,7 +56,10 @@ function MapController() {
 export default function PostcodeMap({ selectedAreas, availability, onAreaClick }: PostcodeMapProps) {
   const [geoData, setGeoData] = useState<any>(null);
   const geoJsonRef = useRef<any>(null);
+  const mapRef = useRef<L.Map | null>(null);
   const [mapId, setMapId] = useState<string | null>(null);
+  const selectedAreasRef = useRef<string[]>(selectedAreas);
+  const availabilityRef = useRef<Record<string, boolean>>(availability);
 
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -61,6 +67,11 @@ export default function PostcodeMap({ selectedAreas, availability, onAreaClick }
     }, 50);
     return () => clearTimeout(timer);
   }, []);
+
+  useEffect(() => {
+    selectedAreasRef.current = selectedAreas;
+    availabilityRef.current = availability;
+  }, [selectedAreas, availability]);
 
   useEffect(() => {
     if (geoJsonRef.current) {
@@ -89,7 +100,7 @@ export default function PostcodeMap({ selectedAreas, availability, onAreaClick }
 
   const onEachFeature = (feature: any, layer: any) => {
     // MissingMaps uses 'name' for the postcode area code (e.g., 'AB', 'BT')
-    const areaCode = feature.properties?.name || feature.properties?.PC_AREA || feature.properties?.area_code;
+    const areaCode = getAreaCode(feature);
     
     layer.on({
       click: (e: any) => {
@@ -98,10 +109,8 @@ export default function PostcodeMap({ selectedAreas, availability, onAreaClick }
       },
       mouseover: (e: any) => {
         const l = e.target;
-        l.setStyle({
-          fillOpacity: 0.8,
-          weight: 3,
-        });
+        const baseStyle = getStyle(feature);
+        l.setStyle({ ...baseStyle, fillOpacity: 0.8, weight: 3 });
         l.bringToFront();
       },
       mouseout: (e: any) => {
@@ -127,9 +136,9 @@ export default function PostcodeMap({ selectedAreas, availability, onAreaClick }
   };
 
   const getStyle = (feature: any) => {
-    const areaCode = feature.properties?.name || feature.properties?.area_code;
-    const isSelected = selectedAreas.includes(areaCode);
-    const isAvailable = availability[areaCode] !== false;
+    const areaCode = getAreaCode(feature);
+    const isSelected = areaCode ? selectedAreasRef.current.includes(areaCode) : false;
+    const isAvailable = areaCode ? availabilityRef.current[areaCode] !== false : true;
 
     if (isSelected) {
       return {
@@ -173,10 +182,13 @@ export default function PostcodeMap({ selectedAreas, availability, onAreaClick }
         <MapContainer
           id={mapId}
           bounds={UK_BOUNDS}
-        style={{ height: '100%', width: '100%' }}
-        zoomControl={false}
-        scrollWheelZoom={true}
-        attributionControl={false}
+          style={{ height: '100%', width: '100%' }}
+          zoomControl={false}
+          scrollWheelZoom={true}
+          attributionControl={false}
+          whenReady={(event) => {
+            mapRef.current = event.target;
+          }}
       >
         <TileLayer
           url="https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png"
@@ -197,13 +209,13 @@ export default function PostcodeMap({ selectedAreas, availability, onAreaClick }
       {/* Custom Zoom Controls */}
       <div className="absolute bottom-4 right-4 flex flex-col gap-2 z-[1000]">
         <button 
-          onClick={() => {}} // Handle via map ref if needed
+          onClick={() => mapRef.current?.zoomIn()}
           className="w-10 h-10 bg-white rounded-lg shadow-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 font-bold text-xl"
         >
           +
         </button>
         <button 
-          onClick={() => {}} // Handle via map ref if needed
+          onClick={() => mapRef.current?.zoomOut()}
           className="w-10 h-10 bg-white rounded-lg shadow-lg border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 font-bold text-xl"
         >
           -

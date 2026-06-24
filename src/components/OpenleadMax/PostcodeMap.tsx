@@ -105,9 +105,11 @@ export default function PostcodeMap({ selectedAreas, availability, onAreaClick }
     layer.on({
       click: (e: any) => {
         L.DomEvent.stopPropagation(e);
-        if (areaCode) onAreaClick(areaCode);
+        if (!areaCode || availabilityRef.current[areaCode] === false) return;
+        onAreaClick(areaCode);
       },
       mouseover: (e: any) => {
+        if (!areaCode || availabilityRef.current[areaCode] === false) return;
         const l = e.target;
         const baseStyle = getStyle(feature);
         l.setStyle({ ...baseStyle, fillOpacity: 0.8, weight: 3 });
@@ -155,6 +157,7 @@ export default function PostcodeMap({ selectedAreas, availability, onAreaClick }
         fillOpacity: 0.4,
         color: '#94a3b8', // slate-400
         weight: 1,
+        interactive: false,
       };
     }
 
@@ -163,6 +166,7 @@ export default function PostcodeMap({ selectedAreas, availability, onAreaClick }
       fillOpacity: 0.4,
       color: '#10b981', // emerald-500
       weight: 1,
+      interactive: true,
     };
   };
 

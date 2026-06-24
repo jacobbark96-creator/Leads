@@ -94,6 +94,7 @@ export default function OpenleadMaxPage() {
       const availMap: Record<string, boolean> = {};
       availData?.forEach(a => availMap[a.area_code] = a.is_available);
       setAvailability(availMap);
+      setSelectedAreas(prev => prev.filter(area => availMap[area] !== false));
     } catch (error) {
       console.error('Error fetching Openlead Max data:', error);
     } finally {
@@ -101,7 +102,8 @@ export default function OpenleadMaxPage() {
     }
   };
 
-  const totalTopUp = selectedAreas.reduce((sum, area) => sum + (pricing[area] || 0), 0);
+  const selectableAreas = selectedAreas.filter(area => availability[area] !== false);
+  const totalTopUp = selectableAreas.reduce((sum, area) => sum + (pricing[area] || 0), 0);
 
   const toggleArea = (areaCode: string) => {
     if (availability[areaCode] === false) {
@@ -115,6 +117,22 @@ export default function OpenleadMaxPage() {
       }
       return isSelected ? prev.filter(a => a !== areaCode) : [...prev, areaCode];
     });
+  };
+
+  const handleCheckout = () => {
+    const unavailableSelections = selectedAreas.filter(area => availability[area] === false);
+
+    if (unavailableSelections.length > 0) {
+      setSelectedAreas(prev => prev.filter(area => availability[area] !== false));
+      toast.error('Unavailable territories were removed from your selection.');
+      return;
+    }
+
+    if (selectableAreas.length === 0 || totalTopUp < 2000) {
+      return;
+    }
+
+    setShowTopUpModal(true);
   };
 
   return (
@@ -207,18 +225,18 @@ export default function OpenleadMaxPage() {
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Selected Territories</h3>
-                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{selectedAreas.length} Areas</span>
+                <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full">{selectableAreas.length} Areas</span>
               </div>
               
               <div className="space-y-2">
-                {selectedAreas.length === 0 ? (
+                {selectableAreas.length === 0 ? (
                   <div className="py-12 border-2 border-dashed border-slate-100 rounded-2xl flex flex-col items-center justify-center text-center px-4">
                     <MapIcon className="w-8 h-8 text-slate-200 mb-2" />
                     <p className="text-[10px] font-bold text-slate-400">Click areas on the map to begin your territory dominance</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-5 gap-2">
-                    {selectedAreas.map(area => (
+                    {selectableAreas.map(area => (
                       <div key={area} className="relative group flex flex-col items-center gap-1">
                         <button 
                           onClick={() => toggleArea(area)}
@@ -251,10 +269,10 @@ export default function OpenleadMaxPage() {
             </div>
 
             <button 
-              disabled={selectedAreas.length === 0 || totalTopUp < 2000}
-              onClick={() => setShowTopUpModal(true)}
+              disabled={selectableAreas.length === 0 || totalTopUp < 2000}
+              onClick={handleCheckout}
               className={`w-full py-4 rounded-xl font-black text-xs uppercase tracking-widest flex items-center justify-center gap-2 transition-all ${
-                selectedAreas.length > 0 && totalTopUp >= 2000
+                selectableAreas.length > 0 && totalTopUp >= 2000
                   ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-xl shadow-blue-200 hover:scale-[1.02] active:scale-95' 
                   : 'bg-slate-200 text-slate-400 cursor-not-allowed'
               }`}
@@ -263,7 +281,7 @@ export default function OpenleadMaxPage() {
               Secure Territories
             </button>
             <p className="text-[9px] text-slate-400 text-center mt-3 font-medium uppercase tracking-tighter">
-              {totalTopUp < 2000 && selectedAreas.length > 0 
+              {totalTopUp < 2000 && selectableAreas.length > 0 
                 ? `Minimum top up of £2,000 required (Current: £${totalTopUp.toLocaleString()})`
                 : "Confirm your booking window above to proceed"}
             </p>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { Device, Call } from '@twilio/voice-sdk';
+import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
@@ -11,6 +12,26 @@ import { InternalChat } from './InternalChat';
 
 export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile } = useAuthStore();
+  const pathname = usePathname();
+  // #region debug-point sound:report-helper
+  const reportDebug = async (hypothesisId: string, msg: string, data: Record<string, unknown> = {}) => {
+    try {
+      await fetch('http://127.0.0.1:7777/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: 'internal-chat-desktop',
+          runId: 'pre-fix',
+          hypothesisId,
+          location: 'src/components/DialerProvider.tsx',
+          msg: `[DEBUG] ${msg}`,
+          data,
+          ts: Date.now()
+        })
+      });
+    } catch {}
+  };
+  // #endregion
   const [device, setDevice] = useState<Device | null>(null);
   const [activeCall, setActiveCall] = useState<Call | null>(null);
   const [callStatus, setCallStatus] = useState<string>('');
@@ -41,6 +62,15 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     let timeout: NodeJS.Timeout;
     const handleNewMessageToast = (e: any) => {
       setToastMessage(e.detail);
+      // #region debug-point sound:event
+      void reportDebug('E', 'Chat toast event received in dialer provider', {
+        senderName: e?.detail?.senderName || null,
+        pathname: window.location.pathname,
+        visibilityState: document.visibilityState,
+        hasFocus: document.hasFocus()
+      });
+      // #endregion
+      playInternalChatSound();
       
       // Auto-hide after 5 seconds
       if (timeout) clearTimeout(timeout);
@@ -59,6 +89,75 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [currentEntityId, setCurrentEntityId] = useState<string | null>(null);
   const initPromise = useRef<Promise<Device | null> | null>(null);
   const deviceRef = useRef<Device | null>(null);
+  const audioContextRef = useRef<AudioContext | null>(null);
+
+  const playInternalChatSound = () => {
+    if (typeof window === 'undefined') return;
+
+    try {
+      const AudioContextCtor = window.AudioContext || (window as any).webkitAudioContext;
+      if (!AudioContextCtor) return;
+
+      const ctx = audioContextRef.current || new AudioContextCtor();
+      audioContextRef.current = ctx;
+      // #region debug-point sound:before-play
+      void reportDebug('E', 'Attempting to play internal chat sound', {
+        pathname: window.location.pathname,
+        visibilityState: document.visibilityState,
+        hasFocus: document.hasFocus(),
+        audioContextState: ctx.state
+      });
+      // #endregion
+
+      if (ctx.state === 'suspended') {
+        void ctx.resume();
+      }
+
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      const oscillatorTwo = ctx.createOscillator();
+      const gainNodeTwo = ctx.createGain();
+
+      oscillator.type = 'sine';
+      oscillator.frequency.setValueAtTime(880, ctx.currentTime);
+      oscillator.frequency.exponentialRampToValueAtTime(700, ctx.currentTime + 0.32);
+
+      gainNode.gain.setValueAtTime(0.0001, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.08, ctx.currentTime + 0.02);
+      gainNode.gain.exponentialRampToValueAtTime(0.05, ctx.currentTime + 0.18);
+      gainNode.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.36);
+
+      oscillatorTwo.type = 'sine';
+      oscillatorTwo.frequency.setValueAtTime(740, ctx.currentTime + 0.22);
+      oscillatorTwo.frequency.exponentialRampToValueAtTime(620, ctx.currentTime + 0.58);
+
+      gainNodeTwo.gain.setValueAtTime(0.0001, ctx.currentTime + 0.2);
+      gainNodeTwo.gain.exponentialRampToValueAtTime(0.06, ctx.currentTime + 0.28);
+      gainNodeTwo.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + 0.62);
+
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillatorTwo.connect(gainNodeTwo);
+      gainNodeTwo.connect(ctx.destination);
+      oscillator.start();
+      oscillatorTwo.start(ctx.currentTime + 0.2);
+      oscillator.stop(ctx.currentTime + 0.38);
+      oscillatorTwo.stop(ctx.currentTime + 0.64);
+      // #region debug-point sound:scheduled
+      void reportDebug('E', 'Internal chat sound scheduled', {
+        audioContextState: ctx.state,
+        currentTime: ctx.currentTime
+      });
+      // #endregion
+    } catch (error: any) {
+      // #region debug-point sound:error
+      void reportDebug('E', 'Internal chat sound threw', {
+        message: error?.message || 'Unknown error',
+        name: error?.name || null
+      });
+      // #endregion
+    }
+  };
 
   // Cleanup on unmount - Only destroy device when provider unmounts
   useEffect(() => {
@@ -66,6 +165,9 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       if (deviceRef.current && deviceRef.current.state !== 'destroyed') {
         console.log('Destroying Twilio device on DialerProvider unmount');
         deviceRef.current.destroy();
+      }
+      if (audioContextRef.current) {
+        void audioContextRef.current.close();
       }
     };
   }, []); // Only run on actual provider unmount
@@ -554,14 +656,28 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const canUseInternalChat = profile && ['admin', 'super_admin', 'rep', 'sales', 'growth_manager'].includes(profile.role);
+  const isStaffRoute = pathname?.startsWith('/staff');
+  const shouldRenderGlobalInternalChat = canUseInternalChat && !isStaffRoute;
   const showFloatingDialer = profile && ['rep', 'super_admin', 'admin'].includes(profile.role);
 
   return (
     <DialerContext.Provider value={{ makeCall, activeCall, currentEntityId }}>
       {children}
 
-      {canUseInternalChat && (
+      {shouldRenderGlobalInternalChat && (
         <InternalChat isOpen={isInternalChatOpen} onClose={() => setIsInternalChatOpen(false)} isModal={true} />
+      )}
+
+      {canUseInternalChat && toastMessage && (
+        <div className="fixed bottom-6 right-6 z-[95] w-72 bg-gray-900 border border-gray-700 text-white p-3 rounded-xl shadow-2xl animate-in slide-in-from-bottom-5">
+          <div className="flex flex-col">
+            <div className="flex items-center gap-2 mb-1">
+              <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
+              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{toastMessage.senderName}</span>
+            </div>
+            <span className="text-[11px] text-gray-300 line-clamp-2 leading-relaxed font-medium">{toastMessage.content}</span>
+          </div>
+        </div>
       )}
       
       {/* Floating Dialer Button & Manual Dialpad */}
@@ -603,37 +719,31 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           )}
 
           <div className="flex items-center gap-3">
-            <div className="relative">
-              {/* Tooltip for new messages */}
-              <div 
-                className={`absolute right-full mr-4 bottom-0 w-64 bg-gray-900 border border-gray-700 text-white p-3 rounded-xl shadow-2xl transition-all duration-300 origin-bottom-right ${
-                  toastMessage 
-                    ? 'opacity-100 scale-100 translate-y-0 translate-x-0' 
-                    : 'opacity-0 scale-95 translate-y-2 translate-x-4 pointer-events-none'
-                }`}
-              >
-                <div className="flex flex-col">
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="w-1.5 h-1.5 bg-blue-500 rounded-full animate-pulse"></div>
-                    <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">{toastMessage?.senderName}</span>
-                  </div>
-                  <span className="text-[11px] text-gray-300 line-clamp-2 leading-relaxed font-medium">{toastMessage?.content}</span>
-                </div>
-                {/* Arrow */}
-                <div className="absolute bottom-4 -right-2 border-[6px] border-transparent border-l-gray-900"></div>
-              </div>
+            {canUseInternalChat && (
+              <div className="relative">
+                <button
+                  onClick={() => {
+                    if (isStaffRoute) {
+                      const element = document.getElementById('staff-team-messages');
+                      if (element) {
+                        element.scrollIntoView({
+                          behavior: 'smooth',
+                          block: 'center'
+                        });
+                      }
+                      return;
+                    }
 
-              <button
-                onClick={() => {
-                  window.dispatchEvent(new CustomEvent('toggle-internal-chat'));
-                }}
-                className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-transform hover:scale-105 active:scale-95 relative"
-                title="Internal Chat"
-              >
-                <MessageSquare className="w-6 h-6" />
-                <span id="global-unread-badge" className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full hidden"></span>
-              </button>
-            </div>
+                    window.dispatchEvent(new CustomEvent('toggle-internal-chat'));
+                  }}
+                  className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-transform hover:scale-105 active:scale-95 relative"
+                  title={isStaffRoute ? 'Jump to Team Messages' : 'Internal Chat'}
+                >
+                  <MessageSquare className="w-6 h-6" />
+                  <span id="global-unread-badge" className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full hidden"></span>
+                </button>
+              </div>
+            )}
 
             <button
               onClick={() => setShowSettings(!showSettings)}

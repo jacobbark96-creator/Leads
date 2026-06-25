@@ -36,6 +36,25 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   const { profile } = useAuthStore();
   const dialerContext = useContext(DialerContext);
   const activeCall = dialerContext?.activeCall;
+  // #region debug-point A-E:report-helper
+  const reportDebug = async (hypothesisId: string, msg: string, data: Record<string, unknown> = {}) => {
+    try {
+      await fetch('http://127.0.0.1:7777/event', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          sessionId: 'internal-chat-desktop',
+          runId: 'pre-fix',
+          hypothesisId,
+          location: 'src/components/InternalChat.tsx',
+          msg: `[DEBUG] ${msg}`,
+          data,
+          ts: Date.now()
+        })
+      });
+    } catch {}
+  };
+  // #endregion
   
   const [users, setUsers] = useState<any[]>([]);
   const [groups, setGroups] = useState<GroupChat[]>([]);
@@ -74,12 +93,77 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
   const [notificationPermission, setNotificationPermission] = useState<string>('default');
+  const [groupsLoaded, setGroupsLoaded] = useState(false);
+  const groupReadAtRef = useRef<Record<string, string | null>>({});
+  const groupReadStorageKey = profile?.id ? `internal-chat-group-read:${profile.id}` : null;
 
   useEffect(() => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
+      // #region debug-point B:permission-init
+      reportDebug('B', 'Notification permission detected on mount', {
+        permission: Notification.permission,
+        isOpen,
+        pathname: window.location.pathname,
+        visibilityState: document.visibilityState,
+        hasFocus: document.hasFocus()
+      });
+      // #endregion
+    }
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/notification-sw.js').then((registration) => {
+        // #region debug-point E:service-worker-registered
+        reportDebug('E', 'Notification service worker registered', {
+          scope: registration.scope,
+          pathname: window.location.pathname
+        });
+        // #endregion
+      }).catch((error: any) => {
+        // #region debug-point E:service-worker-register-failed
+        reportDebug('E', 'Notification service worker registration failed', {
+          message: error?.message || 'Unknown error',
+          pathname: window.location.pathname
+        });
+        // #endregion
+      });
     }
   }, []);
+
+  const showDesktopNotification = async (senderName: string, content: string) => {
+    const title = `New message from ${senderName}`;
+    const options = {
+      body: content,
+      icon: '/openlead-favicon.svg',
+      badge: '/openlead-favicon.svg',
+      tag: `internal-message-${senderName}`,
+      requireInteraction: document.visibilityState === 'hidden' || !document.hasFocus(),
+      data: {
+        url: '/staff'
+      }
+    };
+
+    if ('serviceWorker' in navigator) {
+      const registration = await navigator.serviceWorker.getRegistration();
+      if (registration?.showNotification) {
+        await registration.showNotification(title, options);
+        // #region debug-point E:notification-via-sw
+        await reportDebug('E', 'Desktop notification shown via service worker', {
+          senderName,
+          pathname: window.location.pathname,
+          visibilityState: document.visibilityState,
+          hasFocus: document.hasFocus()
+        });
+        // #endregion
+        return;
+      }
+    }
+
+    const notification = new Notification(title, options);
+    notification.onclick = () => {
+      window.focus();
+    };
+  };
 
   const requestNotificationPermission = async () => {
     if (!('Notification' in window)) {
@@ -122,10 +206,66 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
   const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
 
+  const updateGlobalUnreadBadge = (counts: Record<string, number>) => {
+    const total = Object.values(counts).reduce((a, b) => a + b, 0);
+    const badge = document.getElementById('global-unread-badge');
+    if (badge) {
+      if (total > 0) {
+        badge.innerText = total.toString();
+        badge.classList.remove('hidden');
+      } else {
+        badge.classList.add('hidden');
+      }
+    }
+  };
+
+  const getStoredGroupReadTimes = () => {
+    if (typeof window === 'undefined' || !groupReadStorageKey) return {} as Record<string, string>;
+    try {
+      const raw = localStorage.getItem(groupReadStorageKey);
+      return raw ? JSON.parse(raw) : {};
+    } catch {
+      return {};
+    }
+  };
+
+  const persistStoredGroupReadTimes = (times: Record<string, string>) => {
+    if (typeof window === 'undefined' || !groupReadStorageKey) return;
+    try {
+      localStorage.setItem(groupReadStorageKey, JSON.stringify(times));
+    } catch {}
+  };
+
+  const markGroupAsRead = async (groupId: string) => {
+    if (!profile) return false;
+
+    const readAt = new Date().toISOString();
+    const storedTimes = getStoredGroupReadTimes();
+    storedTimes[groupId] = readAt;
+    persistStoredGroupReadTimes(storedTimes);
+
+    const { error } = await supabase
+      .from('internal_group_members')
+      .update({ last_read_at: readAt })
+      .eq('group_id', groupId)
+      .eq('user_id', profile.id);
+
+    groupReadAtRef.current[groupId] = readAt;
+    setUnreadCounts(prev => {
+      const nextCounts = { ...prev };
+      delete nextCounts[groupId];
+      updateGlobalUnreadBadge(nextCounts);
+      return nextCounts;
+    });
+
+    return !error;
+  };
+
   // 1. Fetch eligible users (staff) and groups
   useEffect(() => {
     const fetchData = async () => {
       if (!profile) return;
+      setGroupsLoaded(false);
       
       const { data: usersData } = await supabase
         .from('users')
@@ -137,15 +277,58 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
         sessionStorage.setItem('team_users', JSON.stringify(usersData));
       }
 
-      const { data: groupsData } = await supabase
-        .from('internal_group_chats')
-        .select('id, name');
-      
-      if (groupsData) {
-        const gData = groupsData.map(g => ({ ...g, isGroup: true as const }));
-        setGroups(gData);
-        groupsRef.current = gData;
+      let memberships: { group_id: string; last_read_at?: string | null }[] = [];
+      const { data: membershipRows } = await supabase
+        .from('internal_group_members')
+        .select('group_id, last_read_at')
+        .eq('user_id', profile.id);
+
+      if (membershipRows) {
+        memberships = membershipRows;
+      } else {
+        const { data: fallbackMembershipRows } = await supabase
+          .from('internal_group_members')
+          .select('group_id')
+          .eq('user_id', profile.id);
+        memberships = fallbackMembershipRows || [];
       }
+
+      const groupIds = memberships?.map((membership) => membership.group_id).filter(Boolean) || [];
+      const storedReadTimes = getStoredGroupReadTimes();
+      groupReadAtRef.current = memberships.reduce<Record<string, string | null>>((acc, membership) => {
+        acc[membership.group_id] = membership.last_read_at || storedReadTimes[membership.group_id] || null;
+        return acc;
+      }, {});
+
+      // One-time client fallback for existing users before the DB migration is applied:
+      // treat current history as read so only new group messages increment the badge.
+      if (groupIds.length > 0) {
+        const hasAnyReadState = groupIds.some((groupId) => Boolean(groupReadAtRef.current[groupId]));
+        if (!hasAnyReadState) {
+          const baseline = new Date().toISOString();
+          const baselineMap = { ...storedReadTimes };
+          groupIds.forEach((groupId) => {
+            baselineMap[groupId] = baseline;
+            groupReadAtRef.current[groupId] = baseline;
+          });
+          persistStoredGroupReadTimes(baselineMap);
+        }
+      }
+
+      let groupsData: { id: string; name: string }[] = [];
+
+      if (groupIds.length > 0) {
+        const { data } = await supabase
+          .from('internal_group_chats')
+          .select('id, name')
+          .in('id', groupIds);
+        groupsData = data || [];
+      }
+      
+      const gData = groupsData.map(g => ({ ...g, isGroup: true as const }));
+      setGroups(gData);
+      groupsRef.current = gData;
+      setGroupsLoaded(true);
     };
     fetchData();
   }, [profile]);
@@ -323,27 +506,41 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
 
   // 3. Fetch initial unread counts & subscribe to messages
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || !groupsLoaded) return;
 
     const fetchUnread = async () => {
-      const { data } = await supabase
+      const groupIds = groupsRef.current.map(g => g.id);
+
+      const { data: directMessages } = await supabase
         .from('internal_messages')
-        .select('sender_id, group_id')
-        .or(`receiver_id.eq.${profile.id},and(group_id.not.is.null,sender_id.neq.${profile.id})`)
+        .select('sender_id')
+        .eq('receiver_id', profile.id)
         .eq('is_read', false);
-        
-      if (data) {
+
+      const groupMessages = groupIds.length > 0
+        ? await supabase
+            .from('internal_messages')
+            .select('group_id, created_at')
+            .in('group_id', groupIds)
+            .neq('sender_id', profile.id)
+        : { data: [] as { group_id: string; created_at: string }[] };
+
+      if (directMessages || groupMessages.data) {
         const counts: Record<string, number> = {};
-        // Filter out groups we are not a member of
-        const myGroupIds = groupsRef.current.map(g => g.id);
-        
-        data.forEach(msg => {
-          if (msg.group_id) {
-            if (myGroupIds.includes(msg.group_id)) {
-              counts[msg.group_id] = (counts[msg.group_id] || 0) + 1;
-            }
-          } else if (msg.sender_id) {
+
+        directMessages?.forEach(msg => {
+          if (msg.sender_id) {
             counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1;
+          }
+        });
+
+        groupMessages.data?.forEach((msg: { group_id: string; created_at: string }) => {
+          if (msg.group_id) {
+            const lastReadAt = groupReadAtRef.current[msg.group_id];
+            if (lastReadAt && new Date(msg.created_at).getTime() <= new Date(lastReadAt).getTime()) {
+              return;
+            }
+            counts[msg.group_id] = (counts[msg.group_id] || 0) + 1;
           }
         });
 
@@ -357,18 +554,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
         }
 
         setUnreadCounts(counts);
-        
-        // Update global badge
-        const total = Object.values(counts).reduce((a, b) => a + b, 0);
-        const badge = document.getElementById('global-unread-badge');
-        if (badge) {
-          if (total > 0) {
-            badge.innerText = total.toString();
-            badge.classList.remove('hidden');
-          } else {
-            badge.classList.add('hidden');
-          }
-        }
+        updateGlobalUnreadBadge(counts);
       }
     };
 
@@ -412,10 +598,32 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
         const isCurrentlyChatting = (currentActiveUser?.isGroup && currentActiveUser.id === newMsg.group_id) || 
                                     (!currentActiveUser?.isGroup && currentActiveUser?.id === newMsg.sender_id);
 
+        // #region debug-point A-C-D:message-branch
+        reportDebug('A', 'Incoming internal message reached notification branch check', {
+          isOpen,
+          isForMe,
+          isForMyGroup: Boolean(isForMyGroup),
+          isCurrentlyChatting,
+          activeChatId: currentActiveUser?.id || null,
+          activeChatIsGroup: Boolean(currentActiveUser?.isGroup),
+          senderId: newMsg.sender_id,
+          receiverId: newMsg.receiver_id || null,
+          groupId: newMsg.group_id || null,
+          pathname: window.location.pathname,
+          visibilityState: document.visibilityState,
+          hasFocus: document.hasFocus(),
+          notificationPermission: 'Notification' in window ? Notification.permission : 'unsupported'
+        });
+        // #endregion
+
         if (isCurrentlyChatting && isOpen) {
           // If we are actively chatting with them/group, mark as read
           setMessages(prev => [...prev, newMsg]);
-          supabase.from('internal_messages').update({ is_read: true }).eq('id', newMsg.id).then(() => fetchUnread());
+          if (newMsg.group_id) {
+            void markGroupAsRead(newMsg.group_id).then(() => fetchUnread());
+          } else {
+            supabase.from('internal_messages').update({ is_read: true }).eq('id', newMsg.id).then(() => fetchUnread());
+          }
         } else {
           // Dispatch event for floating tooltip and desktop notification
           const senderUserStr = sessionStorage.getItem('team_users');
@@ -429,7 +637,37 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
           }
           
           if ('Notification' in window && Notification.permission === 'granted') {
-            new Notification(`New message from ${senderName}`, { body: newMsg.content });
+            void showDesktopNotification(senderName, newMsg.content).then(() => {
+              // #region debug-point B-E:notification-success
+              reportDebug('B', 'Desktop notification created', {
+                senderName,
+                pathname: window.location.pathname,
+                visibilityState: document.visibilityState,
+                hasFocus: document.hasFocus()
+              });
+              // #endregion
+            }).catch((error: any) => {
+              // #region debug-point B-E:notification-error
+              reportDebug('B', 'Desktop notification threw', {
+                senderName,
+                message: error?.message || 'Unknown error',
+                name: error?.name || null,
+                pathname: window.location.pathname,
+                visibilityState: document.visibilityState,
+                hasFocus: document.hasFocus()
+              });
+              // #endregion
+            });
+          } else {
+            // #region debug-point B:notification-skipped
+            reportDebug('B', 'Desktop notification skipped', {
+              hasNotificationApi: 'Notification' in window,
+              permission: 'Notification' in window ? Notification.permission : 'unsupported',
+              pathname: window.location.pathname,
+              visibilityState: document.visibilityState,
+              hasFocus: document.hasFocus()
+            });
+            // #endregion
           }
 
           window.dispatchEvent(new CustomEvent('new-internal-message-toast', {
@@ -461,7 +699,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
     return () => {
       supabase.removeChannel(msgChannel);
     };
-  }, [profile, isOpen]);
+  }, [profile, isOpen, groupsLoaded]);
 
   // 4. Fetch messages when active user/group changes
   useEffect(() => {
@@ -483,39 +721,32 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
       if (data) {
         setMessages((data as Message[]).reverse());
         
-        // Mark ALL messages from this user/group as read
-        let markReadQuery = supabase
-          .from('internal_messages')
-          .update({ is_read: true })
-          .eq('is_read', false);
-        
         if (activeChatUser.isGroup) {
-          markReadQuery = markReadQuery.eq('group_id', activeChatUser.id).neq('sender_id', profile.id);
+          const marked = await markGroupAsRead(activeChatUser.id);
+          if (!marked) {
+            setUnreadCounts(prev => {
+              const nextCounts = { ...prev };
+              delete nextCounts[activeChatUser.id];
+              updateGlobalUnreadBadge(nextCounts);
+              return nextCounts;
+            });
+          }
         } else {
-          markReadQuery = markReadQuery.eq('sender_id', activeChatUser.id).eq('receiver_id', profile.id);
-        }
-        
-        const { error: markError } = await markReadQuery;
-        
-        if (!markError) {
-          // Clear local unread counts
-          setUnreadCounts(prev => {
-            const newCounts = { ...prev };
-            delete newCounts[activeChatUser.id];
-            
-            // Update global badge
-            const total = Object.values(newCounts).reduce((a, b) => a + b, 0);
-            const badge = document.getElementById('global-unread-badge');
-            if (badge) {
-              if (total > 0) {
-                badge.innerText = total.toString();
-                badge.classList.remove('hidden');
-              } else {
-                badge.classList.add('hidden');
-              }
-            }
-            return newCounts;
-          });
+          const { error: markError } = await supabase
+            .from('internal_messages')
+            .update({ is_read: true })
+            .eq('is_read', false)
+            .eq('sender_id', activeChatUser.id)
+            .eq('receiver_id', profile.id);
+
+          if (!markError) {
+            setUnreadCounts(prev => {
+              const nextCounts = { ...prev };
+              delete nextCounts[activeChatUser.id];
+              updateGlobalUnreadBadge(nextCounts);
+              return nextCounts;
+            });
+          }
         }
       }
     };
@@ -567,7 +798,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
       insertData.receiver_id = activeChatUser.id;
     }
 
-    const { data, error } = await supabase.from('internal_messages').insert(insertData).select().single();
+    const { data } = await supabase.from('internal_messages').insert(insertData).select().single();
 
     if (data) {
       setMessages(prev => prev.map(m => m.id === tempId ? data : m));
@@ -957,7 +1188,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
                       </div>
                       <div className="flex items-center gap-1 mt-1 px-1">
                         <span className="text-[10px] text-gray-500">{format(new Date(msg.created_at), 'HH:mm')}</span>
-                        {isMine && (
+                        {isMine && !activeChatUser.isGroup && (
                           <div className="flex items-center gap-1">
                             {msg.is_read ? <CheckCheck className="w-3 h-3 text-blue-400" /> : <Check className="w-3 h-3 text-gray-500" />}
                             {idx === messages.length - 1 && (

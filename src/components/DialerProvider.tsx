@@ -553,17 +553,20 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     setManualNumber('');
   };
 
+  const canUseInternalChat = profile && ['admin', 'super_admin', 'rep', 'sales', 'growth_manager'].includes(profile.role);
   const showFloatingDialer = profile && ['rep', 'super_admin', 'admin'].includes(profile.role);
 
   return (
     <DialerContext.Provider value={{ makeCall, activeCall, currentEntityId }}>
       {children}
+
+      {canUseInternalChat && (
+        <InternalChat isOpen={isInternalChatOpen} onClose={() => setIsInternalChatOpen(false)} isModal={true} />
+      )}
       
       {/* Floating Dialer Button & Manual Dialpad */}
       {showFloatingDialer && !activeCall && callStatus !== 'Connecting...' && (
         <>
-          <InternalChat isOpen={isInternalChatOpen} onClose={() => setIsInternalChatOpen(false)} isModal={true} />
-          
           <div className="fixed bottom-6 right-6 z-[90] flex flex-col items-end gap-4">
             {/* Internal Chat UI will go here */}
             

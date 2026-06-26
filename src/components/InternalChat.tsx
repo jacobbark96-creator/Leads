@@ -36,25 +36,6 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   const { profile } = useAuthStore();
   const dialerContext = useContext(DialerContext);
   const activeCall = dialerContext?.activeCall;
-  // #region debug-point A-E:report-helper
-  const reportDebug = async (hypothesisId: string, msg: string, data: Record<string, unknown> = {}) => {
-    try {
-      await fetch('http://127.0.0.1:7777/event', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: 'internal-chat-desktop',
-          runId: 'pre-fix',
-          hypothesisId,
-          location: 'src/components/InternalChat.tsx',
-          msg: `[DEBUG] ${msg}`,
-          data,
-          ts: Date.now()
-        })
-      });
-    } catch {}
-  };
-  // #endregion
   
   const [users, setUsers] = useState<any[]>([]);
   const [groups, setGroups] = useState<GroupChat[]>([]);
@@ -100,32 +81,11 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   useEffect(() => {
     if ('Notification' in window) {
       setNotificationPermission(Notification.permission);
-      // #region debug-point B:permission-init
-      reportDebug('B', 'Notification permission detected on mount', {
-        permission: Notification.permission,
-        isOpen,
-        pathname: window.location.pathname,
-        visibilityState: document.visibilityState,
-        hasFocus: document.hasFocus()
-      });
-      // #endregion
     }
 
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.register('/notification-sw.js').then((registration) => {
-        // #region debug-point E:service-worker-registered
-        reportDebug('E', 'Notification service worker registered', {
-          scope: registration.scope,
-          pathname: window.location.pathname
-        });
-        // #endregion
       }).catch((error: any) => {
-        // #region debug-point E:service-worker-register-failed
-        reportDebug('E', 'Notification service worker registration failed', {
-          message: error?.message || 'Unknown error',
-          pathname: window.location.pathname
-        });
-        // #endregion
       });
     }
   }, []);
@@ -147,14 +107,6 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
       const registration = await navigator.serviceWorker.getRegistration();
       if (registration?.showNotification) {
         await registration.showNotification(title, options);
-        // #region debug-point E:notification-via-sw
-        await reportDebug('E', 'Desktop notification shown via service worker', {
-          senderName,
-          pathname: window.location.pathname,
-          visibilityState: document.visibilityState,
-          hasFocus: document.hasFocus()
-        });
-        // #endregion
         return;
       }
     }
@@ -250,6 +202,10 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
       .eq('group_id', groupId)
       .eq('user_id', profile.id);
 
+    if (error) {
+      console.warn("Failed to update last_read_at in DB (column might be missing):", error);
+    }
+
     groupReadAtRef.current[groupId] = readAt;
     setUnreadCounts(prev => {
       const nextCounts = { ...prev };
@@ -278,19 +234,20 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
       }
 
       let memberships: { group_id: string; last_read_at?: string | null }[] = [];
-      const { data: membershipRows } = await supabase
+      const { data: membershipRows, error: membershipError } = await supabase
         .from('internal_group_members')
         .select('group_id, last_read_at')
         .eq('user_id', profile.id);
 
-      if (membershipRows) {
-        memberships = membershipRows;
-      } else {
+      if (membershipError) {
+        // Fallback for missing column or other query error
         const { data: fallbackMembershipRows } = await supabase
           .from('internal_group_members')
           .select('group_id')
           .eq('user_id', profile.id);
         memberships = fallbackMembershipRows || [];
+      } else if (membershipRows) {
+        memberships = membershipRows;
       }
 
       const groupIds = memberships?.map((membership) => membership.group_id).filter(Boolean) || [];
@@ -598,24 +555,6 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
         const isCurrentlyChatting = (currentActiveUser?.isGroup && currentActiveUser.id === newMsg.group_id) || 
                                     (!currentActiveUser?.isGroup && currentActiveUser?.id === newMsg.sender_id);
 
-        // #region debug-point A-C-D:message-branch
-        reportDebug('A', 'Incoming internal message reached notification branch check', {
-          isOpen,
-          isForMe,
-          isForMyGroup: Boolean(isForMyGroup),
-          isCurrentlyChatting,
-          activeChatId: currentActiveUser?.id || null,
-          activeChatIsGroup: Boolean(currentActiveUser?.isGroup),
-          senderId: newMsg.sender_id,
-          receiverId: newMsg.receiver_id || null,
-          groupId: newMsg.group_id || null,
-          pathname: window.location.pathname,
-          visibilityState: document.visibilityState,
-          hasFocus: document.hasFocus(),
-          notificationPermission: 'Notification' in window ? Notification.permission : 'unsupported'
-        });
-        // #endregion
-
         if (isCurrentlyChatting && isOpen) {
           // If we are actively chatting with them/group, mark as read
           setMessages(prev => [...prev, newMsg]);
@@ -637,37 +576,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
           }
           
           if ('Notification' in window && Notification.permission === 'granted') {
-            void showDesktopNotification(senderName, newMsg.content).then(() => {
-              // #region debug-point B-E:notification-success
-              reportDebug('B', 'Desktop notification created', {
-                senderName,
-                pathname: window.location.pathname,
-                visibilityState: document.visibilityState,
-                hasFocus: document.hasFocus()
-              });
-              // #endregion
-            }).catch((error: any) => {
-              // #region debug-point B-E:notification-error
-              reportDebug('B', 'Desktop notification threw', {
-                senderName,
-                message: error?.message || 'Unknown error',
-                name: error?.name || null,
-                pathname: window.location.pathname,
-                visibilityState: document.visibilityState,
-                hasFocus: document.hasFocus()
-              });
-              // #endregion
-            });
-          } else {
-            // #region debug-point B:notification-skipped
-            reportDebug('B', 'Desktop notification skipped', {
-              hasNotificationApi: 'Notification' in window,
-              permission: 'Notification' in window ? Notification.permission : 'unsupported',
-              pathname: window.location.pathname,
-              visibilityState: document.visibilityState,
-              hasFocus: document.hasFocus()
-            });
-            // #endregion
+            void showDesktopNotification(senderName, newMsg.content);
           }
 
           window.dispatchEvent(new CustomEvent('new-internal-message-toast', {

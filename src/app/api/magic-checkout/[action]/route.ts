@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
-export const runtime = 'edge';
-
 const extractTown = (address: string) => {
   if (!address) return 'Location TBC';
   let clean = address.replace(/,\s*(UK|United Kingdom)$/i, '');
@@ -14,8 +12,9 @@ const extractTown = (address: string) => {
   return parts[0] || 'Location TBC';
 };
 
-export async function POST(req: Request, { params }: { params: Promise<{ action: string }> }) {
-  const { action } = await params;
+export async function POST(req: Request, props: { params: Promise<{ action: string }> | { action: string } }) {
+  const params = await props.params;
+  const { action } = params;
   
   if (action === 'generate') {
     return handleGenerate(req);

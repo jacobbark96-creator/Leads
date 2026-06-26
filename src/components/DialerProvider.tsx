@@ -13,25 +13,6 @@ import { InternalChat } from './InternalChat';
 export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { profile } = useAuthStore();
   const pathname = usePathname();
-  // #region debug-point sound:report-helper
-  const reportDebug = async (hypothesisId: string, msg: string, data: Record<string, unknown> = {}) => {
-    try {
-      await fetch('http://127.0.0.1:7777/event', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          sessionId: 'internal-chat-desktop',
-          runId: 'pre-fix',
-          hypothesisId,
-          location: 'src/components/DialerProvider.tsx',
-          msg: `[DEBUG] ${msg}`,
-          data,
-          ts: Date.now()
-        })
-      });
-    } catch {}
-  };
-  // #endregion
   const [device, setDevice] = useState<Device | null>(null);
   const [activeCall, setActiveCall] = useState<Call | null>(null);
   const [callStatus, setCallStatus] = useState<string>('');
@@ -62,14 +43,6 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     let timeout: NodeJS.Timeout;
     const handleNewMessageToast = (e: any) => {
       setToastMessage(e.detail);
-      // #region debug-point sound:event
-      void reportDebug('E', 'Chat toast event received in dialer provider', {
-        senderName: e?.detail?.senderName || null,
-        pathname: window.location.pathname,
-        visibilityState: document.visibilityState,
-        hasFocus: document.hasFocus()
-      });
-      // #endregion
       playInternalChatSound();
       
       // Auto-hide after 5 seconds
@@ -100,14 +73,6 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
       const ctx = audioContextRef.current || new AudioContextCtor();
       audioContextRef.current = ctx;
-      // #region debug-point sound:before-play
-      void reportDebug('E', 'Attempting to play internal chat sound', {
-        pathname: window.location.pathname,
-        visibilityState: document.visibilityState,
-        hasFocus: document.hasFocus(),
-        audioContextState: ctx.state
-      });
-      // #endregion
 
       if (ctx.state === 'suspended') {
         void ctx.resume();
@@ -143,19 +108,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       oscillatorTwo.start(ctx.currentTime + 0.2);
       oscillator.stop(ctx.currentTime + 0.38);
       oscillatorTwo.stop(ctx.currentTime + 0.64);
-      // #region debug-point sound:scheduled
-      void reportDebug('E', 'Internal chat sound scheduled', {
-        audioContextState: ctx.state,
-        currentTime: ctx.currentTime
-      });
-      // #endregion
     } catch (error: any) {
-      // #region debug-point sound:error
-      void reportDebug('E', 'Internal chat sound threw', {
-        message: error?.message || 'Unknown error',
-        name: error?.name || null
-      });
-      // #endregion
     }
   };
 

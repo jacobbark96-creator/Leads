@@ -34,8 +34,6 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
     const appUrl = `${url.protocol}//${url.host}`;
 
     // Redirect directly to our checkout page with the token.
-    // We will handle the "action_link" login inside the client component
-    // to bypass Supabase's strict redirect URL whitelist.
     return NextResponse.redirect(`${appUrl}/magic-checkout?token=${link.token}`);
   } catch (err: any) {
     console.error('Error in /pay/[slug] redirect:', err);

@@ -48,26 +48,12 @@ async function handleGenerate(req: Request) {
 
     if (!leadId || !contractorId || !purchaseType) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
 
-    const { data: existingLink } = await supabaseAdmin
-      .from('magic_checkout_links')
-      .select('expires_at')
-      .eq('lead_id', leadId)
-      .is('used_at', null)
-      .gte('expires_at', new Date().toISOString())
-      .maybeSingle();
-
-    if (existingLink) {
-      return NextResponse.json({ 
-        error: 'An active magic checkout link already exists for this lead. Please wait for it to expire.',
-        expiresAt: existingLink.expires_at 
-      }, { status: 409 });
-    }
-
     const { data: lead } = await supabaseAdmin.from('leads').select('*').eq('id', leadId).single();
     if (!lead) return NextResponse.json({ error: 'Lead not found' }, { status: 404 });
 
     const { data: contractorUser } = await supabaseAdmin.from('users').select('*').eq('id', contractorId).single();
     if (!contractorUser) return NextResponse.json({ error: 'Contractor user not found' }, { status: 404 });
+    if (!contractorUser.email) return NextResponse.json({ error: 'Contractor does not have an email address' }, { status: 400 });
     
     const { data: contractorClient } = await supabaseAdmin.from('clients').select('id').eq('user_id', contractorId).single();
     if (!contractorClient) return NextResponse.json({ error: 'Contractor client profile not found' }, { status: 404 });
@@ -75,7 +61,11 @@ async function handleGenerate(req: Request) {
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeKey) return NextResponse.json({ error: 'Stripe is not configured' }, { status: 500 });
 
-    const appUrl = 'https://openlead.co.uk';
+    const host = req.headers.get('host');
+    const isLocal = host?.includes('localhost') || host?.includes('127.0.0.1');
+    const protocol = req.headers.get('x-forwarded-proto') || (isLocal ? 'http' : 'https');
+    const appUrl = `${protocol}://${host}`;
+
     const isExclusive = purchaseType === 'exclusive';
     const targetPrice = isExclusive ? (lead.exclusive_price || 135) : (lead.share_price || 45);
 
@@ -106,15 +96,19 @@ async function handleGenerate(req: Request) {
       body: formData.toString()
     });
 
-    if (!stripeRes.ok) return NextResponse.json({ error: 'Failed to create Stripe session' }, { status: 500 });
+    if (!stripeRes.ok) {
+      const errorText = await stripeRes.text();
+      console.error('Stripe error:', errorText);
+      return NextResponse.json({ error: 'Failed to create Stripe session' }, { status: 500 });
+    }
 
     const session = await stripeRes.json();
 
     const expiresAt = new Date();
-    expiresAt.setMinutes(expiresAt.getMinutes() + 15);
+    expiresAt.setHours(expiresAt.getHours() + 24);
     
     const reservationExpiresAt = new Date();
-    reservationExpiresAt.setMinutes(reservationExpiresAt.getMinutes() + 5);
+    reservationExpiresAt.setHours(reservationExpiresAt.getHours() + 24);
 
     const { data: magicLink, error: magicError } = await supabaseAdmin
       .from('magic_checkout_links')
@@ -131,23 +125,34 @@ async function handleGenerate(req: Request) {
     if (magicError) throw magicError;
 
     const { data: authLink, error: generateAuthError } = await supabaseAdmin.auth.admin.generateLink({
-      type: 'magiclink', email: contractorUser.email, options: { redirectTo: `${appUrl}/magic-checkout?token=${magicLink.token}` }
+      type: 'magiclink', 
+      email: contractorUser.email, 
+      options: { redirectTo: `${appUrl}/magic-checkout?token=${magicLink.token}` }
     });
 
     if (generateAuthError) throw generateAuthError;
+    if (!authLink || !authLink.properties) {
+      throw new Error('Failed to generate authentication link properties');
+    }
 
     const slug = Math.random().toString(36).substring(2, 10).toUpperCase();
 
     const { error: updateError } = await supabaseAdmin
       .from('magic_checkout_links')
-      .update({ slug, action_link: authLink.properties.action_link })
+      .update({ 
+        slug, 
+        action_link: authLink.properties.action_link 
+      })
       .eq('id', magicLink.id);
       
     if (updateError) throw updateError;
 
     return NextResponse.json({ url: `${appUrl}/pay/${slug}` });
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Internal Server Error' }, { status: 500 });
+    console.error('Magic checkout error:', error);
+    return NextResponse.json({ 
+      error: error?.message || 'Internal Server Error' 
+    }, { status: 500 });
   }
 }
 

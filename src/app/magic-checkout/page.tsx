@@ -15,22 +15,18 @@ function MagicCheckoutContent() {
       return;
     }
 
-    const processCheckout = async (session: any) => {
+    const processCheckout = async () => {
       try {
-        if (!session) {
-          throw new Error('Authentication failed. No session established.');
-        }
-
         const res = await fetch(`/api/magic-checkout/consume?token=${token}`, {
           method: 'POST',
         });
 
+        const data = await res.json();
+
         if (!res.ok) {
-          const data = await res.json();
           throw new Error(data.error || 'Failed to process checkout link');
         }
 
-        const data = await res.json();
         if (data.url) {
           window.location.href = data.url;
         } else {
@@ -44,28 +40,32 @@ function MagicCheckoutContent() {
 
     let processed = false;
 
-    // Listen for auth state changes (which happens when Supabase parses the URL hash/code)
+    // We no longer strictly require a Supabase session to proceed to Stripe,
+    // because the lead assignment is handled via metadata in the Stripe webhook.
+    // However, we still try to get the session for a better return experience.
+    
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (!processed) {
+        processed = true;
+        processCheckout();
+      }
+    });
+
+    // Listen for auth state changes just in case they sign in while on this page
     const { data: authListener } = supabase.auth.onAuthStateChange((event, session) => {
       if ((event === 'SIGNED_IN' || event === 'INITIAL_SESSION') && session && !processed) {
         processed = true;
-        processCheckout(session);
+        processCheckout();
       }
     });
 
-    // Also check immediately in case the session is already established
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session && !processed) {
-        processed = true;
-        processCheckout(session);
-      }
-    });
-
-    // Timeout if no session after 5 seconds
+    // Fallback: If session check takes too long, just try to proceed anyway
     const timeout = setTimeout(() => {
       if (!processed) {
-        setError('Authentication timed out. Please try again.');
+        processed = true;
+        processCheckout();
       }
-    }, 5000);
+    }, 2000);
 
     return () => {
       authListener.subscription.unsubscribe();

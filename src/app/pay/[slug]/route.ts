@@ -30,8 +30,10 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       return new NextResponse('This link has expired', { status: 400 });
     }
 
-    const url = new URL(req.url);
-    const appUrl = `${url.protocol}//${url.host}`;
+    const host = req.headers.get('host');
+    const isLocal = host?.includes('localhost') || host?.includes('127.0.0.1');
+    const protocol = req.headers.get('x-forwarded-proto') || (isLocal ? 'http' : 'https');
+    const appUrl = `${protocol}://${host}`;
 
     // Redirect directly to our checkout page with the token.
     return NextResponse.redirect(`${appUrl}/magic-checkout?token=${link.token}`);

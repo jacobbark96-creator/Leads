@@ -50,8 +50,10 @@ export async function POST(req: NextRequest) {
     const stripeKey = process.env.STRIPE_SECRET_KEY;
     if (!stripeKey) return NextResponse.json({ error: 'Stripe is not configured' }, { status: 500 });
 
-    const url = new URL(req.url);
-    const appUrl = `${url.protocol}//${url.host}`;
+    const host = req.headers.get('host');
+    const isLocal = host?.includes('localhost') || host?.includes('127.0.0.1');
+    const protocol = req.headers.get('x-forwarded-proto') || (isLocal ? 'http' : 'https');
+    const appUrl = `${protocol}://${host}`;
 
     const isExclusive = purchaseType === 'exclusive';
     const targetPrice = isExclusive ? (lead.exclusive_price || 135) : (lead.share_price || 45);

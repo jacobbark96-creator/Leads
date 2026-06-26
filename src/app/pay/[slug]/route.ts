@@ -14,7 +14,7 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
 
     const { data: link, error } = await supabaseAdmin
       .from('magic_checkout_links')
-      .select('token, expires_at, used_at')
+      .select('token, expires_at, used_at, action_link')
       .eq('slug', slug)
       .single();
 
@@ -30,13 +30,15 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       return new NextResponse('This link has expired', { status: 400 });
     }
 
-    const host = req.headers.get('host');
-    const isLocal = host?.includes('localhost') || host?.includes('127.0.0.1');
-    const protocol = req.headers.get('x-forwarded-proto') || (isLocal ? 'http' : 'https');
-    const appUrl = `${protocol}://${host}`;
+    // If we have a Supabase action link, use it to log the user in automatically
+    if (link.action_link) {
+      return NextResponse.redirect(link.action_link);
+    }
 
-    // Redirect directly to our checkout page with the token
-    // This avoids Supabase Auth redirect issues if the whitelist isn't configured for /magic-checkout
+    const url = new URL(req.url);
+    const appUrl = `${url.protocol}//${url.host}`;
+
+    // Fallback redirect directly to our checkout page
     return NextResponse.redirect(`${appUrl}/magic-checkout?token=${link.token}`);
   } catch (err: any) {
     console.error('Error in /pay/[slug] redirect:', err);

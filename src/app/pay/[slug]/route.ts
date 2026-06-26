@@ -30,15 +30,12 @@ export async function GET(req: Request, { params }: { params: Promise<{ slug: st
       return new NextResponse('This link has expired', { status: 400 });
     }
 
-    // If we have a Supabase action link, use it to log the user in automatically
-    if (link.action_link) {
-      return NextResponse.redirect(link.action_link);
-    }
-
     const url = new URL(req.url);
     const appUrl = `${url.protocol}//${url.host}`;
 
-    // Fallback redirect directly to our checkout page
+    // Redirect directly to our checkout page with the token.
+    // We will handle the "action_link" login inside the client component
+    // to bypass Supabase's strict redirect URL whitelist.
     return NextResponse.redirect(`${appUrl}/magic-checkout?token=${link.token}`);
   } catch (err: any) {
     console.error('Error in /pay/[slug] redirect:', err);

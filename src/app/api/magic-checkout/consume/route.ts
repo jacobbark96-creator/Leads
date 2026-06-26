@@ -24,7 +24,10 @@ export async function POST(req: NextRequest) {
 
     await supabaseAdmin.from('magic_checkout_links').update({ used_at: new Date().toISOString() }).eq('id', magicLink.id);
 
-    return NextResponse.json({ url: magicLink.stripe_url });
+    return NextResponse.json({ 
+      url: magicLink.stripe_url,
+      action_link: magicLink.action_link 
+    });
   } catch (error: any) {
     return NextResponse.json({ error: 'Internal Server Error' }, { status: 500 });
   }

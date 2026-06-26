@@ -27,6 +27,14 @@ function MagicCheckoutContent() {
           throw new Error(data.error || 'Failed to process checkout link');
         }
 
+        if (data.action_link) {
+          // Use the action link to log the user in.
+          // Since this is a direct navigation to a Supabase-generated URL, 
+          // it will set the session and then redirect back here or to the destination.
+          window.location.href = data.action_link;
+          return;
+        }
+
         if (data.url) {
           window.location.href = data.url;
         } else {

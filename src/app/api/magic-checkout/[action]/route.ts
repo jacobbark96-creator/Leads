@@ -1,7 +1,8 @@
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 const extractTown = (address: string) => {
   if (!address) return 'Location TBC';
@@ -14,9 +15,8 @@ const extractTown = (address: string) => {
   return parts[0] || 'Location TBC';
 };
 
-export async function POST(req: Request, props: { params: Promise<{ action: string }> | { action: string } }) {
-  const params = await props.params;
-  const { action } = params;
+export async function POST(req: NextRequest, { params }: { params: Promise<{ action: string }> }) {
+  const { action } = await params;
   
   if (action === 'generate') {
     return handleGenerate(req);
@@ -27,7 +27,7 @@ export async function POST(req: Request, props: { params: Promise<{ action: stri
   return NextResponse.json({ error: 'Not found' }, { status: 404 });
 }
 
-async function handleGenerate(req: Request) {
+async function handleGenerate(req: NextRequest) {
   try {
     const supabaseAdmin = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -157,7 +157,7 @@ async function handleGenerate(req: Request) {
   }
 }
 
-async function handleConsume(req: Request) {
+async function handleConsume(req: NextRequest) {
   try {
     const url = new URL(req.url);
     const token = url.searchParams.get('token');

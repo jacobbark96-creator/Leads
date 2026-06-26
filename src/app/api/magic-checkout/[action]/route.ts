@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
 
+export const runtime = 'edge';
+
 const extractTown = (address: string) => {
   if (!address) return 'Location TBC';
   let clean = address.replace(/,\s*(UK|United Kingdom)$/i, '');

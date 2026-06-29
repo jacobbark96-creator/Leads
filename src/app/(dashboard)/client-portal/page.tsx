@@ -11,6 +11,7 @@ import { WelcomeModal } from './components/WelcomeModal';
 import { AdvisorModal } from './components/AdvisorModal';
 import { TopUpModal } from '../../../components/TopUpModal';
 import { InvoicesModal } from '../../../components/InvoicesModal';
+import { PerformanceModal } from '../../../components/PerformanceModal';
 import { ClientFeedbackButton } from './components/ClientFeedbackButton';
 import { trackClientActivity } from '@/lib/activityTracker';
 import toast from 'react-hot-toast';
@@ -40,6 +41,7 @@ export default function ClientDashboard() {
   const [showAdvisorModal, setShowAdvisorModal] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showInvoicesModal, setShowInvoicesModal] = useState(false);
+  const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const { profile } = useAuthStore();
   const PAGE_SIZE = 24;
 
@@ -114,7 +116,7 @@ export default function ClientDashboard() {
 
       const { data: purchasesData, error: purchasesError } = await supabase
         .from('lead_purchases')
-        .select('id, status, purchase_type, price_paid, purchased_at, leads(*, buildings(*))')
+        .select('id, status, purchase_type, price_paid, sale_amount, purchased_at, leads(*, buildings(*))')
         .eq('client_id', clientData.id)
         .order('purchased_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
@@ -126,7 +128,9 @@ export default function ClientDashboard() {
         .map(p => ({
           ...(Array.isArray(p.leads) ? p.leads[0] : p.leads),
           purchase_id: p.id,
-          purchase_status: p.status || 'new'
+          purchase_status: p.status || 'new',
+          price_paid: p.price_paid || 0,
+          sale_amount: p.sale_amount || 0
         })) as Lead[];
 
       const hasNextPage = fetchedLeads.length > PAGE_SIZE;
@@ -177,14 +181,18 @@ export default function ClientDashboard() {
     fetchDashboardData(nextPage, false);
   };
 
-  const updatePurchaseStatus = async (purchaseId: string, newStatus: string) => {
+  const updatePurchaseStatus = async (purchaseId: string, newStatus: string, saleAmount?: number) => {
     try {
+      const updateData: any = { status: newStatus };
+      if (saleAmount !== undefined) {
+        updateData.sale_amount = saleAmount;
+      }
       const { error } = await supabase
         .from('lead_purchases')
-        .update({ status: newStatus })
+        .update(updateData)
         .eq('id', purchaseId);
       if (error) throw error;
-      setLeads(prev => prev.map(l => l.purchase_id === purchaseId ? { ...l, purchase_status: newStatus } : l));
+      setLeads(prev => prev.map(l => l.purchase_id === purchaseId ? { ...l, purchase_status: newStatus, sale_amount: saleAmount ?? l.sale_amount } : l));
       toast.success('Status updated');
     } catch (error: any) {
       toast.error('Failed to update status');
@@ -329,24 +337,36 @@ export default function ClientDashboard() {
     </div>
   );
 
-  const getNextInvoiceCard = () => (
-    <button
-      onClick={() => {
-        if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Invoices' });
-        setShowInvoicesModal(true);
-      }}
-      className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 p-2.5 h-full flex flex-col justify-center items-center relative overflow-hidden group hover:border-blue-500/30 hover:shadow-blue-500/20 transition-all w-full"
-    >
-      <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-br from-openlead-blue/5 to-transparent rounded-bl-full transition-transform group-hover:scale-110"></div>
-      <div className="absolute bottom-0 left-0 w-16 h-16 bg-gradient-to-tr from-openlead-blue/5 to-transparent rounded-tr-full transition-transform group-hover:scale-110"></div>
-      
-      <div className="relative z-10 flex flex-col items-center justify-center gap-2 h-full w-full">
-        <span className="text-base sm:text-lg font-black text-gray-900 tracking-tight leading-none group-hover:text-openlead-blue transition-colors">Invoices</span>
-        <span className="text-[10px] sm:text-[11px] font-bold text-openlead-blue bg-blue-50/80 px-4 py-1 rounded-full border border-blue-100/50 group-hover:bg-blue-100/80 group-hover:scale-105 transition-all uppercase tracking-wider shadow-sm">
-          Click Here
-        </span>
-      </div>
-    </button>
+  const getActionButtons = () => (
+    <div className="h-full grid grid-cols-2 gap-2 lg:gap-3 w-full">
+      <button
+        onClick={() => {
+          if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Invoices' });
+          setShowInvoicesModal(true);
+        }}
+        className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 flex flex-col justify-center items-center relative overflow-hidden group hover:border-blue-500/30 hover:shadow-blue-500/20 transition-all h-full"
+      >
+        <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-openlead-blue/5 to-transparent rounded-bl-full transition-transform group-hover:scale-110"></div>
+        <div className="relative z-10 flex flex-col items-center justify-center gap-1.5 h-full w-full p-2">
+          <List className="w-5 h-5 sm:w-6 sm:h-6 text-openlead-blue group-hover:scale-110 transition-transform" />
+          <span className="text-[10px] sm:text-[11px] font-black text-gray-900 tracking-tight leading-none group-hover:text-openlead-blue transition-colors text-center">Invoices</span>
+        </div>
+      </button>
+
+      <button
+        onClick={() => {
+          if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Performance' });
+          setShowPerformanceModal(true);
+        }}
+        className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 flex flex-col justify-center items-center relative overflow-hidden group hover:border-emerald-500/30 hover:shadow-emerald-500/20 transition-all h-full"
+      >
+        <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full transition-transform group-hover:scale-110"></div>
+        <div className="relative z-10 flex flex-col items-center justify-center gap-1.5 h-full w-full p-2">
+          <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500 group-hover:scale-110 transition-transform" />
+          <span className="text-[10px] sm:text-[11px] font-black text-gray-900 tracking-tight leading-none group-hover:text-emerald-600 transition-colors text-center">My Performance</span>
+        </div>
+      </button>
+    </div>
   );
 
   return (
@@ -359,7 +379,7 @@ export default function ClientDashboard() {
         <div className="flex-1 h-full grid grid-cols-2 sm:grid-cols-3 gap-2 lg:gap-3">
           {getTopUpCard()}
           {profile?.trade_account_enabled && getLeftToSpendCard()}
-          {getNextInvoiceCard()}
+          {getActionButtons()}
         </div>
       </div>
 
@@ -596,6 +616,11 @@ export default function ClientDashboard() {
       <InvoicesModal
         isOpen={showInvoicesModal}
         onClose={() => setShowInvoicesModal(false)}
+      />
+      <PerformanceModal
+        isOpen={showPerformanceModal}
+        onClose={() => setShowPerformanceModal(false)}
+        leads={leads}
       />
       <ClientFeedbackButton />
     </div>

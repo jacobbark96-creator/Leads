@@ -146,6 +146,7 @@ export interface Lead {
   clients?: { company_name: string; contact_name: string } | null;
   purchase_id?: string;
   purchase_status?: string;
+  sale_amount?: number;
   lead_notes?: any[];
   roof_suitability?: string;
   solar_exposure?: string;

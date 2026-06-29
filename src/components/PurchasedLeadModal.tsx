@@ -12,7 +12,7 @@ interface PurchasedLeadModalProps {
   isOpen: boolean;
   onClose: () => void;
   lead: Lead;
-  onUpdateStatus?: (purchaseId: string, newStatus: string) => Promise<void>;
+  onUpdateStatus?: (purchaseId: string, newStatus: string, saleAmount?: number) => Promise<void>;
 }
 
 const MissingValue = () => null;
@@ -39,6 +39,8 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
   const [updating, setUpdating] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
+  const [showSaleAmountPrompt, setShowSaleAmountPrompt] = useState(false);
+  const [saleAmount, setSaleAmount] = useState('');
 
   useEffect(() => {
     if (!isOpen || !lead?.id) return;
@@ -54,11 +56,11 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
 
   if (!isOpen) return null;
 
-  const handleStatusUpdate = async (newStatus: string) => {
+  const handleStatusUpdate = async (newStatus: string, amount?: number) => {
     if (!onUpdateStatus || !lead.purchase_id) return;
     setUpdating(true);
     try {
-      await onUpdateStatus(lead.purchase_id, newStatus);
+      await onUpdateStatus(lead.purchase_id, newStatus, amount);
       onClose();
     } finally {
       setUpdating(false);
@@ -514,15 +516,15 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                 {updating ? 'Updating...' : 'Mark as quoted'}
               </button>
             )}
-            {lead.purchase_status === 'sat' && (
+            {lead.purchase_status === 'sat' && !showSaleAmountPrompt && (
               <>
                 <button
-                  onClick={() => handleStatusUpdate('won')}
+                  onClick={() => setShowSaleAmountPrompt(true)}
                   disabled={updating}
                   className="px-6 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   <TrendingUp className="w-4 h-4" />
-                  {updating ? 'Updating...' : 'Won'}
+                  Won
                 </button>
                 <button
                   onClick={() => handleStatusUpdate('archive')}
@@ -530,9 +532,39 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                   className="px-6 py-2.5 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   <X className="w-4 h-4" />
-                  {updating ? 'Updating...' : 'Archive'}
+                  Archive
                 </button>
               </>
+            )}
+            {lead.purchase_status === 'sat' && showSaleAmountPrompt && (
+              <div className="flex items-center gap-2 bg-emerald-50 p-1.5 rounded-xl border border-emerald-100 animate-in fade-in zoom-in duration-200">
+                <span className="text-sm font-bold text-emerald-800 pl-2">Sale Amount:</span>
+                <div className="relative">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 font-bold">£</span>
+                  <input
+                    type="number"
+                    value={saleAmount}
+                    onChange={(e) => setSaleAmount(e.target.value)}
+                    placeholder="0.00"
+                    className="pl-7 pr-3 py-2 w-32 rounded-lg border border-emerald-200 text-sm font-bold focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 bg-white text-gray-900"
+                  />
+                </div>
+                <button
+                  onClick={() => handleStatusUpdate('won', Number(saleAmount) || 0)}
+                  disabled={updating || !saleAmount}
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-lg hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-1"
+                >
+                  <Check className="w-4 h-4" />
+                  Save
+                </button>
+                <button
+                  onClick={() => setShowSaleAmountPrompt(false)}
+                  disabled={updating}
+                  className="px-3 py-2 text-gray-500 hover:bg-emerald-100 rounded-lg transition-colors"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
             )}
             {lead.purchase_status === 'won' && (
                <button

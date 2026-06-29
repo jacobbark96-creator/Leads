@@ -453,20 +453,21 @@ export default function ClientDashboard() {
             )}
           </div>
 
-          {/* Qualified Leads */}
+          {/* Surveyed Leads */}
           <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden">
             <button 
               onClick={() => setActiveTab('sat')}
-              className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 transition-all ${activeTab === 'sat' ? 'bg-gradient-to-r from-amber-50 to-orange-50/30' : 'bg-gray-50/30 hover:bg-gray-50'}`}
+              className={`p-4 flex items-center justify-between transition-colors ${
+                activeTab === 'sat' ? 'bg-amber-50 border-b border-amber-100' : 'hover:bg-gray-50'
+              }`}
             >
               <div className="flex items-center gap-2">
                 <CalendarIcon className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-bold text-gray-900">Qualified</span>
+                <span className="text-sm font-bold text-gray-900">Surveyed</span>
               </div>
               <div className="flex items-center gap-2">
                 <span className="text-xs font-semibold text-gray-500">{leads.filter(l => l.purchase_status === 'sat').length}</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${activeTab === 'sat' ? 'rotate-180' : ''}`}
-                />
+                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${activeTab === 'sat' ? 'rotate-180' : ''}`} />
               </div>
             </button>
             {activeTab === 'sat' && (

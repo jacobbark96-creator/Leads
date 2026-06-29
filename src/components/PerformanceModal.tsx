@@ -27,7 +27,7 @@ export const PerformanceModal: React.FC<PerformanceModalProps> = ({ isOpen, onCl
   // Calculations
   const totalLeads = leads.length;
   const purchasedCount = leads.filter(l => l.purchase_status === 'new').length;
-  const qualifiedCount = leads.filter(l => l.purchase_status === 'sat').length;
+  const surveyedCount = leads.filter(l => l.purchase_status === 'sat').length;
   const wonCount = leads.filter(l => l.purchase_status === 'won').length;
   const archiveCount = leads.filter(l => l.purchase_status === 'archive').length;
 
@@ -40,10 +40,10 @@ export const PerformanceModal: React.FC<PerformanceModalProps> = ({ isOpen, onCl
 
   const pieData = useMemo(() => [
     { name: 'Purchased', value: purchasedCount, gradient: 'url(#colorPurchased)' },
-    { name: 'Qualified', value: qualifiedCount, gradient: 'url(#colorQualified)' },
+    { name: 'Surveyed', value: surveyedCount, gradient: 'url(#colorSurveyed)' },
     { name: 'Won', value: wonCount, gradient: 'url(#colorWon)' },
     { name: 'Archive', value: archiveCount, gradient: 'url(#colorArchive)' },
-  ].filter(d => d.value > 0), [purchasedCount, qualifiedCount, wonCount, archiveCount]);
+  ].filter(d => d.value > 0), [purchasedCount, surveyedCount, wonCount, archiveCount]);
 
   return (
     <div className="fixed inset-0 z-[60] overflow-hidden bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
@@ -145,7 +145,7 @@ export const PerformanceModal: React.FC<PerformanceModalProps> = ({ isOpen, onCl
                           <stop offset="0%" stopColor="#60a5fa" stopOpacity={1}/>
                           <stop offset="100%" stopColor="#2563eb" stopOpacity={1}/>
                         </linearGradient>
-                        <linearGradient id="colorQualified" x1="0" y1="0" x2="0" y2="1">
+                        <linearGradient id="colorSurveyed" x1="0" y1="0" x2="0" y2="1">
                           <stop offset="0%" stopColor="#fcd34d" stopOpacity={1}/>
                           <stop offset="100%" stopColor="#d97706" stopOpacity={1}/>
                         </linearGradient>
@@ -210,13 +210,13 @@ export const PerformanceModal: React.FC<PerformanceModalProps> = ({ isOpen, onCl
                   <span className="text-lg font-black text-slate-900">{purchasedCount}</span>
                 </div>
 
-                {/* Qualified */}
+                {/* Surveyed */}
                 <div className="flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-amber-50/50 to-transparent border border-amber-100/50 group hover:border-amber-200 transition-colors">
                   <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 font-black shadow-inner">Q</div>
-                    <span className="text-xs font-bold text-slate-700 group-hover:text-amber-700 transition-colors">Qualified</span>
+                    <div className="w-8 h-8 rounded-xl bg-amber-100 flex items-center justify-center text-amber-600 font-black shadow-inner">S</div>
+                    <span className="text-xs font-bold text-slate-700 group-hover:text-amber-700 transition-colors">Surveyed</span>
                   </div>
-                  <span className="text-lg font-black text-slate-900">{qualifiedCount}</span>
+                  <span className="text-lg font-black text-slate-900">{surveyedCount}</span>
                 </div>
 
                 {/* Won */}

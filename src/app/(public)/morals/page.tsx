@@ -1,5 +1,19 @@
 import React from 'react';
 import { Target, Search, HeartHandshake, ShieldCheck, Scale } from 'lucide-react';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Our Morals | Transparent Lead Generation | Openlead',
+  description: 'Built on Trust & Transparency. Openlead prioritizes quality over quantity, absolute transparency, and client success.',
+  alternates: {
+    canonical: '/morals',
+  },
+  openGraph: {
+    title: 'Our Morals | Openlead',
+    description: 'Quality Over Quantity. Absolute Transparency. Client Success First.',
+    url: 'https://openlead.co.uk/morals',
+  }
+};
 
 export default function Morals() {
   return (

@@ -1,6 +1,20 @@
 import React from 'react';
 import { CheckCircle2, TrendingUp, Users, Target } from 'lucide-react';
 import Image from 'next/image';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'About Us | Openlead Lead Generation',
+  description: 'Learn how Openlead bridges the gap between great services and ready customers. We provide exclusive, real-time leads to UK contractors.',
+  alternates: {
+    canonical: '/about',
+  },
+  openGraph: {
+    title: 'About Us | Openlead',
+    description: 'Learn how Openlead bridges the gap between great services and ready customers.',
+    url: 'https://openlead.co.uk/about',
+  }
+};
 
 export default function About() {
   return (

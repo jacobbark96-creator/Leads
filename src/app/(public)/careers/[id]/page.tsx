@@ -76,8 +76,45 @@ export default async function JobPage({ params }: Props) {
   // High-quality Unsplash image for a modern, professional office aesthetic
   const heroImageUrl = "https://images.unsplash.com/photo-1497366216548-37526070297c?auto=format&fit=crop&q=80&w=2069";
 
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'JobPosting',
+    title: job.title,
+    description: job.description,
+    datePosted: job.created_at,
+    validThrough: new Date(new Date().setMonth(new Date().getMonth() + 3)).toISOString(), // 3 months from now
+    employmentType: job.type === 'Full-time' ? 'FULL_TIME' : job.type === 'Part-time' ? 'PART_TIME' : 'CONTRACTOR',
+    hiringOrganization: {
+      '@type': 'Organization',
+      name: 'Openlead',
+      sameAs: 'https://openlead.co.uk',
+      logo: 'https://openlead.co.uk/openlead-logo.png'
+    },
+    jobLocation: {
+      '@type': 'Place',
+      address: {
+        '@type': 'PostalAddress',
+        addressLocality: job.location,
+        addressCountry: 'UK'
+      }
+    },
+    baseSalary: {
+      '@type': 'MonetaryAmount',
+      currency: 'GBP',
+      value: {
+        '@type': 'QuantitativeValue',
+        unitText: 'YEAR',
+        value: job.salary_range
+      }
+    }
+  };
+
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       {/* Dynamic Background Elements */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
         <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-openlead-blue/5 blur-[120px] rounded-full animate-pulse" />

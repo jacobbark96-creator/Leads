@@ -15,6 +15,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     '/morals',
     '/careers',
     '/press',
+    '/roi-calculator',
     '/privacy',
     '/terms',
     '/anti-bribery',

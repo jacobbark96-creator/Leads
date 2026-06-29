@@ -1,6 +1,20 @@
 import React from 'react';
 import { Layers, ShieldCheck, Zap, LineChart, Handshake, LayoutDashboard } from 'lucide-react';
 import Image from 'next/image';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Our Services | Lead Generation Marketplace | Openlead',
+  description: 'Stop fighting over shared data. Openlead provides exclusive, high-converting leads for Solar, Roofing, and Home Services with a built-in CRM.',
+  alternates: {
+    canonical: '/services',
+  },
+  openGraph: {
+    title: 'Our Services | Openlead',
+    description: 'High-converting exclusive leads for UK Contractors.',
+    url: 'https://openlead.co.uk/services',
+  }
+};
 
 export default function Services() {
   return (

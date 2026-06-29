@@ -21,6 +21,7 @@ export const Footer = () => {
             <h4 className="font-bold text-openlead-blue mb-4 tracking-wider uppercase text-xs">Platform</h4>
             <ul className="space-y-3">
               <li><a href="/services" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Services</a></li>
+              <li><a href="/roi-calculator" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">ROI Calculator</a></li>
               <li><a href="/about" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">About Us</a></li>
               <li><a href="/morals" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Our Morals</a></li>
               <li><a href="/press" className="text-slate-600 hover:text-openlead-blue transition-colors text-sm">Press Centre</a></li>

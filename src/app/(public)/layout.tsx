@@ -32,6 +32,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
 
               <div className="hidden md:flex space-x-2">
                 <a href="/services" className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-full font-medium transition-all duration-200">What We Do</a>
+                <a href="/roi-calculator" className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-full font-medium transition-all duration-200">ROI Calculator</a>
                 <a href="/about" className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-full font-medium transition-all duration-200">About Us</a>
                 <a href="/morals" className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-full font-medium transition-all duration-200">Our Morals</a>
                 <a href="/careers" className="text-gray-600 hover:text-gray-900 hover:bg-gray-50 px-4 py-2 rounded-full font-medium transition-all duration-200">Careers</a>
@@ -64,6 +65,7 @@ export default function PublicLayout({ children }: { children: React.ReactNode }
             {mobileMenuOpen && (
               <div className="md:hidden absolute left-0 right-0 top-full mt-3 bg-white/95 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-xl pb-4 pt-2 px-4 flex flex-col space-y-4">
                 <a href="/services" onClick={() => setMobileMenuOpen(false)} className="text-gray-600 hover:text-blue-600 font-medium transition-colors py-2 border-b border-gray-50">What We Do</a>
+                <a href="/roi-calculator" onClick={() => setMobileMenuOpen(false)} className="text-gray-600 hover:text-blue-600 font-medium transition-colors py-2 border-b border-gray-50">ROI Calculator</a>
                 <a href="/about" onClick={() => setMobileMenuOpen(false)} className="text-gray-600 hover:text-blue-600 font-medium transition-colors py-2 border-b border-gray-50">About Us</a>
                 <a href="/morals" onClick={() => setMobileMenuOpen(false)} className="text-gray-600 hover:text-blue-600 font-medium transition-colors py-2 border-b border-gray-50">Our Morals</a>
                 <a href="/careers" onClick={() => setMobileMenuOpen(false)} className="text-gray-600 hover:text-blue-600 font-medium transition-colors py-2 border-b border-gray-50">Careers</a>

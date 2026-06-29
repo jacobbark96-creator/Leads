@@ -65,5 +65,39 @@ export default async function PressPostPage({ params }: Props) {
 
   const relatedPosts = await getRelatedPosts(post.id);
 
-  return <PressPostClient post={post} relatedPosts={relatedPosts} />;
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'Article',
+    headline: post.seo_title || post.title,
+    description: post.seo_description || `Read the latest story: ${post.title}`,
+    image: post.image_url ? [post.image_url] : [],
+    datePublished: post.created_at,
+    dateModified: post.updated_at || post.created_at,
+    author: {
+      '@type': 'Person',
+      name: post.author?.name || 'Openlead Team'
+    },
+    publisher: {
+      '@type': 'Organization',
+      name: 'Openlead',
+      logo: {
+        '@type': 'ImageObject',
+        url: 'https://openlead.co.uk/openlead-logo.png'
+      }
+    },
+    mainEntityOfPage: {
+      '@type': 'WebPage',
+      '@id': `https://openlead.co.uk/press/${slug}`
+    }
+  };
+
+  return (
+    <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
+      <PressPostClient post={post} relatedPosts={relatedPosts} />
+    </>
+  );
 }

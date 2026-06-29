@@ -16,6 +16,9 @@ export const metadata: Metadata = {
   creator: 'Openlead',
   publisher: 'Openlead',
   metadataBase: new URL('https://openlead.co.uk'),
+  alternates: {
+    canonical: '/',
+  },
   openGraph: {
     type: 'website',
     locale: 'en_GB',
@@ -68,10 +71,42 @@ export default function RootLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const jsonLd = {
+    '@context': 'https://schema.org',
+    '@graph': [
+      {
+        '@type': 'WebSite',
+        '@id': 'https://openlead.co.uk/#website',
+        url: 'https://openlead.co.uk/',
+        name: 'Openlead',
+        description: 'High-Converting Exclusive Leads for Contractors',
+        publisher: {
+          '@id': 'https://openlead.co.uk/#organization'
+        },
+      },
+      {
+        '@type': 'Organization',
+        '@id': 'https://openlead.co.uk/#organization',
+        name: 'Openlead',
+        url: 'https://openlead.co.uk/',
+        logo: {
+          '@type': 'ImageObject',
+          url: 'https://openlead.co.uk/openlead-logo.png'
+        },
+        image: 'https://openlead.co.uk/openlead-emailheader.png',
+        description: 'Openlead generates exclusive, pre-qualified leads for Solar, Roofing, and Home Services directly to your CRM.',
+      }
+    ]
+  };
+
   return (
     <html lang="en">
       <head>
         <link rel="preconnect" href="https://pznqrbfgrvfmkdprifst.supabase.co" />
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+        />
       </head>
       <body className={`${inter.className} ${inter.variable} ${darkerGrotesque.variable}`}>
         <AuthProvider>

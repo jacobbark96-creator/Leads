@@ -56,8 +56,9 @@ export async function POST(req: Request) {
       formattedFrom = formattedFrom.replace('whatsapp:', '');
     }
 
-    const host = req.headers.get('host') || 'localhost:3000';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const host = req.headers.get('host') || 'openlead.co.uk';
+    const forwardedProto = req.headers.get('x-forwarded-proto');
+    const protocol = forwardedProto || (host.includes('localhost') ? 'http' : 'https');
     const statusCallbackUrl = `${protocol}://${host}/api/twilio/sms-status`;
 
     const params = new URLSearchParams();

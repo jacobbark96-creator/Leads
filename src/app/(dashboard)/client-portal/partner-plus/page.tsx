@@ -13,10 +13,11 @@ export default function PartnerPlusKanban() {
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
 
   const columns = [
-    { id: 'pitched', label: 'Pitched', color: 'blue' },
-    { id: 'sold', label: 'Sold', color: 'emerald' },
-    { id: 'awaiting_install_date', label: 'Awaiting Install Date', color: 'amber' },
-    { id: 'installed', label: 'Installed', color: 'green' }
+    { id: 'sold', label: 'Sold', color: 'blue' },
+    { id: 'waiting_on_survey', label: 'Waiting on Survey', color: 'amber' },
+    { id: 'waiting_on_install', label: 'Waiting on Install', color: 'purple' },
+    { id: 'installed', label: 'Installed', color: 'emerald' },
+    { id: 'paid', label: 'Paid', color: 'green' }
   ];
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function PartnerPlusKanban() {
         .from('leads')
         .select('*')
         .eq('assigned_to', profile?.id)
-        .in('partner_plus_status', ['pitched', 'sold', 'awaiting_install_date', 'installed']);
+        .in('partner_plus_status', ['sold', 'waiting_on_survey', 'waiting_on_install', 'installed', 'paid']);
 
       if (error) throw error;
       setLeads(data || []);
@@ -44,7 +45,8 @@ export default function PartnerPlusKanban() {
   };
 
   const handleDragStart = (e: React.DragEvent, lead: any) => {
-    if (lead.partner_plus_status !== 'awaiting_install_date') {
+    const moveableStatuses = ['waiting_on_survey', 'waiting_on_install'];
+    if (!moveableStatuses.includes(lead.partner_plus_status)) {
       e.preventDefault();
       return;
     }
@@ -61,15 +63,25 @@ export default function PartnerPlusKanban() {
     const leadId = e.dataTransfer.getData('text/plain');
     setDraggingLeadId(null);
 
-    if (columnId !== 'installed') {
-      if (columnId !== 'awaiting_install_date') {
-         toast.error("You can only move leads to 'Installed'");
+    const leadToUpdate = leads.find(l => l.id === leadId);
+    if (!leadToUpdate) return;
+
+    // Define valid transitions
+    const validTransitions: Record<string, string[]> = {
+      'waiting_on_survey': ['waiting_on_install'],
+      'waiting_on_install': ['installed']
+    };
+
+    const allowedTargets = validTransitions[leadToUpdate.partner_plus_status] || [];
+    
+    if (!allowedTargets.includes(columnId)) {
+      if (columnId !== leadToUpdate.partner_plus_status) {
+        toast.error(`Cannot move from ${leadToUpdate.partner_plus_status.replace(/_/g, ' ')} to ${columnId.replace(/_/g, ' ')}`);
       }
       return;
     }
 
-    const leadToUpdate = leads.find(l => l.id === leadId);
-    if (!leadToUpdate || leadToUpdate.partner_plus_status !== 'awaiting_install_date') return;
+    const previousStatus = leadToUpdate.partner_plus_status;
 
     try {
       // Optimistic update
@@ -80,13 +92,11 @@ export default function PartnerPlusKanban() {
         .update({ partner_plus_status: columnId })
         .eq('id', leadId);
 
-      if (error) {
-        throw error;
-      }
-      toast.success('Lead marked as installed!');
+      if (error) throw error;
+      toast.success(`Lead moved to ${columnId.replace(/_/g, ' ')}!`);
     } catch (err: any) {
       // Revert optimistic update
-      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, partner_plus_status: 'awaiting_install_date' } : l));
+      setLeads(prev => prev.map(l => l.id === leadId ? { ...l, partner_plus_status: previousStatus } : l));
       toast.error('Failed to update lead: ' + err.message);
     }
   };
@@ -132,17 +142,19 @@ export default function PartnerPlusKanban() {
             </div>
 
             <div className="flex-1 overflow-y-auto space-y-2 pr-1 custom-scrollbar">
-              {leads.filter(l => l.partner_plus_status === col.id).map(lead => (
-                <div
-                  key={lead.id}
-                  draggable={lead.partner_plus_status === 'awaiting_install_date'}
-                  onDragStart={(e) => handleDragStart(e, lead)}
-                  className={`bg-white rounded-xl p-3 border shadow-sm transition-all ${
-                    lead.partner_plus_status === 'awaiting_install_date' 
-                      ? 'cursor-grab active:cursor-grabbing hover:border-amber-300 hover:shadow-md' 
-                      : 'cursor-default opacity-90'
-                  } ${draggingLeadId === lead.id ? 'opacity-50 scale-95' : 'border-slate-200'}`}
-                >
+              {leads.filter(l => l.partner_plus_status === col.id).map(lead => {
+                const isMoveable = ['waiting_on_survey', 'waiting_on_install'].includes(lead.partner_plus_status);
+                return (
+                  <div
+                    key={lead.id}
+                    draggable={isMoveable}
+                    onDragStart={(e) => handleDragStart(e, lead)}
+                    className={`bg-white rounded-xl p-3 border shadow-sm transition-all ${
+                      isMoveable 
+                        ? 'cursor-grab active:cursor-grabbing hover:border-blue-300 hover:shadow-md' 
+                        : 'cursor-default opacity-90'
+                    } ${draggingLeadId === lead.id ? 'opacity-50 scale-95' : 'border-slate-200'}`}
+                  >
                   <div className="flex justify-between items-start mb-2">
                     <div>
                       <h4 className="font-black text-slate-900 text-xs">{lead.company || lead.name}</h4>
@@ -162,8 +174,9 @@ export default function PartnerPlusKanban() {
                       </div>
                     )}
                   </div>
-                </div>
-              ))}
+                  </div>
+                );
+              })}
               
               {leads.filter(l => l.partner_plus_status === col.id).length === 0 && (
                 <div className="h-20 flex items-center justify-center border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50">

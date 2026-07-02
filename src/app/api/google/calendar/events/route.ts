@@ -113,6 +113,9 @@ export async function POST(req: Request) {
     return NextResponse.json(data);
   } catch (error: any) {
     console.error('Calendar POST error:', error);
+    if (error.message.includes('No Google connection') || error.message.includes('Google connection expired')) {
+      return NextResponse.json({ error: 'NOT_CONNECTED', message: error.message }, { status: 400 });
+    }
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

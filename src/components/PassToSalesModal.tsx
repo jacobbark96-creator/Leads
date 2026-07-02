@@ -160,9 +160,12 @@ export const PassToSalesModal: React.FC<PassToSalesModalProps> = ({ isOpen, onCl
         })
       });
 
+      const eventData = await eventRes.json();
       if (!eventRes.ok) {
-        const errData = await eventRes.json();
-        throw new Error(errData.error || 'Failed to create calendar event');
+        if (eventData.error === 'NOT_CONNECTED') {
+          throw new Error('This salesman has not connected their Google Calendar. They must log in and connect it before you can book them.');
+        }
+        throw new Error(eventData.error || eventData.message || 'Failed to create calendar event');
       }
 
       const { error } = await supabase

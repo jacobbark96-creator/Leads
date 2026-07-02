@@ -51,6 +51,7 @@ export interface Client {
   latitude?: number | null;
   longitude?: number | null;
   assigned_to?: string | null;
+  is_partner_plus?: boolean;
   created_at: string;
 }
 
@@ -156,6 +157,7 @@ export interface Lead {
   lead_type?: 'residential' | 'commercial';
   division_id?: string | null;
   sales_pipeline_status?: 'Upcoming' | 'Pitched' | 'No Show' | 'Sold' | 'Lost';
+  partner_plus_status?: string | null;
   buildings?: Building[];
 }
 

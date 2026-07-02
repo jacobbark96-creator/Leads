@@ -60,7 +60,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     areas_covered: '',
     service_areas: [] as any[],
     services_offered: '',
-    internal_notes: ''
+    internal_notes: '',
+    is_partner_plus: false
   });
 
   const [newDirectPassword, setNewDirectPassword] = useState('');
@@ -269,7 +270,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           areas_covered: data.areas_covered || '',
           service_areas: Array.isArray(data.service_areas) ? data.service_areas : [],
           services_offered: data.services_offered || '',
-          internal_notes: data.internal_notes || ''
+          internal_notes: data.internal_notes || '',
+          is_partner_plus: data.is_partner_plus || false
         }));
 
         setSelectedServiceCategoryIds(parseServicesOfferedToIds(data.services_offered || '', categoryOptions));
@@ -346,6 +348,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           services_offered: selectedServiceCategoryIds.join(', '),
           assigned_to: selectedAdvisorId || null,
           internal_notes: formData.internal_notes,
+          is_partner_plus: formData.is_partner_plus,
           is_profile_complete: true // Mark complete since admin is filling it out
         };
 
@@ -1018,6 +1021,24 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                       <input type="text" value={formData.other_contact_numbers} onChange={e => setFormData({...formData, other_contact_numbers: e.target.value})} className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-blue-500 focus:border-blue-500" />
                     </div>
                     <div className="md:col-span-2">
+                      <div className="flex items-center justify-between p-4 bg-purple-50 rounded-xl border border-purple-100 mb-4">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-purple-600 shadow-sm">
+                            <Briefcase className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900">Partner+ Status</h4>
+                            <p className="text-xs text-gray-500">Enable advanced Kanban board and sales assignments</p>
+                          </div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => setFormData({...formData, is_partner_plus: !formData.is_partner_plus})}
+                          className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-purple-500 focus:ring-offset-2 ${formData.is_partner_plus ? 'bg-purple-600' : 'bg-gray-200'}`}
+                        >
+                          <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.is_partner_plus ? 'translate-x-5' : 'translate-x-0'}`} />
+                        </button>
+                      </div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">Service Areas (Geofenced)</label>
                       <p className="text-xs text-gray-500 mb-3">Define the exact areas this client covers. They will only receive leads within these locations.</p>
                       <MultiServiceArea 

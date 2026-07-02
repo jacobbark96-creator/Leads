@@ -16,6 +16,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [clientName, setClientName] = useState<string | null>(null);
   const [clientCompanyName, setClientCompanyName] = useState<string | null>(null);
+  const [isPartnerPlus, setIsPartnerPlus] = useState<boolean>(false);
   const [showFlexModal, setShowFlexModal] = useState(false);
 
   useEffect(() => {
@@ -23,13 +24,14 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
       const fetchClient = async () => {
         const { data } = await supabase
           .from('clients')
-          .select('contact_name, company_name')
+          .select('contact_name, company_name, is_partner_plus')
           .eq('user_id', profile.id)
           .single();
         
         if (data) {
-          if (data.contact_name) setClientName(data.contact_name);
-          if (data.company_name) setClientCompanyName(data.company_name);
+          setClientName(data.contact_name);
+          setClientCompanyName(data.company_name);
+          setIsPartnerPlus(data.is_partner_plus || false);
         }
       };
       fetchClient();
@@ -64,12 +66,21 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const getNavItems = () => {
     switch (profile.role) {
       case 'client':
-        return [
+        const clientItems = [
           { name: 'Dashboard', path: '/client-portal', icon: LayoutDashboard },
           { name: 'Marketplace', path: '/marketplace', icon: Database },
           { name: 'My Openlead', path: '/my-openlead', icon: User },
           { name: 'Openlead Max', path: '/openlead-max', icon: Sparkles },
         ];
+        if (isPartnerPlus) {
+          clientItems.push({
+            name: 'Partner+', 
+            path: '/client-portal/partner-plus', 
+            icon: Briefcase,
+            isPartnerPlusItem: true
+          });
+        }
+        return clientItems;
       case 'sales':
       case 'Residential Sales':
       case 'Commercial Sales':
@@ -194,16 +205,18 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                     const isActive = pathname.startsWith(item.path);
                     return (
                       <Link
-                        key={item.name}
-                        href={item.path}
-                        className={`${
-                          isActive
-                            ? 'bg-blue-50 text-blue-700 font-semibold'
-                            : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium'
-                        } inline-flex items-center px-4 py-2.5 rounded-full text-sm transition-all duration-200 ease-in-out`}
-                      >
-                        {item.name}
-                      </Link>
+                          key={item.name}
+                          href={item.path}
+                          className={`${
+                            isActive
+                              ? 'bg-blue-50 text-blue-700 font-semibold'
+                              : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium'
+                          } inline-flex items-center px-4 py-2.5 rounded-full text-sm transition-all duration-200 ease-in-out`}
+                        >
+                          {item.name === 'Partner+' ? (
+                            <>Partner<span className="text-[10px] -mt-2.5 ml-[1px]">＋</span></>
+                          ) : item.name}
+                        </Link>
                     );
                   })}
                 </div>
@@ -325,7 +338,9 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium'
                         } flex items-center px-4 py-3 rounded-xl text-base transition-colors mb-1`}
                       >
-                        {item.name}
+                        {item.name === 'Partner+' ? (
+                          <>Partner<span className="text-[10px] -mt-2.5 ml-[1px]">＋</span></>
+                        ) : item.name}
                       </Link>
                     );
                   })}

@@ -22,17 +22,41 @@ export const PassToSalesModal: React.FC<PassToSalesModalProps> = ({ isOpen, onCl
   const [isInHouseMode, setIsInHouseMode] = useState(false);
   const [isScheduling, setIsScheduling] = useState(false);
   const [salesStaff, setSalesStaff] = useState<any[]>([]);
+  const [partnerClients, setPartnerClients] = useState<any[]>([]);
+  const [selectedPartnerClientId, setSelectedPartnerClientId] = useState<string | null>(null);
   const [selectedSalesmanId, setSelectedSalesmanId] = useState<string | null>(null);
   const [availableSlots, setAvailableSlots] = useState<Date[]>([]);
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
   const [loadingStaff, setLoadingStaff] = useState(false);
+  const [loadingPartnerClients, setLoadingPartnerClients] = useState(false);
   const [loadingSlots, setLoadingSlots] = useState(false);
 
   useEffect(() => {
-    if (isOpen && isInHouseMode && profile) {
-      fetchSalesStaff();
+    if (isOpen) {
+      if (isInHouseMode && profile) {
+        fetchSalesStaff();
+      } else {
+        fetchPartnerClients();
+      }
     }
   }, [isOpen, isInHouseMode, profile, lead?.division_id]);
+
+  const fetchPartnerClients = async () => {
+    setLoadingPartnerClients(true);
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, company_name, contact_name, user_id')
+        .eq('is_partner_plus', true);
+      
+      if (error) throw error;
+      setPartnerClients(data || []);
+    } catch (error: any) {
+      toast.error('Failed to fetch Partner+ clients: ' + error.message);
+    } finally {
+      setLoadingPartnerClients(false);
+    }
+  };
 
   const fetchSalesStaff = async () => {
     setLoadingStaff(true);
@@ -187,14 +211,25 @@ Est. System Size: ${lead.est_system_size || 'N/A'}
   const handleMarkSentToSales = async () => {
     try {
       setIsSending(true);
+      
+      const updateData: any = { sent_to_sales: true };
+      
+      if (selectedPartnerClientId) {
+        const partner = partnerClients.find(p => p.id === selectedPartnerClientId);
+        if (partner && partner.user_id) {
+          updateData.assigned_to = partner.user_id;
+          updateData.partner_plus_status = 'awaiting_sales';
+        }
+      }
+
       const { error } = await supabase
         .from('leads')
-        .update({ sent_to_sales: true })
+        .update(updateData)
         .eq('id', lead.id);
 
       if (error) throw error;
 
-      toast.success('Lead marked as sent to sales');
+      toast.success(selectedPartnerClientId ? 'Lead assigned to Partner+' : 'Lead marked as sent to sales');
       onSentToSales?.();
       onClose();
     } catch (error: any) {
@@ -298,8 +333,41 @@ Est. System Size: ${lead.est_system_size || 'N/A'}
                   </div>
                 )
               ) : (
-                <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 font-mono text-xs whitespace-pre-wrap leading-relaxed text-gray-700">
-                  {leadDetailsText}
+                <div className="space-y-4">
+                  <div className="bg-gray-50 rounded-xl p-4 border border-gray-200 font-mono text-xs whitespace-pre-wrap leading-relaxed text-gray-700">
+                    {leadDetailsText}
+                  </div>
+                  
+                  <div className="pt-2 border-t border-gray-100">
+                    <h4 className="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                      Partner+ Clients
+                    </h4>
+                    {loadingPartnerClients ? (
+                      <div className="flex justify-center py-4"><Loader2 className="w-6 h-6 animate-spin text-blue-600" /></div>
+                    ) : (
+                      <div className="space-y-2 max-h-40 overflow-y-auto pr-1">
+                        {partnerClients.map(client => (
+                          <button
+                            key={client.id}
+                            onClick={() => setSelectedPartnerClientId(client.id)}
+                            className={`w-full text-left px-4 py-3 rounded-xl border transition-all ${
+                              selectedPartnerClientId === client.id 
+                                ? 'border-purple-500 bg-purple-50 text-purple-800 shadow-sm' 
+                                : 'border-gray-200 hover:border-purple-200 hover:bg-gray-50'
+                            }`}
+                          >
+                            <div className="flex justify-between items-center">
+                              <span className="font-bold text-sm">{client.company_name || client.contact_name}</span>
+                              <span className="text-[10px] uppercase tracking-wider font-semibold opacity-60 bg-purple-100 px-2 py-0.5 rounded text-purple-800">Partner+</span>
+                            </div>
+                          </button>
+                        ))}
+                        {partnerClients.length === 0 && (
+                          <p className="text-xs text-gray-400 italic text-center py-4">No Partner+ clients available.</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
                 </div>
               )}
             </div>

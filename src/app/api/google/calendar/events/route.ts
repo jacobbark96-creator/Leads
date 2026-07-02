@@ -34,15 +34,24 @@ async function getAccessToken(userId: string) {
 
   const data = await res.json();
   if (!res.ok) {
-    // If token is invalid, clear it from DB
-    if (res.status === 400 || res.status === 401) {
+    console.error('Google Token Refresh Error:', {
+      status: res.status,
+      data,
+      userId
+    });
+
+    // If token is invalid or grant is invalid, clear it from DB
+    const isInvalid = res.status === 400 || res.status === 401;
+    const isInvalidGrant = data.error === 'invalid_grant';
+
+    if (isInvalid || isInvalidGrant) {
       await supabase
         .from('users')
         .update({ google_refresh_token: null })
         .eq('id', userId);
       throw new Error('Google connection expired. Please reconnect.');
     }
-    throw new Error(data.error || 'Failed to refresh token');
+    throw new Error(data.error_description || data.error || 'Failed to refresh token');
   }
   return data.access_token;
 }
@@ -66,7 +75,10 @@ export async function GET(req: Request) {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error?.message || 'Failed to fetch events');
+    if (!res.ok) {
+      console.error('Google Calendar Fetch Events Error:', data);
+      throw new Error(data.error?.message || 'Failed to fetch events');
+    }
 
     return NextResponse.json(data.items || []);
   } catch (error: any) {
@@ -89,6 +101,10 @@ export async function POST(req: Request) {
 
     const token = await getAccessToken(userId);
 
+    // Support both string dates and Google-style date objects from frontend
+    const startObj = typeof start === 'string' ? { dateTime: start } : start;
+    const endObj = typeof end === 'string' ? { dateTime: end } : end;
+
     const res = await fetch('https://www.googleapis.com/calendar/v3/calendars/primary/events', {
       method: 'POST',
       headers: {
@@ -99,8 +115,8 @@ export async function POST(req: Request) {
         summary,
         description,
         location,
-        start: { dateTime: start },
-        end: { dateTime: end },
+        start: startObj,
+        end: endObj,
         reminders: {
           useDefault: true
         }
@@ -108,7 +124,10 @@ export async function POST(req: Request) {
     });
 
     const data = await res.json();
-    if (!res.ok) throw new Error(data.error?.message || 'Failed to create event');
+    if (!res.ok) {
+      console.error('Google Calendar Create Event Error:', data);
+      throw new Error(data.error?.message || 'Failed to create event');
+    }
 
     return NextResponse.json(data);
   } catch (error: any) {

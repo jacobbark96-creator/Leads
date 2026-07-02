@@ -87,8 +87,16 @@ export const PassToSalesModal: React.FC<PassToSalesModalProps> = ({ isOpen, onCl
       end.setDate(end.getDate() + 7);
 
       const res = await fetch(`/api/google/calendar/events?userId=${userId}&timeMin=${start.toISOString()}&timeMax=${end.toISOString()}`);
-      if (!res.ok) throw new Error('Failed to fetch events');
-      const events = await res.json();
+      const data = await res.json();
+      
+      if (!res.ok) {
+        if (data.error === 'NOT_CONNECTED') {
+          throw new Error('This salesman has not connected their Google Calendar. They must log in and connect it before you can book them.');
+        }
+        throw new Error(data.error || data.message || 'Failed to fetch events');
+      }
+
+      const events = data;
 
       const slots: Date[] = [];
       for (let i = 0; i < 7; i++) {
@@ -122,9 +130,11 @@ export const PassToSalesModal: React.FC<PassToSalesModalProps> = ({ isOpen, onCl
         }
       }
       setAvailableSlots(slots);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching availability:', err);
-      toast.error('Could not fetch salesman availability.');
+      toast.error(err.message || 'Could not fetch salesman availability.');
+      // Drop out of scheduling mode so they can select someone else
+      setIsScheduling(false);
     } finally {
       setLoadingSlots(false);
     }

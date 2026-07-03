@@ -3,9 +3,12 @@ import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types';
 import { useAuthStore } from '@/store/authStore';
-import { Plus, Users, Mail, User, Shield, X, Trash2, Key, Clock, ExternalLink, ChevronRight, CheckCircle2, AlertCircle, ShoppingCart } from 'lucide-react';
+import { Plus, Users, Mail, User, Shield, X, Trash2, Key, Clock, ExternalLink, ChevronRight, CheckCircle2, AlertCircle, ShoppingCart, MapPin } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
+import { MarketplaceLeadModal } from '@/components/MarketplaceLeadModal';
+import { getVagueLocation } from '@/lib/utils';
+import { Lead } from '@/types';
 
 export default function TeamManagement() {
   const [team, setTeam] = useState<UserProfile[]>([]);
@@ -19,6 +22,8 @@ export default function TeamManagement() {
   const [newPassword, setNewPassword] = useState('');
   const [isResetting, setIsResetting] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [selectedLeadForPreview, setSelectedLeadForPreview] = useState<Lead | null>(null);
+  const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const { profile, refreshProfile } = useAuthStore();
   const [formData, setFormData] = useState({
     name: '',
@@ -512,31 +517,39 @@ export default function TeamManagement() {
                   ) : (
                     <div className="space-y-3">
                       {userLeads.map((req) => (
-                        <div key={req.id} className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center justify-between gap-4">
+                        <div 
+                          key={req.id} 
+                          className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center justify-between gap-4 hover:border-blue-200 transition-all group cursor-pointer"
+                          onClick={() => {
+                            setSelectedLeadForPreview(req.leads);
+                            setIsLeadModalOpen(true);
+                          }}
+                        >
                           <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100">
-                              <ExternalLink className="w-5 h-5" />
+                            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100 group-hover:scale-105 transition-transform">
+                              <MapPin className="w-5 h-5" />
                             </div>
                             <div>
-                              <p className="text-sm font-bold text-gray-900">{req.leads?.name || 'Lead Request'}</p>
+                              <p className="text-sm font-bold text-gray-900">
+                                {getVagueLocation(req.leads?.latitude, req.leads?.longitude) || 'Location Undisclosed'}
+                              </p>
                               <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
                                 {req.purchase_type === 'exclusive' ? 'Exclusive Purchase' : 'Lead Share'} • £{req.price_paid}
                               </p>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2">
+                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                             <button
                               onClick={() => handleRejectRequest(req.id)}
-                              className="p-2 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-xl transition-all"
-                              title="Reject Request"
+                              className="px-4 py-2 bg-white border border-red-100 text-red-600 text-xs font-bold rounded-xl hover:bg-red-50 transition-all shadow-sm"
                             >
-                              <X className="w-4 h-4" />
+                              Reject
                             </button>
                             <button
                               onClick={() => handleApproveRequest(req)}
                               className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all"
                             >
-                              Approve
+                              Quick Approve
                             </button>
                           </div>
                         </div>
@@ -613,6 +626,19 @@ export default function TeamManagement() {
               </form>
             </div>
           </div>
+        )}
+
+        {/* Lead Preview Modal */}
+        {selectedLeadForPreview && (
+          <MarketplaceLeadModal
+            isOpen={isLeadModalOpen}
+            onClose={() => {
+              setIsLeadModalOpen(false);
+              setSelectedLeadForPreview(null);
+            }}
+            lead={selectedLeadForPreview}
+            onPurchase={() => {}} // Not used in this context but required by prop
+          />
         )}
       </div>
     </ProtectedRoute>

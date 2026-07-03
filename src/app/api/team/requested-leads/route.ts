@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { createClient } from '@supabase/supabase-js';
 
+export const runtime = 'edge';
+
 export async function GET(req: Request) {
   try {
     const { searchParams } = new URL(req.url);

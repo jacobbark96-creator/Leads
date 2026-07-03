@@ -3,6 +3,8 @@ import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { createClient } from '@supabase/supabase-js';
 import { sendTeamInvitationEmail } from '@/lib/resend';
 
+export const runtime = 'edge';
+
 export async function POST(req: Request) {
   try {
     const { email, name, role, parentId } = await req.json();

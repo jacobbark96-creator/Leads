@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { createClient } from '@supabase/supabase-js';
 
+export const runtime = 'edge';
+
 export async function POST(req: Request) {
   try {
     const { userId, newPassword, parentId } = await req.json();

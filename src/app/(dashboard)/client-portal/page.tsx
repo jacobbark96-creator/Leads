@@ -494,7 +494,7 @@ export default function ClientDashboard() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-gray-900 truncate">
-                            {extractTown(req.leads?.location) || 'Location Undisclosed'}
+                            {req.leads?.location?.split(',')[0] || 'Location Undisclosed'}
                           </p>
                           <p className="text-[10px] text-amber-600 font-medium truncate uppercase tracking-wider">
                             Waiting for Parent Approval

@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     // 4. Send rejection email to the child account
     const childUser = purchase.client.user;
     const lead = purchase.leads;
-    const leadLocation = extractTown(lead.location);
+    const leadLocation = lead.location?.split(',')[0] || 'Undisclosed Location';
 
     const emailResult = await sendLeadRejectionEmail(
       childUser.email,

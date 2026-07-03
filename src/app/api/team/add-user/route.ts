@@ -70,7 +70,8 @@ export async function POST(req: Request) {
         name: name,
         job_title: role || 'Team Member',
         invited_at: new Date().toISOString(),
-        is_approved: true
+        is_approved: true,
+        requires_password_change: true
       })
       .eq('id', newUserId);
 

@@ -9,6 +9,7 @@ import { CalendarModal } from './components/CalendarModal';
 import { PurchasedLeadModal } from '../../../components/PurchasedLeadModal';
 import { WelcomeModal } from './components/WelcomeModal';
 import { AdvisorModal } from './components/AdvisorModal';
+import { PasswordResetModal } from './components/PasswordResetModal';
 import { TopUpModal } from '../../../components/TopUpModal';
 import { InvoicesModal } from '../../../components/InvoicesModal';
 import { PerformanceModal } from '../../../components/PerformanceModal';
@@ -34,6 +35,7 @@ export default function ClientDashboard() {
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
+  const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [clientLocation, setClientLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -97,7 +99,9 @@ export default function ClientDashboard() {
         if (parentData) setParentName(parentData.name);
       }
 
-      if (isInitial && !clientData.has_seen_welcome_modal) {
+      if (isInitial && profile?.requires_password_change) {
+        setShowPasswordResetModal(true);
+      } else if (isInitial && !clientData.has_seen_welcome_modal) {
         setShowWelcomeModal(true);
       }
 
@@ -734,6 +738,29 @@ export default function ClientDashboard() {
         onClose={() => setShowAdvisorModal(false)}
         advisor={advisorDetails}
       />
+
+      {profile && (
+        <PasswordResetModal
+          isOpen={showPasswordResetModal}
+          onClose={() => {
+            setShowPasswordResetModal(false);
+            // After password reset, check if we should show welcome modal
+            const checkWelcome = async () => {
+              const { data } = await supabase
+                .from('clients')
+                .select('has_seen_welcome_modal')
+                .eq('user_id', profile.id)
+                .single();
+              if (data && !data.has_seen_welcome_modal) {
+                setShowWelcomeModal(true);
+              }
+            };
+            checkWelcome();
+          }}
+          userId={profile.id}
+        />
+      )}
+
       {showTopUpModal && profile && clientId && (
         <TopUpModal
           isOpen={showTopUpModal}

@@ -26,6 +26,7 @@ export interface UserProfile {
   flex_terms_accepted_at?: string | null;
   allowed_child_accounts?: boolean;
   parent_id?: string | null;
+  requires_password_change?: boolean;
   created_at: string;
 }
 

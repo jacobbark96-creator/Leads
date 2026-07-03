@@ -179,6 +179,7 @@ export default function ClientDashboard() {
         .from('lead_purchases')
         .select('id, status, purchase_type, price_paid, sale_amount, purchased_at, leads(*, buildings(*))')
         .eq('client_id', clientData.id)
+        .neq('status', 'permission_pending')
         .order('purchased_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 

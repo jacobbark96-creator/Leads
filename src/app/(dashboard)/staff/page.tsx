@@ -125,6 +125,7 @@ export default function StaffPortal() {
         const { data: purchases } = await supabase
           .from('lead_purchases')
           .select('price_paid, purchased_at')
+          .neq('status', 'permission_pending')
           .gte('purchased_at', todayIso);
           
         let totalRevenue = 0;

@@ -17,6 +17,7 @@ export default function AdminPartnersPage() {
   const [formData, setFormData] = useState({
     name: '',
     description: '',
+    reward: '',
     photo_url: '',
     link: '',
     active: true
@@ -48,6 +49,7 @@ export default function AdminPartnersPage() {
       setFormData({
         name: partner.name || '',
         description: partner.description || '',
+        reward: partner.reward || '',
         photo_url: partner.photo_url || '',
         link: partner.link || '',
         active: partner.active
@@ -57,6 +59,7 @@ export default function AdminPartnersPage() {
       setFormData({
         name: '',
         description: '',
+        reward: '',
         photo_url: '',
         link: '',
         active: true
@@ -243,6 +246,17 @@ export default function AdminPartnersPage() {
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="What do they offer?"
+                      />
+                    </div>
+                    
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Reward (Pill Text)</label>
+                      <input
+                        type="text"
+                        value={formData.reward}
+                        onChange={(e) => setFormData({ ...formData, reward: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="e.g. 10% Off or £50 Credit"
                       />
                     </div>
                     

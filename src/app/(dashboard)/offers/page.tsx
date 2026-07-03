@@ -134,9 +134,11 @@ export default function OffersPage() {
                       Claim Offer 
                       <ExternalLink className="w-2.5 h-2.5" />
                     </span>
-                    <div className="w-6 h-6 rounded-full bg-slate-50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
-                      <div className="w-1 h-1 rounded-full bg-blue-600" />
-                    </div>
+                    {partner.reward && (
+                      <div className="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-lg shadow-blue-600/20">
+                        {partner.reward}
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>

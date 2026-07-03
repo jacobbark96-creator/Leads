@@ -12,12 +12,12 @@ import { Lead } from '@/types';
 
 export default function TeamManagement() {
   const [team, setTeam] = useState<UserProfile[]>([]);
+  const [allPendingRequests, setAllPendingRequests] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [loadingRequests, setLoadingRequests] = useState(true);
   const [showAddModal, setShowAddModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
-  const [userLeads, setUserLeads] = useState<any[]>([]);
-  const [loadingLeads, setLoadingLeads] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [isResetting, setIsResetting] = useState(false);
@@ -50,34 +50,69 @@ export default function TeamManagement() {
     }
   };
 
-  const fetchUserLeads = async (userId: string) => {
+  const fetchAllPendingRequests = async () => {
+    if (!profile) return;
     try {
-      setLoadingLeads(true);
-      const { data: session } = await supabase.auth.getSession();
-      const res = await fetch(`/api/team/requested-leads?userId=${userId}&parentId=${profile?.id}`, {
-        headers: {
-          'Authorization': `Bearer ${session?.session?.access_token}`
-        }
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-      setUserLeads(data.requestedLeads || []);
+      setLoadingRequests(true);
+      const { data, error } = await supabase
+        .from('lead_purchases')
+        .select(`
+          *,
+          leads:lead_id (*),
+          client:client_id (
+            user:user_id (name)
+          )
+        `)
+        .eq('status', 'permission_pending')
+        .order('purchased_at', { ascending: false });
+
+      if (error) throw error;
+      setAllPendingRequests(data || []);
     } catch (error: any) {
-      toast.error('Failed to fetch leads: ' + error.message);
+      console.error('Failed to fetch pending requests:', error);
     } finally {
-      setLoadingLeads(false);
+      setLoadingRequests(false);
     }
   };
 
   useEffect(() => {
+    if (!profile) return;
+
     fetchTeam();
+    fetchAllPendingRequests();
+
+    // Set up real-time subscriptions
+    const teamChannel = supabase
+      .channel('team_changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'users',
+          filter: `parent_id=eq.${profile.id}`
+        },
+        () => fetchTeam()
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lead_purchases'
+        },
+        () => fetchAllPendingRequests()
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(teamChannel);
+    };
   }, [profile]);
 
   useEffect(() => {
     if (selectedUser) {
-      fetchUserLeads(selectedUser.id);
-    } else {
-      setUserLeads([]);
+      // Logic for selected user can go here
     }
   }, [selectedUser]);
 
@@ -194,7 +229,7 @@ export default function TeamManagement() {
       if (error) throw error;
       
       toast.success('Purchase approved!');
-      fetchUserLeads(selectedUser!.id);
+      fetchAllPendingRequests();
       refreshProfile();
     } catch (error: any) {
       toast.error('Failed to approve: ' + error.message);
@@ -211,7 +246,7 @@ export default function TeamManagement() {
       
       if (error) throw error;
       toast.success('Request rejected');
-      fetchUserLeads(selectedUser!.id);
+      fetchAllPendingRequests();
     } catch (error: any) {
       toast.error('Failed to reject: ' + error.message);
     }
@@ -251,91 +286,139 @@ export default function TeamManagement() {
       <div className="space-y-6 animate-in fade-in duration-500">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Team Management</h1>
+            <h1 className="text-2xl font-bold text-gray-900">Team</h1>
             <p className="text-sm text-gray-500">Manage your child accounts and their permissions.</p>
           </div>
-          <button
-            onClick={() => setShowAddModal(true)}
-            className="flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
-          >
-            <Plus className="w-5 h-5" />
-            Add Team Member
-          </button>
         </div>
 
-        {loading ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[1, 2, 3].map((i) => (
-              <div key={i} className="h-48 bg-white rounded-2xl border border-gray-100 animate-pulse" />
-            ))}
-          </div>
-        ) : team.length === 0 ? (
-          <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
-            <Users className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-bold text-gray-900 mb-1">No team members yet</h3>
-            <p className="text-gray-500 mb-6">Start by adding your first child account to your team.</p>
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="inline-flex items-center gap-2 text-blue-600 font-bold hover:text-blue-700"
-            >
-              <Plus className="w-4 h-4" />
-              Add Member Now
-            </button>
-          </div>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {team.map((member) => {
-              const status = getUserStatus(member);
-              const StatusIcon = status.icon;
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Left Column: Team Members */}
+          <div className="lg:col-span-5 space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                <Users className="w-4 h-4 text-blue-600" />
+                Team Members
+              </h2>
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-500/20"
+              >
+                <Plus className="w-4 h-4" />
+                Add Member
+              </button>
+            </div>
 
-              return (
-                <div
-                  key={member.id}
-                  onClick={() => setSelectedUser(member)}
-                  className="bg-white rounded-2xl border border-gray-100 p-6 shadow-sm hover:shadow-md hover:border-blue-200 transition-all group cursor-pointer relative overflow-hidden"
-                >
-                  <div className="flex items-start justify-between mb-6">
-                    <div className="flex items-center gap-4">
-                      <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-lg border border-blue-100 shadow-sm group-hover:scale-105 transition-transform">
-                        {member.name?.charAt(0).toUpperCase()}
+            <div className="space-y-3">
+              {loading ? (
+                [1, 2, 3].map((i) => (
+                  <div key={i} className="h-24 bg-white rounded-2xl border border-gray-100 animate-pulse" />
+                ))
+              ) : team.length === 0 ? (
+                <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-8 text-center">
+                  <Users className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500 font-medium">No team members yet</p>
+                </div>
+              ) : (
+                team.map((member) => {
+                  const status = getUserStatus(member);
+                  const StatusIcon = status.icon;
+
+                  return (
+                    <div
+                      key={member.id}
+                      onClick={() => setSelectedUser(member)}
+                      className={`bg-white rounded-2xl border p-4 shadow-sm hover:shadow-md transition-all group cursor-pointer relative overflow-hidden ${selectedUser?.id === member.id ? 'border-blue-600 ring-1 ring-blue-600' : 'border-gray-100 hover:border-blue-200'}`}
+                    >
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600 font-bold text-base border border-blue-100 shadow-sm group-hover:scale-105 transition-transform">
+                            {member.name?.charAt(0).toUpperCase()}
+                          </div>
+                          <div>
+                            <h3 className="font-bold text-gray-900 leading-tight text-sm group-hover:text-blue-600 transition-colors">{member.name}</h3>
+                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{member.job_title || 'Team Member'}</p>
+                          </div>
+                        </div>
+                        <div className={`flex items-center gap-1.5 px-2 py-0.5 rounded-full border text-[9px] font-bold ${status.color}`}>
+                          <StatusIcon className="w-2.5 h-2.5" />
+                          {status.label}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+
+          {/* Right Column: Pending Requests */}
+          <div className="lg:col-span-7 space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h2 className="text-sm font-black text-gray-900 uppercase tracking-widest flex items-center gap-2">
+                <ShoppingCart className="w-4 h-4 text-blue-600" />
+                Purchase Requests
+              </h2>
+              <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full uppercase tracking-widest">
+                {allPendingRequests.length} Pending
+              </span>
+            </div>
+
+            <div className="space-y-3">
+              {loadingRequests ? (
+                [1, 2, 3].map(i => <div key={i} className="h-20 bg-gray-50 rounded-xl animate-pulse" />)
+              ) : allPendingRequests.length === 0 ? (
+                <div className="bg-white rounded-2xl border-2 border-dashed border-gray-100 p-12 text-center">
+                  <AlertCircle className="w-10 h-10 text-gray-300 mx-auto mb-3" />
+                  <p className="text-sm text-gray-500 font-medium">No pending purchase requests.</p>
+                </div>
+              ) : (
+                allPendingRequests.map((req) => (
+                  <div 
+                    key={req.id} 
+                    className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center justify-between gap-4 hover:border-blue-200 transition-all group cursor-pointer"
+                    onClick={() => {
+                      setSelectedLeadForPreview(req.leads);
+                      setIsLeadModalOpen(true);
+                    }}
+                  >
+                    <div className="flex items-center gap-3">
+                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100 group-hover:scale-105 transition-transform">
+                        <MapPin className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="font-bold text-gray-900 leading-tight group-hover:text-blue-600 transition-colors">{member.name}</h3>
-                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-0.5">{member.job_title || 'Team Member'}</p>
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-bold text-gray-900">
+                            {getVagueLocation(req.leads?.latitude, req.leads?.longitude) || 'Location Undisclosed'}
+                          </p>
+                          <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-0.5 rounded font-medium">
+                            {req.client?.user?.name}
+                          </span>
+                        </div>
+                        <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
+                          {req.purchase_type === 'exclusive' ? 'Exclusive Purchase' : 'Lead Share'} • £{req.price_paid}
+                        </p>
                       </div>
                     </div>
-                    <div className={`flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-[10px] font-bold ${status.color}`}>
-                      <StatusIcon className="w-3 h-3" />
-                      {status.label}
+                    <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                      <button
+                        onClick={() => handleRejectRequest(req.id)}
+                        className="px-4 py-2 bg-white border border-red-100 text-red-600 text-xs font-bold rounded-xl hover:bg-red-50 transition-all shadow-sm"
+                      >
+                        Reject
+                      </button>
+                      <button
+                        onClick={() => handleApproveRequest(req)}
+                        className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all"
+                      >
+                        Quick Approve
+                      </button>
                     </div>
                   </div>
-
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-3 text-xs text-gray-600">
-                      <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400">
-                        <Mail className="w-3.5 h-3.5" />
-                      </div>
-                      <span className="truncate">{member.email}</span>
-                    </div>
-                    <div className="flex items-center gap-3 text-xs text-gray-600">
-                      <div className="w-7 h-7 rounded-lg bg-gray-50 flex items-center justify-center text-gray-400">
-                        <Shield className="w-3.5 h-3.5" />
-                      </div>
-                      <span>Marketplace Access</span>
-                    </div>
-                  </div>
-
-                  <div className="mt-6 pt-5 border-t border-gray-50 flex items-center justify-between">
-                    <span className="text-[10px] text-gray-400 font-medium uppercase tracking-widest">
-                      {status.sub}
-                    </span>
-                    <ChevronRight className="w-4 h-4 text-gray-300 group-hover:text-blue-500 group-hover:translate-x-0.5 transition-all" />
-                  </div>
-                </div>
-              );
-            })}
+                ))
+              )}
+            </div>
           </div>
-        )}
+        </div>
 
         {/* Add User Modal */}
         {showAddModal && (
@@ -501,59 +584,61 @@ export default function TeamManagement() {
                       Purchase Requests
                     </h3>
                     <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-2 py-0.5 rounded-full uppercase tracking-widest">
-                      {userLeads.length} Pending
+                      {allPendingRequests.filter(r => r.client?.user_id === selectedUser.id).length} Pending
                     </span>
                   </div>
 
-                  {loadingLeads ? (
+                  {loadingRequests ? (
                     <div className="space-y-3">
                       {[1, 2].map(i => <div key={i} className="h-20 bg-gray-50 rounded-xl animate-pulse" />)}
                     </div>
-                  ) : userLeads.length === 0 ? (
+                  ) : allPendingRequests.filter(r => r.client?.user_id === selectedUser.id).length === 0 ? (
                     <div className="p-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 text-center">
                       <AlertCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
                       <p className="text-sm text-gray-500 font-medium">No pending purchase requests from this user.</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
-                      {userLeads.map((req) => (
-                        <div 
-                          key={req.id} 
-                          className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center justify-between gap-4 hover:border-blue-200 transition-all group cursor-pointer"
-                          onClick={() => {
-                            setSelectedLeadForPreview(req.leads);
-                            setIsLeadModalOpen(true);
-                          }}
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100 group-hover:scale-105 transition-transform">
-                              <MapPin className="w-5 h-5" />
+                      {allPendingRequests
+                        .filter(r => r.client?.user_id === selectedUser.id)
+                        .map((req) => (
+                          <div 
+                            key={req.id} 
+                            className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center justify-between gap-4 hover:border-blue-200 transition-all group cursor-pointer"
+                            onClick={() => {
+                              setSelectedLeadForPreview(req.leads);
+                              setIsLeadModalOpen(true);
+                            }}
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100 group-hover:scale-105 transition-transform">
+                                <MapPin className="w-5 h-5" />
+                              </div>
+                              <div>
+                                <p className="text-sm font-bold text-gray-900">
+                                  {getVagueLocation(req.leads?.latitude, req.leads?.longitude) || 'Location Undisclosed'}
+                                </p>
+                                <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
+                                  {req.purchase_type === 'exclusive' ? 'Exclusive Purchase' : 'Lead Share'} • £{req.price_paid}
+                                </p>
+                              </div>
                             </div>
-                            <div>
-                              <p className="text-sm font-bold text-gray-900">
-                                {getVagueLocation(req.leads?.latitude, req.leads?.longitude) || 'Location Undisclosed'}
-                              </p>
-                              <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
-                                {req.purchase_type === 'exclusive' ? 'Exclusive Purchase' : 'Lead Share'} • £{req.price_paid}
-                              </p>
+                            <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
+                              <button
+                                onClick={() => handleRejectRequest(req.id)}
+                                className="px-4 py-2 bg-white border border-red-100 text-red-600 text-xs font-bold rounded-xl hover:bg-red-50 transition-all shadow-sm"
+                              >
+                                Reject
+                              </button>
+                              <button
+                                onClick={() => handleApproveRequest(req)}
+                                className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all"
+                              >
+                                Quick Approve
+                              </button>
                             </div>
                           </div>
-                          <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
-                            <button
-                              onClick={() => handleRejectRequest(req.id)}
-                              className="px-4 py-2 bg-white border border-red-100 text-red-600 text-xs font-bold rounded-xl hover:bg-red-50 transition-all shadow-sm"
-                            >
-                              Reject
-                            </button>
-                            <button
-                              onClick={() => handleApproveRequest(req)}
-                              className="px-4 py-2 bg-blue-600 text-white text-xs font-bold rounded-xl hover:bg-blue-700 shadow-lg shadow-blue-500/20 transition-all"
-                            >
-                              Quick Approve
-                            </button>
-                          </div>
-                        </div>
-                      ))}
+                        ))}
                     </div>
                   )}
                 </div>

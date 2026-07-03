@@ -42,7 +42,7 @@ export default function Login() {
 
   const getHomePath = () => {
     if (!profile) return '/';
-    if (profile.role === 'client') return '/my-openlead';
+    if (profile.role === 'client') return '/client-portal';
     return '/staff';
   };
 
@@ -53,7 +53,7 @@ export default function Login() {
         if (profile.is_approved === false) {
           router.replace('/pending-approval');
         } else {
-          router.replace('/my-openlead');
+          router.replace('/client-portal');
         }
       } else {
         router.replace('/staff');
@@ -138,7 +138,7 @@ export default function Login() {
               if (profileData.is_approved === false) {
                 router.replace('/pending-approval');
               } else {
-                router.replace('/my-openlead');
+                router.replace('/client-portal');
               }
             } else {
               router.replace('/staff');

@@ -26,7 +26,7 @@ export default function SubscriptionSummary() {
     setIsLoading(true);
     try {
       // Since it's free forever, we just redirect straight to the dashboard
-      window.location.href = '/my-openlead';
+      window.location.href = '/client-portal';
     } catch (err: any) {
       toast.error('Failed to complete registration: ' + err.message);
       setIsLoading(false);

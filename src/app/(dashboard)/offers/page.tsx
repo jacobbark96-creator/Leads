@@ -111,9 +111,16 @@ export default function OffersPage() {
                     <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest">Partner</span>
                   </div>
 
+                  {/* Reward Pill - Larger and positioned at bottom right of image */}
+                  {partner.reward && (
+                    <div className="absolute bottom-2.5 right-2.5 bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-xl shadow-blue-600/40 border border-blue-400/30 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                      Reward: {partner.reward}
+                    </div>
+                  )}
+
                   <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors duration-300" />
                   
-                  <div className="absolute bottom-2.5 right-2.5 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-lg translate-y-12 group-hover:translate-y-0 transition-transform duration-300 border border-slate-100">
+                  <div className="absolute bottom-2.5 left-2.5 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-lg translate-y-12 group-hover:translate-y-0 transition-transform duration-300 border border-slate-100">
                     <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
                   </div>
                 </div>
@@ -134,11 +141,6 @@ export default function OffersPage() {
                       Claim Offer 
                       <ExternalLink className="w-2.5 h-2.5" />
                     </span>
-                    {partner.reward && (
-                      <div className="bg-blue-600 text-white text-[8px] font-black px-2 py-0.5 rounded-full uppercase tracking-widest shadow-lg shadow-blue-600/20">
-                        {partner.reward}
-                      </div>
-                    )}
                   </div>
                 </div>
               </div>

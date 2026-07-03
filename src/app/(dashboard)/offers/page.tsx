@@ -157,7 +157,7 @@ export default function OffersPage() {
       {/* Offer Detail Modal */}
       <AnimatePresence>
         {selectedPartner && (
-          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+          <div className="fixed inset-0 z-[100] flex items-start justify-center p-4 sm:p-6 pt-32 sm:pt-40">
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -170,79 +170,79 @@ export default function OffersPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-3xl max-h-[85vh] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col border border-slate-200"
+              className="relative w-full max-w-2xl max-h-[75vh] bg-white rounded-[24px] shadow-2xl overflow-hidden flex flex-col border border-slate-200"
             >
               {/* Modal Close Button */}
               <button 
                 onClick={() => setSelectedPartner(null)}
-                className="absolute top-6 right-6 z-10 p-2 bg-white/80 backdrop-blur-md rounded-full text-slate-400 hover:text-slate-900 transition-colors border border-slate-100"
+                className="absolute top-4 right-4 z-20 p-2 bg-white/80 backdrop-blur-md rounded-full text-slate-400 hover:text-slate-900 transition-colors border border-slate-100 shadow-sm"
               >
-                <X className="w-5 h-5" />
+                <X className="w-4 h-4" />
               </button>
 
               <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {/* Hero Section with Logo and Banner */}
-                <div className="relative h-48 sm:h-64 bg-slate-100">
+                <div className="relative h-40 sm:h-48 bg-slate-50">
                   {selectedPartner.photo_url ? (
                     <img 
                       src={selectedPartner.photo_url} 
                       alt={selectedPartner.name}
-                      className="w-full h-full object-cover"
+                      className="w-full h-full object-contain p-4"
                     />
                   ) : (
                     <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
-                      <Star className="w-20 h-20 text-blue-100 fill-blue-50" />
+                      <Star className="w-16 h-16 text-blue-100 fill-blue-50" />
                     </div>
                   )}
                   
                   {/* Reward Badge in Hero */}
                   {selectedPartner.reward && (
-                    <div className="absolute bottom-6 left-8 bg-blue-600 text-white text-[12px] font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-2xl shadow-blue-600/40 border border-blue-400/30">
+                    <div className="absolute bottom-4 left-6 bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-xl shadow-blue-600/40 border border-blue-400/30">
                       Reward: {selectedPartner.reward}
                     </div>
                   )}
                 </div>
 
-                <div className="px-6 py-8 sm:px-10">
+                <div className="px-5 py-6 sm:px-8">
                   {/* Title and Logo Row */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
-                    <div className="flex items-center gap-4">
-                      <div className="w-14 h-14 rounded-2xl bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-center overflow-hidden p-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+                    <div className="flex items-center gap-3">
+                      <div className="w-12 h-12 rounded-xl bg-white shadow-lg shadow-slate-200/50 border border-slate-100 flex items-center justify-center overflow-hidden p-1.5">
                         {selectedPartner.photo_url ? (
                           <img src={selectedPartner.photo_url} alt="" className="w-full h-full object-contain" />
                         ) : (
-                          <span className="text-xl font-black text-blue-600">{selectedPartner.name.substring(0, 2)}</span>
+                          <span className="text-lg font-black text-blue-600">{selectedPartner.name.substring(0, 2)}</span>
                         )}
                       </div>
                       <div>
-                        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none mb-2">
+                        <h2 className="text-xl font-black text-slate-900 uppercase tracking-tight leading-none mb-1.5">
                           {selectedPartner.name}
                         </h2>
                         <div className="flex items-center gap-2">
-                          <span className="inline-flex px-2 py-0.5 rounded-md bg-blue-50 text-[10px] font-black text-blue-600 uppercase tracking-widest border border-blue-100">Verified Partner</span>
+                          <span className="inline-flex px-1.5 py-0.5 rounded-md bg-blue-50 text-[8px] font-black text-blue-600 uppercase tracking-widest border border-blue-100">Verified Partner</span>
                         </div>
                       </div>
                     </div>
                     
                     <button 
                       onClick={() => handleClaimOffer(selectedPartner)}
-                      className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5"
+                      className="inline-flex items-center justify-center px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white text-[10px] font-black uppercase tracking-widest rounded-xl transition-all shadow-lg shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5"
                     >
                       Claim Offer Now
-                      <ExternalLink className="w-4 h-4 ml-2" />
+                      <ExternalLink className="w-3.5 h-3.5 ml-2" />
                     </button>
                   </div>
 
                   {/* Main Content Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
-                    <div className="lg:col-span-7 space-y-8">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                    <div className="lg:col-span-7 space-y-6">
                       {/* Description */}
                       <section>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
-                          <Info className="w-3.5 h-3.5 text-blue-600" />
+                        <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2.5 flex items-center gap-2">
+                          <Info className="w-3 h-3 text-blue-600" />
                           About this Offer
                         </h4>
-                        <p className="text-xs text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
+                        <p className="text-[11px] text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
                           {selectedPartner.description}
                         </p>
                       </section>

@@ -410,8 +410,18 @@ export default function TeamManagement() {
                     }}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100 group-hover:scale-105 transition-transform">
-                        <MapPin className="w-5 h-5" />
+                      <div className="w-10 h-10 rounded-lg bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform">
+                        {req.leads?.image_url ? (
+                          <img 
+                            src={req.leads.image_url} 
+                            alt={req.leads?.location || 'Lead'} 
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-600">
+                            <MapPin className="w-5 h-5" />
+                          </div>
+                        )}
                       </div>
                       <div>
                         <div className="flex items-center gap-2">
@@ -632,22 +642,32 @@ export default function TeamManagement() {
                         .map((req) => (
                           <div 
                             key={req.id} 
-                            className="p-4 bg-white border border-gray-100 rounded-2xl shadow-sm flex items-center justify-between gap-4 hover:border-blue-200 transition-all group cursor-pointer"
+                            className="p-3 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-between gap-3 hover:border-blue-200 transition-all group cursor-pointer"
                             onClick={() => {
                               setSelectedLeadForPreview(req.leads);
                               setIsLeadModalOpen(true);
                             }}
                           >
                             <div className="flex items-center gap-3">
-                              <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 font-bold border border-blue-100 group-hover:scale-105 transition-transform">
-                                <MapPin className="w-5 h-5" />
+                              <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform">
+                                {req.leads?.image_url ? (
+                                  <img 
+                                    src={req.leads.image_url} 
+                                    alt={req.leads?.location || 'Lead'} 
+                                    className="w-full h-full object-cover"
+                                  />
+                                ) : (
+                                  <div className="w-full h-full bg-blue-50 flex items-center justify-center text-blue-600">
+                                    <MapPin className="w-4 h-4" />
+                                  </div>
+                                )}
                               </div>
                               <div>
                                 <p className="text-sm font-bold text-gray-900">
                                   {req.leads?.location?.split(',')[0] || 'Location Undisclosed'}
                                 </p>
                                 <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
-                                  {req.purchase_type === 'exclusive' ? 'Exclusive Purchase' : 'Lead Share'} • £{req.price_paid}
+                                  {req.purchase_type === 'exclusive' ? 'Exclusive' : 'Share'} • £{req.price_paid}
                                 </p>
                               </div>
                             </div>

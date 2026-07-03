@@ -483,22 +483,38 @@ export default function ClientDashboard() {
                     {pendingRequests.map((req) => (
                       <div 
                         key={req.id} 
+                        className="flex items-center justify-between p-3 rounded-xl bg-amber-50/30 border border-amber-100/50 hover:bg-amber-50/50 transition-colors group cursor-pointer"
                         onClick={() => {
                           setSelectedPendingLead(req.leads);
                           setIsPendingModalOpen(true);
                         }}
-                        className="px-4 py-2.5 hover:bg-white/60 cursor-pointer flex items-center gap-3 transition-colors"
                       >
-                        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 border border-amber-200">
-                          <MapPin className="w-4 h-4" />
+                        <div className="flex items-center gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-amber-100 group-hover:scale-105 transition-transform">
+                            {req.leads?.image_url ? (
+                              <img 
+                                src={req.leads.image_url} 
+                                alt={req.leads?.location || 'Lead'} 
+                                className="w-full h-full object-cover"
+                              />
+                            ) : (
+                              <div className="w-full h-full bg-amber-50 flex items-center justify-center text-amber-600">
+                                <Clock className="w-4 h-4" />
+                              </div>
+                            )}
+                          </div>
+                          <div className="min-w-0 flex-1">
+                            <p className="text-xs font-bold text-gray-900 truncate">
+                              {req.leads?.location?.split(',')[0] || 'Location Undisclosed'}
+                            </p>
+                            <p className="text-[10px] text-amber-600 font-medium truncate uppercase tracking-wider">
+                              {req.purchase_type === 'exclusive' ? 'Exclusive' : 'Share'} • Pending Approval
+                            </p>
+                          </div>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-bold text-gray-900 truncate">
-                            {req.leads?.location?.split(',')[0] || 'Location Undisclosed'}
-                          </p>
-                          <p className="text-[10px] text-amber-600 font-medium truncate uppercase tracking-wider">
-                            Waiting for Parent Approval
-                          </p>
+                        <div className="text-right">
+                          <p className="text-xs font-bold text-gray-900">£{req.price_paid}</p>
+                          <p className="text-[10px] text-gray-400 font-medium">Request</p>
                         </div>
                       </div>
                     ))}

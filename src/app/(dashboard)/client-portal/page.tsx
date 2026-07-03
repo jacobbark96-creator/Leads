@@ -7,6 +7,7 @@ import { Lead, Category } from '../../../types';
 import { useAuthStore } from '../../../store/authStore';
 import { CalendarModal } from './components/CalendarModal';
 import { PurchasedLeadModal } from '../../../components/PurchasedLeadModal';
+import { MarketplaceLeadModal } from '../../../components/MarketplaceLeadModal';
 import { WelcomeModal } from './components/WelcomeModal';
 import { AdvisorModal } from './components/AdvisorModal';
 import { PasswordResetModal } from './components/PasswordResetModal';
@@ -15,6 +16,7 @@ import { InvoicesModal } from '../../../components/InvoicesModal';
 import { PerformanceModal } from '../../../components/PerformanceModal';
 import { ClientFeedbackButton } from './components/ClientFeedbackButton';
 import { trackClientActivity } from '@/lib/activityTracker';
+import { getVagueLocation } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -32,6 +34,8 @@ export default function ClientDashboard() {
   const [selectedCategory, setSelectedCategory] = useState<string>('all');
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedPendingLead, setSelectedPendingLead] = useState<Lead | null>(null);
+  const [isPendingModalOpen, setIsPendingModalOpen] = useState(false);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
   const [showWelcomeModal, setShowWelcomeModal] = useState(false);
@@ -46,10 +50,11 @@ export default function ClientDashboard() {
   const [showInvoicesModal, setShowInvoicesModal] = useState(false);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const [requestedLeads, setRequestedLeads] = useState<any[]>([]);
+  const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const { profile, refreshProfile } = useAuthStore();
   const PAGE_SIZE = 24;
 
-  const [activeTab, setActiveTab] = useState<'new' | 'sat' | 'won' | 'archive'>('new');
+  const [activeTab, setActiveTab] = useState<'pending' | 'new' | 'sat' | 'won' | 'archive'>('new');
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
 
   const handleLeadClick = (lead: Lead) => {
@@ -144,6 +149,21 @@ export default function ClientDashboard() {
           ).data?.map(c => c.id) || []);
 
         if (!reqError) setRequestedLeads(reqLeads || []);
+      }
+
+      // Fetch own pending requests if child account
+      if (profile.parent_id) {
+        const { data: ownPending, error: ownPendingError } = await supabase
+          .from('lead_purchases')
+          .select(`
+            id, status, purchase_type, price_paid, purchased_at,
+            leads:lead_id (*, buildings(*))
+          `)
+          .eq('client_id', clientData.id)
+          .eq('status', 'permission_pending')
+          .order('purchased_at', { ascending: false });
+
+        if (!ownPendingError) setPendingRequests(ownPending || []);
       }
 
       if (isInitial) {
@@ -496,6 +516,55 @@ export default function ClientDashboard() {
         {/* RIGHT: CATEGORIES */}
         <div className="lg:col-span-2 flex flex-col gap-3 lg:gap-4 min-h-0 overflow-hidden">
           
+          {/* Pending Requests (Child Only) */}
+          {profile?.parent_id && pendingRequests.length > 0 && (
+            <div className="bg-amber-50/50 rounded-xl shadow-lg shadow-amber-100/50 border border-amber-100 flex flex-col overflow-hidden animate-in slide-in-from-right duration-500">
+              <button 
+                onClick={() => setActiveTab('pending')}
+                className={`flex items-center justify-between px-4 py-3 border-b border-amber-100 transition-all ${activeTab === 'pending' ? 'bg-gradient-to-r from-amber-50 to-orange-50/30' : 'bg-amber-50/30 hover:bg-amber-50'}`}
+              >
+                <div className="flex items-center gap-2">
+                  <Clock className="w-4 h-4 text-amber-500" />
+                  <span className="text-sm font-bold text-amber-900">Pending Requests</span>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs font-black text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
+                    {pendingRequests.length}
+                  </span>
+                  <ChevronDown className={`w-4 h-4 text-amber-400 transition-transform ${activeTab === 'pending' ? 'rotate-180' : ''}`} />
+                </div>
+              </button>
+              {activeTab === 'pending' && (
+                <div className="flex-1 overflow-y-auto max-h-[180px]">
+                  <div className="divide-y divide-amber-50">
+                    {pendingRequests.map((req) => (
+                      <div 
+                        key={req.id} 
+                        onClick={() => {
+                          setSelectedPendingLead(req.leads);
+                          setIsPendingModalOpen(true);
+                        }}
+                        className="px-4 py-2.5 hover:bg-white/60 cursor-pointer flex items-center gap-3 transition-colors"
+                      >
+                        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center text-amber-600 shrink-0 border border-amber-200">
+                          <MapPin className="w-4 h-4" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-xs font-bold text-gray-900 truncate">
+                            {getVagueLocation(req.leads?.latitude, req.leads?.longitude) || 'Location Undisclosed'}
+                          </p>
+                          <p className="text-[10px] text-amber-600 font-medium truncate uppercase tracking-wider">
+                            Waiting for Parent Approval
+                          </p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
           {/* Requested Leads (Parent Only) */}
           {profile?.allowed_child_accounts && requestedLeads.length > 0 && (
             <div className="bg-indigo-50/50 rounded-xl shadow-lg shadow-indigo-100/50 border border-indigo-100 flex flex-col overflow-hidden animate-in slide-in-from-right duration-500">
@@ -725,6 +794,18 @@ export default function ClientDashboard() {
           onClose={() => setSelectedLead(null)}
           lead={selectedLead}
           onUpdateStatus={updatePurchaseStatus}
+        />
+      )}
+
+      {selectedPendingLead && (
+        <MarketplaceLeadModal
+          isOpen={isPendingModalOpen}
+          onClose={() => {
+            setIsPendingModalOpen(false);
+            setSelectedPendingLead(null);
+          }}
+          lead={selectedPendingLead}
+          onPurchase={() => {}} // Read-only in this context
         />
       )}
 

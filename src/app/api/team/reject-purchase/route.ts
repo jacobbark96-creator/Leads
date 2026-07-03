@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 import { createClient } from '@supabase/supabase-js';
 import { sendLeadRejectionEmail } from '@/lib/resend';
-import { getVagueLocation } from '@/lib/utils';
+import { extractTown } from '@/lib/utils';
 
 export const runtime = 'edge';
 
@@ -57,7 +57,7 @@ export async function POST(req: Request) {
     // 4. Send rejection email to the child account
     const childUser = purchase.client.user;
     const lead = purchase.leads;
-    const leadLocation = getVagueLocation(lead.latitude, lead.longitude) || 'Undisclosed Location';
+    const leadLocation = extractTown(lead.address);
 
     const emailResult = await sendLeadRejectionEmail(
       childUser.email,

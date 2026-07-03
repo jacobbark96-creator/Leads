@@ -2,6 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { Calendar as CalendarIcon, Filter, Search, Phone, Mail, Building, MapPin, User, ChevronDown, CheckSquare, ShoppingCart, List, TrendingUp, Gift, Users, X, Zap, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { extractTown, getVagueLocation } from '@/lib/utils';
 
 import { Lead, Category } from '../../../types';
 import { useAuthStore } from '../../../store/authStore';
@@ -16,7 +17,6 @@ import { InvoicesModal } from '../../../components/InvoicesModal';
 import { PerformanceModal } from '../../../components/PerformanceModal';
 import { ClientFeedbackButton } from './components/ClientFeedbackButton';
 import { trackClientActivity } from '@/lib/activityTracker';
-import { getVagueLocation } from '@/lib/utils';
 import toast from 'react-hot-toast';
 import Link from 'next/link';
 import dynamic from 'next/dynamic';
@@ -494,7 +494,7 @@ export default function ClientDashboard() {
                         </div>
                         <div className="min-w-0 flex-1">
                           <p className="text-xs font-bold text-gray-900 truncate">
-                            {getVagueLocation(req.leads?.latitude, req.leads?.longitude) || 'Location Undisclosed'}
+                            {extractTown(req.leads?.address) || 'Location Undisclosed'}
                           </p>
                           <p className="text-[10px] text-amber-600 font-medium truncate uppercase tracking-wider">
                             Waiting for Parent Approval

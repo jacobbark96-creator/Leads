@@ -19,6 +19,8 @@ export default function AdminPartnersPage() {
     description: '',
     reward: '',
     photo_url: '',
+    additional_photos: [] as string[],
+    terms_and_conditions: '',
     link: '',
     active: true
   });
@@ -51,6 +53,8 @@ export default function AdminPartnersPage() {
         description: partner.description || '',
         reward: partner.reward || '',
         photo_url: partner.photo_url || '',
+        additional_photos: partner.additional_photos || [],
+        terms_and_conditions: partner.terms_and_conditions || '',
         link: partner.link || '',
         active: partner.active
       });
@@ -61,6 +65,8 @@ export default function AdminPartnersPage() {
         description: '',
         reward: '',
         photo_url: '',
+        additional_photos: [],
+        terms_and_conditions: '',
         link: '',
         active: true
       });
@@ -268,6 +274,28 @@ export default function AdminPartnersPage() {
                         onChange={(e) => setFormData({ ...formData, photo_url: e.target.value })}
                         className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
                         placeholder="https://..."
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Additional Photos (One URL per line)</label>
+                      <textarea
+                        rows={3}
+                        value={formData.additional_photos.join('\n')}
+                        onChange={(e) => setFormData({ ...formData, additional_photos: e.target.value.split('\n').filter(url => url.trim()) })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="https://image1.com&#10;https://image2.com"
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-bold text-gray-700 mb-1">Terms and Conditions</label>
+                      <textarea
+                        rows={4}
+                        value={formData.terms_and_conditions}
+                        onChange={(e) => setFormData({ ...formData, terms_and_conditions: e.target.value })}
+                        className="w-full px-4 py-2 border border-gray-300 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                        placeholder="Offer specific terms and conditions..."
                       />
                     </div>
                     

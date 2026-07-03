@@ -2,13 +2,15 @@
 
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { ExternalLink, Star } from 'lucide-react';
+import { ExternalLink, Star, X, Info, ShieldCheck, ChevronRight } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function OffersPage() {
   const [partners, setPartners] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [selectedPartner, setSelectedPartner] = useState<any>(null);
   const { profile } = useAuthStore();
 
   useEffect(() => {
@@ -32,7 +34,11 @@ export default function OffersPage() {
     }
   };
 
-  const handlePartnerClick = async (partner: any) => {
+  const handlePartnerClick = (partner: any) => {
+    setSelectedPartner(partner);
+  };
+
+  const handleClaimOffer = async (partner: any) => {
     if (!profile?.id) return;
     
     // Track click
@@ -70,7 +76,6 @@ export default function OffersPage() {
         </div>
       </div>
 
-      {/* Main Content Area */}
       <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -121,7 +126,7 @@ export default function OffersPage() {
                   <div className="absolute inset-0 bg-blue-600/0 group-hover:bg-blue-600/5 transition-colors duration-300" />
                   
                   <div className="absolute bottom-2.5 left-2.5 bg-white/90 backdrop-blur-md p-1.5 rounded-xl shadow-lg translate-y-12 group-hover:translate-y-0 transition-transform duration-300 border border-slate-100">
-                    <ExternalLink className="w-3.5 h-3.5 text-blue-600" />
+                    <Info className="w-3.5 h-3.5 text-blue-600" />
                   </div>
                 </div>
                 
@@ -138,8 +143,8 @@ export default function OffersPage() {
                   
                   <div className="pt-3 border-t border-slate-50 flex items-center justify-between">
                     <span className="text-[9px] font-black text-blue-600 uppercase tracking-widest flex items-center gap-1 group-hover:gap-2 transition-all">
-                      Claim Offer 
-                      <ExternalLink className="w-2.5 h-2.5" />
+                      View Details
+                      <ChevronRight className="w-2.5 h-2.5" />
                     </span>
                   </div>
                 </div>
@@ -148,6 +153,150 @@ export default function OffersPage() {
           </div>
         )}
       </div>
+
+      {/* Offer Detail Modal */}
+      <AnimatePresence>
+        {selectedPartner && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 sm:p-6">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setSelectedPartner(null)}
+              className="absolute inset-0 bg-slate-900/60 backdrop-blur-sm"
+            />
+            
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col border border-slate-200"
+            >
+              {/* Modal Close Button */}
+              <button 
+                onClick={() => setSelectedPartner(null)}
+                className="absolute top-6 right-6 z-10 p-2 bg-white/80 backdrop-blur-md rounded-full text-slate-400 hover:text-slate-900 transition-colors border border-slate-100"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="flex-1 overflow-y-auto custom-scrollbar">
+                {/* Hero Section with Logo and Banner */}
+                <div className="relative h-64 sm:h-80 bg-slate-100">
+                  {selectedPartner.photo_url ? (
+                    <img 
+                      src={selectedPartner.photo_url} 
+                      alt={selectedPartner.name}
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-50">
+                      <Star className="w-20 h-20 text-blue-100 fill-blue-50" />
+                    </div>
+                  )}
+                  
+                  {/* Reward Badge in Hero */}
+                  {selectedPartner.reward && (
+                    <div className="absolute bottom-6 left-8 bg-blue-600 text-white text-[12px] font-black px-4 py-2 rounded-full uppercase tracking-widest shadow-2xl shadow-blue-600/40 border border-blue-400/30">
+                      Reward: {selectedPartner.reward}
+                    </div>
+                  )}
+                </div>
+
+                <div className="px-8 py-10 sm:px-12">
+                  {/* Title and Logo Row */}
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
+                    <div className="flex items-center gap-5">
+                      <div className="w-16 h-16 rounded-2xl bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-center overflow-hidden p-2">
+                        {selectedPartner.photo_url ? (
+                          <img src={selectedPartner.photo_url} alt="" className="w-full h-full object-contain" />
+                        ) : (
+                          <span className="text-xl font-black text-blue-600">{selectedPartner.name.substring(0, 2)}</span>
+                        )}
+                      </div>
+                      <div>
+                        <h2 className="text-2xl font-black text-slate-900 uppercase tracking-tight leading-none mb-2">
+                          {selectedPartner.name}
+                        </h2>
+                        <div className="flex items-center gap-2">
+                          <span className="inline-flex px-2 py-0.5 rounded-md bg-blue-50 text-[10px] font-black text-blue-600 uppercase tracking-widest border border-blue-100">Verified Partner</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <button 
+                      onClick={() => handleClaimOffer(selectedPartner)}
+                      className="inline-flex items-center justify-center px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white text-xs font-black uppercase tracking-widest rounded-2xl transition-all shadow-xl shadow-blue-600/20 hover:shadow-blue-600/30 hover:-translate-y-0.5"
+                    >
+                      Claim Offer Now
+                      <ExternalLink className="w-4 h-4 ml-2" />
+                    </button>
+                  </div>
+
+                  {/* Main Content Grid */}
+                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                    <div className="lg:col-span-2 space-y-10">
+                      {/* Description */}
+                      <section>
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                          <Info className="w-3.5 h-3.5 text-blue-600" />
+                          About this Offer
+                        </h4>
+                        <p className="text-sm text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
+                          {selectedPartner.description}
+                        </p>
+                      </section>
+
+                      {/* Additional Photos Grid */}
+                      {selectedPartner.additional_photos && selectedPartner.additional_photos.length > 0 && (
+                        <section>
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Gallery</h4>
+                          <div className="grid grid-cols-2 gap-4">
+                            {selectedPartner.additional_photos.map((photo: string, idx: number) => (
+                              <div key={idx} className="aspect-video rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 group">
+                                <img 
+                                  src={photo} 
+                                  alt={`Gallery ${idx + 1}`} 
+                                  className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                                />
+                              </div>
+                            ))}
+                          </div>
+                        </section>
+                      )}
+                    </div>
+
+                    <div className="space-y-8">
+                      {/* Terms and Conditions Card */}
+                      {selectedPartner.terms_and_conditions && (
+                        <div className="bg-slate-50/50 rounded-3xl p-6 border border-slate-100">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                            <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                            Terms & Conditions
+                          </h4>
+                          <div className="text-[11px] text-slate-500 font-medium leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                            {selectedPartner.terms_and_conditions}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Trust Badge */}
+                      <div className="bg-blue-600/5 rounded-3xl p-6 border border-blue-100 flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
+                          <Star className="w-5 h-5 text-white fill-white" />
+                        </div>
+                        <p className="text-[10px] font-bold text-blue-900 leading-tight">
+                          This offer is exclusive to Openlead clients and has been pre-negotiated for your benefit.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       <style jsx global>{`
         .custom-scrollbar::-webkit-scrollbar {

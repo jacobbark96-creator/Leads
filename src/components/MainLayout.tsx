@@ -43,7 +43,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
 
   const getHomePath = () => {
     if (!profile) return '/';
-    if (profile.role === 'client') return '/my-openlead';
+    if (profile.role === 'client') return '/client-portal';
     return '/staff';
   };
 
@@ -69,7 +69,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         const clientItems = [
           { name: 'Dashboard', path: '/client-portal', icon: LayoutDashboard },
           { name: 'Marketplace', path: '/marketplace', icon: Database },
-          { name: 'My Openlead', path: '/my-openlead', icon: User },
+          { name: 'Offers', path: '/offers', icon: Star },
           { name: 'Openlead Max', path: '/openlead-max', icon: Sparkles },
         ];
         if (isPartnerPlus) {
@@ -261,7 +261,16 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                       </span>
                     )}
                   </div>
-                  <div className="pl-3 ml-3 border-l border-gray-200">
+                  <div className="pl-3 ml-3 border-l border-gray-200 flex items-center gap-1">
+                    {profile.role === 'client' && (
+                      <Link
+                        href="/my-openlead"
+                        className="p-1.5 text-gray-400 hover:text-blue-600 rounded-full hover:bg-blue-50 transition-colors"
+                        title="Settings"
+                      >
+                        <Settings className="w-4 h-4" />
+                      </Link>
+                    )}
                     <button
                       onClick={async (e) => {
                         e.preventDefault();
@@ -361,16 +370,28 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                         )}
                       </div>
                     </div>
-                    <button
-                      onClick={async (e) => {
-                        e.preventDefault();
-                        await signOut();
-                      }}
-                      className="flex items-center justify-center p-2 rounded-full text-red-600 hover:bg-red-50 focus:outline-none transition-colors"
-                    >
-                      <span className="sr-only">Sign out</span>
-                      <LogOut className="h-6 w-6 pointer-events-none" />
-                    </button>
+                    <div className="flex items-center gap-2">
+                      {profile.role === 'client' && (
+                        <Link
+                          href="/my-openlead"
+                          onClick={() => setMobileMenuOpen(false)}
+                          className="flex items-center justify-center p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+                        >
+                          <span className="sr-only">Settings</span>
+                          <Settings className="h-6 w-6" />
+                        </Link>
+                      )}
+                      <button
+                        onClick={async (e) => {
+                          e.preventDefault();
+                          await signOut();
+                        }}
+                        className="flex items-center justify-center p-2 rounded-full text-red-600 hover:bg-red-50 focus:outline-none transition-colors"
+                      >
+                        <span className="sr-only">Sign out</span>
+                        <LogOut className="h-6 w-6 pointer-events-none" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>

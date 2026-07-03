@@ -111,14 +111,9 @@ export default function OffersPage() {
                     </div>
                   )}
                   
-                  {/* Glassmorphism Badge */}
-                  <div className="absolute top-2.5 left-2.5 bg-white/80 backdrop-blur-md px-2 py-0.5 rounded-lg border border-white/50 shadow-sm">
-                    <span className="text-[8px] font-black text-blue-600 uppercase tracking-widest">Partner</span>
-                  </div>
-
-                  {/* Reward Pill - Larger and positioned at bottom right of image */}
+                  {/* Reward Pill - Positioned at top right of image */}
                   {partner.reward && (
-                    <div className="absolute bottom-2.5 right-2.5 bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-xl shadow-blue-600/40 border border-blue-400/30 animate-in fade-in slide-in-from-bottom-2 duration-500">
+                    <div className="absolute top-2.5 right-2.5 bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-xl shadow-blue-600/40 border border-blue-400/30 animate-in fade-in slide-in-from-top-2 duration-500">
                       Reward: {partner.reward}
                     </div>
                   )}
@@ -197,7 +192,7 @@ export default function OffersPage() {
                   
                   {/* Reward Badge in Hero */}
                   {selectedPartner.reward && (
-                    <div className="absolute bottom-4 left-6 bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-xl shadow-blue-600/40 border border-blue-400/30">
+                    <div className="absolute top-4 right-6 bg-blue-600 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-xl shadow-blue-600/40 border border-blue-400/30">
                       Reward: {selectedPartner.reward}
                     </div>
                   )}

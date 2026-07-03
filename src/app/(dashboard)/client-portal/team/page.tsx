@@ -426,7 +426,7 @@ export default function TeamManagement() {
                       <div>
                         <div className="flex items-center gap-2">
                           <p className="text-sm font-bold text-gray-900">
-                            {req.leads?.location?.split(',')[0] || 'Location Undisclosed'}
+                            {extractTown(req.leads?.location)}
                           </p>
                           <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-0.5 rounded font-medium">
                             {req.client?.user?.name}
@@ -664,7 +664,7 @@ export default function TeamManagement() {
                               </div>
                               <div>
                                 <p className="text-sm font-bold text-gray-900">
-                                  {req.leads?.location?.split(',')[0] || 'Location Undisclosed'}
+                                  {extractTown(req.leads?.location)}
                                 </p>
                                 <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
                                   {req.purchase_type === 'exclusive' ? 'Exclusive' : 'Share'} • £{req.price_paid}

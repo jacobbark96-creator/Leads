@@ -18,6 +18,42 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const [clientCompanyName, setClientCompanyName] = useState<string | null>(null);
   const [isPartnerPlus, setIsPartnerPlus] = useState<boolean>(false);
   const [showFlexModal, setShowFlexModal] = useState(false);
+  const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
+
+  useEffect(() => {
+    if (profile?.role === 'client' && profile.allowed_child_accounts) {
+      const fetchPendingCount = async () => {
+        const { count } = await supabase
+          .from('lead_purchases')
+          .select('*', { count: 'exact', head: true })
+          .eq('status', 'permission_pending');
+        
+        setPendingRequestsCount(count || 0);
+      };
+
+      fetchPendingCount();
+
+      // Subscribe to changes in lead_purchases
+      const channel = supabase
+        .channel('pending-requests-count')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'lead_purchases'
+          },
+          () => {
+            fetchPendingCount();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [profile]);
 
   useEffect(() => {
     if (profile?.role === 'client') {
@@ -218,11 +254,17 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                             isActive
                               ? 'bg-blue-50 text-blue-700 font-semibold'
                               : 'text-gray-600 hover:bg-gray-100 hover:text-gray-900 font-medium'
-                          } inline-flex items-center px-4 py-2.5 rounded-full text-sm transition-all duration-200 ease-in-out`}
+                          } inline-flex items-center px-4 py-2.5 rounded-full text-sm transition-all duration-200 ease-in-out relative`}
                         >
                           {item.name === 'Partner+' ? (
                             <>Partner<span className="text-[10px] -mt-2.5 ml-[1px]">＋</span></>
                           ) : item.name}
+                          
+                          {item.name === 'Team' && pendingRequestsCount > 0 && (
+                            <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-white animate-in zoom-in duration-300">
+                              {pendingRequestsCount}
+                            </span>
+                          )}
                         </Link>
                     );
                   })}
@@ -352,11 +394,17 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                           isActive
                             ? 'bg-blue-50 text-blue-700 font-semibold'
                             : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium'
-                        } flex items-center px-4 py-3 rounded-xl text-base transition-colors mb-1`}
+                        } flex items-center px-4 py-3 rounded-xl text-base transition-colors mb-1 relative`}
                       >
                         {item.name === 'Partner+' ? (
                           <>Partner<span className="text-[10px] -mt-2.5 ml-[1px]">＋</span></>
                         ) : item.name}
+
+                        {item.name === 'Team' && pendingRequestsCount > 0 && (
+                          <span className="absolute right-4 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white shadow-sm ring-2 ring-white animate-in zoom-in duration-300">
+                            {pendingRequestsCount}
+                          </span>
+                        )}
                       </Link>
                     );
                   })}

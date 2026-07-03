@@ -7,6 +7,7 @@ import { Plus, Users, Mail, User, Shield, X, Trash2, Key, Clock, ExternalLink, C
 import toast from 'react-hot-toast';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { MarketplaceLeadModal } from '@/components/MarketplaceLeadModal';
+import { OrderSummaryModal } from '@/components/OrderSummaryModal';
 import { extractTown, getVagueLocation } from '@/lib/utils';
 import { Lead } from '@/types';
 
@@ -28,6 +29,15 @@ export default function TeamManagement() {
   const [isRejecting, setIsRejecting] = useState(false);
   const [selectedLeadForPreview, setSelectedLeadForPreview] = useState<Lead | null>(null);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
+  
+  // Checkout states for parent approval
+  const [selectedLeadForCheckout, setSelectedLeadForCheckout] = useState<Lead | null>(null);
+  const [isOrderModalOpen, setIsOrderModalOpen] = useState(false);
+  const [pendingPurchaseId, setPendingPurchaseId] = useState<string | null>(null);
+  const [parentCreditBalance, setParentCreditBalance] = useState<number>(0);
+  const [parentClientId, setParentClientId] = useState<string | null>(null);
+  const [isProcessingApproval, setIsProcessingApproval] = useState(false);
+
   const { profile, refreshProfile } = useAuthStore();
   const [formData, setFormData] = useState({
     name: '',
@@ -51,6 +61,23 @@ export default function TeamManagement() {
       toast.error('Failed to fetch team: ' + error.message);
     } finally {
       setLoading(false);
+    }
+  };
+
+  const fetchParentCredit = async () => {
+    if (!profile) return;
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('id, credit_balance')
+        .eq('user_id', profile.id)
+        .single();
+
+      if (error) throw error;
+      setParentCreditBalance(data?.credit_balance || 0);
+      setParentClientId(data?.id || null);
+    } catch (error) {
+      console.error('Failed to fetch parent credit:', error);
     }
   };
 
@@ -83,6 +110,7 @@ export default function TeamManagement() {
     if (!profile) return;
 
     fetchTeam();
+    fetchParentCredit();
     fetchAllPendingRequests();
 
     // Set up real-time subscriptions
@@ -224,19 +252,55 @@ export default function TeamManagement() {
     }
   };
 
-  const handleApproveRequest = async (request: any) => {
+  const handleApproveRequest = (request: any) => {
+    setPendingPurchaseId(request.id);
+    setSelectedLeadForCheckout(request.leads);
+    setIsOrderModalOpen(true);
+  };
+
+  const handleProceedToPayApproval = async (creditToUse: number, purchaseType: 'exclusive' | 'share', discountedPrice: number, useTradeAccount: boolean) => {
+    if (!profile || !selectedLeadForCheckout || !pendingPurchaseId) return;
+
     try {
-      const { data, error } = await supabase.rpc('approve_purchase_request', {
-        p_purchase_id: request.id
+      setIsProcessingApproval(true);
+      
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          checkoutType: 'lead',
+          userId: profile.id,
+          email: profile.email || 'user@example.com',
+          leadId: selectedLeadForCheckout.id,
+          clientId: parentClientId || '', 
+          leadLocation: selectedLeadForCheckout.location,
+          leadCategory: selectedLeadForCheckout.category_id,
+          leadPrice: discountedPrice.toString(),
+          creditToUse: creditToUse.toString(),
+          purchaseType: purchaseType,
+          pendingPurchaseId: pendingPurchaseId,
+          useTradeAccount: useTradeAccount
+        }),
       });
 
-      if (error) throw error;
-      
-      toast.success('Purchase approved!');
-      fetchAllPendingRequests();
-      refreshProfile();
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Checkout failed');
+
+      if (data.skipStripe) {
+        toast.success('Lead approved and purchased successfully!');
+        setIsOrderModalOpen(false);
+        setPendingPurchaseId(null);
+        setSelectedLeadForCheckout(null);
+        fetchAllPendingRequests();
+        fetchParentCredit();
+        refreshProfile();
+      } else if (data.url) {
+        window.location.href = data.url;
+      }
     } catch (error: any) {
-      toast.error('Failed to approve: ' + error.message);
+      toast.error('Failed to process approval: ' + error.message);
+    } finally {
+      setIsProcessingApproval(false);
     }
   };
 
@@ -439,7 +503,7 @@ export default function TeamManagement() {
                     </div>
                     <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                       <button
-                        onClick={() => handleRejectRequest(req.id)}
+                        onClick={() => handleRejectRequest(req)}
                         className="px-4 py-2 bg-white border border-red-100 text-red-600 text-xs font-bold rounded-xl hover:bg-red-50 transition-all shadow-sm"
                       >
                         Reject
@@ -673,7 +737,7 @@ export default function TeamManagement() {
                             </div>
                             <div className="flex items-center gap-2" onClick={(e) => e.stopPropagation()}>
                               <button
-                                onClick={() => handleRejectRequest(req.id)}
+                                onClick={() => handleRejectRequest(req)}
                                 className="px-4 py-2 bg-white border border-red-100 text-red-600 text-xs font-bold rounded-xl hover:bg-red-50 transition-all shadow-sm"
                               >
                                 Reject
@@ -771,6 +835,21 @@ export default function TeamManagement() {
             }}
             lead={selectedLeadForPreview}
             onPurchase={() => {}} // Not used in this context but required by prop
+          />
+        )}
+
+        {/* Order Summary Modal for Approval */}
+        {selectedLeadForCheckout && (
+          <OrderSummaryModal
+            isOpen={isOrderModalOpen}
+            onClose={() => {
+              setIsOrderModalOpen(false);
+              setSelectedLeadForCheckout(null);
+              setPendingPurchaseId(null);
+            }}
+            lead={selectedLeadForCheckout}
+            creditBalance={parentCreditBalance}
+            onProceedToPay={handleProceedToPayApproval}
           />
         )}
 

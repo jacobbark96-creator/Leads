@@ -178,22 +178,42 @@ export async function POST(req: Request) {
           const usedCredit = parseFloat(session.metadata?.usedCredit || '0');
           const purchaseType = session.metadata?.purchaseType || 'exclusive'; // fallback for old sessions
           const pricePaid = (session.amount_total || 0) / 100;
+          const pendingPurchaseId = session.metadata?.pendingPurchaseId;
 
           if (leadId && clientId) {
-            // Use the secure RPC function to process the purchase transaction
-            const { error: purchaseError } = await supabaseAdmin.rpc('purchase_lead', {
-              p_lead_id: leadId,
-              p_client_id: clientId,
-              p_purchase_type: purchaseType,
-              p_price_paid: pricePaid,
-              p_credit_used: usedCredit,
-              p_use_trade_account: false
-            });
-              
-            if (purchaseError) {
-              console.error('Error assigning purchased lead via RPC:', purchaseError);
+            if (pendingPurchaseId) {
+              // Handle finalizing a child's purchase request
+              console.log(`Finalizing approved purchase ${pendingPurchaseId} for client ${clientId}`);
+              const { error: purchaseError } = await supabaseAdmin.rpc('finalize_approved_purchase', {
+                p_purchase_id: pendingPurchaseId,
+                p_purchase_type: purchaseType,
+                p_price_paid: pricePaid,
+                p_credit_used: usedCredit,
+                p_use_trade_account: false,
+                p_parent_user_id: userId // The parent who paid
+              });
+
+              if (purchaseError) {
+                console.error('Error finalizing approved purchase via RPC:', purchaseError);
+              } else {
+                console.log(`Successfully finalized purchase ${pendingPurchaseId} for lead ${leadId}`);
+              }
             } else {
-              console.log(`Successfully assigned lead ${leadId} to client ${clientId} (${purchaseType})`);
+              // Standard direct purchase logic
+              const { error: purchaseError } = await supabaseAdmin.rpc('purchase_lead', {
+                p_lead_id: leadId,
+                p_client_id: clientId,
+                p_purchase_type: purchaseType,
+                p_price_paid: pricePaid,
+                p_credit_used: usedCredit,
+                p_use_trade_account: false
+              });
+                
+              if (purchaseError) {
+                console.error('Error assigning purchased lead via RPC:', purchaseError);
+              } else {
+                console.log(`Successfully assigned lead ${leadId} to client ${clientId} (${purchaseType})`);
+              }
             }
           } else {
             console.error('Missing leadId or clientId in session metadata for payment');

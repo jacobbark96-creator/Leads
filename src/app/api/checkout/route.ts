@@ -74,7 +74,20 @@ export async function POST(req: Request) {
     } 
     
     else if (checkoutType === 'lead') {
-      const { userId, email, leadId, clientId, leadLocation, leadCategory, leadPrice, creditToUse, purchaseType } = body;
+      const { 
+        userId, 
+        email, 
+        leadId, 
+        clientId, 
+        leadLocation, 
+        leadCategory, 
+        leadPrice, 
+        creditToUse, 
+        purchaseType,
+        pendingPurchaseId,
+        useTradeAccount 
+      } = body;
+      
       if (!userId || !email || !leadId || !clientId || !purchaseType) {
         return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
       }
@@ -87,32 +100,49 @@ export async function POST(req: Request) {
       const remainingPrice = Math.max(0, fullPrice - appliedCredit);
       const isExclusive = purchaseType === 'exclusive';
 
-      // If price is 0 (fully covered by credit), bypass Stripe
-      if (remainingPrice < 0.5) { // Stripe minimum is usually 50p, so anything less is "free"
+      // If price is 0 (fully covered by credit or using Flex), bypass Stripe
+      if (remainingPrice < 0.5 || useTradeAccount) { 
         const creditUsed = Math.round((fullPrice - remainingPrice) * 100) / 100;
-        console.log('Bypassing Stripe, purchasing with credit:', { leadId, clientId, remainingPrice, creditUsed });
+        console.log('Bypassing Stripe:', { leadId, clientId, remainingPrice, creditUsed, pendingPurchaseId, useTradeAccount });
         
         try {
           const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
-          const { data: purchaseResult, error: purchaseError } = await supabaseAdmin.rpc('purchase_lead', {
-            p_lead_id: leadId,
-            p_client_id: clientId,
-            p_purchase_type: purchaseType,
-            p_price_paid: Math.round(remainingPrice * 100) / 100,
-            p_credit_used: creditUsed,
-            p_use_trade_account: false
-          });
+          
+          let result;
+          if (pendingPurchaseId) {
+            // If finalizing an existing request
+            const { data, error } = await supabaseAdmin.rpc('finalize_approved_purchase', {
+              p_purchase_id: pendingPurchaseId,
+              p_purchase_type: purchaseType,
+              p_price_paid: useTradeAccount ? fullPrice : Math.round(remainingPrice * 100) / 100,
+              p_credit_used: useTradeAccount ? 0 : creditUsed,
+              p_use_trade_account: useTradeAccount,
+              p_parent_user_id: userId // The person paying (the parent)
+            });
+            result = { data, error };
+          } else {
+            // Standard direct purchase
+            const { data, error } = await supabaseAdmin.rpc('purchase_lead', {
+              p_lead_id: leadId,
+              p_client_id: clientId,
+              p_purchase_type: purchaseType,
+              p_price_paid: useTradeAccount ? fullPrice : Math.round(remainingPrice * 100) / 100,
+              p_credit_used: useTradeAccount ? 0 : creditUsed,
+              p_use_trade_account: useTradeAccount
+            });
+            result = { data, error };
+          }
 
-          if (purchaseError) {
-            console.error('Purchase RPC Error:', purchaseError);
+          if (result.error) {
+            console.error('Purchase RPC Error:', result.error);
             return NextResponse.json({ 
-              error: purchaseError.message || 'Database error during purchase',
-              details: purchaseError,
-              context: 'purchase_lead_rpc'
+              error: result.error.message || 'Database error during purchase',
+              details: result.error,
+              context: pendingPurchaseId ? 'finalize_approved_purchase_rpc' : 'purchase_lead_rpc'
             }, { status: 500 });
           }
           
-          console.log('Purchase successful:', purchaseResult);
+          console.log('Purchase successful:', result.data);
           return NextResponse.json({ skipStripe: true, url: `${appUrl}/my-openlead?purchase_success=true` });
         } catch (rpcErr: any) {
           console.error('RPC Exception:', rpcErr);
@@ -134,6 +164,9 @@ export async function POST(req: Request) {
       formData.append('metadata[clientId]', clientId);
       formData.append('metadata[usedCredit]', appliedCredit.toString());
       formData.append('metadata[purchaseType]', purchaseType);
+      if (pendingPurchaseId) {
+        formData.append('metadata[pendingPurchaseId]', pendingPurchaseId);
+      }
       formData.append('success_url', `${appUrl}/my-openlead?purchase_success=true&session_id={CHECKOUT_SESSION_ID}`);
       formData.append('cancel_url', `${appUrl}/marketplace?purchase_canceled=true`);
 

@@ -363,17 +363,26 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                   <button
                     onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice, useTradeAccount)}
                     className={`w-full flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-                      useTradeAccount 
-                        ? 'bg-slate-900 hover:bg-slate-800 focus:ring-slate-500' 
-                        : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                      profile?.parent_id
+                        ? 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
+                        : useTradeAccount 
+                          ? 'bg-slate-900 hover:bg-slate-800 focus:ring-slate-500' 
+                          : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
                     }`}
                   >
-                    {useTradeAccount 
-                      ? 'Add to Flex Invoice' 
-                      : (totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay')}
+                    {profile?.parent_id 
+                      ? 'Request Purchase'
+                      : useTradeAccount 
+                        ? 'Add to Flex Invoice' 
+                        : (totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay')}
                   </button>
                   <p className="text-[10px] text-center text-gray-500 mt-2.5 flex items-center justify-center gap-1">
-                    {useTradeAccount ? (
+                    {profile?.parent_id ? (
+                      <>
+                        <InfoIcon className="w-3 h-3" />
+                        Your request will be sent to your manager for approval
+                      </>
+                    ) : useTradeAccount ? (
                       <>
                         <InfoIcon className="w-3 h-3" />
                         This will be added to your weekly invoice

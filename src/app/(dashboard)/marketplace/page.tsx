@@ -301,6 +301,27 @@ export default function MarketplacePage() {
 
       const targetPrice = discountedPrice !== undefined ? discountedPrice : (purchaseType === 'exclusive' ? (lead.exclusive_price || 135) : (lead.share_price || 45));
 
+      // Handle child account request
+      if (profile.parent_id) {
+        setLoading(true);
+        const { error: requestError } = await supabase
+          .from('lead_purchases')
+          .insert([{
+            lead_id: leadId,
+            client_id: clientId,
+            purchase_type: purchaseType,
+            price_paid: targetPrice,
+            status: 'permission_pending'
+          }]);
+
+        if (requestError) throw requestError;
+
+        toast.success('Purchase request sent to your manager!');
+        setLeadToPurchase(null);
+        setLoading(false);
+        return;
+      }
+
       if (useTradeAccount) {
         setLoading(true);
         const { data, error: purchaseError } = await supabase.rpc('purchase_lead', {

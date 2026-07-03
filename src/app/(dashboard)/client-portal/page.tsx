@@ -42,7 +42,8 @@ export default function ClientDashboard() {
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showInvoicesModal, setShowInvoicesModal] = useState(false);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
-  const { profile } = useAuthStore();
+  const [requestedLeads, setRequestedLeads] = useState<any[]>([]);
+  const { profile, refreshProfile } = useAuthStore();
   const PAGE_SIZE = 24;
 
   const [activeTab, setActiveTab] = useState<'new' | 'sat' | 'won' | 'archive'>('new');
@@ -103,6 +104,31 @@ export default function ClientDashboard() {
         } catch {
           // keep pending
         }
+      }
+
+      // Fetch requested leads if parent
+      if (profile.allowed_child_accounts) {
+        const { data: reqLeads, error: reqError } = await supabase
+          .from('lead_purchases')
+          .select(`
+            *,
+            leads:lead_id (*),
+            clients:client_id (contact_name, company_name)
+          `)
+          .eq('status', 'permission_pending')
+          .in('client_id', (
+            await supabase
+              .from('clients')
+              .select('id')
+              .in('user_id', (
+                await supabase
+                  .from('users')
+                  .select('id')
+                  .eq('parent_id', profile.id)
+              ).data?.map(u => u.id) || [])
+          ).data?.map(c => c.id) || []);
+
+        if (!reqError) setRequestedLeads(reqLeads || []);
       }
 
       if (isInitial) {
@@ -239,6 +265,38 @@ export default function ClientDashboard() {
   if (loading) {
     return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
   }
+
+  const handleRejectRequest = async (purchaseId: string) => {
+    if (!window.confirm('Are you sure you want to reject this purchase request?')) return;
+    try {
+      const { error } = await supabase
+        .from('lead_purchases')
+        .delete()
+        .eq('id', purchaseId);
+      
+      if (error) throw error;
+      toast.success('Request rejected');
+      fetchDashboardData(0, true);
+    } catch (error: any) {
+      toast.error('Failed to reject: ' + error.message);
+    }
+  };
+
+  const handleApproveRequest = async (request: any) => {
+    try {
+      const { data, error } = await supabase.rpc('approve_purchase_request', {
+        p_purchase_id: request.id
+      });
+
+      if (error) throw error;
+      
+      toast.success('Purchase approved!');
+      fetchDashboardData(0, true);
+      refreshProfile();
+    } catch (error: any) {
+      toast.error('Failed to approve: ' + error.message);
+    }
+  };
 
   const getWelcomeBanner = () => (
     <div className="relative bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 rounded-xl overflow-hidden h-full shadow-lg shadow-slate-900/10">
@@ -413,6 +471,56 @@ export default function ClientDashboard() {
         {/* RIGHT: CATEGORIES */}
         <div className="lg:col-span-2 flex flex-col gap-3 lg:gap-4 min-h-0 overflow-hidden">
           
+          {/* Requested Leads (Parent Only) */}
+          {profile?.allowed_child_accounts && requestedLeads.length > 0 && (
+            <div className="bg-indigo-50/50 rounded-xl shadow-lg shadow-indigo-100/50 border border-indigo-100 flex flex-col overflow-hidden animate-in slide-in-from-right duration-500">
+              <div className="flex items-center justify-between px-4 py-3 border-b border-indigo-100 bg-white/50">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 rounded-full bg-indigo-500 animate-pulse" />
+                  <span className="text-sm font-bold text-indigo-900">Purchase Requests</span>
+                </div>
+                <span className="text-xs font-black text-indigo-600 bg-indigo-100 px-2 py-0.5 rounded-full">
+                  {requestedLeads.length}
+                </span>
+              </div>
+              <div className="flex-1 overflow-y-auto max-h-[220px] divide-y divide-indigo-50">
+                {requestedLeads.map((req) => (
+                  <div key={req.id} className="px-4 py-3 bg-white/30 hover:bg-white/60 transition-colors flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-3 min-w-0">
+                      <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center text-indigo-600 shrink-0 font-bold border border-indigo-200">
+                        {req.clients?.contact_name?.charAt(0).toUpperCase()}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-xs font-bold text-gray-900 truncate">
+                          {req.leads?.name || `Lead #${req.lead_id.split('-')[0]}`}
+                        </p>
+                        <p className="text-[10px] text-indigo-600 font-medium truncate">
+                          Requested by {req.clients?.contact_name}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      <button 
+                        onClick={() => handleRejectRequest(req.id)}
+                        className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
+                        title="Reject"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <button 
+                        onClick={() => handleApproveRequest(req)}
+                        className="flex items-center gap-1 px-3 py-1.5 bg-indigo-600 text-white text-[10px] font-bold rounded-lg hover:bg-indigo-700 shadow-sm shadow-indigo-200 transition-all"
+                      >
+                        <CheckSquare className="w-3 h-3" />
+                        Approve
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
           {/* Purchased Leads */}
           <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden">
             <button 

@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard, Zap } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard, Zap, Users } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
 import { AdminNotifications } from './AdminNotifications';
@@ -68,10 +68,15 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
       case 'client':
         const clientItems = [
           { name: 'Dashboard', path: '/client-portal', icon: LayoutDashboard },
+        ];
+        if (profile.allowed_child_accounts) {
+          clientItems.push({ name: 'Team Management', path: '/client-portal/team', icon: Users });
+        }
+        clientItems.push(
           { name: 'Marketplace', path: '/marketplace', icon: Database },
           { name: 'Offers', path: '/offers', icon: Star },
           { name: 'Openlead Max', path: '/openlead-max', icon: Sparkles },
-        ];
+        );
         if (isPartnerPlus) {
           clientItems.push({
             name: 'Partner+', 

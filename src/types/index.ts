@@ -24,6 +24,8 @@ export interface UserProfile {
   current_trade_usage?: number;
   trade_limit_setting?: number;
   flex_terms_accepted_at?: string | null;
+  allowed_child_accounts?: boolean;
+  parent_id?: string | null;
   created_at: string;
 }
 

@@ -4,9 +4,9 @@ const resendApiKey = process.env.RESEND_API_KEY;
 export const defaultFromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@openlead.co.uk';
 
 const sendResendEmail = async (payload: any) => {
-  if (!resendApiKey) {
-    console.warn('Resend API key not configured. Skipping email.');
-    return { success: false, error: 'Resend API key missing' };
+  if (!resendApiKey || resendApiKey === 'your_resend_api_key') {
+    console.error('❌ Resend API key not configured or still using placeholder. Please update RESEND_API_KEY in your .env file.');
+    return { success: false, error: 'Resend API key missing or invalid' };
   }
   const response = await fetch('https://api.resend.com/emails', {
     method: 'POST',
@@ -187,6 +187,60 @@ export const sendAdvisorNotificationEmail = async (
     });
   } catch (err: any) {
     console.error('Failed to send advisor notification email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Sends an invitation email to a new child account.
+ */
+export const sendTeamInvitationEmail = async (
+  email: string, 
+  name: string, 
+  parentName: string,
+  password?: string
+) => {
+  try {
+    return await sendResendEmail({
+      from: `Openlead <${defaultFromEmail}>`,
+      to: [email],
+      subject: `You've been invited to Openlead by ${parentName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb;">Hello ${name}! 👋</h2>
+          <p style="color: #4b5563; line-height: 1.6;">
+            <strong>${parentName}</strong> has invited you to join their team on <strong>Openlead</strong>.
+          </p>
+          
+          <p style="color: #4b5563; line-height: 1.6;">
+            Openlead is a premium marketplace for high-intent leads. As a team member, you'll be able to:
+          </p>
+          <ul style="color: #4b5563; line-height: 1.6;">
+            <li>Browse the marketplace for exclusive leads</li>
+            <li>Request lead purchases for your manager's approval</li>
+            <li>Manage your assigned leads in your personal dashboard</li>
+          </ul>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <p style="margin: 0; color: #334155;"><strong>Your Account:</strong> ${email}</p>
+            ${password ? `<p style="margin: 5px 0 0; color: #334155;"><strong>Temporary Password:</strong> <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${password}</code></p>` : ''}
+            <p style="margin: 10px 0 0; color: #64748b; font-size: 12px;">We recommend changing your password after your first login.</p>
+          </div>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://openlead.co.uk'}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
+              Log in to your Dashboard
+            </a>
+          </div>
+
+          <p style="margin-top: 30px; color: #94a3b8; font-size: 12px; text-align: center;">
+            If you have any questions, feel free to reach out to our support team.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send team invitation email:', err);
     return { success: false, error: err.message };
   }
 };

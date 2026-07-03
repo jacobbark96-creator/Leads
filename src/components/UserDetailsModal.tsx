@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserProfile, Division } from '../types';
-import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin, Briefcase, CreditCard, Zap } from 'lucide-react';
+import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin, Briefcase, CreditCard, Zap, Users } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 
@@ -61,7 +61,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     service_areas: [] as any[],
     services_offered: '',
     internal_notes: '',
-    is_partner_plus: false
+    is_partner_plus: false,
+    allowed_child_accounts: user.allowed_child_accounts || false
   });
 
   const [newDirectPassword, setNewDirectPassword] = useState('');
@@ -328,7 +329,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           trade_account_enabled: formData.trade_account_enabled,
           approved_trade_amount: formData.approved_trade_amount,
           current_trade_usage: formData.current_trade_usage,
-          trade_limit_setting: formData.trade_limit_setting
+          trade_limit_setting: formData.trade_limit_setting,
+          allowed_child_accounts: formData.allowed_child_accounts
         })
         .eq('id', user.id);
 
@@ -698,6 +700,25 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                         </div>
                       </div>
                     )}
+
+                    <div className="mt-6 flex items-center justify-between p-4 bg-indigo-50 rounded-xl border border-indigo-100">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-indigo-600 shadow-sm">
+                          <Users className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <h4 className="text-sm font-bold text-gray-900">Child Accounts</h4>
+                          <p className="text-xs text-gray-500">Allow this user to manage a team</p>
+                        </div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, allowed_child_accounts: !formData.allowed_child_accounts})}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${formData.allowed_child_accounts ? 'bg-indigo-600' : 'bg-gray-200'}`}
+                      >
+                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.allowed_child_accounts ? 'translate-x-5' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
                   </div>
                 )}
 

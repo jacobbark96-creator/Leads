@@ -93,7 +93,7 @@ export default function OffersPage() {
                 onClick={() => handlePartnerClick(partner)}
                 className="group bg-white rounded-2xl border border-slate-200 overflow-hidden hover:shadow-2xl hover:shadow-blue-900/5 hover:-translate-y-1 transition-all duration-300 cursor-pointer flex flex-col"
               >
-                <div className="h-44 bg-slate-100 relative overflow-hidden border-b border-slate-100">
+                <div className="h-56 bg-slate-100 relative overflow-hidden border-b border-slate-100">
                   {partner.photo_url ? (
                     <img 
                       src={partner.photo_url} 
@@ -125,7 +125,7 @@ export default function OffersPage() {
                   </div>
                 </div>
                 
-                <div className="p-4 flex-1 flex flex-col bg-white">
+                <div className="p-6 flex-1 flex flex-col bg-white">
                   <div className="flex items-start justify-between mb-1.5">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-tight group-hover:text-blue-600 transition-colors">
                       {partner.name}

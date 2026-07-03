@@ -246,6 +246,57 @@ export const sendTeamInvitationEmail = async (
 };
 
 /**
+ * Sends an email to a child account when their lead purchase request is rejected.
+ */
+export const sendLeadRejectionEmail = async (
+  email: string,
+  name: string,
+  leadLocation: string,
+  reason: string
+) => {
+  try {
+    return await sendResendEmail({
+      from: `Openlead <${defaultFromEmail}>`,
+      to: [email],
+      subject: `Lead Purchase Request Update`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #ef4444;">Purchase Request Update 🛑</h2>
+          <p style="color: #4b5563; line-height: 1.6;">
+            Hello ${name},
+          </p>
+          <p style="color: #4b5563; line-height: 1.6;">
+            Your request to purchase the lead in <strong>${leadLocation}</strong> has been reviewed by your manager and has been <strong>rejected</strong>.
+          </p>
+          
+          <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <p style="margin: 0; color: #991b1b; font-weight: bold;">Reason for Rejection:</p>
+            <p style="margin: 10px 0 0; color: #b91c1c; line-height: 1.6;">${reason}</p>
+          </div>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            This lead has been returned to the marketplace and is no longer in your pending requests.
+          </p>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://openlead.co.uk'}/marketplace" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+              Back to Marketplace
+            </a>
+          </div>
+
+          <p style="margin-top: 30px; color: #94a3b8; font-size: 12px; text-align: center;">
+            © ${new Date().getFullYear()} Openlead. All rights reserved.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send lead rejection email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
  * Send Receipt Email (To be called from Stripe Webhook later)
  */
 export const sendReceiptEmail = async (email: string, leadId: string, amount: number) => {

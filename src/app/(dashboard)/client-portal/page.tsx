@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { Calendar as CalendarIcon, Filter, Search, Phone, Mail, Building, MapPin, User, ChevronDown, CheckSquare, ShoppingCart, List, TrendingUp, Gift, Users, X, Zap, Clock } from 'lucide-react';
+import { Calendar as CalendarIcon, Filter, Search, Phone, Mail, Building, MapPin, User, ChevronDown, CheckSquare, ShoppingCart, List, TrendingUp, Gift, Users, X, Zap, Clock, AlertCircle } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 import { Lead, Category } from '../../../types';
@@ -49,6 +49,10 @@ export default function ClientDashboard() {
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showInvoicesModal, setShowInvoicesModal] = useState(false);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
+  const [showRejectionModal, setShowRejectionModal] = useState(false);
+  const [rejectionReason, setRejectionReason] = useState('');
+  const [requestToReject, setRequestToReject] = useState<any>(null);
+  const [isRejecting, setIsRejecting] = useState(false);
   const [requestedLeads, setRequestedLeads] = useState<any[]>([]);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
   const { profile, refreshProfile } = useAuthStore();
@@ -302,19 +306,43 @@ export default function ClientDashboard() {
     return <div className="flex justify-center py-8"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div></div>;
   }
 
-  const handleRejectRequest = async (purchaseId: string) => {
-    if (!window.confirm('Are you sure you want to reject this purchase request?')) return;
+  const handleRejectRequest = (request: any) => {
+    setRequestToReject(request);
+    setShowRejectionModal(true);
+  };
+
+  const submitRejection = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!requestToReject || !rejectionReason) return;
+
+    setIsRejecting(true);
     try {
-      const { error } = await supabase
-        .from('lead_purchases')
-        .delete()
-        .eq('id', purchaseId);
-      
-      if (error) throw error;
-      toast.success('Request rejected');
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch('/api/team/reject-purchase', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.session?.access_token}`
+        },
+        body: JSON.stringify({
+          purchaseId: requestToReject.id,
+          reason: rejectionReason,
+          parentId: profile?.id
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+
+      toast.success('Request rejected and email sent');
+      setShowRejectionModal(false);
+      setRejectionReason('');
+      setRequestToReject(null);
       fetchDashboardData(0, true);
     } catch (error: any) {
       toast.error('Failed to reject: ' + error.message);
+    } finally {
+      setIsRejecting(false);
     }
   };
 
@@ -596,7 +624,7 @@ export default function ClientDashboard() {
                     </div>
                     <div className="flex items-center gap-1.5 shrink-0">
                       <button 
-                        onClick={() => handleRejectRequest(req.id)}
+                        onClick={() => handleRejectRequest(req)}
                         className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-all"
                         title="Reject"
                       >
@@ -862,6 +890,72 @@ export default function ClientDashboard() {
         leads={leads}
       />
       <ClientFeedbackButton />
+
+      {/* Rejection Reason Modal */}
+      {showRejectionModal && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-in fade-in duration-200">
+          <div className="bg-white rounded-[24px] shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-6 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-full bg-red-600 flex items-center justify-center text-white shadow-lg shadow-red-500/20">
+                  <X className="w-5 h-5" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-bold text-gray-900">Reject Request</h2>
+                  <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Provide a reason</p>
+                </div>
+              </div>
+              <button
+                onClick={() => {
+                  setShowRejectionModal(false);
+                  setRequestToReject(null);
+                  setRejectionReason('');
+                }}
+                className="p-2 text-gray-400 hover:text-gray-600 rounded-full hover:bg-white transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={submitRejection} className="p-6 space-y-4">
+              <div className="bg-amber-50 border border-amber-100 p-4 rounded-xl flex gap-3">
+                <AlertCircle className="w-5 h-5 text-amber-600 shrink-0" />
+                <p className="text-[10px] text-amber-800 leading-relaxed">
+                  This will reject the purchase request and send an email to the team member explaining why.
+                </p>
+              </div>
+              
+              <div>
+                <label className="block text-xs font-bold text-gray-500 uppercase tracking-wider mb-1 px-1">Reason for Rejection</label>
+                <textarea
+                  required
+                  value={rejectionReason}
+                  onChange={(e) => setRejectionReason(e.target.value)}
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:ring-2 focus:ring-red-500/20 focus:border-red-500 transition-all min-h-[100px] resize-none"
+                  placeholder="e.g. This lead is outside our current target area or we have already purchased a similar lead recently."
+                />
+              </div>
+
+              <div className="pt-2">
+                <button
+                  type="submit"
+                  disabled={isRejecting || !rejectionReason.trim()}
+                  className="w-full py-4 bg-red-600 text-white rounded-xl font-bold hover:bg-red-700 transition-all shadow-lg shadow-red-500/20 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                >
+                  {isRejecting ? (
+                    <>
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      Rejecting...
+                    </>
+                  ) : (
+                    'Confirm Rejection'
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

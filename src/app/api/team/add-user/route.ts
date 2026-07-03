@@ -69,7 +69,8 @@ export async function POST(req: Request) {
         role: 'client',
         name: name,
         job_title: role || 'Team Member',
-        invited_at: new Date().toISOString()
+        invited_at: new Date().toISOString(),
+        is_approved: true
       })
       .eq('id', newUserId);
 

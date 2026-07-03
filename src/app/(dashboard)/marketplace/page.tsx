@@ -88,6 +88,7 @@ export default function MarketplacePage() {
 
       if (profile?.role === 'client') {
         // Fetch client ID and credit
+        
         const { data: clientData, error: clientError } = await supabase
           .from('clients')
           .select('id, services_offered, credit_balance, property_type_preference')
@@ -95,18 +96,7 @@ export default function MarketplacePage() {
           .single();
 
         if (clientError) throw new Error('Could not find client profile.');
-
-        // If child account, fetch parent's credit balance
-        if (profile.parent_id) {
-          const { data: parentClient } = await supabase
-            .from('clients')
-            .select('credit_balance')
-            .eq('user_id', profile.parent_id)
-            .single();
-          setCreditBalance(parentClient?.credit_balance || 0);
-        } else {
-          setCreditBalance(clientData.credit_balance || 0);
-        }
+        setCreditBalance(clientData.credit_balance || 0);
 
         // Use RPC to get leads within service area
         const res = await supabase.rpc('get_local_marketplace_leads', {
@@ -310,6 +300,27 @@ export default function MarketplacePage() {
       if (!lead) throw new Error('Lead details not found');
 
       const targetPrice = discountedPrice !== undefined ? discountedPrice : (purchaseType === 'exclusive' ? (lead.exclusive_price || 135) : (lead.share_price || 45));
+
+      // Handle child account request
+      if (profile.parent_id) {
+        setLoading(true);
+        const { error: requestError } = await supabase
+          .from('lead_purchases')
+          .insert([{
+            lead_id: leadId,
+            client_id: clientId,
+            purchase_type: purchaseType,
+            price_paid: targetPrice,
+            status: 'permission_pending'
+          }]);
+
+        if (requestError) throw requestError;
+
+        toast.success('Purchase request sent to your manager!');
+        setLeadToPurchase(null);
+        setLoading(false);
+        return;
+      }
 
       if (useTradeAccount) {
         setLoading(true);

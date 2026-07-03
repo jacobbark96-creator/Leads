@@ -603,10 +603,12 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
             </button>
             <button
               onClick={onPurchase}
-              className="px-6 py-2.5 shadow-sm text-sm font-bold rounded-xl text-white flex items-center gap-2 transition-colors bg-blue-600 hover:bg-blue-700"
+              className={`px-6 py-2.5 shadow-sm text-sm font-bold rounded-xl text-white flex items-center gap-2 transition-colors ${
+                profile?.parent_id ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'
+              }`}
             >
               <ShoppingCart className="w-4 h-4" />
-              Proceed to Order Summary
+              {profile?.parent_id ? 'Request Purchase' : 'Proceed to Order Summary'}
             </button>
           </div>
         </div>

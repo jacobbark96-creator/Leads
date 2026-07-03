@@ -16,30 +16,13 @@ interface OrderSummaryModalProps {
 
 export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, onClose, lead, creditBalance, onProceedToPay }) => {
   const { profile } = useAuthStore();
-  const [parentBilling, setParentBilling] = useState<any>(null);
   const [discountCode, setDiscountCode] = useState('');
   const [appliedDiscount, setAppliedDiscount] = useState<{code: string, amount: number} | null>(null);
   const [isApplying, setIsApplying] = useState(false);
   const [purchaseType, setPurchaseType] = useState<'exclusive' | 'share'>('exclusive');
   const [useTradeAccount, setUseTradeAccount] = useState(false);
 
-  // Fetch parent billing info if this is a child account
-  React.useEffect(() => {
-    if (isOpen && profile?.parent_id) {
-      supabase
-        .from('users')
-        .select('trade_account_enabled, trade_limit_setting, current_trade_usage')
-        .eq('id', profile.parent_id)
-        .single()
-        .then(({ data }) => {
-          if (data) setParentBilling(data);
-        });
-    }
-  }, [isOpen, profile?.parent_id]);
-
   if (!isOpen) return null;
-
-  const effectiveProfile = parentBilling || profile;
 
   const isShareAvailable = (lead.purchase_count || 0) < (lead.max_shares || 3);
   const isExclusiveAvailable = (lead.purchase_count || 0) === 0;
@@ -256,11 +239,11 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
 
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Payment Summary</h3>
                   
-                  {effectiveProfile?.trade_account_enabled && (
+                  {profile?.trade_account_enabled && (
                     <div className="mb-4">
                       <label 
                         onClick={() => {
-                          const currentLimit = Number(effectiveProfile.trade_limit_setting) || 0;
+                          const currentLimit = Number(profile.trade_limit_setting) || 0;
                           if (currentLimit <= 0) {
                             toast.error('Please set your Flex Limit in the dashboard first');
                             return;
@@ -271,7 +254,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                           useTradeAccount 
                             ? 'border-blue-600 bg-blue-50 shadow-md' 
                             : 'border-gray-200 hover:border-blue-300'
-                        } ${((effectiveProfile.trade_limit_setting || 0) <= 0) ? 'opacity-60 grayscale' : ''}`}
+                        } ${((profile.trade_limit_setting || 0) <= 0) ? 'opacity-60 grayscale' : ''}`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -283,14 +266,14 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                             <p className="text-sm font-bold text-gray-900 leading-tight">Add to Flex Invoice</p>
                             <div className="space-y-0.5 mt-0.5">
                               <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
-                                { (effectiveProfile.trade_limit_setting || 0) > 0 
-                                  ? `Flex Limit: £${(effectiveProfile.trade_limit_setting || 0).toLocaleString()}`
+                                { (profile.trade_limit_setting || 0) > 0 
+                                  ? `Flex Limit: £${(profile.trade_limit_setting || 0).toLocaleString()}`
                                   : 'Flex Limit Not Set'
                                 }
                               </p>
-                              { (effectiveProfile.trade_limit_setting || 0) > 0 && (
+                              { (profile.trade_limit_setting || 0) > 0 && (
                                 <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
-                                  Remaining Flex: £{Math.max(0, (effectiveProfile.trade_limit_setting || 0) - (effectiveProfile.current_trade_usage || 0)).toLocaleString()}
+                                  Remaining Flex: £{Math.max(0, (profile.trade_limit_setting || 0) - (profile.current_trade_usage || 0)).toLocaleString()}
                                 </p>
                               )}
                             </div>
@@ -380,17 +363,26 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                   <button
                     onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice, useTradeAccount)}
                     className={`w-full flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
-                      useTradeAccount 
-                        ? 'bg-slate-900 hover:bg-slate-800 focus:ring-slate-500' 
-                        : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                      profile?.parent_id
+                        ? 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
+                        : useTradeAccount 
+                          ? 'bg-slate-900 hover:bg-slate-800 focus:ring-slate-500' 
+                          : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
                     }`}
                   >
-                    {useTradeAccount 
-                      ? 'Add to Flex Invoice' 
-                      : (totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay')}
+                    {profile?.parent_id 
+                      ? 'Request Purchase'
+                      : useTradeAccount 
+                        ? 'Add to Flex Invoice' 
+                        : (totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay')}
                   </button>
                   <p className="text-[10px] text-center text-gray-500 mt-2.5 flex items-center justify-center gap-1">
-                    {useTradeAccount ? (
+                    {profile?.parent_id ? (
+                      <>
+                        <InfoIcon className="w-3 h-3" />
+                        Your request will be sent to your manager for approval
+                      </>
+                    ) : useTradeAccount ? (
                       <>
                         <InfoIcon className="w-3 h-3" />
                         This will be added to your weekly invoice

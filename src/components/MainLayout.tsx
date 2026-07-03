@@ -70,14 +70,14 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           { name: 'Dashboard', path: '/client-portal', icon: LayoutDashboard },
         ];
         if (profile.allowed_child_accounts) {
-          clientItems.push({ name: 'Team Management', path: '/client-portal/team', icon: Users });
+          clientItems.push({ name: 'Team', path: '/client-portal/team', icon: Users });
         }
         clientItems.push(
           { name: 'Marketplace', path: '/marketplace', icon: Database },
           { name: 'Offers', path: '/offers', icon: Star },
         );
         if (!profile.parent_id) {
-          clientItems.push({ name: 'Openlead Max', path: '/openlead-max', icon: Sparkles });
+          clientItems.push({ name: 'Max', path: '/openlead-max', icon: Sparkles });
         }
         if (isPartnerPlus) {
           clientItems.push({

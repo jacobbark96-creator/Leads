@@ -75,8 +75,10 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         clientItems.push(
           { name: 'Marketplace', path: '/marketplace', icon: Database },
           { name: 'Offers', path: '/offers', icon: Star },
-          { name: 'Openlead Max', path: '/openlead-max', icon: Sparkles },
         );
+        if (!profile.parent_id) {
+          clientItems.push({ name: 'Openlead Max', path: '/openlead-max', icon: Sparkles });
+        }
         if (isPartnerPlus) {
           clientItems.push({
             name: 'Partner+', 

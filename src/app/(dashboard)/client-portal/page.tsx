@@ -38,6 +38,7 @@ export default function ClientDashboard() {
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [clientLocation, setClientLocation] = useState<{lat: number, lng: number} | null>(null);
   const [advisorDetails, setAdvisorDetails] = useState<any | null>(null);
+  const [parentName, setParentName] = useState<string | null>(null);
   const [showAdvisorModal, setShowAdvisorModal] = useState(false);
   const [showTopUpModal, setShowTopUpModal] = useState(false);
   const [showInvoicesModal, setShowInvoicesModal] = useState(false);
@@ -84,6 +85,16 @@ export default function ClientDashboard() {
       setCreditBalance(clientData.credit_balance || 0);
       if (clientData.latitude && clientData.longitude) {
         setClientLocation({ lat: clientData.latitude, lng: clientData.longitude });
+      }
+
+      // Fetch parent name if child account
+      if (profile.parent_id) {
+        const { data: parentData } = await supabase
+          .from('users')
+          .select('name')
+          .eq('id', profile.parent_id)
+          .single();
+        if (parentData) setParentName(parentData.name);
       }
 
       if (isInitial && !clientData.has_seen_welcome_modal) {
@@ -318,13 +329,19 @@ export default function ClientDashboard() {
             <MapPin className="w-3 h-3" />
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] text-slate-400 font-medium uppercase leading-none mb-0.5">Advisor</p>
-            <p className="text-[11px] font-bold text-white leading-tight truncate">{advisorDetails?.name || 'Jake Bedwell'}</p>
-            <div className="flex items-center gap-1.5 mt-0.5">
-              <button onClick={() => setShowAdvisorModal(true)} className="text-[9px] font-medium text-blue-400 hover:text-blue-300 transition-colors">WhatsApp</button>
-              <span className="text-slate-600">•</span>
-              <button className="text-[9px] font-medium text-blue-400 hover:text-blue-300 transition-colors">Email</button>
-            </div>
+            <p className="text-[9px] text-slate-400 font-medium uppercase leading-none mb-0.5">
+              {profile?.parent_id ? 'Company Contact' : 'Advisor'}
+            </p>
+            <p className="text-[11px] font-bold text-white leading-tight truncate">
+              {profile?.parent_id ? (parentName || 'Parent Account') : (advisorDetails?.name || 'Jake Bedwell')}
+            </p>
+            {!profile?.parent_id && (
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <button onClick={() => setShowAdvisorModal(true)} className="text-[9px] font-medium text-blue-400 hover:text-blue-300 transition-colors">WhatsApp</button>
+                <span className="text-slate-600">•</span>
+                <button className="text-[9px] font-medium text-blue-400 hover:text-blue-300 transition-colors">Email</button>
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -396,20 +413,22 @@ export default function ClientDashboard() {
   );
 
   const getActionButtons = () => (
-    <div className="h-full grid grid-cols-2 gap-2 lg:gap-3 w-full">
-      <button
-        onClick={() => {
-          if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Invoices' });
-          setShowInvoicesModal(true);
-        }}
-        className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 flex flex-col justify-center items-center relative overflow-hidden group hover:border-blue-500/30 hover:shadow-blue-500/20 transition-all h-full"
-      >
-        <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-openlead-blue/5 to-transparent rounded-bl-full transition-transform group-hover:scale-110"></div>
-        <div className="relative z-10 flex flex-col items-center justify-center gap-1.5 h-full w-full p-2">
-          <List className="w-5 h-5 sm:w-6 sm:h-6 text-openlead-blue group-hover:scale-110 transition-transform" />
-          <span className="text-[10px] sm:text-[11px] font-black text-gray-900 tracking-tight leading-none group-hover:text-openlead-blue transition-colors text-center">Invoices</span>
-        </div>
-      </button>
+    <div className={`h-full grid ${profile?.parent_id ? 'grid-cols-1' : 'grid-cols-2'} gap-2 lg:gap-3 w-full`}>
+      {!profile?.parent_id && (
+        <button
+          onClick={() => {
+            if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Invoices' });
+            setShowInvoicesModal(true);
+          }}
+          className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 flex flex-col justify-center items-center relative overflow-hidden group hover:border-blue-500/30 hover:shadow-blue-500/20 transition-all h-full"
+        >
+          <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-openlead-blue/5 to-transparent rounded-bl-full transition-transform group-hover:scale-110"></div>
+          <div className="relative z-10 flex flex-col items-center justify-center gap-1.5 h-full w-full p-2">
+            <List className="w-5 h-5 sm:w-6 sm:h-6 text-openlead-blue group-hover:scale-110 transition-transform" />
+            <span className="text-[10px] sm:text-[11px] font-black text-gray-900 tracking-tight leading-none group-hover:text-openlead-blue transition-colors text-center">Invoices</span>
+          </div>
+        </button>
+      )}
 
       <button
         onClick={() => {
@@ -435,9 +454,11 @@ export default function ClientDashboard() {
           {getWelcomeBanner()}
         </div>
         <div className="flex-1 h-full grid grid-cols-2 sm:grid-cols-3 gap-2 lg:gap-3">
-          {getTopUpCard()}
-          {profile?.trade_account_enabled && getLeftToSpendCard()}
-          {getActionButtons()}
+          {!profile?.parent_id && getTopUpCard()}
+          {!profile?.parent_id && profile?.trade_account_enabled && getLeftToSpendCard()}
+          <div className={profile?.parent_id ? 'col-span-2 sm:col-span-1 sm:col-start-3' : ''}>
+            {getActionButtons()}
+          </div>
         </div>
       </div>
 

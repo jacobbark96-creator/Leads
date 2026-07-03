@@ -170,7 +170,7 @@ export default function OffersPage() {
               initial={{ opacity: 0, scale: 0.95, y: 20 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col border border-slate-200"
+              className="relative w-full max-w-3xl max-h-[85vh] bg-white rounded-[32px] shadow-2xl overflow-hidden flex flex-col border border-slate-200"
             >
               {/* Modal Close Button */}
               <button 
@@ -182,7 +182,7 @@ export default function OffersPage() {
 
               <div className="flex-1 overflow-y-auto custom-scrollbar">
                 {/* Hero Section with Logo and Banner */}
-                <div className="relative h-64 sm:h-80 bg-slate-100">
+                <div className="relative h-48 sm:h-64 bg-slate-100">
                   {selectedPartner.photo_url ? (
                     <img 
                       src={selectedPartner.photo_url} 
@@ -203,11 +203,11 @@ export default function OffersPage() {
                   )}
                 </div>
 
-                <div className="px-8 py-10 sm:px-12">
+                <div className="px-6 py-8 sm:px-10">
                   {/* Title and Logo Row */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-10">
-                    <div className="flex items-center gap-5">
-                      <div className="w-16 h-16 rounded-2xl bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-center overflow-hidden p-2">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-6 mb-8">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 rounded-2xl bg-white shadow-xl shadow-slate-200/50 border border-slate-100 flex items-center justify-center overflow-hidden p-2">
                         {selectedPartner.photo_url ? (
                           <img src={selectedPartner.photo_url} alt="" className="w-full h-full object-contain" />
                         ) : (
@@ -234,15 +234,15 @@ export default function OffersPage() {
                   </div>
 
                   {/* Main Content Grid */}
-                  <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-                    <div className="lg:col-span-2 space-y-10">
+                  <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div className="lg:col-span-7 space-y-8">
                       {/* Description */}
                       <section>
-                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                        <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
                           <Info className="w-3.5 h-3.5 text-blue-600" />
                           About this Offer
                         </h4>
-                        <p className="text-sm text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
+                        <p className="text-xs text-slate-600 font-medium leading-relaxed whitespace-pre-wrap">
                           {selectedPartner.description}
                         </p>
                       </section>
@@ -250,10 +250,10 @@ export default function OffersPage() {
                       {/* Additional Photos Grid */}
                       {selectedPartner.additional_photos && selectedPartner.additional_photos.length > 0 && (
                         <section>
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4">Gallery</h4>
-                          <div className="grid grid-cols-2 gap-4">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3">Gallery</h4>
+                          <div className="grid grid-cols-2 gap-3">
                             {selectedPartner.additional_photos.map((photo: string, idx: number) => (
-                              <div key={idx} className="aspect-video rounded-2xl overflow-hidden border border-slate-100 bg-slate-50 group">
+                              <div key={idx} className="aspect-video rounded-xl overflow-hidden border border-slate-100 bg-slate-50 group">
                                 <img 
                                   src={photo} 
                                   alt={`Gallery ${idx + 1}`} 
@@ -266,26 +266,26 @@ export default function OffersPage() {
                       )}
                     </div>
 
-                    <div className="space-y-8">
+                    <div className="lg:col-span-5 space-y-6">
                       {/* Terms and Conditions Card */}
                       {selectedPartner.terms_and_conditions && (
-                        <div className="bg-slate-50/50 rounded-3xl p-6 border border-slate-100">
-                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+                        <div className="bg-slate-50/50 rounded-2xl p-5 border border-slate-100">
+                          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em] mb-3 flex items-center gap-2">
                             <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
                             Terms & Conditions
                           </h4>
-                          <div className="text-[11px] text-slate-500 font-medium leading-relaxed whitespace-pre-wrap max-h-64 overflow-y-auto custom-scrollbar pr-2">
+                          <div className="text-[10px] text-slate-500 font-medium leading-relaxed whitespace-pre-wrap max-h-48 overflow-y-auto custom-scrollbar pr-2">
                             {selectedPartner.terms_and_conditions}
                           </div>
                         </div>
                       )}
 
                       {/* Trust Badge */}
-                      <div className="bg-blue-600/5 rounded-3xl p-6 border border-blue-100 flex items-center gap-4">
-                        <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
-                          <Star className="w-5 h-5 text-white fill-white" />
+                      <div className="bg-blue-600/5 rounded-2xl p-5 border border-blue-100 flex items-center gap-4">
+                        <div className="w-9 h-9 rounded-xl bg-blue-600 flex items-center justify-center shrink-0">
+                          <Star className="w-4 h-4 text-white fill-white" />
                         </div>
-                        <p className="text-[10px] font-bold text-blue-900 leading-tight">
+                        <p className="text-[9px] font-bold text-blue-900 leading-tight">
                           This offer is exclusive to Openlead clients and has been pre-negotiated for your benefit.
                         </p>
                       </div>

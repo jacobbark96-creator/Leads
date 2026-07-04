@@ -14,9 +14,10 @@ import { PressCentreTab } from './components/PressCentreTab';
 import { FeedbackTab } from './components/FeedbackTab';
 import { DivisionsTab } from './components/DivisionsTab';
 import { FinanceTab } from './components/FinanceTab';
+import { BroadcastsTab } from './components/BroadcastsTab';
 
 export default function UserManagement() {
-  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'lead_monitoring' | 'pack_monitoring' | 'background' | 'press' | 'feedback' | 'divisions' | 'finance'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'lead_monitoring' | 'pack_monitoring' | 'background' | 'press' | 'feedback' | 'divisions' | 'finance' | 'broadcasts'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuthStore();
@@ -316,6 +317,12 @@ export default function UserManagement() {
           className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'press' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
         >
           <div className="flex items-center gap-2"><FileText className="w-4 h-4" /> Press Centre</div>
+        </button>
+        <button
+          onClick={() => setActiveTab('broadcasts')}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'broadcasts' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+        >
+          <div className="flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Broadcasts</div>
         </button>
         <button
           onClick={() => setActiveTab('feedback')}
@@ -692,6 +699,7 @@ export default function UserManagement() {
       {activeTab === 'pack_monitoring' && <PackMonitoringTab />}
       {activeTab === 'background' && <BackgroundTab />}
       {activeTab === 'press' && <PressCentreTab />}
+      {activeTab === 'broadcasts' && <BroadcastsTab />}
       {activeTab === 'feedback' && <FeedbackTab />}
       {activeTab === 'finance' && <FinanceTab />}
       {activeTab === 'divisions' && profile?.role === 'super_admin' && <DivisionsTab />}

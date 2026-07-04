@@ -123,6 +123,16 @@ BEGIN
     WHERE id = v_purchase.lead_id;
   END IF;
 
+  -- 8. Create a notification for the child account
+  INSERT INTO public.notifications (user_id, title, content, type, metadata)
+  VALUES (
+    v_child_client.user_id,
+    'Lead Purchase Approved',
+    'Your manager has approved and purchased the lead in ' || public.extract_town(v_lead.location) || ' for you.',
+    'approval',
+    jsonb_build_object('purchase_id', p_purchase_id, 'lead_id', v_purchase.lead_id)
+  );
+
   RETURN jsonb_build_object('success', true);
 END;
 $$;

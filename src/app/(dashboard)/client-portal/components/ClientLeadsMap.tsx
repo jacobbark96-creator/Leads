@@ -5,7 +5,8 @@ import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
 import { Lead } from '../../../../types';
-import { Home } from 'lucide-react';
+import { Home, Clock, Lock } from 'lucide-react';
+import { extractTown } from '@/lib/utils';
 
 // Fix Leaflet's default icon paths and React 18 Strict Mode / Fast Refresh issues
 if (typeof window !== 'undefined') {
@@ -94,28 +95,53 @@ export default function ClientLeadsMap({ leads, onLeadClick }: ClientLeadsMapPro
           url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
         />
         
-        {mapLeads.map(lead => (
-          <Marker 
-            key={lead.id} 
-            position={[lead.latitude as number, lead.longitude as number]}
-            eventHandlers={{
-              click: () => onLeadClick(lead),
-            }}
-          >
-            <Popup>
-              <div className="text-sm">
-                <p className="font-bold">{lead.name}</p>
-                <p className="text-gray-500">{lead.location}</p>
-                <button 
-                  onClick={() => onLeadClick(lead)}
-                  className="mt-2 text-blue-600 font-medium hover:underline text-xs"
-                >
-                  View Details
-                </button>
-              </div>
-            </Popup>
-          </Marker>
-        ))}
+        {mapLeads.map(lead => {
+          const isPending = lead.purchase_status === 'permission_pending';
+          
+          return (
+            <Marker 
+              key={lead.id} 
+              position={[lead.latitude as number, lead.longitude as number]}
+              eventHandlers={{
+                click: () => onLeadClick(lead),
+              }}
+            >
+              <Popup>
+                <div className="text-sm p-1">
+                  {isPending ? (
+                    <>
+                      <div className="flex items-center gap-2 mb-1">
+                        <Clock className="w-3.5 h-3.5 text-amber-500" />
+                        <span className="font-bold text-gray-900">Lead in {extractTown(lead.location)}</span>
+                      </div>
+                      <p className="text-xs text-gray-500 mb-2 flex items-center gap-1">
+                        <Lock className="w-3 h-3" />
+                        Details restricted until approved
+                      </p>
+                      <button 
+                        onClick={() => onLeadClick(lead)}
+                        className="w-full py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-700 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-colors border border-amber-200 flex items-center justify-center gap-1"
+                      >
+                        Check Status
+                      </button>
+                    </>
+                  ) : (
+                    <>
+                      <p className="font-bold text-gray-900 mb-0.5">{lead.name}</p>
+                      <p className="text-xs text-gray-500 mb-2">{lead.location}</p>
+                      <button 
+                        onClick={() => onLeadClick(lead)}
+                        className="w-full py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold rounded-lg text-[10px] uppercase tracking-wider transition-colors border border-blue-200"
+                      >
+                        View Details
+                      </button>
+                    </>
+                  )}
+                </div>
+              </Popup>
+            </Marker>
+          );
+        })}
       </MapContainer>
     </div>
   );

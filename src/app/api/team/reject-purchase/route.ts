@@ -63,6 +63,7 @@ export async function POST(req: Request) {
       .select(`
         *,
         client:client_id (
+          id,
           user:user_id (id, name, email)
         ),
         leads:lead_id (*)
@@ -71,7 +72,23 @@ export async function POST(req: Request) {
       .single();
 
     if (purchaseError || !purchase) {
+      console.error('Reject Purchase: Request not found:', purchaseError);
       return NextResponse.json({ error: 'Purchase request not found' }, { status: 404 });
+    }
+
+    // Defensive check for nested data
+    const clientData = Array.isArray(purchase.client) ? purchase.client[0] : purchase.client;
+    const childUser = Array.isArray(clientData?.user) ? clientData.user[0] : clientData?.user;
+    const lead = Array.isArray(purchase.leads) ? purchase.leads[0] : purchase.leads;
+
+    if (!childUser || !lead) {
+      console.error('Reject Purchase: Missing nested data:', { 
+        hasClient: !!clientData, 
+        hasUser: !!childUser, 
+        hasLead: !!lead,
+        purchaseData: JSON.stringify(purchase).substring(0, 500) // Log more data for debugging
+      });
+      return NextResponse.json({ error: 'Required lead or user data missing from purchase record' }, { status: 400 });
     }
 
     // 3. Update the purchase request to 'rejected'
@@ -80,27 +97,59 @@ export async function POST(req: Request) {
       .update({ status: 'rejected' })
       .eq('id', purchaseId);
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      console.error('Reject Purchase: Update error:', updateError);
+      throw updateError;
+    }
 
-    // 4. Send rejection email to the child account
-    const childUser = purchase.client.user;
-    const lead = purchase.leads;
+    // 4. Create a notification for the child account
     const leadLocation = extractTown(lead.location);
 
-    const emailResult = await sendLeadRejectionEmail(
-      childUser.email,
-      childUser.name,
-      leadLocation,
-      reason
-    );
+    try {
+      await supabaseAdmin
+        .from('notifications')
+        .insert([{
+          user_id: childUser.id,
+          title: 'Lead Purchase Rejected',
+          content: `Your request for the lead in ${leadLocation} was rejected. Reason: ${reason}`,
+          type: 'rejection',
+          metadata: {
+            purchase_id: purchaseId,
+            lead_id: lead.id,
+            reason: reason
+          }
+        }]);
+    } catch (notifError) {
+      console.error('Reject Purchase: Notification failed (non-fatal):', notifError);
+    }
 
-    if (!emailResult.success) {
-      console.error('Failed to send rejection email:', emailResult.error);
+    // 5. Send rejection email to the child account
+    let emailSent = false;
+    
+    // Check if Resend is configured
+    const resendKey = process.env.RESEND_API_KEY;
+    if (!resendKey || resendKey === 'your_resend_api_key') {
+      console.warn('Reject Purchase: Resend API key is missing or placeholder. Skipping email.');
+    } else {
+      try {
+        const emailResult = await sendLeadRejectionEmail(
+          childUser.email,
+          childUser.name,
+          leadLocation,
+          reason
+        );
+        emailSent = emailResult.success;
+        if (!emailSent) {
+          console.error('Reject Purchase: Rejection email failed:', emailResult.error);
+        }
+      } catch (emailError) {
+        console.error('Reject Purchase: Rejection email exception:', emailError);
+      }
     }
 
     return NextResponse.json({ 
       success: true, 
-      emailSent: emailResult.success 
+      emailSent 
     });
   } catch (error: any) {
     console.error('Reject purchase error:', error);

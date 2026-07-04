@@ -6,6 +6,7 @@ import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home,
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
 import { AdminNotifications } from './AdminNotifications';
+import { ClientNotifications } from './ClientNotifications';
 import { SmsNotifications } from './SmsNotifications';
 import { supabase } from '../lib/supabase';
 import { FlexModal } from './FlexModal';
@@ -312,13 +313,16 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                   </div>
                   <div className="pl-3 ml-3 border-l border-gray-200 flex items-center gap-1">
                     {profile.role === 'client' && (
-                      <Link
-                        href="/my-openlead"
-                        className="p-1.5 text-gray-400 hover:text-blue-600 rounded-full hover:bg-blue-50 transition-colors"
-                        title="Settings"
-                      >
-                        <Settings className="w-4 h-4" />
-                      </Link>
+                      <>
+                        <ClientNotifications />
+                        <Link
+                          href="/my-openlead"
+                          className="p-1.5 text-gray-400 hover:text-blue-600 rounded-full hover:bg-blue-50 transition-colors"
+                          title="Settings"
+                        >
+                          <Settings className="w-4 h-4" />
+                        </Link>
+                      </>
                     )}
                     <button
                       onClick={async (e) => {
@@ -427,14 +431,17 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                     </div>
                     <div className="flex items-center gap-2">
                       {profile.role === 'client' && (
-                        <Link
-                          href="/my-openlead"
-                          onClick={() => setMobileMenuOpen(false)}
-                          className="flex items-center justify-center p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
-                        >
-                          <span className="sr-only">Settings</span>
-                          <Settings className="h-6 w-6" />
-                        </Link>
+                        <>
+                          <ClientNotifications />
+                          <Link
+                            href="/my-openlead"
+                            onClick={() => setMobileMenuOpen(false)}
+                            className="flex items-center justify-center p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+                          >
+                            <span className="sr-only">Settings</span>
+                            <Settings className="h-6 w-6" />
+                          </Link>
+                        </>
                       )}
                       <button
                         onClick={async (e) => {

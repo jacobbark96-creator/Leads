@@ -1,0 +1,303 @@
+"use client";
+
+import React, { useEffect, useState, useRef } from 'react';
+import { Bell, Check, X, Megaphone, Info, Clock, Trash2, CheckCircle2 } from 'lucide-react';
+import { supabase } from '../lib/supabase';
+import { useAuthStore } from '../store/authStore';
+import toast from 'react-hot-toast';
+import { formatDistanceToNow } from 'date-fns';
+
+interface Notification {
+  id: string;
+  user_id: string | null;
+  title: string;
+  content: string;
+  type: 'broadcast' | 'approval' | 'rejection' | 'system';
+  is_read: boolean;
+  metadata: any;
+  created_at: string;
+}
+
+export function ClientNotifications() {
+  const { profile } = useAuthStore();
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!profile) return;
+    fetchNotifications();
+
+    // Setup realtime subscription
+    const channelId = `client-notifications-${profile.id}`;
+    const channel = supabase
+      .channel(channelId)
+      .on(
+        'postgres_changes',
+        { 
+          event: '*', 
+          schema: 'public', 
+          table: 'notifications'
+        },
+        (payload) => {
+          // If it's a new notification for this user or a broadcast
+          if (payload.eventType === 'INSERT') {
+            const newNotif = payload.new as Notification;
+            if (newNotif.user_id === profile.id || newNotif.user_id === null) {
+              setNotifications(prev => [newNotif, ...prev]);
+              if (!newNotif.is_read) {
+                toast.success(`New Notification: ${newNotif.title}`, {
+                  icon: getIcon(newNotif.type, "w-5 h-5"),
+                  duration: 5000,
+                });
+              }
+            }
+          } else if (payload.eventType === 'UPDATE') {
+            const updatedNotif = payload.new as Notification;
+            setNotifications(prev => prev.map(n => n.id === updatedNotif.id ? updatedNotif : n));
+          } else if (payload.eventType === 'DELETE') {
+            setNotifications(prev => prev.filter(n => n.id === payload.old.id));
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id]);
+
+  useEffect(() => {
+    // Click outside to close
+    function handleClickOutside(event: MouseEvent) {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  const fetchNotifications = async () => {
+    if (!profile) return;
+    try {
+      // 1. Fetch notifications
+      const { data: notifs, error: notifError } = await supabase
+        .from('notifications')
+        .select('*')
+        .or(`user_id.eq.${profile.id},user_id.is.null`)
+        .order('created_at', { ascending: false })
+        .limit(40);
+
+      if (notifError) throw notifError;
+      
+      // 2. Extract lead IDs for "New Lead Available" notifications to check their status
+      const leadIdsToCheck = notifs
+        .filter(n => n.title === 'New Lead Available' && n.metadata?.lead_id)
+        .map(n => n.metadata.lead_id);
+
+      let soldLeadIds: string[] = [];
+      if (leadIdsToCheck.length > 0) {
+        const { data: leads } = await supabase
+          .from('leads')
+          .select('id, status')
+          .in('id', leadIdsToCheck)
+          .eq('status', 'sold');
+        
+        if (leads) {
+          soldLeadIds = leads.map(l => l.id);
+        }
+      }
+
+      // 3. Filter out notifications for leads that are already sold
+      const filteredData = notifs.filter(notif => {
+        if (notif.title === 'New Lead Available' && notif.metadata?.lead_id) {
+          return !soldLeadIds.includes(notif.metadata.lead_id);
+        }
+        return true;
+      });
+
+      setNotifications(filteredData);
+    } catch (error) {
+      console.error('Error fetching notifications:', error);
+    }
+  };
+
+  const markAsRead = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('id', id);
+
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    if (notifications.filter(n => !n.is_read).length === 0) return;
+    
+    setLoading(true);
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .update({ is_read: true })
+        .eq('user_id', profile?.id)
+        .eq('is_read', false);
+
+      if (error) throw error;
+      setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+    } catch (error) {
+      console.error('Error marking all notifications as read:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const deleteNotification = async (id: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      const { error } = await supabase
+        .from('notifications')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      setNotifications(prev => prev.filter(n => n.id !== id));
+    } catch (error) {
+      console.error('Error deleting notification:', error);
+    }
+  };
+
+  const unreadCount = notifications.filter(n => !n.is_read).length;
+
+  const getIcon = (type: string, className: string = "w-4 h-4") => {
+    switch (type) {
+      case 'approval':
+        return <CheckCircle2 className={`${className} text-blue-500`} />;
+      case 'rejection':
+        return <X className={`${className} text-rose-500`} />;
+      case 'broadcast':
+        return <Megaphone className={`${className} text-blue-500`} />;
+      case 'system':
+        return <Bell className={`${className} text-blue-500`} />;
+      default:
+        return <Info className={`${className} text-slate-500`} />;
+    }
+  };
+
+  const toggleOpen = () => {
+    const nextState = !isOpen;
+    setIsOpen(nextState);
+    
+    // If we are opening the panel and there are unread notifications, mark them as read
+    if (nextState && unreadCount > 0) {
+      markAllAsRead();
+    }
+  };
+
+  return (
+    <div className="relative" ref={dropdownRef}>
+      <button
+        onClick={toggleOpen}
+        className="relative p-2 text-gray-400 hover:text-blue-600 focus:outline-none transition-all duration-200 hover:scale-110 active:scale-95"
+      >
+        <Bell className="w-5 h-5" />
+        {unreadCount > 0 && (
+          <span className="absolute top-2 right-2 flex h-2 w-2">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-rose-500 border border-white"></span>
+          </span>
+        )}
+      </button>
+
+      {isOpen && (
+        <div className="absolute right-0 mt-3 w-80 sm:w-96 bg-white/95 backdrop-blur-xl rounded-2xl shadow-2xl border border-gray-200/50 z-50 overflow-hidden animate-in fade-in slide-in-from-top-2 duration-200 transform origin-top-right">
+          <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
+            <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+              Notifications
+            </h3>
+          </div>
+
+          <div className="max-h-[400px] overflow-y-auto scrollbar-thin scrollbar-thumb-gray-200 scrollbar-track-transparent">
+            {notifications.length === 0 ? (
+              <div className="p-10 text-center flex flex-col items-center justify-center gap-3">
+                <div className="w-12 h-12 bg-gray-50 rounded-full flex items-center justify-center">
+                  <Bell className="w-6 h-6 text-gray-300" />
+                </div>
+                <div>
+                  <p className="text-sm font-bold text-gray-900">No notifications yet</p>
+                  <p className="text-xs text-gray-500 mt-1">We'll let you know when something happens.</p>
+                </div>
+              </div>
+            ) : (
+              <ul className="divide-y divide-gray-50">
+                {notifications.map((notif) => (
+                  <li
+                    key={notif.id}
+                    onClick={() => !notif.is_read && markAsRead(notif.id)}
+                    className={`p-4 transition-all duration-200 cursor-pointer relative group ${
+                      !notif.is_read ? 'bg-blue-50/40 hover:bg-blue-50/60' : 'hover:bg-gray-50'
+                    }`}
+                  >
+                    {!notif.is_read && (
+                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-full" />
+                    )}
+                    <div className="flex items-center gap-3 h-10">
+                      <div className={`p-1.5 rounded-lg transition-colors duration-200 shrink-0 ${
+                        !notif.is_read ? 'bg-blue-600/10' : 'bg-slate-50'
+                      }`}>
+                        {getIcon(notif.type, "w-3.5 h-3.5")}
+                      </div>
+                      
+                      <div className="flex-1 min-w-0 flex items-center gap-2">
+                        <p className={`text-xs font-bold truncate shrink-0 ${!notif.is_read ? 'text-gray-900' : 'text-gray-600'}`}>
+                          {notif.title === 'new lead' ? 'New Lead' : 
+                           notif.title === 'New Lead Available' ? 'Local Match' : 
+                           notif.title}
+                        </p>
+                        <span className="text-gray-200 shrink-0">|</span>
+                        <p className={`text-[11px] truncate flex-1 ${!notif.is_read ? 'text-gray-600' : 'text-gray-400'}`}>
+                          {notif.content}
+                        </p>
+                      </div>
+
+                      <div className="flex items-center gap-2 shrink-0">
+                        <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap bg-gray-50/50 px-1.5 py-0.5 rounded border border-gray-100">
+                          {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true }).replace('about ', '').replace(' ago', '')}
+                        </span>
+                        
+                        <button
+                          onClick={(e) => deleteNotification(notif.id, e)}
+                          className="p-1 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all opacity-0 group-hover:opacity-100"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          
+          {notifications.length > 0 && (
+            <div className="p-2 border-t border-gray-100 bg-gray-50/30 flex justify-center">
+              <button
+                className="text-[10px] font-bold text-gray-400 hover:text-gray-600 transition-colors uppercase tracking-widest"
+                onClick={() => setIsOpen(false)}
+              >
+                Close Panel
+              </button>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}

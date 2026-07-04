@@ -16,7 +16,7 @@ export const LiveFeed = () => {
           lead_id,
           leads:lead_id(name, company)
         `)
-        .in('activity_type', ['qualified', 'marketed', 'sold'])
+        .in('activity_type', ['qualified', 'marketed', 'sold', 'requested'])
         .order('created_at', { ascending: false })
         .limit(15);
 
@@ -26,6 +26,7 @@ export const LiveFeed = () => {
           if (act.activity_type === 'qualified') statusLabel = 'Qualified';
           if (act.activity_type === 'marketed') statusLabel = 'Marketed';
           if (act.activity_type === 'sold') statusLabel = 'Sold';
+          if (act.activity_type === 'requested') statusLabel = 'Requested';
 
           let title = '';
           if (act.leads) {
@@ -56,7 +57,7 @@ export const LiveFeed = () => {
       .on('postgres_changes', 
         { event: 'INSERT', schema: 'public', table: 'activities' }, 
         payload => {
-          if (['qualified', 'marketed', 'sold'].includes(payload.new.activity_type)) {
+          if (['qualified', 'marketed', 'sold', 'requested'].includes(payload.new.activity_type)) {
             fetchActivities(); // Refresh to get relations properly
           }
         }
@@ -73,6 +74,7 @@ export const LiveFeed = () => {
       case 'Qualified': return 'text-amber-400 border-amber-400/20';
       case 'Marketed': return 'text-blue-400 border-blue-400/20 bg-blue-400/10';
       case 'Sold': return 'text-emerald-500 border-emerald-500/20 bg-emerald-500/10';
+      case 'Requested': return 'text-purple-400 border-purple-400/20 bg-purple-400/10';
       default: return 'text-gray-400 border-gray-400/20';
     }
   };

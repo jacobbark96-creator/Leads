@@ -58,9 +58,20 @@ export default function ClientDashboard() {
   const [viewMode, setViewMode] = useState<'map' | 'list'>('map');
 
   const handleLeadClick = (lead: Lead) => {
-    setSelectedLead(lead);
+    if (lead.purchase_status === 'permission_pending') {
+      setSelectedPendingLead(lead);
+      setIsPendingModalOpen(true);
+    } else {
+      setSelectedLead(lead);
+    }
+    
     if (profile?.id) {
-      trackClientActivity(profile.id, 'view_lead', { lead_id: lead.id, lead_name: lead.name, company_name: lead.company, purchase_status: lead.purchase_status });
+      trackClientActivity(profile.id, 'view_lead', { 
+        lead_id: lead.id, 
+        lead_name: lead.purchase_status === 'permission_pending' ? 'Redacted' : lead.name, 
+        company_name: lead.purchase_status === 'permission_pending' ? 'Redacted' : lead.company, 
+        purchase_status: lead.purchase_status 
+      });
     }
   };
 
@@ -160,7 +171,6 @@ export default function ClientDashboard() {
         .from('lead_purchases')
         .select('id, status, purchase_type, price_paid, sale_amount, purchased_at, leads(*, buildings(*))')
         .eq('client_id', clientData.id)
-        .neq('status', 'permission_pending')
         .order('purchased_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 

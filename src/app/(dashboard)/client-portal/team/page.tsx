@@ -316,11 +316,22 @@ export default function TeamManagement() {
     setIsRejecting(true);
     try {
       const { data: session } = await supabase.auth.getSession();
+      const token = session?.session?.access_token;
+
+      if (!token) {
+        throw new Error('No active session found. Please log in again.');
+      }
+
+      console.log('Submitting rejection:', {
+        purchaseId: requestToReject.id,
+        parentId: profile?.id
+      });
+
       const res = await fetch('/api/team/reject-purchase', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session?.session?.access_token}`
+          'Authorization': `Bearer ${token}`
         },
         body: JSON.stringify({
           purchaseId: requestToReject.id,

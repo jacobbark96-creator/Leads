@@ -50,6 +50,7 @@ export default function ClientDashboard() {
   const [showInvoicesModal, setShowInvoicesModal] = useState(false);
   const [showPerformanceModal, setShowPerformanceModal] = useState(false);
   const [pendingRequests, setPendingRequests] = useState<any[]>([]);
+  const [lastNotificationId, setLastNotificationId] = useState<string | null>(null);
   const { profile, refreshProfile } = useAuthStore();
   const PAGE_SIZE = 24;
 
@@ -113,15 +114,21 @@ export default function ClientDashboard() {
         try {
           const { data: sessionData } = await supabase.auth.getSession();
           const token = sessionData.session?.access_token;
+          
+          if (!token) {
+            console.warn('Dashboard: No access token found for advisor fetch');
+          }
+
           if (token) {
             const res = await fetch('/api/advisor', {
               headers: { Authorization: `Bearer ${token}` }
             });
             const json = await res.json();
             if (res.ok) setAdvisorDetails(json.advisor);
+            else console.error('Advisor fetch error:', json);
           }
-        } catch {
-          // keep pending
+        } catch (err) {
+          console.error('Dashboard advisor fetch exception:', err);
         }
       }
       
@@ -196,6 +203,56 @@ export default function ClientDashboard() {
       fetchDashboardData(0, true);
     }
   }, [profile?.id]);
+
+  // Real-time subscription for lead purchase updates
+  useEffect(() => {
+    if (!profile || !clientId) return;
+
+    const channel = supabase
+      .channel(`client_notifications_${clientId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lead_purchases',
+          filter: `client_id=eq.${clientId}`
+        },
+        async (payload) => {
+          console.log('Real-time update received:', payload);
+          
+          // Refresh the data immediately
+          fetchDashboardData(0, true);
+          
+          // Handle specific notifications for approval/rejection
+          if (payload.eventType === 'UPDATE') {
+            const oldStatus = payload.old.status;
+            const newStatus = payload.new.status;
+            
+            // If it was pending and now it's 'new' (Approved)
+            if (oldStatus === 'permission_pending' && newStatus === 'new') {
+              toast.success('Your lead purchase request has been APPROVED!', {
+                duration: 6000,
+                icon: '🎉'
+              });
+            }
+          } else if (payload.eventType === 'DELETE') {
+            // Rejection usually deletes the record in our current implementation
+            // or we might want to check if it was a permission_pending record
+            if (payload.old.status === 'permission_pending') {
+              toast.error('A lead purchase request was rejected. Check your email for details.', {
+                duration: 8000
+              });
+            }
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [profile?.id, clientId]);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {

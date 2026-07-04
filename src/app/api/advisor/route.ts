@@ -18,14 +18,20 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Server is not configured for advisor lookup.' }, { status: 500 });
   }
 
-  const token = getBearerToken(req);
-  if (!token) {
+  const authHeader = req.headers.get('authorization');
+  if (!authHeader) {
+    console.error('Advisor API: Missing Authorization header');
     return NextResponse.json({ error: 'Missing Authorization header.' }, { status: 401 });
   }
 
-  const anon = createClient(supabaseUrl, supabaseAnonKey);
-  const { data: userData, error: userError } = await anon.auth.getUser(token);
+  const anon = createClient(supabaseUrl, supabaseAnonKey, {
+    global: { headers: { Authorization: authHeader } },
+    auth: { persistSession: false }
+  });
+  const { data: userData, error: userError } = await anon.auth.getUser();
+  
   if (userError || !userData?.user) {
+    console.error('Advisor API Auth Error:', userError || 'No user data');
     return NextResponse.json({ error: 'Invalid session.' }, { status: 401 });
   }
 

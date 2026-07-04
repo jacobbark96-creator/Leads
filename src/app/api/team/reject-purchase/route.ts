@@ -6,6 +6,12 @@ import { extractTown } from '@/lib/utils';
 
 export const runtime = 'edge';
 
+function getBearerToken(req: Request) {
+  const auth = req.headers.get('authorization') || '';
+  const match = auth.match(/^Bearer\s+(.+)$/i);
+  return match ? match[1] : null;
+}
+
 export async function POST(req: Request) {
   try {
     const { purchaseId, reason, parentId } = await req.json();
@@ -19,14 +25,36 @@ export async function POST(req: Request) {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
     const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!;
     
+    if (!authHeader) {
+      console.error('Reject Purchase: Missing Authorization header');
+      return NextResponse.json({ error: 'Unauthorized: Missing token' }, { status: 401 });
+    }
+
     const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-      global: { headers: { Authorization: authHeader || '' } }
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false }
     });
 
     const { data: { user: authUser }, error: authError } = await supabase.auth.getUser();
 
-    if (authError || !authUser || authUser.id !== parentId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    if (authError || !authUser) {
+      console.error('Reject Purchase Auth Error (Token):', authError);
+      return NextResponse.json({ 
+        error: 'Unauthorized: Invalid session', 
+        details: authError?.message 
+      }, { status: 401 });
+    }
+
+    if (authUser.id !== parentId) {
+      console.error('Reject Purchase Auth Error (ID Mismatch):', {
+        authUserId: authUser.id,
+        providedParentId: parentId
+      });
+      return NextResponse.json({ 
+        error: 'Unauthorized: parentId mismatch',
+        authUserId: authUser.id,
+        providedParentId: parentId
+      }, { status: 401 });
     }
 
     // 2. Fetch purchase details (including child user and lead info)

@@ -508,7 +508,7 @@ export default function TeamManagement() {
                           </span>
                         </div>
                         <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
-                          {req.purchase_type === 'exclusive' ? 'Exclusive Purchase' : 'Lead Share'} • £{req.price_paid}
+                          Purchase Request • £{req.price_paid}
                         </p>
                       </div>
                     </div>

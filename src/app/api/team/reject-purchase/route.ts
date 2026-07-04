@@ -74,13 +74,13 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Purchase request not found' }, { status: 404 });
     }
 
-    // 3. Delete the purchase request
-    const { error: deleteError } = await supabaseAdmin
+    // 3. Update the purchase request to 'rejected'
+    const { error: updateError } = await supabaseAdmin
       .from('lead_purchases')
-      .delete()
+      .update({ status: 'rejected' })
       .eq('id', purchaseId);
 
-    if (deleteError) throw deleteError;
+    if (updateError) throw updateError;
 
     // 4. Send rejection email to the child account
     const childUser = purchase.client.user;

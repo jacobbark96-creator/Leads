@@ -32,7 +32,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
     setPurchaseType('share');
   }
 
-  const basePrice = purchaseType === 'exclusive' ? (lead.exclusive_price || 135) : (lead.share_price || 45);
+  const basePrice = (lead.exclusive_price || 135);
   const discountedPrice = Math.max(0, basePrice - (appliedDiscount?.amount || 0));
   const creditToUse = Math.min(creditBalance, discountedPrice);
   const totalToPay = useTradeAccount ? 0 : Math.max(0, discountedPrice - creditToUse);
@@ -191,50 +191,19 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
             <div className="lg:col-span-2">
               <div className="bg-white rounded-xl border border-gray-200 shadow-sm sticky top-0">
                 <div className="p-5 border-b border-gray-100">
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Purchase Options</h3>
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3">Item Summary</h3>
                   
-                  <div className="space-y-3 mb-5">
-                    <label className={`block relative border rounded-lg p-3 cursor-pointer transition-colors ${purchaseType === 'exclusive' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 hover:bg-gray-50'} ${!isExclusiveAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <input
-                            type="radio"
-                            name="purchaseType"
-                            value="exclusive"
-                            disabled={!isExclusiveAvailable}
-                            checked={purchaseType === 'exclusive'}
-                            onChange={() => setPurchaseType('exclusive')}
-                            className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <span className="ml-2.5 font-bold text-sm text-gray-900">Exclusive Lead</span>
-                        </div>
-                        <span className="font-bold text-sm text-gray-900">£{(lead.exclusive_price || 135).toFixed(2)}</span>
+                  <div className="bg-blue-50/50 border border-blue-100 rounded-lg p-3 mb-5">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Zap className="w-4 h-4 text-blue-600" />
+                        <span className="font-bold text-sm text-gray-900">Exclusive Purchase</span>
                       </div>
-                      <p className="mt-1 text-[10px] text-gray-500 ml-6">
-                        {isExclusiveAvailable ? "Buy exclusively. Removes lead from the market completely." : "Already purchased as a LeadShare. Cannot be bought exclusively."}
-                      </p>
-                    </label>
-
-                    <label className={`block relative border rounded-lg p-3 cursor-pointer transition-colors ${purchaseType === 'share' ? 'border-blue-500 bg-blue-50 ring-1 ring-blue-500' : 'border-gray-200 hover:bg-gray-50'} ${!isShareAvailable ? 'opacity-50 cursor-not-allowed' : ''}`}>
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center">
-                          <input
-                            type="radio"
-                            name="purchaseType"
-                            value="share"
-                            disabled={!isShareAvailable}
-                            checked={purchaseType === 'share'}
-                            onChange={() => setPurchaseType('share')}
-                            className="h-3.5 w-3.5 text-blue-600 focus:ring-blue-500 border-gray-300"
-                          />
-                          <span className="ml-2.5 font-bold text-sm text-gray-900">LeadShare (1 of {lead.max_shares || 3})</span>
-                        </div>
-                        <span className="font-bold text-sm text-gray-900">£{(lead.share_price || 45).toFixed(2)}</span>
-                      </div>
-                      <p className="mt-1 text-[10px] text-gray-500 ml-6">
-                        {isShareAvailable ? `Buy a share of this lead. Shared with up to ${(lead.max_shares || 3) - 1} other contractors.` : "Maximum shares reached for this lead."}
-                      </p>
-                    </label>
+                      <span className="font-bold text-sm text-gray-900">£{(lead.exclusive_price || 135).toFixed(2)}</span>
+                    </div>
+                    <p className="mt-1 text-[10px] text-gray-500">
+                      Removes lead from the market completely and grants exclusive access.
+                    </p>
                   </div>
 
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Payment Summary</h3>
@@ -295,7 +264,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                     </div>
                     
                     <div className="flex justify-between text-sm pt-2 border-t border-gray-50">
-                      <span className="text-gray-600">1x {purchaseType === 'exclusive' ? 'Exclusive' : 'LeadShare'} Lead</span>
+                      <span className="text-gray-600">1x Exclusive Lead</span>
                       <span className="font-medium text-gray-900">£{basePrice.toFixed(2)}</span>
                     </div>
                     

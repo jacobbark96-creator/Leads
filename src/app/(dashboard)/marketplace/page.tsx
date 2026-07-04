@@ -304,6 +304,22 @@ export default function MarketplacePage() {
       // Handle child account request
       if (profile.parent_id) {
         setLoading(true);
+
+        // Double check if already requested
+        const { data: existing } = await supabase
+          .from('lead_purchases')
+          .select('id')
+          .eq('lead_id', leadId)
+          .eq('client_id', clientId)
+          .single();
+
+        if (existing) {
+          toast.error('You have already requested this lead.');
+          setLeadToPurchase(null);
+          setLoading(false);
+          return;
+        }
+
         const { error: requestError } = await supabase
           .from('lead_purchases')
           .insert([{
@@ -492,25 +508,17 @@ export default function MarketplacePage() {
                   </div>
                   */}
                   
-                  <div className="pt-3 pb-1">
-                    <div className="flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-1.5">
-                      <span>LeadShare</span>
-                      <span className={lead.purchase_count && lead.purchase_count >= 3 ? "text-red-500" : "text-blue-600"}>
-                        {lead.purchase_count || 0}/{lead.max_shares || 3}
-                      </span>
+                  {/* Purchase indicator simplified to only show availability */}
+                  <div className="mt-4 pt-4 border-t border-gray-50">
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Availability</span>
+                      <span className="text-[10px] font-black text-green-600 uppercase">Exclusive</span>
                     </div>
                     <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                      <div 
-                        className={`h-1.5 rounded-full ${
-                          (lead.purchase_count || 0) === 0 ? 'bg-gray-200' :
-                          (lead.purchase_count || 0) >= (lead.max_shares || 3) ? 'bg-red-500' : 
-                          'bg-blue-500'
-                        }`}
-                        style={{ width: `${Math.min(100, ((lead.purchase_count || 0) / (lead.max_shares || 3)) * 100)}%` }}
-                      ></div>
+                      <div className="h-1.5 rounded-full bg-green-500 w-full"></div>
                     </div>
                     <div className="text-[10px] text-gray-400 mt-1 text-center font-medium">
-                      {(lead.purchase_count || 0) === 0 ? 'Available for Exclusive Purchase' : `${lead.purchase_count || 0} Contractors have purchased`}
+                      Available for Exclusive Purchase
                     </div>
                   </div>
                 </div>

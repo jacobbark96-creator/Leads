@@ -565,7 +565,7 @@ export default function ClientDashboard() {
                                 {extractTown(req.leads?.location)}
                               </p>
                               <p className="text-[10px] text-amber-600 font-medium truncate uppercase tracking-wider">
-                                {req.purchase_type === 'exclusive' ? 'Exclusive' : 'Share'} • Pending Approval
+                                Pending Approval
                               </p>
                             </div>
                         </div>

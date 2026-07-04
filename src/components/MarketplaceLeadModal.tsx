@@ -46,6 +46,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
   const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
   const [buildings, setBuildings] = useState<any[]>(lead.buildings || []);
   const [isLoadingBuildings, setIsLoadingBuildings] = useState(false);
+  const [existingRequest, setExistingRequest] = useState<any>(null);
+  const [isLoadingRequest, setIsLoadingRequest] = useState(false);
   const { profile } = useAuthStore();
   const hasTrackedView = useRef(false);
 
@@ -77,6 +79,38 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
 
     fetchBuildings();
   }, [isOpen, lead?.id, lead.buildings]);
+
+  useEffect(() => {
+    const checkExistingRequest = async () => {
+      if (!isOpen || !lead?.id || !profile?.id) return;
+      
+      setIsLoadingRequest(true);
+      try {
+        // First find the clientId for this user
+        const { data: clientData } = await supabase
+          .from('clients')
+          .select('id')
+          .eq('user_id', profile.id)
+          .single();
+          
+        if (clientData) {
+          const { data } = await supabase
+            .from('lead_purchases')
+            .select('id, status')
+            .eq('lead_id', lead.id)
+            .eq('client_id', clientData.id)
+            .limit(1)
+            .single();
+          setExistingRequest(data);
+        }
+      } catch (err) {
+        console.error('Error checking existing request:', err);
+      } finally {
+        setIsLoadingRequest(false);
+      }
+    };
+    checkExistingRequest();
+  }, [isOpen, lead?.id, profile?.id]);
 
   const activeBuilding = activeBuildingIndex > 0 ? buildings[activeBuildingIndex - 1] : null;
 
@@ -193,23 +227,14 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
           {/* Top Row: Pricing & High-Level Summary */}
           <div className="flex flex-col lg:flex-row gap-3">
             {/* Pricing Card */}
-            <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex-[0.8] flex divide-x divide-gray-100">
-              <div className="flex-1 pr-3">
+            <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex-[0.8] flex">
+              <div className="flex-1">
                 <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Exclusive Price</h3>
                 <div className="text-xl font-extrabold text-green-600 mb-1">
                   {lead.exclusive_price ? `£${lead.exclusive_price}` : <MissingValue />}
                 </div>
                 <div className="inline-flex items-center gap-1 bg-green-50 text-green-700 px-2 py-0.5 rounded text-[10px] font-bold border border-green-100">
                   <Zap className="w-3 h-3" /> Best for higher win rate
-                </div>
-              </div>
-              <div className="flex-1 pl-3">
-                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-0.5">Leadshare Price</h3>
-                <div className="text-xl font-extrabold text-blue-600 mb-1">
-                  {lead.share_price ? `£${lead.share_price}` : <MissingValue />}
-                </div>
-                <div className="inline-flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded text-[10px] font-bold border border-blue-100">
-                  <User className="w-3 h-3" /> Share with other installers
                 </div>
               </div>
             </div>
@@ -601,15 +626,24 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
             >
               Cancel
             </button>
-            <button
-              onClick={onPurchase}
-              className={`px-6 py-2.5 shadow-sm text-sm font-bold rounded-xl text-white flex items-center gap-2 transition-colors ${
-                profile?.parent_id ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'
-              }`}
-            >
-              <ShoppingCart className="w-4 h-4" />
-              {profile?.parent_id ? 'Request Purchase' : 'Proceed to Order Summary'}
-            </button>
+            {existingRequest ? (
+              <div className="flex items-center gap-2 px-6 py-2.5 bg-gray-100 text-gray-500 text-sm font-bold rounded-xl border border-gray-200">
+                <Clock className="w-4 h-4" />
+                {existingRequest.status === 'permission_pending' ? 'Request Pending Approval' : 
+                 existingRequest.status === 'rejected' ? 'Request Rejected' : 'Already Requested'}
+              </div>
+            ) : (
+              <button
+                onClick={onPurchase}
+                disabled={isLoadingRequest}
+                className={`px-6 py-2.5 shadow-sm text-sm font-bold rounded-xl text-white flex items-center gap-2 transition-colors ${
+                  profile?.parent_id ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'
+                } ${isLoadingRequest ? 'opacity-50 cursor-not-allowed' : ''}`}
+              >
+                <ShoppingCart className="w-4 h-4" />
+                {profile?.parent_id ? 'Request Purchase' : 'Proceed to Order Summary'}
+              </button>
+            )}
           </div>
         </div>
 

@@ -64,7 +64,8 @@ export async function POST(req: Request) {
         *,
         client:client_id (
           id,
-          user:user_id (id, name, email)
+          user_id,
+          contact_name
         ),
         leads:lead_id (*)
       `)
@@ -78,18 +79,26 @@ export async function POST(req: Request) {
 
     // Defensive check for nested data
     const clientData = Array.isArray(purchase.client) ? purchase.client[0] : purchase.client;
-    const childUser = Array.isArray(clientData?.user) ? clientData.user[0] : clientData?.user;
     const lead = Array.isArray(purchase.leads) ? purchase.leads[0] : purchase.leads;
 
-    if (!childUser || !lead) {
+    // Fetch user details separately to be 100% sure we get them
+    const { data: userData, error: userError } = await supabaseAdmin
+      .from('users')
+      .select('id, name, email')
+      .eq('id', clientData?.user_id)
+      .single();
+
+    if (userError || !userData || !lead) {
       console.error('Reject Purchase: Missing nested data:', { 
         hasClient: !!clientData, 
-        hasUser: !!childUser, 
+        hasUser: !!userData, 
         hasLead: !!lead,
-        purchaseData: JSON.stringify(purchase).substring(0, 500) // Log more data for debugging
+        userError
       });
       return NextResponse.json({ error: 'Required lead or user data missing from purchase record' }, { status: 400 });
     }
+
+    const childUser = userData;
 
     // 3. Update the purchase request to 'rejected'
     const { error: updateError } = await supabaseAdmin

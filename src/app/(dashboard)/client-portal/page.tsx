@@ -171,6 +171,7 @@ export default function ClientDashboard() {
         .from('lead_purchases')
         .select('id, status, purchase_type, price_paid, sale_amount, purchased_at, leads(*, buildings(*))')
         .eq('client_id', clientData.id)
+        .neq('status', 'rejected')
         .order('purchased_at', { ascending: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
@@ -208,10 +209,30 @@ export default function ClientDashboard() {
   }, [profile?.id]);
 
   useEffect(() => {
-    if (profile?.id) {
-      setPage(0);
-      fetchDashboardData(0, true);
-    }
+    if (!profile?.id) return;
+
+    setPage(0);
+    fetchDashboardData(0, true);
+
+    // Subscribe to changes in lead_purchases for real-time dashboard updates
+    const channel = supabase
+      .channel('client-dashboard-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'lead_purchases'
+        },
+        () => {
+          fetchDashboardData(0, true);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, [profile?.id]);
 
   // Real-time subscription for lead purchase updates

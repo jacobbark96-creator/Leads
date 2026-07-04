@@ -23,7 +23,32 @@ export function ClientNotifications() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [seenBroadcastIds, setSeenBroadcastIds] = useState<string[]>([]);
+  const [deletedBroadcastIds, setDeletedBroadcastIds] = useState<string[]>([]);
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Load seen and deleted broadcasts from localStorage
+  useEffect(() => {
+    if (!profile?.id) return;
+    
+    const seen = localStorage.getItem(`seen_broadcasts_${profile.id}`);
+    if (seen) {
+      try {
+        setSeenBroadcastIds(JSON.parse(seen));
+      } catch (e) {
+        console.error('Failed to parse seen broadcasts', e);
+      }
+    }
+
+    const deleted = localStorage.getItem(`deleted_broadcasts_${profile.id}`);
+    if (deleted) {
+      try {
+        setDeletedBroadcastIds(JSON.parse(deleted));
+      } catch (e) {
+        console.error('Failed to parse deleted broadcasts', e);
+      }
+    }
+  }, [profile?.id]);
 
   useEffect(() => {
     if (!profile) return;
@@ -44,9 +69,16 @@ export function ClientNotifications() {
           // If it's a new notification for this user or a broadcast
           if (payload.eventType === 'INSERT') {
             const newNotif = payload.new as Notification;
-            if (newNotif.user_id === profile.id || newNotif.user_id === null) {
-              setNotifications(prev => [newNotif, ...prev]);
-              if (!newNotif.is_read) {
+            const isTargeted = newNotif.user_id === profile.id;
+            const isBroadcast = newNotif.user_id === null;
+
+            if (isTargeted || isBroadcast) {
+              // Only add if not already seen/deleted (for broadcasts) or unread (for targeted)
+              const isSeen = isBroadcast && (seenBroadcastIds.includes(newNotif.id) || deletedBroadcastIds.includes(newNotif.id));
+              const isRead = isTargeted && newNotif.is_read;
+
+              if (!isSeen && !isRead) {
+                setNotifications(prev => [newNotif, ...prev]);
                 toast.success(`New Notification: ${newNotif.title}`, {
                   icon: getIcon(newNotif.type, "w-5 h-5"),
                   duration: 5000,
@@ -55,6 +87,8 @@ export function ClientNotifications() {
             }
           } else if (payload.eventType === 'UPDATE') {
             const updatedNotif = payload.new as Notification;
+            // If it's now read, we might want to keep it in the current view 
+            // but update its status so it turns white
             setNotifications(prev => prev.map(n => n.id === updatedNotif.id ? updatedNotif : n));
           } else if (payload.eventType === 'DELETE') {
             setNotifications(prev => prev.filter(n => n.id === payload.old.id));
@@ -66,7 +100,7 @@ export function ClientNotifications() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [profile?.id]);
+  }, [profile?.id, seenBroadcastIds]);
 
   useEffect(() => {
     // Click outside to close
@@ -82,18 +116,27 @@ export function ClientNotifications() {
   const fetchNotifications = async () => {
     if (!profile) return;
     try {
-      // 1. Fetch notifications
+      // 1. Fetch unread notifications
       const { data: notifs, error: notifError } = await supabase
         .from('notifications')
         .select('*')
         .or(`user_id.eq.${profile.id},user_id.is.null`)
+        .eq('is_read', false) // Only get unread
         .order('created_at', { ascending: false })
         .limit(40);
 
       if (notifError) throw notifError;
       
-      // 2. Extract lead IDs for "New Lead Available" notifications to check their status
-      const leadIdsToCheck = notifs
+      // 2. Filter broadcasts against local storage seen and deleted IDs
+      const filteredBroadcasts = notifs.filter(n => {
+        if (n.user_id === null) {
+          return !seenBroadcastIds.includes(n.id) && !deletedBroadcastIds.includes(n.id);
+        }
+        return true;
+      });
+
+      // 3. Extract lead IDs for "New Lead Available" notifications to check their status
+      const leadIdsToCheck = filteredBroadcasts
         .filter(n => n.title === 'New Lead Available' && n.metadata?.lead_id)
         .map(n => n.metadata.lead_id);
 
@@ -110,46 +153,59 @@ export function ClientNotifications() {
         }
       }
 
-      // 3. Filter out notifications for leads that are already sold
-      const filteredData = notifs.filter(notif => {
+      // 4. Filter out notifications for leads that are already sold
+      const finalData = filteredBroadcasts.filter(notif => {
         if (notif.title === 'New Lead Available' && notif.metadata?.lead_id) {
           return !soldLeadIds.includes(notif.metadata.lead_id);
         }
         return true;
       });
 
-      setNotifications(filteredData);
+      setNotifications(finalData);
     } catch (error) {
       console.error('Error fetching notifications:', error);
     }
   };
 
-  const markAsRead = async (id: string) => {
-    try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('id', id);
-
-      if (error) throw error;
-      setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
-    } catch (error) {
-      console.error('Error marking notification as read:', error);
+  const isUnseen = (notif: Notification) => {
+    if (notif.user_id === null) {
+      return !seenBroadcastIds.includes(notif.id) && !deletedBroadcastIds.includes(notif.id);
     }
+    return !notif.is_read;
   };
 
   const markAllAsRead = async () => {
-    if (notifications.filter(n => !n.is_read).length === 0) return;
+    const unseenNotifs = notifications.filter(n => isUnseen(n));
+    if (unseenNotifs.length === 0) return;
     
     setLoading(true);
     try {
-      const { error } = await supabase
-        .from('notifications')
-        .update({ is_read: true })
-        .eq('user_id', profile?.id)
-        .eq('is_read', false);
+      // 1. Update user-specific notifications in DB
+      const userNotifIds = unseenNotifs
+        .filter(n => n.user_id !== null)
+        .map(n => n.id);
 
-      if (error) throw error;
+      if (userNotifIds.length > 0) {
+        const { error } = await supabase
+          .from('notifications')
+          .update({ is_read: true })
+          .in('id', userNotifIds);
+
+        if (error) throw error;
+      }
+
+      // 2. Update broadcasts in localStorage
+      const broadcastIds = unseenNotifs
+        .filter(n => n.user_id === null)
+        .map(n => n.id);
+
+      if (broadcastIds.length > 0) {
+        const newSeenIds = [...new Set([...seenBroadcastIds, ...broadcastIds])];
+        setSeenBroadcastIds(newSeenIds);
+        localStorage.setItem(`seen_broadcasts_${profile?.id}`, JSON.stringify(newSeenIds));
+      }
+
+      // 3. Update local state so items turn white immediately
       setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
     } catch (error) {
       console.error('Error marking all notifications as read:', error);
@@ -161,6 +217,17 @@ export function ClientNotifications() {
   const deleteNotification = async (id: string, e: React.MouseEvent) => {
     e.stopPropagation();
     try {
+      // If it's a broadcast, we just add it to deleted and remove from state
+      // since we can't delete broadcasts from the DB as a client
+      const notif = notifications.find(n => n.id === id);
+      if (notif?.user_id === null) {
+        const newDeletedIds = [...new Set([...deletedBroadcastIds, id])];
+        setDeletedBroadcastIds(newDeletedIds);
+        localStorage.setItem(`deleted_broadcasts_${profile?.id}`, JSON.stringify(newDeletedIds));
+        setNotifications(prev => prev.filter(n => n.id !== id));
+        return;
+      }
+
       const { error } = await supabase
         .from('notifications')
         .delete()
@@ -170,10 +237,11 @@ export function ClientNotifications() {
       setNotifications(prev => prev.filter(n => n.id !== id));
     } catch (error) {
       console.error('Error deleting notification:', error);
+      toast.error('Failed to delete notification');
     }
   };
 
-  const unreadCount = notifications.filter(n => !n.is_read).length;
+  const unreadCount = notifications.filter(n => isUnseen(n)).length;
 
   const getIcon = (type: string, className: string = "w-4 h-4") => {
     switch (type) {
@@ -220,6 +288,11 @@ export function ClientNotifications() {
           <div className="px-4 py-3 border-b border-gray-100 flex items-center justify-between bg-gray-50/50">
             <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
               Notifications
+              {unreadCount > 0 && (
+                <span className="bg-blue-100 text-blue-600 text-[10px] font-black px-1.5 py-0.5 rounded-full">
+                  {unreadCount} NEW
+                </span>
+              )}
             </h3>
           </div>
 
@@ -230,58 +303,60 @@ export function ClientNotifications() {
                   <Bell className="w-6 h-6 text-gray-300" />
                 </div>
                 <div>
-                  <p className="text-sm font-bold text-gray-900">No notifications yet</p>
-                  <p className="text-xs text-gray-500 mt-1">We'll let you know when something happens.</p>
+                  <p className="text-sm font-bold text-gray-900">All caught up!</p>
+                  <p className="text-xs text-gray-500 mt-1">No new notifications at the moment.</p>
                 </div>
               </div>
             ) : (
               <ul className="divide-y divide-gray-50">
-                {notifications.map((notif) => (
-                  <li
-                    key={notif.id}
-                    onClick={() => !notif.is_read && markAsRead(notif.id)}
-                    className={`p-4 transition-all duration-200 cursor-pointer relative group ${
-                      !notif.is_read ? 'bg-blue-50/40 hover:bg-blue-50/60' : 'hover:bg-gray-50'
-                    }`}
-                  >
-                    {!notif.is_read && (
-                      <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-full" />
-                    )}
-                    <div className="flex items-center gap-3 h-10">
-                      <div className={`p-1.5 rounded-lg transition-colors duration-200 shrink-0 ${
-                        !notif.is_read ? 'bg-blue-600/10' : 'bg-slate-50'
-                      }`}>
-                        {getIcon(notif.type, "w-3.5 h-3.5")}
-                      </div>
-                      
-                      <div className="flex-1 min-w-0 flex items-center gap-2">
-                        <p className={`text-xs font-bold truncate shrink-0 ${!notif.is_read ? 'text-gray-900' : 'text-gray-600'}`}>
-                          {notif.title === 'new lead' ? 'New Lead' : 
-                           notif.title === 'New Lead Available' ? 'Local Match' : 
-                           notif.title}
-                        </p>
-                        <span className="text-gray-200 shrink-0">|</span>
-                        <p className={`text-[11px] truncate flex-1 ${!notif.is_read ? 'text-gray-600' : 'text-gray-400'}`}>
-                          {notif.content}
-                        </p>
-                      </div>
-
-                      <div className="flex items-center gap-2 shrink-0">
-                        <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap bg-gray-50/50 px-1.5 py-0.5 rounded border border-gray-100">
-                          {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true }).replace('about ', '').replace(' ago', '')}
-                        </span>
+                {notifications.map((notif) => {
+                  const unseen = isUnseen(notif);
+                  return (
+                    <li
+                      key={notif.id}
+                      className={`p-4 transition-all duration-500 cursor-pointer relative group ${
+                        unseen ? 'bg-blue-50/80 hover:bg-blue-100/60' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      {unseen && (
+                        <div className="absolute left-0 top-0 bottom-0 w-1 bg-blue-600 rounded-r-full" />
+                      )}
+                      <div className="flex items-center gap-3 h-10">
+                        <div className={`p-1.5 rounded-lg transition-colors duration-200 shrink-0 ${
+                          unseen ? 'bg-blue-600/10' : 'bg-slate-50'
+                        }`}>
+                          {getIcon(notif.type, "w-3.5 h-3.5")}
+                        </div>
                         
-                        <button
-                          onClick={(e) => deleteNotification(notif.id, e)}
-                          className="p-1 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all opacity-0 group-hover:opacity-100"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                        <div className="flex-1 min-w-0 flex items-center gap-2">
+                          <p className={`text-xs font-bold truncate shrink-0 ${unseen ? 'text-gray-900' : 'text-gray-600'}`}>
+                            {notif.title === 'new lead' ? 'New Lead' : 
+                             notif.title === 'New Lead Available' ? 'Local Match' : 
+                             notif.title}
+                          </p>
+                          <span className="text-gray-200 shrink-0">|</span>
+                          <p className={`text-[11px] truncate flex-1 ${unseen ? 'text-gray-600' : 'text-gray-400'}`}>
+                            {notif.content}
+                          </p>
+                        </div>
+
+                        <div className="flex items-center gap-2 shrink-0">
+                          <span className="text-[10px] font-medium text-gray-400 whitespace-nowrap bg-gray-50/50 px-1.5 py-0.5 rounded border border-gray-100">
+                            {formatDistanceToNow(new Date(notif.created_at), { addSuffix: true }).replace('about ', '').replace(' ago', '')}
+                          </span>
+                          
+                          <button
+                            onClick={(e) => deleteNotification(notif.id, e)}
+                            className="p-1 text-gray-300 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-all opacity-0 group-hover:opacity-100"
+                            title="Delete"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
-                    </div>
-                  </li>
-                ))}
+                    </li>
+                  );
+                })}
               </ul>
             )}
           </div>

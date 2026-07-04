@@ -30,6 +30,7 @@ export default function TeamManagement() {
   const [selectedLeadForPreview, setSelectedLeadForPreview] = useState<Lead | null>(null);
   const [isLeadModalOpen, setIsLeadModalOpen] = useState(false);
   const [dateFilter, setDateFilter] = useState<'all' | 'mtd' | 'week'>('all');
+  const [historyStatusFilter, setHistoryStatusFilter] = useState<'approved' | 'rejected'>('approved');
   const [selectedUserHistory, setSelectedUserHistory] = useState<any[]>([]);
   const [loadingHistory, setLoadingHistory] = useState(false);
   
@@ -136,7 +137,12 @@ export default function TeamManagement() {
           schema: 'public',
           table: 'lead_purchases'
         },
-        () => fetchAllPendingRequests()
+        () => {
+          fetchAllPendingRequests();
+          if (selectedUser) {
+            fetchUserHistory(selectedUser.id);
+          }
+        }
       )
       .subscribe();
 
@@ -327,6 +333,9 @@ export default function TeamManagement() {
         setPendingPurchaseId(null);
         setSelectedLeadForCheckout(null);
         fetchAllPendingRequests();
+        if (selectedUser) {
+          fetchUserHistory(selectedUser.id);
+        }
         fetchParentCredit();
         refreshProfile();
       } else if (data.url) {
@@ -383,6 +392,9 @@ export default function TeamManagement() {
       setRejectionReason('');
       setRequestToReject(null);
       fetchAllPendingRequests();
+      if (selectedUser) {
+        fetchUserHistory(selectedUser.id);
+      }
     } catch (error: any) {
       toast.error('Failed to reject: ' + error.message);
     } finally {
@@ -855,30 +867,65 @@ export default function TeamManagement() {
                     {/* Column 2: Purchase History */}
                     <div className="space-y-4">
                       <div className="flex items-center justify-between">
-                        <h4 className="text-[10px] font-black text-green-600 uppercase tracking-widest flex items-center gap-2">
-                          <CheckCircle2 className="w-3 h-3" />
-                          Purchase History
+                        <h4 className={`text-[10px] font-black uppercase tracking-widest flex items-center gap-2 ${
+                          historyStatusFilter === 'approved' ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {historyStatusFilter === 'approved' ? <CheckCircle2 className="w-3 h-3" /> : <X className="w-3 h-3" />}
+                          {historyStatusFilter === 'approved' ? 'Purchase History' : 'Rejected Requests'}
                         </h4>
-                        <span className="text-[10px] font-bold text-green-600 bg-green-50 px-2 py-0.5 rounded-full">
-                          {filterLeadsByDate(selectedUserHistory).length}
-                        </span>
+                        <div className="flex items-center gap-1 bg-gray-100 p-1 rounded-lg">
+                          <button
+                            onClick={() => setHistoryStatusFilter('approved')}
+                            className={`px-2 py-1 rounded-md text-[9px] font-bold transition-all ${
+                              historyStatusFilter === 'approved' 
+                                ? 'bg-green-600 text-white shadow-sm' 
+                                : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                          >
+                            Approved
+                          </button>
+                          <button
+                            onClick={() => setHistoryStatusFilter('rejected')}
+                            className={`px-2 py-1 rounded-md text-[9px] font-bold transition-all ${
+                              historyStatusFilter === 'rejected' 
+                                ? 'bg-red-600 text-white shadow-sm' 
+                                : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                          >
+                            Rejected
+                          </button>
+                        </div>
                       </div>
 
                       {loadingHistory ? (
                         <div className="space-y-3">
                           {[1, 2].map(i => <div key={i} className="h-20 bg-gray-50 rounded-xl animate-pulse" />)}
                         </div>
-                      ) : filterLeadsByDate(selectedUserHistory).length === 0 ? (
+                      ) : filterLeadsByDate(selectedUserHistory.filter(h => 
+                          historyStatusFilter === 'approved' ? (h.status === 'new' || h.status === 'purchased') : h.status === 'rejected'
+                        )).length === 0 ? (
                         <div className="p-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 text-center">
-                          <ShoppingCart className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                          <p className="text-[10px] text-gray-500 font-medium">No purchase history in this period.</p>
+                          {historyStatusFilter === 'approved' ? (
+                            <ShoppingCart className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          ) : (
+                            <AlertCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                          )}
+                          <p className="text-[10px] text-gray-500 font-medium">
+                            No {historyStatusFilter} leads in this period.
+                          </p>
                         </div>
                       ) : (
                         <div className="space-y-3">
-                          {filterLeadsByDate(selectedUserHistory).map((purchase) => (
+                          {filterLeadsByDate(selectedUserHistory.filter(h => 
+                            historyStatusFilter === 'approved' ? (h.status === 'new' || h.status === 'purchased') : h.status === 'rejected'
+                          )).map((purchase) => (
                             <div 
                               key={purchase.id} 
-                              className="p-3 bg-white border border-gray-100 rounded-xl flex items-center justify-between gap-3 hover:border-green-200 transition-all group cursor-pointer"
+                              className={`p-3 bg-white border rounded-xl flex items-center justify-between gap-3 transition-all group cursor-pointer ${
+                                historyStatusFilter === 'approved' 
+                                  ? 'border-gray-100 hover:border-green-200' 
+                                  : 'border-gray-100 hover:border-red-200'
+                              }`}
                               onClick={() => {
                                 setSelectedLeadForPreview(purchase.leads);
                                 setIsLeadModalOpen(true);
@@ -893,7 +940,9 @@ export default function TeamManagement() {
                                       className="w-full h-full object-cover"
                                     />
                                   ) : (
-                                    <div className="w-full h-full bg-green-50 flex items-center justify-center text-green-600">
+                                    <div className={`w-full h-full flex items-center justify-center ${
+                                      historyStatusFilter === 'approved' ? 'bg-green-50 text-green-600' : 'bg-red-50 text-red-600'
+                                    }`}>
                                       <MapPin className="w-4 h-4" />
                                     </div>
                                   )}
@@ -903,16 +952,20 @@ export default function TeamManagement() {
                                     {extractTown(purchase.leads?.location)}
                                   </p>
                                   <div className="flex items-center gap-2">
-                                    <p className="text-[9px] text-green-600 font-bold uppercase tracking-wider">
+                                    <p className={`text-[9px] font-bold uppercase tracking-wider ${
+                                      historyStatusFilter === 'approved' ? 'text-green-600' : 'text-red-600'
+                                    }`}>
                                       {purchase.status}
                                     </p>
                                     <span className="text-[9px] text-gray-400">
-                                      {new Date(purchase.purchased_at).toLocaleDateString()}
+                                      {new Date(purchase.purchased_at || purchase.updated_at || purchase.created_at).toLocaleDateString()}
                                     </span>
                                   </div>
                                 </div>
                               </div>
-                              <ChevronRight className="w-3.5 h-3.5 text-gray-300 group-hover:text-green-500 transition-colors" />
+                              <ChevronRight className={`w-3.5 h-3.5 text-gray-300 transition-colors ${
+                                historyStatusFilter === 'approved' ? 'group-hover:text-green-500' : 'group-hover:text-red-500'
+                              }`} />
                             </div>
                           ))}
                         </div>

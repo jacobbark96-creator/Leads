@@ -47,6 +47,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
   const [buildings, setBuildings] = useState<any[]>(lead.buildings || []);
   const [isLoadingBuildings, setIsLoadingBuildings] = useState(false);
   const [existingRequest, setExistingRequest] = useState<any>(null);
+  const [orgRequest, setOrgRequest] = useState<any>(null);
   const [isLoadingRequest, setIsLoadingRequest] = useState(false);
   const { profile } = useAuthStore();
   const hasTrackedView = useRef(false);
@@ -86,7 +87,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
       
       setIsLoadingRequest(true);
       try {
-        // First find the clientId for this user
+        // 1. Get current client ID
         const { data: clientData } = await supabase
           .from('clients')
           .select('id')
@@ -94,14 +95,51 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
           .single();
           
         if (clientData) {
-          const { data } = await supabase
+          // 2. Check for MY request
+          const { data: myReq } = await supabase
             .from('lead_purchases')
             .select('id, status')
             .eq('lead_id', lead.id)
             .eq('client_id', clientData.id)
             .limit(1)
             .single();
-          setExistingRequest(data);
+          setExistingRequest(myReq);
+
+          // 3. If I am a child, check for ORG requests
+          if (profile.parent_id) {
+            const { data: orgReqs } = await supabase
+              .from('lead_purchases')
+              .select(`
+                id, 
+                status, 
+                client:client_id (user:user_id (id))
+              `)
+              .eq('lead_id', lead.id)
+              .neq('client_id', clientData.id) // Exclude my own
+              .in('status', ['permission_pending', 'new', 'sat', 'won']); // Only active/approved ones
+
+            // If any active org request exists, set it
+            if (orgReqs && orgReqs.length > 0) {
+              // We need to verify if the client belongs to the same parent
+              // Since we can't easily join auth.users or do deep nested filters in one go without a custom RPC or flat structure,
+              // we'll fetch the child users of this parent first or use a subquery if RLS allows.
+              
+              const { data: siblingUsers } = await supabase
+                .from('users')
+                .select('id')
+                .eq('parent_id', profile.parent_id);
+              
+              const siblingIds = siblingUsers?.map(u => u.id) || [];
+              
+              const actualOrgReq = orgReqs.find(req => 
+                siblingIds.includes((req.client as any)?.user?.id)
+              );
+              
+              setOrgRequest(actualOrgReq || null);
+            } else {
+              setOrgRequest(null);
+            }
+          }
         }
       } catch (err) {
         console.error('Error checking existing request:', err);
@@ -110,7 +148,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
       }
     };
     checkExistingRequest();
-  }, [isOpen, lead?.id, profile?.id]);
+  }, [isOpen, lead?.id, profile?.id, profile?.parent_id]);
 
   const activeBuilding = activeBuildingIndex > 0 ? buildings[activeBuildingIndex - 1] : null;
 
@@ -631,6 +669,11 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 <Clock className="w-4 h-4" />
                 {existingRequest.status === 'permission_pending' ? 'Request Pending Approval' : 
                  existingRequest.status === 'rejected' ? 'Request Rejected' : 'Already Requested'}
+              </div>
+            ) : orgRequest ? (
+              <div className="flex items-start gap-2 px-4 py-2.5 bg-amber-50 text-amber-700 text-[11px] leading-tight font-bold rounded-xl border border-amber-100 max-w-[300px]">
+                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                <span>This lead has already been requested by someone in your organisation, please contact your account manager for more details.</span>
               </div>
             ) : (
               <button

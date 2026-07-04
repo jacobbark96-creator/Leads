@@ -305,19 +305,45 @@ export default function MarketplacePage() {
       if (profile.parent_id) {
         setLoading(true);
 
-        // Double check if already requested
+        // Double check if already requested by ME or ORG
+        const { data: siblingUsers } = await supabase
+          .from('users')
+          .select('id')
+          .eq('parent_id', profile.parent_id);
+        
+        const siblingIds = siblingUsers?.map(u => u.id) || [];
+        
+        // Find any client IDs associated with these users
+        const { data: siblingClients } = await supabase
+          .from('clients')
+          .select('id')
+          .in('user_id', [profile.id, ...siblingIds]);
+        
+        const clientIds = siblingClients?.map(c => c.id) || [];
+
         const { data: existing } = await supabase
           .from('lead_purchases')
-          .select('id')
+          .select('id, client_id, status')
           .eq('lead_id', leadId)
-          .eq('client_id', clientId)
-          .single();
+          .in('client_id', clientIds);
 
-        if (existing) {
-          toast.error('You have already requested this lead.');
-          setLeadToPurchase(null);
-          setLoading(false);
-          return;
+        if (existing && existing.length > 0) {
+          const myReq = existing.find(r => r.client_id === clientId);
+          const orgReq = existing.find(r => r.client_id !== clientId && r.status !== 'rejected');
+
+          if (myReq) {
+            toast.error('You have already requested this lead.');
+            setLeadToPurchase(null);
+            setLoading(false);
+            return;
+          }
+          
+          if (orgReq) {
+            toast.error('This lead has already been requested by someone in your organisation.');
+            setLeadToPurchase(null);
+            setLoading(false);
+            return;
+          }
         }
 
         const { error: requestError } = await supabase

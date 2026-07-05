@@ -348,15 +348,15 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1] text-white">
               <motion.span
                 animate={{ backgroundPosition: ["200% center", "-200% center"] }}
-                transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
-                className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff,45%,#e2e8f0,55%,#ffffff)] bg-[length:200%_auto]"
+                transition={{ repeat: Infinity, duration: 6, ease: "linear" }}
+                className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff,30%,#cbd5e1,50%,#ffffff,70%)] bg-[length:200%_auto] drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
               >
                 Dominate Search.
               </motion.span><br/>
               <motion.span 
                 animate={{ backgroundPosition: ["200% center", "-200% center"] }}
-                transition={{ repeat: Infinity, duration: 8, ease: "linear", delay: 1 }}
-                className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#60A5FA,45%,#ffffff,55%,#67E8F9)] bg-[length:200%_auto]"
+                transition={{ repeat: Infinity, duration: 5, ease: "linear", delay: 0.5 }}
+                className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#3B82F6,30%,#ffffff,50%,#22D3EE,70%)] bg-[length:200%_auto] drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]"
               >
                 Automate Growth.
               </motion.span>

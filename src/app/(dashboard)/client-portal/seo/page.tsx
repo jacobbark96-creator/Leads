@@ -397,7 +397,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
                  <img 
                    src="/solarpedia.png" 
                    alt="Solarpedia Logo" 
-                   className="h-full w-full object-contain drop-shadow-sm scale-[2]"
+                   className="h-full w-full object-contain drop-shadow-sm scale-[1.7]"
                  />
                </div>
                <div className="flex-1 text-center md:text-left">

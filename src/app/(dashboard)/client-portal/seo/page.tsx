@@ -470,11 +470,6 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
 
         {/* PRICING SECTION */}
         <div className="pt-10">
-          <div className="text-center space-y-3 mb-12">
-            <h2 className="text-3xl font-black text-gray-900 tracking-tight">Concierge Packages</h2>
-            <p className="text-sm text-gray-500 font-medium max-w-lg mx-auto">Transparent pricing designed for aggressive scaling. Zero hidden fees.</p>
-          </div>
-
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
             <PricingCard 
               title="Starter" 

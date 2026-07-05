@@ -333,15 +333,20 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
     <div className="w-full bg-gray-50/50 min-h-screen -mt-4 pt-4">
       {/* Floating ROI Calculator Button */}
       <button onClick={onOpenCalculator} className="fixed bottom-8 right-8 z-50 group">
-        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-100 transition duration-500 animate-shimmer" style={{ backgroundSize: '200% auto' }} />
-        <div className="relative px-6 py-4 bg-[#050505] text-white rounded-full font-black text-sm shadow-2xl flex items-center gap-3 border border-white/10 group-hover:-translate-y-1 transition-transform duration-300">
-          <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.3)]">
-            <TrendingUp className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+        <div className="absolute -inset-2 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600 rounded-full blur-lg opacity-40 group-hover:opacity-100 transition duration-700 animate-shimmer" style={{ backgroundSize: '200% auto' }} />
+        <div className="relative px-8 py-5 bg-[#050505] text-white rounded-full font-black text-sm shadow-2xl flex items-center gap-4 border border-white/10 group-hover:-translate-y-1 transition-transform duration-500 overflow-hidden">
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          <div className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.4)] relative z-10">
+            <TrendingUp className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform duration-500" />
           </div>
-          <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300 tracking-wide relative z-10 text-base">
             Calculate SEO ROI
           </span>
-          <ArrowUpRight className="w-4 h-4 text-gray-500 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
+          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center relative z-10 group-hover:bg-white/10 transition-colors">
+             <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-500" />
+          </div>
         </div>
       </button>
 

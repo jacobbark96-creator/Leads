@@ -1,12 +1,12 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   Search, Globe, TrendingUp, BarChart3, ArrowUpRight, Zap, Target, 
   MousePointer2, Check, Star, ShieldCheck, FileText, MapPin, 
-  Link2, Sparkles, Award, Crown, Activity, Info, Facebook, Instagram, Youtube, Linkedin
+  Link2, Sparkles, Award, Crown, Activity, Info, Facebook, Instagram, Youtube, Linkedin, Twitter
 } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { useAuthStore } from '../../../../store/authStore';
 import { supabase } from '../../../../lib/supabase';
 
@@ -397,28 +397,38 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
           <CounterCard title="SEO Growth / Mo" value={monthlyLeads} desc="Organic acquisition" />
           <CounterCard title="Impressions" value={impressions} desc="Kairo Search & Ads" />
           
-          {/* Solarpedia Card */}
+          {/* Solarpedia Card Premium */}
           <a 
             href="https://solarpedia.co.uk" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="md:col-span-3 bg-white rounded-[2rem] p-6 md:p-8 border border-gray-100 shadow-xl shadow-gray-200/30 flex flex-col md:flex-row items-center justify-between gap-6 relative overflow-hidden group hover:border-amber-200 transition-colors cursor-pointer"
+            className="md:col-span-3 bg-white rounded-[2.5rem] p-8 md:p-10 border border-gray-100 shadow-2xl shadow-gray-200/50 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden group hover:border-amber-300 transition-all duration-500 cursor-pointer"
           >
-            <div className="absolute right-0 bottom-0 w-48 h-48 bg-amber-100 blur-3xl pointer-events-none group-hover:bg-amber-200/50 transition-colors duration-500" />
-            <div className="flex items-center gap-6 relative z-10 w-full">
-               <div className="flex-shrink-0 w-48 h-24 flex items-center justify-center p-2">
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute right-0 bottom-0 w-64 h-64 bg-amber-200/30 blur-[80px] pointer-events-none group-hover:bg-amber-300/40 transition-colors duration-700" />
+            
+            <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 w-full">
+               <div className="flex-shrink-0 w-64 h-32 flex items-center justify-center bg-gradient-to-br from-gray-50 to-white rounded-3xl border border-gray-100 p-6 shadow-inner relative overflow-hidden group-hover:shadow-amber-100/50 transition-shadow duration-500">
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(251,191,36,0.1),transparent)]" />
                  <img 
                    src="/solarpedia.png" 
                    alt="Solarpedia Logo" 
-                   className="h-full w-full object-contain drop-shadow-sm scale-[1.7]"
+                   className="h-full w-full object-contain drop-shadow-md scale-[1.5] group-hover:scale-[1.6] transition-transform duration-700"
                  />
                </div>
                <div className="flex-1 text-center md:text-left">
-                 <h3 className="text-lg font-black text-gray-900 tracking-tight flex items-center justify-center md:justify-start gap-2">
-                   Solarpedia Featured Installer
-                   <ArrowUpRight className="w-4 h-4 text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-100 text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 mb-4">
+                   <Award className="w-3.5 h-3.5" /> Official Partner
+                 </div>
+                 <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center justify-center md:justify-start gap-3 mb-2">
+                   Featured Installer Status
+                   <span className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white text-amber-500 transition-colors duration-500">
+                     <ArrowUpRight className="w-4 h-4" />
+                   </span>
                  </h3>
-                 <p className="text-xs text-gray-500 mt-1 font-medium leading-relaxed">Included in Growth & Authority plans. Gain trust from 50k+ monthly visitors.</p>
+                 <p className="text-sm text-gray-500 font-medium leading-relaxed max-w-2xl">
+                   Included in Growth & Authority plans. Instantly elevate your brand's authority and gain direct exposure to <strong className="text-gray-900">50,000+</strong> high-intent monthly visitors on the industry's most trusted directory.
+                 </p>
                </div>
             </div>
           </a>

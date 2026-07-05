@@ -623,7 +623,7 @@ const PricingCard = ({ title, desc, features, isPopular, theme }: any) => {
         <h3 className="text-3xl font-black tracking-tight mb-3">{title}</h3>
         <p className={`text-sm font-medium mb-10 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{desc}</p>
         
-        <div className="space-y-4 flex-grow mb-10">
+        <div className="space-y-4 flex-grow">
           {features.map((f: string) => (
             <div key={f} className="flex items-start gap-3 text-sm font-bold">
               <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isDark ? 'text-blue-400' : 'text-gray-400'}`} />
@@ -631,14 +631,6 @@ const PricingCard = ({ title, desc, features, isPopular, theme }: any) => {
             </div>
           ))}
         </div>
-        
-        <button className={`w-full py-4 rounded-2xl text-sm font-black transition-all ${
-          isDark 
-            ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20' 
-            : 'bg-gray-50 text-gray-900 hover:bg-gray-100 border border-gray-200'
-        }`}>
-          Select {title}
-        </button>
       </div>
     </div>
   );

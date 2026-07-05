@@ -16,6 +16,7 @@ export default function SEOPage() {
   const [loading, setLoading] = useState(true);
   const [weeklyLeads, setWeeklyLeads] = useState(0);
   const [monthlyLeads, setMonthlyLeads] = useState(0);
+  const [impressions, setImpressions] = useState(0);
 
   useEffect(() => {
     const checkSEOStatus = async () => {
@@ -26,6 +27,7 @@ export default function SEOPage() {
     };
     setWeeklyLeads(Math.floor(Math.random() * (300 - 100 + 1)) + 100);
     setMonthlyLeads(Math.floor(Math.random() * (1100 - 900 + 1)) + 900);
+    setImpressions(Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000);
     checkSEOStatus();
   }, [profile?.id]);
 
@@ -44,7 +46,7 @@ export default function SEOPage() {
     return <SEODashboard />;
   }
 
-  return <SEOMarketing weeklyLeads={weeklyLeads} monthlyLeads={monthlyLeads} />;
+  return <SEOMarketing weeklyLeads={weeklyLeads} monthlyLeads={monthlyLeads} impressions={impressions} />;
 }
 
 // ----------------------------------------------------------------------
@@ -205,7 +207,7 @@ function SEODashboard() {
 // ----------------------------------------------------------------------
 // SEO MARKETING (For Non-Customers)
 // ----------------------------------------------------------------------
-function SEOMarketing({ weeklyLeads, monthlyLeads }: { weeklyLeads: number, monthlyLeads: number }) {
+function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads: number, monthlyLeads: number, impressions: number }) {
   const [currentFact, setCurrentFact] = useState(0);
   const [reportRequested, setReportRequested] = useState(false);
   
@@ -288,39 +290,59 @@ function SEOMarketing({ weeklyLeads, monthlyLeads }: { weeklyLeads: number, mont
           </p>
         </motion.div>
 
-        {/* Counters & Solarpedia (1 col each) */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center"
-        >
-          <div className="text-4xl font-semibold text-gray-900 tracking-tight">{weeklyLeads}</div>
-          <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-1">Leads / Week</div>
-          <div className="text-[9px] text-gray-400 mt-2">Across all active clients</div>
-        </motion.div>
+        {/* Counters & Solarpedia */}
+        <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.2 }}
+            className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center"
+          >
+            <div className="text-4xl font-semibold text-gray-900 tracking-tight">{weeklyLeads.toLocaleString()}</div>
+            <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-1">Leads / Week</div>
+            <div className="text-[9px] text-gray-400 mt-2">Across all active clients</div>
+          </motion.div>
 
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.3 }}
-          className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center"
-        >
-          <div className="text-4xl font-semibold text-gray-900 tracking-tight">{monthlyLeads}</div>
-          <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-1">SEO Growth / Mo</div>
-          <div className="text-[9px] text-gray-400 mt-2">Organic search capture</div>
-        </motion.div>
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center"
+          >
+            <div className="text-4xl font-semibold text-gray-900 tracking-tight">{monthlyLeads.toLocaleString()}</div>
+            <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-1">SEO Growth / Mo</div>
+            <div className="text-[9px] text-gray-400 mt-2">Organic search capture</div>
+          </motion.div>
 
+          <motion.div 
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center"
+          >
+            <div className="text-4xl font-semibold text-gray-900 tracking-tight">{impressions.toLocaleString()}</div>
+            <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-1">Kairo Search & Ads</div>
+            <div className="text-[9px] text-gray-400 mt-2">Impressions across all campaigns</div>
+          </motion.div>
+        </div>
+
+        {/* Solarpedia Featured Wide Banner */}
         <motion.div 
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="bg-[#111] rounded-3xl p-6 border border-gray-800 shadow-lg flex flex-col justify-center relative overflow-hidden"
+          transition={{ delay: 0.5 }}
+          className="md:col-span-3 bg-[#111] rounded-3xl p-8 border border-gray-800 shadow-lg flex flex-col sm:flex-row items-center justify-between relative overflow-hidden"
         >
-          <div className="absolute right-0 bottom-0 w-32 h-32 bg-amber-500/10 blur-2xl pointer-events-none" />
-          <Award className="w-6 h-6 text-amber-500 mb-3 relative z-10" />
-          <h3 className="text-sm font-semibold text-white relative z-10">Solarpedia Featured</h3>
-          <p className="text-xs text-gray-400 mt-1 relative z-10">Included in Growth & Authority plans. Gain trust from 50k+ monthly visitors.</p>
+          <div className="absolute right-0 bottom-0 w-64 h-64 bg-amber-500/10 blur-3xl pointer-events-none" />
+          <div className="flex items-center gap-4 relative z-10">
+            <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20">
+              <Award className="w-8 h-8 text-amber-500" />
+            </div>
+            <div className="text-center sm:text-left">
+              <h3 className="text-lg font-semibold text-white">Solarpedia Featured Installer</h3>
+              <p className="text-sm text-gray-400 mt-1">Included in Growth & Authority plans. Gain immediate trust from 50k+ monthly visitors.</p>
+            </div>
+          </div>
         </motion.div>
       </div>
 

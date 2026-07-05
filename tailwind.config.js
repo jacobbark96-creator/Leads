@@ -33,8 +33,8 @@ export default {
         }
       },
       animation: {
-        'shimmer': 'shimmer 6s linear infinite',
-        'shimmer-delayed': 'shimmer 5s linear infinite 0.5s',
+        'shimmer': 'shimmer 4s ease-in-out infinite',
+        'shimmer-delayed': 'shimmer 4s ease-in-out infinite 2s',
         float: 'float 6s ease-in-out infinite',
         'float-slow': 'float-slow 8s ease-in-out infinite',
       }

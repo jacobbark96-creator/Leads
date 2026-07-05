@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard, Zap, Users } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard, Zap, Users, Search } from 'lucide-react';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
 import { AdminNotifications } from './AdminNotifications';
@@ -113,6 +113,9 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           { name: 'Marketplace', path: '/marketplace', icon: Database },
           { name: 'Offers', path: '/offers', icon: Star },
         );
+        // SEO button - Hidden from all users during build
+        clientItems.push({ name: 'SEO', path: '/client-portal/seo', icon: Search, hidden: true });
+
         if (!profile.parent_id) {
           clientItems.push({ name: 'Max', path: '/openlead-max', icon: Sparkles });
         }
@@ -204,7 +207,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                     <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain" />
                   </Link>
                   <div className="hidden sm:flex sm:space-x-2">
-                  {navItems.map((item: any) => {
+                  {navItems.filter((item: any) => !item.hidden).map((item: any) => {
                     const Icon = item.icon;
                     if (item.children) {
                       const isActive = item.children.some((child: any) => pathname.startsWith(child.path));
@@ -358,7 +361,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
             {mobileMenuOpen && (
               <div className="sm:hidden absolute left-0 right-0 top-full mt-3 bg-white/95 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
                 <div className="py-2 px-2">
-                  {navItems.map((item: any) => {
+                  {navItems.filter((item: any) => !item.hidden).map((item: any) => {
                     const Icon = item.icon;
                     if (item.children) {
                       return (

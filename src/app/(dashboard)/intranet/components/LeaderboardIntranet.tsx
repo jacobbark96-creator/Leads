@@ -57,7 +57,8 @@ export const LeaderboardIntranet = () => {
       // 3. Fetch SOLD leads in timeframe via lead_purchases
       let salesQuery = supabase
         .from('lead_purchases')
-        .select('lead_id, purchased_at, leads!inner(assigned_to)');
+        .select('lead_id, purchased_at, leads!inner(assigned_to)')
+        .in('status', ['new', 'sat', 'won']);
 
       if (startDate) {
         salesQuery = salesQuery.gte('purchased_at', startDate);

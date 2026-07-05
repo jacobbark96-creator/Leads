@@ -39,11 +39,11 @@ export const Leaderboard = () => {
         .eq('activity_type', 'qualified')
         .gte('created_at', startOfMonth);
 
-      // 3. Fetch sold purchases MTD (won)
+      // 3. Fetch sold purchases MTD (new, sat, won)
       const { data: soldData } = await supabase
         .from('lead_purchases')
         .select('lead_id, status, purchased_at, leads(assigned_to)')
-        .eq('status', 'won')
+        .in('status', ['new', 'sat', 'won'])
         .gte('purchased_at', startOfMonth);
 
       // 4. Process scores

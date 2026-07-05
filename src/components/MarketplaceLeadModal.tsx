@@ -105,14 +105,18 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
             .single();
           setExistingRequest(myReq);
 
-          // 3. If I am a child, check for ORG requests
-          if (profile.parent_id) {
+          // 3. Check for ORG requests (if I am a child OR a parent)
+          if (profile.parent_id || profile.allowed_child_accounts) {
+            // If I'm a parent, I want to see requests from my children
+            // If I'm a child, I want to see requests from my siblings
+            const targetParentId = profile.parent_id || profile.id;
+
             const { data: orgReqs } = await supabase
               .from('lead_purchases')
               .select(`
                 id, 
                 status, 
-                client:client_id (user:user_id (id))
+                client:client_id (user:user_id (id, name))
               `)
               .eq('lead_id', lead.id)
               .neq('client_id', clientData.id) // Exclude my own
@@ -120,19 +124,15 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
 
             // If any active org request exists, set it
             if (orgReqs && orgReqs.length > 0) {
-              // We need to verify if the client belongs to the same parent
-              // Since we can't easily join auth.users or do deep nested filters in one go without a custom RPC or flat structure,
-              // we'll fetch the child users of this parent first or use a subquery if RLS allows.
-              
-              const { data: siblingUsers } = await supabase
+              const { data: teamUsers } = await supabase
                 .from('users')
                 .select('id')
-                .eq('parent_id', profile.parent_id);
+                .eq('parent_id', targetParentId);
               
-              const siblingIds = siblingUsers?.map(u => u.id) || [];
+              const teamUserIds = teamUsers?.map(u => u.id) || [];
               
               const actualOrgReq = orgReqs.find(req => 
-                siblingIds.includes((req.client as any)?.user?.id)
+                teamUserIds.includes((req.client as any)?.user?.id)
               );
               
               setOrgRequest(actualOrgReq || null);
@@ -671,9 +671,20 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                  existingRequest.status === 'rejected' ? 'Request Rejected' : 'Already Requested'}
               </div>
             ) : orgRequest ? (
-              <div className="flex items-start gap-2 px-4 py-2.5 bg-amber-50 text-amber-700 text-[11px] leading-tight font-bold rounded-xl border border-amber-100 max-w-[300px]">
-                <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                <span>This lead has already been requested by someone in your organisation, please contact your account manager for more details.</span>
+              <div className="flex flex-col gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100 max-w-[320px]">
+                <div className="flex items-start gap-2 text-amber-700 text-[11px] leading-tight font-bold">
+                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                  <span>This lead has already been requested by someone in your organisation.</span>
+                </div>
+                <div className="flex items-center gap-2 px-2 py-1.5 bg-white/60 rounded-lg border border-amber-200/50 self-start">
+                  <div className="w-5 h-5 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 text-[10px] font-black">
+                    {(orgRequest.client as any)?.user?.name?.charAt(0).toUpperCase()}
+                  </div>
+                  <span className="text-[10px] font-bold text-amber-900">
+                    {(orgRequest.client as any)?.user?.name}
+                  </span>
+                  <span className="text-[9px] font-medium text-amber-500 uppercase tracking-wider ml-1">Requested</span>
+                </div>
               </div>
             ) : (
               <button

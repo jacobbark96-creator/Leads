@@ -142,6 +142,38 @@ export async function POST(req: Request) {
             }, { status: 500 });
           }
           
+          // 4. If it was an approval, notify the child account
+          if (pendingPurchaseId) {
+            try {
+              // Fetch the child user_id from the purchase record
+              const { data: purchaseData } = await supabaseAdmin
+                .from('lead_purchases')
+                .select('client:client_id(user_id)')
+                .eq('id', pendingPurchaseId)
+                .single();
+              
+              const childUserId = (purchaseData?.client as any)?.user_id;
+              
+              if (childUserId) {
+                const leadLoc = extractTown(leadLocation);
+                await supabaseAdmin
+                  .from('notifications')
+                  .insert([{
+                    user_id: childUserId,
+                    title: 'Lead Request Approved',
+                    content: `Your request for the lead in ${leadLoc} has been approved and paid for!`,
+                    type: 'approval',
+                    metadata: {
+                      purchase_id: pendingPurchaseId,
+                      lead_id: leadId
+                    }
+                  }]);
+              }
+            } catch (notifErr) {
+              console.error('Failed to send approval notification (non-fatal):', notifErr);
+            }
+          }
+
           console.log('Purchase successful:', result.data);
           return NextResponse.json({ skipStripe: true, url: `${appUrl}/my-openlead?purchase_success=true` });
         } catch (rpcErr: any) {

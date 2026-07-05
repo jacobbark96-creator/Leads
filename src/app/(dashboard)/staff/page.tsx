@@ -125,7 +125,7 @@ export default function StaffPortal() {
         const { data: purchases } = await supabase
           .from('lead_purchases')
           .select('price_paid, purchased_at')
-          .neq('status', 'permission_pending')
+          .in('status', ['new', 'sat', 'won'])
           .gte('purchased_at', todayIso);
           
         let totalRevenue = 0;
@@ -173,11 +173,11 @@ export default function StaffPortal() {
       .subscribe();
       
     const usersSub = supabase.channel('users-stats')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, fetchStats)
       .subscribe();
       
     const purchasesSub = supabase.channel('purchases-stats')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lead_purchases' }, fetchStats)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_purchases' }, fetchStats)
       .subscribe();
 
     return () => {

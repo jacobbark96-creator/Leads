@@ -96,7 +96,7 @@ export async function GET(req: NextRequest) {
     let soldQuery = supabaseAdmin
       .from('lead_purchases')
       .select('purchased_at, price_paid, lead_id, leads(name, company, assigned_to, price, exclusive_price, share_price, purchase_date, is_exclusive_sold, is_marketed)')
-      .neq('status', 'permission_pending')
+      .in('status', ['new', 'sat', 'won'])
       .gte('purchased_at', queryStart.toISOString())
       .lte('purchased_at', end.toISOString());
 

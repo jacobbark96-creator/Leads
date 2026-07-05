@@ -197,6 +197,40 @@ export async function POST(req: Request) {
                 console.error('Error finalizing approved purchase via RPC:', purchaseError);
               } else {
                 console.log(`Successfully finalized purchase ${pendingPurchaseId} for lead ${leadId}`);
+                
+                // Notify the child account
+                try {
+                  // Fetch the child user_id and lead location
+                  const { data: purchaseData } = await supabaseAdmin
+                    .from('lead_purchases')
+                    .select('client:client_id(user_id), leads:lead_id(location)')
+                    .eq('id', pendingPurchaseId)
+                    .single();
+                  
+                  const childUserId = (purchaseData?.client as any)?.user_id;
+                  const leadLocation = (purchaseData?.leads as any)?.location;
+                  
+                  if (childUserId) {
+                    // We need a helper to extract town or just use the location
+                    // Since this is a server route, we can define a quick local helper or just use the first part
+                    const leadLoc = leadLocation ? leadLocation.split(',')[0].trim() : 'New Lead';
+                    
+                    await supabaseAdmin
+                      .from('notifications')
+                      .insert([{
+                        user_id: childUserId,
+                        title: 'Lead Request Approved',
+                        content: `Your request for the lead in ${leadLoc} has been approved and paid for!`,
+                        type: 'approval',
+                        metadata: {
+                          purchase_id: pendingPurchaseId,
+                          lead_id: leadId
+                        }
+                      }]);
+                  }
+                } catch (notifErr) {
+                  console.error('Failed to send approval notification in webhook:', notifErr);
+                }
               }
             } else {
               // Standard direct purchase logic

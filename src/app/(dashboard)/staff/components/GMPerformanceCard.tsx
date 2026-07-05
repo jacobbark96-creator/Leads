@@ -65,7 +65,7 @@ export const GMPerformanceCard = () => {
           .from('lead_purchases')
           .select('price_paid')
           .in('client_id', clientIds)
-          .neq('status', 'permission_pending')
+          .in('status', ['new', 'sat', 'won'])
           .gte('purchased_at', startOfMonth);
         
         const purchaseTotal = purchases?.reduce((sum, p) => sum + (Number(p.price_paid) || 0), 0) || 0;

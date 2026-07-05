@@ -89,16 +89,44 @@ export default function TeamManagement() {
     if (!profile) return;
     try {
       setLoadingRequests(true);
+      
+      // First, get all child client IDs for this parent
+      const { data: childUsers } = await supabase
+        .from('users')
+        .select('id')
+        .eq('parent_id', profile.id);
+      
+      const childUserIds = childUsers?.map(u => u.id) || [];
+      
+      if (childUserIds.length === 0) {
+        setAllPendingRequests([]);
+        return;
+      }
+
+      const { data: childClients } = await supabase
+        .from('clients')
+        .select('id')
+        .in('user_id', childUserIds);
+      
+      const childClientIds = childClients?.map(c => c.id) || [];
+
+      if (childClientIds.length === 0) {
+        setAllPendingRequests([]);
+        return;
+      }
+
       const { data, error } = await supabase
         .from('lead_purchases')
         .select(`
           *,
           leads:lead_id (*),
           client:client_id (
+            user_id,
             user:user_id (name)
           )
         `)
         .eq('status', 'permission_pending')
+        .in('client_id', childClientIds)
         .order('purchased_at', { ascending: false });
 
       if (error) throw error;
@@ -169,7 +197,7 @@ export default function TeamManagement() {
           leads:lead_id (*)
         `)
         .eq('client_id', clientData.id)
-        .neq('status', 'permission_pending')
+        .in('status', ['new', 'sat', 'won', 'rejected'])
         .order('purchased_at', { ascending: false });
 
       if (error) throw error;
@@ -572,11 +600,14 @@ export default function TeamManagement() {
                           <p className="text-sm font-bold text-gray-900">
                             {extractTown(req.leads?.location)}
                           </p>
-                          <span className="text-[10px] text-gray-400 bg-gray-50 px-2 py-0.5 rounded font-medium">
-                            {req.client?.user?.name}
-                          </span>
+                          <div className="flex items-center gap-1.5 px-2 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100 shadow-sm">
+                            <User className="w-2.5 h-2.5" />
+                            <span className="text-[10px] font-bold whitespace-nowrap">
+                              {Array.isArray(req.client) ? req.client[0]?.user?.name : req.client?.user?.name}
+                            </span>
+                          </div>
                         </div>
-                        <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
+                        <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider mt-0.5">
                           Purchase Request • £{req.price_paid}
                         </p>
                       </div>
@@ -793,55 +824,75 @@ export default function TeamManagement() {
                           Requested Leads
                         </h4>
                         <span className="text-[10px] font-bold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                          {filterLeadsByDate(allPendingRequests.filter(r => r.client?.user_id === selectedUser.id)).length}
-                        </span>
-                      </div>
+                        {filterLeadsByDate(allPendingRequests.filter(r => {
+                          const client = Array.isArray(r.client) ? r.client[0] : r.client;
+                          const clientUserId = typeof client?.user_id === 'object' ? client.user_id?.id : client?.user_id;
+                          return clientUserId === selectedUser.id;
+                        })).length}
+                      </span>
+                    </div>
 
-                      {loadingRequests ? (
-                        <div className="space-y-3">
-                          {[1, 2].map(i => <div key={i} className="h-20 bg-gray-50 rounded-xl animate-pulse" />)}
-                        </div>
-                      ) : filterLeadsByDate(allPendingRequests.filter(r => r.client?.user_id === selectedUser.id)).length === 0 ? (
-                        <div className="p-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 text-center">
-                          <AlertCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                          <p className="text-[10px] text-gray-500 font-medium">No pending requests in this period.</p>
-                        </div>
-                      ) : (
-                        <div className="space-y-3">
-                          {filterLeadsByDate(allPendingRequests
-                            .filter(r => r.client?.user_id === selectedUser.id))
-                            .map((req) => (
-                              <div 
-                                key={req.id} 
-                                className="p-3 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-between gap-3 hover:border-amber-200 transition-all group cursor-pointer"
-                                onClick={() => {
-                                  setSelectedLeadForPreview(req.leads);
-                                  setIsLeadModalOpen(true);
-                                }}
-                              >
-                                <div className="flex items-center gap-3">
-                                  <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform">
-                                    {req.leads?.image_url ? (
-                                      <img 
-                                        src={req.leads.image_url} 
-                                        alt={req.leads?.location || 'Lead'} 
-                                        className="w-full h-full object-cover"
-                                      />
-                                    ) : (
-                                      <div className="w-full h-full bg-amber-50 flex items-center justify-center text-amber-600">
-                                        <MapPin className="w-4 h-4" />
-                                      </div>
-                                    )}
-                                  </div>
-                                  <div>
+                    {loadingRequests ? (
+                      <div className="space-y-3">
+                        {[1, 2].map(i => <div key={i} className="h-20 bg-gray-50 rounded-xl animate-pulse" />) }
+                      </div>
+                    ) : filterLeadsByDate(allPendingRequests.filter(r => {
+                        const client = Array.isArray(r.client) ? r.client[0] : r.client;
+                        const clientUserId = typeof client?.user_id === 'object' ? client.user_id?.id : client?.user_id;
+                        return clientUserId === selectedUser.id;
+                      })).length === 0 ? (
+                      <div className="p-8 bg-gray-50 rounded-2xl border-2 border-dashed border-gray-100 text-center">
+                        <AlertCircle className="w-8 h-8 text-gray-300 mx-auto mb-2" />
+                        <p className="text-[10px] text-gray-500 font-medium">No pending requests in this period.</p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {filterLeadsByDate(allPendingRequests
+                          .filter(r => {
+                            const client = Array.isArray(r.client) ? r.client[0] : r.client;
+                            const clientUserId = typeof client?.user_id === 'object' ? client.user_id?.id : client?.user_id;
+                            return clientUserId === selectedUser.id;
+                          }))
+                          .map((req) => (
+                            <div 
+                              key={req.id} 
+                              className="p-3 bg-gray-50 border border-gray-100 rounded-xl flex items-center justify-between gap-3 hover:border-amber-200 transition-all group cursor-pointer"
+                              onClick={() => {
+                                setSelectedLeadForPreview(req.leads);
+                                setIsLeadModalOpen(true);
+                              }}
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform">
+                                  {req.leads?.image_url ? (
+                                    <img 
+                                      src={req.leads.image_url} 
+                                      alt={req.leads?.location || 'Lead'} 
+                                      className="w-full h-full object-cover"
+                                    />
+                                  ) : (
+                                    <div className="w-full h-full bg-amber-50 flex items-center justify-center text-amber-600">
+                                      <MapPin className="w-4 h-4" />
+                                    </div>
+                                  )}
+                                </div>
+                                <div>
+                                  <div className="flex items-center gap-2">
                                     <p className="text-xs font-bold text-gray-900 truncate max-w-[100px]">
                                       {extractTown(req.leads?.location)}
                                     </p>
-                                    <p className="text-[9px] text-amber-600 font-bold uppercase tracking-wider">
-                                      £{req.price_paid}
-                                    </p>
+                                    <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-50 text-blue-600 rounded-full border border-blue-100">
+                                      <User className="w-2 h-2" />
+                                      <span className="text-[8px] font-bold whitespace-nowrap">
+                                        {Array.isArray(req.client) ? req.client[0]?.user?.name : req.client?.user?.name}
+                                      </span>
+                                    </div>
                                   </div>
+                                  <p className="text-[9px] text-amber-600 font-bold uppercase tracking-wider">
+                                    £{req.price_paid}
+                                  </p>
                                 </div>
+                              </div>
                                 <div className="flex items-center gap-1" onClick={(e) => e.stopPropagation()}>
                                   <button
                                     onClick={() => handleRejectRequest(req)}

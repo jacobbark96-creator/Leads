@@ -28,7 +28,7 @@ export async function GET(req: NextRequest) {
     const { data: marketplaceSales } = await supabaseAdmin
       .from('lead_purchases')
       .select('id, purchased_at, price_paid, lead_id, user_id, status, leads(name, company, price, exclusive_price, share_price, purchase_date, is_marketed, is_exclusive_sold, clients(company_name, contact_name))')
-      .neq('status', 'permission_pending')
+      .in('status', ['new', 'sat', 'won'])
       .order('purchased_at', { ascending: false });
 
     // 2. Fetch Manual Sales

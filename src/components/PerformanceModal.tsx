@@ -31,7 +31,9 @@ export const PerformanceModal: React.FC<PerformanceModalProps> = ({ isOpen, onCl
   const wonCount = leads.filter(l => l.purchase_status === 'won').length;
   const archiveCount = leads.filter(l => l.purchase_status === 'archive').length;
 
-  const totalSpend = leads.reduce((sum, lead) => sum + (lead.price_paid || 0), 0);
+  const totalSpend = leads
+    .filter(l => ['new', 'sat', 'won'].includes(l.purchase_status || ''))
+    .reduce((sum, lead) => sum + (lead.price_paid || 0), 0);
   const totalSold = leads.filter(l => l.purchase_status === 'won').reduce((sum, lead) => sum + (lead.sale_amount || 0), 0);
   
   const costPerWonLead = wonCount > 0 ? totalSpend / wonCount : 0;

@@ -487,7 +487,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
           </motion.div>
         </div>
 
-        {/* 25% OFF "BLACK CARD" SECTION */}
+        {/* 15% OFF "BLACK CARD" SECTION */}
         <div className="bg-[#050505] rounded-[2.5rem] p-1 relative overflow-hidden group shadow-2xl shadow-blue-900/20">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/40 via-cyan-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
@@ -498,10 +498,10 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
                  <Crown className="w-3.5 h-3.5" /> Lifetime Privilege
                </div>
                <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4 leading-[1.1]">
-                 25% Off Every <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-600">Marketplace Lead.</span>
+                 15% Off Every <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-600">Marketplace Lead.</span>
                </h2>
                <p className="text-gray-400 text-sm md:text-base leading-relaxed font-medium">
-                 As a concierge SEO client, you unlock an automatic, permanent 25% discount across the entire Openlead marketplace. Scale your organic traffic while acquiring immediate leads at a fraction of the cost.
+                 As a concierge SEO client, you unlock an automatic, permanent 15% discount across the entire Openlead marketplace. Scale your organic traffic while acquiring immediate leads at a fraction of the cost.
                </p>
              </div>
              
@@ -513,7 +513,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
                     transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
                     className="absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)] bg-[length:200%_100%]" 
                   />
-                  <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 tracking-tighter mb-1 relative z-10">25%</div>
+                  <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 tracking-tighter mb-1 relative z-10">15%</div>
                   <div className="text-[9px] font-black text-gray-400 uppercase tracking-[0.4em] relative z-10">Discount Rate</div>
                </div>
              </div>

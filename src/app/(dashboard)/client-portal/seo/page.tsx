@@ -242,17 +242,17 @@ function SEODashboard() {
 
 const BrandCarousel = () => {
   const brands = [
-    { name: "Google", isImage: true, src: "https://logo.clearbit.com/google.com", size: "h-10" },
-    { name: "Facebook", isImage: true, src: "https://logo.clearbit.com/facebook.com", size: "h-10" },
-    { name: "Instagram", isImage: true, src: "https://logo.clearbit.com/instagram.com", size: "h-10" },
-    { name: "YouTube", isImage: true, src: "https://logo.clearbit.com/youtube.com", size: "h-10" },
-    { name: "LinkedIn", isImage: true, src: "https://logo.clearbit.com/linkedin.com", size: "h-10" },
+    { name: "Google", isImage: true, src: "https://unavatar.io/google.com", size: "h-10" },
+    { name: "Facebook", isImage: true, src: "https://unavatar.io/facebook.com", size: "h-10" },
+    { name: "Instagram", isImage: true, src: "https://unavatar.io/instagram.com", size: "h-10" },
+    { name: "YouTube", isImage: true, src: "https://unavatar.io/youtube.com", size: "h-10" },
+    { name: "LinkedIn", isImage: true, src: "https://unavatar.io/linkedin.com", size: "h-10" },
     { name: "Solarpedia", isImage: true, src: "/solarpedia.png", size: "h-24 scale-[1.5]" },
-    { name: "Forbes", isImage: true, src: "https://logo.clearbit.com/forbes.com", size: "h-10", subtext: "additional one off cost" },
-    { name: "Esquire", isImage: true, src: "https://logo.clearbit.com/esquire.com", size: "h-10", subtext: "additional one off cost" },
-    { name: "The Telegraph", isImage: true, src: "https://logo.clearbit.com/telegraph.co.uk", size: "h-10", subtext: "additional one off cost" },
-    { name: "Variety", isImage: true, src: "https://logo.clearbit.com/variety.com", size: "h-10", subtext: "additional one off cost" },
-    { name: "Bing", isImage: true, src: "https://logo.clearbit.com/bing.com", size: "h-10" },
+    { name: "Forbes", isImage: true, src: "https://unavatar.io/forbes.com", size: "h-10", subtext: "additional one off cost" },
+    { name: "Esquire", isImage: true, src: "https://unavatar.io/esquire.com", size: "h-10", subtext: "additional one off cost" },
+    { name: "The Telegraph", isImage: true, src: "https://unavatar.io/telegraph.co.uk", size: "h-10", subtext: "additional one off cost" },
+    { name: "Variety", isImage: true, src: "https://unavatar.io/variety.com", size: "h-10", subtext: "additional one off cost" },
+    { name: "Bing", isImage: true, src: "https://unavatar.io/bing.com", size: "h-10" },
     { name: "Local Citations", color: "text-gray-900", icon: <MapPin className="w-10 h-10" /> }
   ];
 

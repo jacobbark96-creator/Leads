@@ -233,6 +233,51 @@ function SEODashboard() {
 // SEO MARKETING (For Non-Customers)
 // ----------------------------------------------------------------------
 
+const BrandCarousel = () => {
+  const brands = [
+    { name: "Google", color: "text-blue-500", icon: <Search className="w-8 h-8" /> },
+    { name: "Facebook", color: "text-blue-600", icon: <Globe className="w-8 h-8" /> }, // Placeholder for FB
+    { name: "Instagram", color: "text-pink-600", icon: <Globe className="w-8 h-8" /> }, // Placeholder for Insta
+    { name: "TikTok", color: "text-rose-500", icon: <Globe className="w-8 h-8" /> }, // Placeholder for TikTok
+    { name: "YouTube", color: "text-red-600", icon: <Globe className="w-8 h-8" /> }, // Placeholder for YT
+    { name: "LinkedIn", color: "text-blue-700", icon: <Globe className="w-8 h-8" /> }, // Placeholder for LI
+    { name: "Solarpedia", isImage: true, src: "/solarpedia.png" },
+    { name: "Bing", color: "text-teal-600", icon: <Search className="w-8 h-8" /> },
+    { name: "Local Citations", color: "text-gray-900", icon: <MapPin className="w-8 h-8" /> }
+  ];
+
+  return (
+    <div className="py-16 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30 overflow-hidden relative w-full mb-12 -mt-12 z-20">
+      <div className="text-center mb-10">
+        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Where your leads come from & where your brand is seen</h3>
+      </div>
+      
+      {/* Gradient Fades */}
+      <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-white to-transparent z-10" />
+      <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-white to-transparent z-10" />
+      
+      <motion.div 
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
+        className="flex gap-16 w-max items-center px-8"
+      >
+        {[...brands, ...brands, ...brands].map((brand, i) => (
+          <div key={i} className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+            {brand.isImage ? (
+              <img src={brand.src} alt={brand.name} className="h-8 w-auto object-contain" />
+            ) : (
+              <div className={`flex items-center gap-2 ${brand.color}`}>
+                {brand.icon}
+                <span className="text-2xl font-black tracking-tight">{brand.name}</span>
+              </div>
+            )}
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+};
+
 const LogoOpenlead = () => (
   <div className="flex items-center gap-2">
     <img 
@@ -320,8 +365,11 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
           </div>
         </div>
 
+        {/* BRAND / LEAD SOURCE CAROUSEL */}
+        <BrandCarousel />
+
         {/* METRICS & TRUST SECTION */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 relative z-20 px-2 md:-mt-20">
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 relative z-20 px-2 mt-12">
           <CounterCard title="Leads / Week" value={weeklyLeads.toLocaleString()} desc="Active network capture" />
           <CounterCard title="SEO Growth / Mo" value={monthlyLeads.toLocaleString()} desc="Organic acquisition" />
           <CounterCard title="Impressions" value={impressions.toLocaleString()} desc="Kairo Search & Ads" />

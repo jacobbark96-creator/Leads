@@ -346,14 +346,32 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
 
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1]">
               <span className="inline-block relative">
-                <span className="text-transparent bg-clip-text animate-shimmer" style={{ backgroundImage: 'linear-gradient(110deg, #a1a1aa 40%, #ffffff 50%, #a1a1aa 60%)', backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                <motion.span 
+                  animate={{ backgroundPosition: ["0% center", "200% center"] }}
+                  transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                  className="text-transparent bg-clip-text inline-block" 
+                  style={{ 
+                    backgroundImage: 'linear-gradient(110deg, #a1a1aa 20%, #ffffff 40%, #ffffff 60%, #a1a1aa 80%)', 
+                    backgroundSize: '200% auto', 
+                    WebkitBackgroundClip: 'text', 
+                    WebkitTextFillColor: 'transparent' 
+                  }}>
                   Dominate Search.
-                </span>
+                </motion.span>
               </span><br/>
               <span className="inline-block relative">
-                <span className="text-transparent bg-clip-text animate-shimmer-delayed" style={{ backgroundImage: 'linear-gradient(110deg, #3b82f6 40%, #ffffff 50%, #06b6d4 60%)', backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                <motion.span 
+                  animate={{ backgroundPosition: ["0% center", "200% center"] }}
+                  transition={{ repeat: Infinity, duration: 4, ease: "linear", delay: 2 }}
+                  className="text-transparent bg-clip-text inline-block" 
+                  style={{ 
+                    backgroundImage: 'linear-gradient(110deg, #3b82f6 20%, #ffffff 40%, #ffffff 60%, #06b6d4 80%)', 
+                    backgroundSize: '200% auto', 
+                    WebkitBackgroundClip: 'text', 
+                    WebkitTextFillColor: 'transparent' 
+                  }}>
                   Automate Growth.
-                </span>
+                </motion.span>
               </span>
             </h1>
 

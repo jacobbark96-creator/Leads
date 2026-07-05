@@ -235,13 +235,13 @@ function SEODashboard() {
 
 const BrandCarousel = () => {
   const brands = [
-    { name: "Google", color: "text-gray-900", icon: <Globe className="w-10 h-10" /> },
-    { name: "Facebook", color: "text-[#1877F2]", icon: <Facebook className="w-10 h-10" /> },
-    { name: "Instagram", color: "text-[#E4405F]", icon: <Instagram className="w-10 h-10" /> },
-    { name: "YouTube", color: "text-[#FF0000]", icon: <Youtube className="w-10 h-10" /> },
-    { name: "LinkedIn", color: "text-[#0A66C2]", icon: <Linkedin className="w-10 h-10" /> },
+    { name: "Google", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg", size: "h-10" },
+    { name: "Facebook", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg", size: "h-10" },
+    { name: "Instagram", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg", size: "h-10" },
+    { name: "YouTube", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg", size: "h-10" },
+    { name: "LinkedIn", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/8/81/LinkedIn_icon.svg", size: "h-10" },
     { name: "Solarpedia", isImage: true, src: "/solarpedia.png", size: "h-10" },
-    { name: "Bing", color: "text-[#00809D]", icon: <Search className="w-10 h-10" /> },
+    { name: "Bing", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/9/9c/Bing_Fluent_Logo.svg", size: "h-10" },
     { name: "Local Citations", color: "text-gray-900", icon: <MapPin className="w-10 h-10" /> }
   ];
 

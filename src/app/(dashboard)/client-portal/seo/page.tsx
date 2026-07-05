@@ -4,9 +4,9 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Globe, TrendingUp, BarChart3, ArrowUpRight, Zap, Target, 
   MousePointer2, Check, Star, ShieldCheck, FileText, MapPin, 
-  Link2, Sparkles, Award, Crown, Activity
+  Link2, Sparkles, Award, Crown, Activity, Info, ChevronRight, ChevronLeft
 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../../../store/authStore';
 import { supabase } from '../../../../lib/supabase';
 
@@ -206,6 +206,38 @@ function SEODashboard() {
 // SEO MARKETING (For Non-Customers)
 // ----------------------------------------------------------------------
 function SEOMarketing({ weeklyLeads, monthlyLeads }: { weeklyLeads: number, monthlyLeads: number }) {
+  const [currentFact, setCurrentFact] = useState(0);
+  
+  const facts = [
+    {
+      stat: "93%",
+      title: "of online experiences begin with a search engine.",
+      desc: "If you aren't ranking, your competitors are taking your customers."
+    },
+    {
+      stat: "14.6%",
+      title: "close rate for SEO leads.",
+      desc: "Compared to just 1.7% for outbound marketing like print or cold calling."
+    },
+    {
+      stat: "78%",
+      title: "of local mobile searches result in a purchase.",
+      desc: "Local SEO puts you directly in front of high-intent buyers in your area."
+    },
+    {
+      stat: "54.4%",
+      title: "of all clicks go to the top 3 Google results.",
+      desc: "Ranking on page 2 means you're effectively invisible to 99% of searchers."
+    }
+  ];
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentFact((prev) => (prev + 1) % facts.length);
+    }, 6000);
+    return () => clearInterval(timer);
+  }, [facts.length]);
+
   return (
     <div className="max-w-6xl mx-auto space-y-8 pb-20 px-2">
       
@@ -290,6 +322,67 @@ function SEOMarketing({ weeklyLeads, monthlyLeads }: { weeklyLeads: number, mont
           <p className="text-xs text-gray-400 mt-1 relative z-10">Included in Growth & Authority plans. Gain trust from 50k+ monthly visitors.</p>
         </motion.div>
       </div>
+
+      {/* Did You Know Carousel */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.5 }}
+        className="bg-white rounded-3xl border border-gray-200 shadow-sm p-8 relative overflow-hidden flex items-center justify-between"
+      >
+        <div className="absolute left-0 top-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
+        
+        <div className="flex-1 max-w-4xl relative z-10">
+          <div className="flex items-center gap-2 text-blue-600 mb-4">
+            <Info className="w-4 h-4" />
+            <span className="text-[10px] font-bold uppercase tracking-widest">Did you know?</span>
+          </div>
+          
+          <div className="h-24 flex items-center relative">
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={currentFact}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: -10 }}
+                transition={{ duration: 0.4 }}
+                className="absolute inset-0 flex flex-col justify-center"
+              >
+                <h3 className="text-2xl font-semibold text-gray-900 tracking-tight">
+                  <span className="text-blue-600 font-bold">{facts[currentFact].stat}</span> {facts[currentFact].title}
+                </h3>
+                <p className="text-sm text-gray-500 mt-2">{facts[currentFact].desc}</p>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+        </div>
+
+        <div className="flex flex-col items-center gap-3 ml-8 relative z-10 hidden sm:flex">
+          <div className="flex gap-1.5">
+            {facts.map((_, i) => (
+              <button 
+                key={i} 
+                onClick={() => setCurrentFact(i)}
+                className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentFact ? 'bg-blue-600 w-4' : 'bg-gray-200 hover:bg-gray-300'}`}
+              />
+            ))}
+          </div>
+          <div className="flex gap-2">
+            <button 
+              onClick={() => setCurrentFact((prev) => (prev - 1 + facts.length) % facts.length)}
+              className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-all"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={() => setCurrentFact((prev) => (prev + 1) % facts.length)}
+              className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-all"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      </motion.div>
 
       {/* Pricing Title */}
       <div className="pt-8 pb-4 text-center">

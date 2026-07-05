@@ -325,11 +325,17 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
   return (
     <div className="w-full bg-gray-50/50 min-h-screen -mt-4 pt-4">
       {/* Floating ROI Calculator Button */}
-      <button className="fixed bottom-8 right-8 z-50 px-6 py-4 bg-gray-900 text-white rounded-full font-black text-sm shadow-2xl shadow-gray-900/40 hover:-translate-y-1 hover:shadow-gray-900/60 transition-all flex items-center gap-3 border border-white/10 group">
-        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-          <TrendingUp className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+      <button className="fixed bottom-8 right-8 z-50 group">
+        <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-100 transition duration-500 animate-shimmer" style={{ backgroundSize: '200% auto' }} />
+        <div className="relative px-6 py-4 bg-[#050505] text-white rounded-full font-black text-sm shadow-2xl flex items-center gap-3 border border-white/10 group-hover:-translate-y-1 transition-transform duration-300">
+          <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.3)]">
+            <TrendingUp className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+          </div>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300">
+            Calculate SEO ROI
+          </span>
+          <ArrowUpRight className="w-4 h-4 text-gray-500 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all" />
         </div>
-        Calculate SEO ROI
       </button>
 
       <div className="max-w-6xl mx-auto space-y-12 pb-24 px-4">

@@ -113,8 +113,8 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           { name: 'Marketplace', path: '/marketplace', icon: Database },
           { name: 'Offers', path: '/offers', icon: Star },
         );
-        // SEO button - Hidden from all users during build
-        clientItems.push({ name: 'SEO', path: '/client-portal/seo', icon: Search, hidden: true });
+        // SEO button
+        clientItems.push({ name: 'SEO', path: '/client-portal/seo', icon: Search });
 
         if (!profile.parent_id) {
           clientItems.push({ name: 'Max', path: '/openlead-max', icon: Sparkles });

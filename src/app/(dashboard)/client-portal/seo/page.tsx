@@ -52,7 +52,7 @@ export default function SEOPage() {
   }, [profile?.id]);
 
   if (loading) {
-    return (
+      return (
       <div className="min-h-[60vh] flex items-center justify-center">
         <div className="relative w-12 h-12">
           <div className="absolute inset-0 rounded-full border-[3px] border-gray-100" />
@@ -306,6 +306,11 @@ const LogoKairo = () => (
 function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator }: { weeklyLeads: number, monthlyLeads: number, impressions: number, onOpenCalculator: () => void }) {
   const [reportRequested, setReportRequested] = useState(false);
   
+  const handleRequestReport = () => {
+    setReportRequested(true);
+    window.location.href = 'mailto:jake.bedwell@kairostudio.co.uk?subject=SEO Report Request&body=I would like to request a free SEO report for my business.';
+  };
+  
   const facts = [
     {
       stat: "93%",
@@ -554,7 +559,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
                 Find out exactly what's holding your website back from the first page of Google with a comprehensive, no-obligation technical review.
               </p>
               <button 
-                onClick={() => setReportRequested(true)}
+                onClick={handleRequestReport}
                 className="px-8 py-4 bg-gray-900 text-white rounded-xl text-sm font-black hover:bg-black transition-all shadow-xl shadow-gray-900/20 hover:-translate-y-1 flex items-center gap-2 mx-auto group"
               >
                 <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />

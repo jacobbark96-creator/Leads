@@ -130,13 +130,19 @@ export function SEOROICalculatorModal({ isOpen, onClose }: SEOROICalculatorModal
                   </div>
                 </div>
                 <p className="text-[9px] text-gray-500 font-medium mb-3">We recommend starting with 20-40 leads for sustainable scaling.</p>
-                <input 
-                  type="range" 
-                  min="5" max="150" step="5"
-                  value={targetLeads}
-                  onChange={(e) => setTargetLeads(Number(e.target.value))}
-                  className="w-full h-2 bg-emerald-100 rounded-lg appearance-none cursor-pointer accent-emerald-500"
-                />
+                <div className="relative pt-1">
+                  {/* "Realistic" Marker */}
+                  <div className="absolute top-0 left-[17.24%] w-0.5 h-full bg-emerald-200 z-0 flex flex-col items-center">
+                    <span className="absolute -top-4 text-[8px] font-black text-emerald-400 uppercase tracking-widest bg-white px-1 whitespace-nowrap">Realistic</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="5" max="150" step="5"
+                    value={targetLeads}
+                    onChange={(e) => setTargetLeads(Number(e.target.value))}
+                    className="w-full h-2 bg-emerald-100 rounded-lg appearance-none cursor-pointer accent-emerald-500 relative z-10"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -200,7 +206,10 @@ export function SEOROICalculatorModal({ isOpen, onClose }: SEOROICalculatorModal
 
             <div className="relative z-10 mt-6">
               <button 
-                onClick={onClose}
+                onClick={() => {
+                  window.location.href = `mailto:jake.bedwell@kairostudio.co.uk?subject=SEO Strategy Request&body=I have calculated my SEO ROI and would like to discuss a custom strategy. %0D%0A%0D%0A--- ROI Projection ---%0D%0AProjected Monthly Revenue: ${formatCurrency(projectedMonthlyRevenue)}%0D%0ATarget Leads: ${targetLeads}%0D%0AAvg Job Value: ${formatCurrency(avgJobValue)}`;
+                  onClose();
+                }}
                 className="w-full py-3 bg-white text-gray-900 rounded-xl text-xs font-black hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 shadow-xl"
               >
                 Get Your Custom Strategy <ArrowRight className="w-3.5 h-3.5" />

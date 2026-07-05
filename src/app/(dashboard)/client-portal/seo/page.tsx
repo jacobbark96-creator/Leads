@@ -345,10 +345,16 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
             </div>
 
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1]">
-              <span className="inline-block text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff,35%,#cbd5e1,50%,#ffffff,65%)] bg-[length:200%_auto] animate-shimmer pb-1">
+              <span className="inline-block text-white pb-1 relative overflow-hidden">
+                <span className="absolute inset-0 bg-[linear-gradient(110deg,transparent,35%,rgba(255,255,255,0.8),50%,transparent,65%)] bg-[length:200%_auto] animate-shimmer" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  Dominate Search.
+                </span>
                 Dominate Search.
               </span><br/>
-              <span className="inline-block text-transparent bg-clip-text bg-[linear-gradient(110deg,#3B82F6,35%,#ffffff,50%,#22D3EE,65%)] bg-[length:200%_auto] animate-shimmer-delayed pb-1">
+              <span className="inline-block text-cyan-400 pb-1 relative overflow-hidden">
+                <span className="absolute inset-0 bg-[linear-gradient(110deg,transparent,35%,rgba(255,255,255,0.9),50%,transparent,65%)] bg-[length:200%_auto] animate-shimmer-delayed" style={{ WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  Automate Growth.
+                </span>
                 Automate Growth.
               </span>
             </h1>

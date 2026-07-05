@@ -268,10 +268,10 @@ const BrandCarousel = () => {
       
       <motion.div 
         animate={{ x: ["0%", "-50%"] }}
-        transition={{ repeat: Infinity, ease: "linear", duration: 50 }}
+        transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
         className="flex gap-24 w-max items-center px-8"
       >
-        {[...brands, ...brands, ...brands].map((brand, i) => (
+        {[...brands, ...brands].map((brand, i) => (
           <div key={i} className="flex flex-col items-center gap-1 opacity-50 hover:opacity-100 transition-opacity grayscale hover:grayscale-0 cursor-default hover:scale-110 duration-300">
             {brand.isImage ? (
               <img src={brand.src} alt={brand.name} className={`${brand.size} w-auto object-contain drop-shadow-sm`} />

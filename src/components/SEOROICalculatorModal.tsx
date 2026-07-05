@@ -11,7 +11,7 @@ interface SEOROICalculatorModalProps {
 
 export function SEOROICalculatorModal({ isOpen, onClose }: SEOROICalculatorModalProps) {
   // Inputs based on what clients actually know about their own business
-  const [avgJobValue, setAvgJobValue] = useState<number>(8500); // £
+  const [avgJobValue, setAvgJobValue] = useState<number>(10000); // £
   const [closeRate, setCloseRate] = useState<number>(20); // % (e.g., win 1 in 5 jobs)
   const [targetLeads, setTargetLeads] = useState<number>(30); // Target leads per month
 
@@ -78,11 +78,15 @@ export function SEOROICalculatorModal({ isOpen, onClose }: SEOROICalculatorModal
                 <p className="text-[9px] text-gray-400 font-medium mb-3">Use a conservative average to keep projections realistic.</p>
                 <input 
                   type="range" 
-                  min="1000" max="25000" step="500"
+                  min="9500" max="25000" step="500"
                   value={avgJobValue}
                   onChange={(e) => setAvgJobValue(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
+                  className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600 relative z-10"
                 />
+                <div className="flex justify-between text-[10px] text-gray-400 font-bold mt-2">
+                  <span>£9.5k</span>
+                  <span>£25k+</span>
+                </div>
               </div>
 
               {/* Close Rate */}
@@ -96,13 +100,23 @@ export function SEOROICalculatorModal({ isOpen, onClose }: SEOROICalculatorModal
                   </div>
                 </div>
                 <p className="text-[9px] text-gray-400 font-medium mb-3">Openlead's exclusive SEO leads typically convert at 20-35%.</p>
-                <input 
-                  type="range" 
-                  min="5" max="50" step="1"
-                  value={closeRate}
-                  onChange={(e) => setCloseRate(Number(e.target.value))}
-                  className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600"
-                />
+                <div className="relative pt-1">
+                  {/* "Average" Marker */}
+                  <div className="absolute top-0 left-[33.33%] w-0.5 h-full bg-blue-200 z-0 flex flex-col items-center">
+                    <span className="absolute -top-4 text-[8px] font-black text-blue-400 uppercase tracking-widest bg-white px-1 whitespace-nowrap">Avg</span>
+                  </div>
+                  <input 
+                    type="range" 
+                    min="5" max="50" step="1"
+                    value={closeRate}
+                    onChange={(e) => setCloseRate(Number(e.target.value))}
+                    className="w-full h-2 bg-gray-100 rounded-lg appearance-none cursor-pointer accent-blue-600 relative z-10"
+                  />
+                </div>
+                <div className="flex justify-between text-[10px] text-gray-400 font-bold mt-2">
+                  <span>5% (1 in 20)</span>
+                  <span>50% (1 in 2)</span>
+                </div>
               </div>
 
               {/* Target Extra Leads Slider */}

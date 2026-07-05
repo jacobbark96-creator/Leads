@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Globe, TrendingUp, BarChart3, ArrowUpRight, Zap, Target, 
   MousePointer2, Check, Star, ShieldCheck, FileText, MapPin, 
-  Link2, Sparkles, Award, Crown, Activity, Info
+  Link2, Sparkles, Award, Crown, Activity, Info, Facebook, Instagram, Youtube, Linkedin
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../../../store/authStore';
@@ -236,11 +236,10 @@ function SEODashboard() {
 const BrandCarousel = () => {
   const brands = [
     { name: "Google", color: "text-blue-500", icon: <Search className="w-8 h-8" /> },
-    { name: "Facebook", color: "text-blue-600", icon: <Globe className="w-8 h-8" /> }, // Placeholder for FB
-    { name: "Instagram", color: "text-pink-600", icon: <Globe className="w-8 h-8" /> }, // Placeholder for Insta
-    { name: "TikTok", color: "text-rose-500", icon: <Globe className="w-8 h-8" /> }, // Placeholder for TikTok
-    { name: "YouTube", color: "text-red-600", icon: <Globe className="w-8 h-8" /> }, // Placeholder for YT
-    { name: "LinkedIn", color: "text-blue-700", icon: <Globe className="w-8 h-8" /> }, // Placeholder for LI
+    { name: "Facebook", color: "text-blue-600", icon: <Facebook className="w-8 h-8" /> },
+    { name: "Instagram", color: "text-pink-600", icon: <Instagram className="w-8 h-8" /> },
+    { name: "YouTube", color: "text-red-600", icon: <Youtube className="w-8 h-8" /> },
+    { name: "LinkedIn", color: "text-blue-700", icon: <Linkedin className="w-8 h-8" /> },
     { name: "Solarpedia", isImage: true, src: "/solarpedia.png" },
     { name: "Bing", color: "text-teal-600", icon: <Search className="w-8 h-8" /> },
     { name: "Local Citations", color: "text-gray-900", icon: <MapPin className="w-8 h-8" /> }

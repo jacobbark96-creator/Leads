@@ -324,6 +324,14 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
 
   return (
     <div className="w-full bg-gray-50/50 min-h-screen -mt-4 pt-4">
+      {/* Floating ROI Calculator Button */}
+      <button className="fixed bottom-8 right-8 z-50 px-6 py-4 bg-gray-900 text-white rounded-full font-black text-sm shadow-2xl shadow-gray-900/40 hover:-translate-y-1 hover:shadow-gray-900/60 transition-all flex items-center gap-3 border border-white/10 group">
+        <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
+          <TrendingUp className="w-4 h-4 text-blue-400 group-hover:scale-110 transition-transform" />
+        </div>
+        Calculate SEO ROI
+      </button>
+
       <div className="max-w-6xl mx-auto space-y-12 pb-24 px-4">
         
         {/* HERO SECTION (Dark Premium) */}
@@ -425,8 +433,8 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
                    </span>
                  </h3>
                  <p className="text-sm text-gray-500 font-medium leading-relaxed max-w-2xl">
-                   Included in Growth & Authority plans. Instantly elevate your brand's authority and gain direct exposure to <strong className="text-gray-900">50,000+</strong> high-intent monthly visitors on the industry's most trusted directory.
-                 </p>
+                    Included in Growth & Authority plans. Instantly elevate your brand's authority and gain direct exposure to <strong className="text-gray-900">50,000+</strong> high-intent monthly visitors on the UK's free independent solar advisory.
+                  </p>
                </div>
             </div>
           </a>

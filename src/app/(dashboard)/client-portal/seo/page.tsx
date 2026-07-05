@@ -207,6 +207,7 @@ function SEODashboard() {
 // ----------------------------------------------------------------------
 function SEOMarketing({ weeklyLeads, monthlyLeads }: { weeklyLeads: number, monthlyLeads: number }) {
   const [currentFact, setCurrentFact] = useState(0);
+  const [reportRequested, setReportRequested] = useState(false);
   
   const facts = [
     {
@@ -414,6 +415,47 @@ function SEOMarketing({ weeklyLeads, monthlyLeads }: { weeklyLeads: number, mont
           theme="light"
         />
       </div>
+
+      {/* Free SEO Report CTA */}
+      <motion.div 
+        initial={{ opacity: 0, y: 10 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        className="mt-8 bg-gradient-to-br from-blue-900 to-[#0A0A0A] rounded-3xl p-10 text-center relative overflow-hidden border border-blue-800 shadow-2xl"
+      >
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-blue-500/10 blur-[80px] pointer-events-none" />
+        <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+          {!reportRequested ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="space-y-6"
+            >
+              <h2 className="text-3xl font-semibold text-white tracking-tight">Curious about your current rankings?</h2>
+              <p className="text-blue-100/70 text-sm">Find out exactly what's holding your website back from the first page of Google with a comprehensive, no-obligation audit.</p>
+              <button 
+                onClick={() => setReportRequested(true)}
+                className="px-8 py-4 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2 mx-auto group"
+              >
+                <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                Get your free current SEO report now
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="py-4"
+            >
+              <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
+                <Check className="w-8 h-8 text-emerald-400" />
+              </div>
+              <h3 className="text-2xl font-semibold text-white tracking-tight mb-2">Request Received</h3>
+              <p className="text-emerald-100/80 text-sm">Thank you, one of the Openlead team will be in touch soon with your comprehensive SEO report.</p>
+            </motion.div>
+          )}
+        </div>
+      </motion.div>
     </div>
   );
 }

@@ -248,6 +248,10 @@ const BrandCarousel = () => {
     { name: "YouTube", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg", size: "h-10" },
     { name: "LinkedIn", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/8/81/LinkedIn_icon.svg", size: "h-10" },
     { name: "Solarpedia", isImage: true, src: "/solarpedia.png", size: "h-24 scale-[1.5]" },
+    { name: "Forbes", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Forbes_logo.svg", size: "h-8", subtext: "additional one off cost" },
+    { name: "Esquire", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/d/df/Esquire_logo.svg", size: "h-6", subtext: "additional one off cost" },
+    { name: "The Telegraph", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/4/48/The_Telegraph_logo.svg", size: "h-8", subtext: "additional one off cost" },
+    { name: "Variety", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/8/87/Variety_logo.svg", size: "h-6", subtext: "additional one off cost" },
     { name: "Bing", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/9/9c/Bing_Fluent_Logo.svg", size: "h-10" },
     { name: "Local Citations", color: "text-gray-900", icon: <MapPin className="w-10 h-10" /> }
   ];
@@ -264,17 +268,22 @@ const BrandCarousel = () => {
       
       <motion.div 
         animate={{ x: ["0%", "-50%"] }}
-        transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+        transition={{ repeat: Infinity, ease: "linear", duration: 50 }}
         className="flex gap-24 w-max items-center px-8"
       >
         {[...brands, ...brands, ...brands].map((brand, i) => (
-          <div key={i} className="flex items-center gap-3 opacity-50 hover:opacity-100 transition-opacity grayscale hover:grayscale-0 cursor-default hover:scale-110 duration-300">
+          <div key={i} className="flex flex-col items-center gap-1 opacity-50 hover:opacity-100 transition-opacity grayscale hover:grayscale-0 cursor-default hover:scale-110 duration-300">
             {brand.isImage ? (
               <img src={brand.src} alt={brand.name} className={`${brand.size} w-auto object-contain drop-shadow-sm`} />
             ) : (
               <div className={`flex items-center justify-center ${brand.color} drop-shadow-sm`}>
                 {brand.icon}
               </div>
+            )}
+            {brand.subtext && (
+              <span className="text-[7px] font-black text-gray-400 uppercase tracking-tighter whitespace-nowrap">
+                {brand.subtext}
+              </span>
             )}
           </div>
         ))}

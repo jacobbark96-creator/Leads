@@ -563,7 +563,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
               <div className="w-20 h-20 bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/50 flex items-center justify-center mx-auto mb-6 transform -rotate-6">
                 <Search className="w-8 h-8 text-blue-600 transform rotate-6" />
               </div>
-              <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-4">Request Your Private Audit</h2>
+              <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-4">Request Your Free Private Audit</h2>
               <p className="text-base text-gray-500 mb-8 max-w-xl mx-auto font-medium">
                 Find out exactly what's holding your website back from the first page of Google with a comprehensive, no-obligation technical review.
               </p>

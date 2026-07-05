@@ -362,11 +362,11 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
               Enterprise-grade search engine optimization, delivered directly to your dashboard. Stop hunting for leads—engineer a system where they hunt for you.
             </p>
 
-            <div className="flex flex-wrap justify-center gap-2">
-               <Badge icon={Globe} text="Technical Audits" />
-               <Badge icon={FileText} text="Content Strategy" />
-               <Badge icon={MapPin} text="Local Citations" />
-               <Badge icon={Link2} text="Link Building" />
+            <div className="flex flex-wrap justify-center gap-3">
+               <Badge icon={Globe} text="Technical Audits" colorClass="text-emerald-400" borderClass="border-emerald-500/20" bgClass="bg-emerald-500/10" />
+               <Badge icon={FileText} text="Content Strategy" colorClass="text-purple-400" borderClass="border-purple-500/20" bgClass="bg-purple-500/10" />
+               <Badge icon={MapPin} text="Local Citations" colorClass="text-amber-400" borderClass="border-amber-500/20" bgClass="bg-amber-500/10" />
+               <Badge icon={Link2} text="Link Building" colorClass="text-cyan-400" borderClass="border-cyan-500/20" bgClass="bg-cyan-500/10" />
             </div>
           </div>
         </div>
@@ -533,10 +533,10 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
 // REUSABLE COMPONENTS
 // ----------------------------------------------------------------------
 
-const Badge = ({ icon: Icon, text }: { icon: any, text: string }) => (
-  <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-gray-300 backdrop-blur-sm">
-    <Icon className="w-3.5 h-3.5 text-blue-400" />
-    {text}
+const Badge = ({ icon: Icon, text, colorClass = "text-blue-400", borderClass = "border-blue-500/20", bgClass = "bg-blue-500/10" }: { icon: any, text: string, colorClass?: string, borderClass?: string, bgClass?: string }) => (
+  <div className={`flex items-center gap-2 px-4 py-2 ${bgClass} border ${borderClass} rounded-xl text-xs font-bold text-gray-200 backdrop-blur-md shadow-lg shadow-black/20 group hover:-translate-y-0.5 transition-transform cursor-default`}>
+    <Icon className={`w-4 h-4 ${colorClass} group-hover:scale-110 transition-transform`} />
+    <span className="tracking-wide">{text}</span>
   </div>
 );
 

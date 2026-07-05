@@ -346,12 +346,12 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
 
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1]">
               <span className="inline-block relative">
-                <span className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#a1a1aa,40%,#ffffff,50%,#a1a1aa,60%)] bg-[length:200%_auto] animate-shimmer">
+                <span className="text-transparent bg-clip-text animate-shimmer" style={{ backgroundImage: 'linear-gradient(110deg, #a1a1aa 40%, #ffffff 50%, #a1a1aa 60%)', backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   Dominate Search.
                 </span>
               </span><br/>
               <span className="inline-block relative">
-                <span className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#3b82f6,40%,#ffffff,50%,#06b6d4,60%)] bg-[length:200%_auto] animate-shimmer-delayed">
+                <span className="text-transparent bg-clip-text animate-shimmer-delayed" style={{ backgroundImage: 'linear-gradient(110deg, #3b82f6 40%, #ffffff 50%, #06b6d4 60%)', backgroundSize: '200% auto', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
                   Automate Growth.
                 </span>
               </span>

@@ -316,21 +316,21 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
             href="https://solarpedia.co.uk" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="bg-[#111] rounded-[2rem] p-8 border border-gray-800 shadow-2xl flex flex-col justify-center relative overflow-hidden group hover:border-amber-500/50 transition-colors cursor-pointer"
+            className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-gray-200/30 flex flex-col justify-center relative overflow-hidden group hover:border-amber-200 transition-colors cursor-pointer"
           >
-            <div className="absolute right-0 bottom-0 w-32 h-32 bg-amber-500/10 blur-2xl pointer-events-none group-hover:bg-amber-500/20 transition-colors duration-500" />
-            <div className="relative z-10 mb-4 h-8 flex items-center">
+            <div className="absolute right-0 bottom-0 w-32 h-32 bg-amber-100 blur-2xl pointer-events-none group-hover:bg-amber-200/50 transition-colors duration-500" />
+            <div className="relative z-10 mb-4 h-12 flex items-center">
               <img 
                 src="/solarpedia.png" 
                 alt="Solarpedia Logo" 
-                className="h-full w-auto object-contain"
+                className="h-full w-auto object-contain drop-shadow-sm"
               />
             </div>
-            <h3 className="text-lg font-black text-white tracking-tight relative z-10 flex items-center gap-2">
+            <h3 className="text-lg font-black text-gray-900 tracking-tight relative z-10 flex items-center gap-2">
               Solarpedia Featured
               <ArrowUpRight className="w-4 h-4 text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity" />
             </h3>
-            <p className="text-xs text-gray-400 mt-2 font-medium relative z-10 leading-relaxed">Included in Growth & Authority plans. Gain trust from 50k+ monthly visitors.</p>
+            <p className="text-xs text-gray-500 mt-2 font-medium relative z-10 leading-relaxed">Included in Growth & Authority plans. Gain trust from 50k+ monthly visitors.</p>
           </a>
         </div>
 
@@ -479,11 +479,12 @@ const Badge = ({ icon: Icon, text }: { icon: any, text: string }) => (
 );
 
 const CounterCard = ({ title, value, desc }: { title: string, value: string | number, desc: string }) => (
-  <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-gray-200/30 flex flex-col justify-center items-center text-center group hover:-translate-y-1 transition-transform duration-300">
-    <div className="text-4xl font-black text-gray-900 tracking-tighter mb-2 group-hover:text-blue-600 transition-colors">{value}</div>
-    <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">{title}</div>
-    <div className="w-8 h-px bg-gray-200 mb-3" />
-    <div className="text-[11px] text-gray-500 font-bold italic">{desc}</div>
+  <div className="bg-[#050505] rounded-[2rem] p-8 border border-white/10 shadow-2xl flex flex-col justify-center items-center text-center group hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+    <div className="absolute inset-0 bg-gradient-to-br from-gray-800/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+    <div className="text-4xl font-black text-white tracking-tighter mb-2 group-hover:text-blue-400 transition-colors relative z-10">{value}</div>
+    <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 relative z-10">{title}</div>
+    <div className="w-8 h-px bg-gray-800 mb-3 relative z-10" />
+    <div className="text-[11px] text-gray-400 font-bold italic relative z-10">{desc}</div>
   </div>
 );
 

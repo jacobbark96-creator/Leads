@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   Search, Globe, TrendingUp, BarChart3, ArrowUpRight, Zap, Target, 
   MousePointer2, Check, Star, ShieldCheck, FileText, MapPin, 
-  Link2, Sparkles, Award, Crown, Activity, Info, ChevronRight, ChevronLeft
+  Link2, Sparkles, Award, Crown, Activity, Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../../../../store/authStore';
@@ -34,9 +34,9 @@ export default function SEOPage() {
   if (loading) {
     return (
       <div className="min-h-[60vh] flex items-center justify-center">
-        <div className="relative w-8 h-8">
-          <div className="absolute inset-0 rounded-full border-2 border-gray-100" />
-          <div className="absolute inset-0 rounded-full border-2 border-blue-600 border-t-transparent animate-spin" />
+        <div className="relative w-12 h-12">
+          <div className="absolute inset-0 rounded-full border-[3px] border-gray-100" />
+          <div className="absolute inset-0 rounded-full border-[3px] border-gray-900 border-t-transparent animate-spin" />
         </div>
       </div>
     );
@@ -61,18 +61,22 @@ function SEODashboard() {
   ];
 
   return (
-    <div className="max-w-6xl mx-auto space-y-6 pb-16 px-2">
+    <div className="max-w-7xl mx-auto space-y-8 pb-20 px-4">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">SEO Intelligence</h1>
-          <p className="text-sm text-gray-500 mt-1">Real-time organic search performance and visibility metrics.</p>
+      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-gray-100">
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-[10px] font-bold uppercase tracking-[0.2em]">
+            <Activity className="w-3 h-3" />
+            Active Concierge Plan
+          </div>
+          <h1 className="text-3xl font-black text-gray-900 tracking-tight">SEO Intelligence</h1>
+          <p className="text-sm text-gray-500 font-medium">Real-time organic search performance and visibility metrics.</p>
         </div>
-        <div className="flex items-center gap-2">
-          <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-xs font-medium text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+        <div className="flex items-center gap-3">
+          <button className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
             Download Report
           </button>
-          <button className="px-4 py-2 bg-gray-900 text-white rounded-lg text-xs font-medium hover:bg-gray-800 transition-all shadow-sm flex items-center gap-2">
+          <button className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-black transition-all shadow-md shadow-gray-900/20 flex items-center gap-2">
             <Zap className="w-3.5 h-3.5" />
             Optimize
           </button>
@@ -80,74 +84,76 @@ function SEODashboard() {
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         {perfStats.map((stat, index) => (
           <motion.div
             key={stat.label}
-            initial={{ opacity: 0, y: 10 }}
+            initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm flex flex-col justify-between"
+            className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/30 flex flex-col justify-between group hover:border-gray-200 transition-all"
           >
-            <div className="flex items-center justify-between mb-4">
-              <stat.icon className={`w-4 h-4 ${stat.color}`} />
-              <span className={`text-[10px] font-medium px-2 py-0.5 rounded-md ${
-                stat.change.startsWith('+') ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
+            <div className="flex items-center justify-between mb-6">
+              <div className="p-3 bg-gray-50 rounded-2xl group-hover:scale-110 transition-transform">
+                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+              </div>
+              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+                stat.change.startsWith('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
               }`}>
                 {stat.change}
               </span>
             </div>
             <div>
-              <div className="text-2xl font-semibold text-gray-900 tracking-tight">{stat.value}</div>
-              <div className="text-xs font-medium text-gray-500 mt-1">{stat.label}</div>
+              <div className="text-3xl font-black text-gray-900 tracking-tight">{stat.value}</div>
+              <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-2">{stat.label}</div>
             </div>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
         {/* Keywords Table */}
-        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden">
-          <div className="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
-            <h2 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
-              <BarChart3 className="w-4 h-4 text-gray-400" />
+        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30 overflow-hidden flex flex-col">
+          <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
+            <h2 className="text-base font-black text-gray-900 flex items-center gap-3">
+              <BarChart3 className="w-5 h-5 text-gray-400" />
               High-Impact Keywords
             </h2>
-            <button className="text-[10px] font-semibold text-blue-600 uppercase tracking-widest hover:text-blue-700">View All</button>
+            <button className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">View All</button>
           </div>
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto flex-grow">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50/50">
-                  <th className="px-5 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Keyword</th>
-                  <th className="px-5 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Volume</th>
-                  <th className="px-5 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Position</th>
-                  <th className="px-5 py-3 text-[10px] font-semibold text-gray-500 uppercase tracking-wider">Trend</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Keyword</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Volume</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Position</th>
+                  <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Trend</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-100">
+              <tbody className="divide-y divide-gray-50">
                 {[
                   { word: 'contractor leads uk', volume: '2.4k', pos: '1', trend: 'up' },
                   { word: 'exclusive construction leads', volume: '1.2k', pos: '3', trend: 'up' },
                   { word: 'qualified renovation leads', volume: '850', pos: '5', trend: 'down' },
                   { word: 'hiring local builders', volume: '620', pos: '2', trend: 'stable' },
                 ].map((kw, i) => (
-                  <tr key={i} className="hover:bg-gray-50 transition-colors">
-                    <td className="px-5 py-3">
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs font-medium text-gray-900">{kw.word}</span>
-                        <ArrowUpRight className="w-3 h-3 text-gray-300" />
+                  <tr key={i} className="hover:bg-gray-50/80 transition-colors group">
+                    <td className="px-8 py-5">
+                      <div className="flex items-center gap-3">
+                        <span className="text-sm font-bold text-gray-900">{kw.word}</span>
+                        <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                       </div>
                     </td>
-                    <td className="px-5 py-3 text-xs text-gray-500">{kw.volume}</td>
-                    <td className="px-5 py-3">
-                      <span className="inline-flex items-center justify-center w-5 h-5 rounded bg-gray-100 text-gray-700 text-[10px] font-semibold">
+                    <td className="px-8 py-5 text-sm font-bold text-gray-500">{kw.volume}</td>
+                    <td className="px-8 py-5">
+                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-xl bg-gray-900 text-white text-xs font-black shadow-md">
                         {kw.pos}
                       </span>
                     </td>
-                    <td className="px-5 py-3">
-                      <div className="h-1.5 w-12 bg-gray-100 rounded-full overflow-hidden">
-                        <div className={`h-full rounded-full ${kw.trend === 'up' ? 'bg-emerald-500' : kw.trend === 'down' ? 'bg-red-500' : 'bg-blue-500'}`} 
+                    <td className="px-8 py-5">
+                      <div className="h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${kw.trend === 'up' ? 'bg-emerald-500' : kw.trend === 'down' ? 'bg-red-500' : 'bg-gray-400'}`} 
                              style={{ width: kw.trend === 'up' ? '85%' : kw.trend === 'down' ? '30%' : '55%' }} />
                       </div>
                     </td>
@@ -159,38 +165,39 @@ function SEODashboard() {
         </div>
 
         {/* Side Panels */}
-        <div className="space-y-4">
-          {/* Elite Performance Card (Dark) */}
-          <div className="bg-[#0A0A0A] p-6 rounded-2xl text-white relative overflow-hidden border border-gray-800 shadow-xl">
-            <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl" />
+        <div className="space-y-6">
+          {/* Elite Performance Card */}
+          <div className="bg-[#050505] p-8 rounded-[2.5rem] text-white relative overflow-hidden border border-white/10 shadow-2xl shadow-gray-900/20">
+            <div className="absolute -right-12 -top-12 w-48 h-48 bg-blue-600/20 rounded-full blur-[40px]" />
+            <div className="absolute -left-12 -bottom-12 w-48 h-48 bg-cyan-600/10 rounded-full blur-[40px]" />
             <div className="relative z-10">
-              <Crown className="w-5 h-5 mb-4 text-blue-400" />
-              <h3 className="text-sm font-semibold mb-1">Elite Performance</h3>
-              <p className="text-gray-400 text-xs leading-relaxed mb-6">
-                Domain authority is <span className="text-white font-medium">DR 34</span>. You are outranking 82% of local competitors this month.
+              <Crown className="w-6 h-6 mb-5 text-amber-400" />
+              <h3 className="text-xl font-black tracking-tight mb-2">Elite Performance</h3>
+              <p className="text-gray-400 text-sm leading-relaxed mb-8 font-medium">
+                Domain authority is <span className="text-white font-bold">DR 34</span>. You are outranking 82% of local competitors this month.
               </p>
-              <button className="w-full py-2 bg-white/10 hover:bg-white/20 border border-white/10 text-white rounded-lg text-xs font-medium transition-all">
+              <button className="w-full py-3.5 bg-white text-gray-900 hover:bg-gray-100 rounded-xl text-sm font-black transition-all shadow-xl">
                 View Competitors
               </button>
             </div>
           </div>
 
           {/* Queue Card */}
-          <div className="bg-white p-5 rounded-2xl border border-gray-200 shadow-sm">
-            <h3 className="text-xs font-semibold text-gray-900 mb-4 flex items-center gap-2">
-              <Activity className="w-3.5 h-3.5 text-gray-400" />
+          <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30">
+            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
+              <Activity className="w-4 h-4 text-emerald-500" />
               Optimization Queue
             </h3>
-            <div className="space-y-2">
+            <div className="space-y-3">
               {[
                 { task: 'Fix 4 meta descriptions', priority: 'High', color: 'red' },
                 { task: 'Optimize image alt tags', priority: 'Medium', color: 'amber' },
                 { task: 'Add 2 internal links', priority: 'Low', color: 'blue' },
               ].map((t, i) => (
-                <div key={i} className="flex items-center justify-between p-2.5 bg-gray-50 rounded-lg border border-gray-100">
-                  <span className="text-[11px] font-medium text-gray-700">{t.task}</span>
-                  <span className={`text-[9px] font-medium px-2 py-0.5 rounded-md ${
-                    t.color === 'red' ? 'bg-red-50 text-red-700' : t.color === 'amber' ? 'bg-amber-50 text-amber-700' : 'bg-blue-50 text-blue-700'
+                <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-gray-200 transition-colors">
+                  <span className="text-xs font-bold text-gray-700">{t.task}</span>
+                  <span className={`text-[9px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider ${
+                    t.color === 'red' ? 'bg-red-50 text-red-600' : t.color === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
                   }`}>
                     {t.priority}
                   </span>
@@ -207,8 +214,26 @@ function SEODashboard() {
 // ----------------------------------------------------------------------
 // SEO MARKETING (For Non-Customers)
 // ----------------------------------------------------------------------
+
+const LogoOpenlead = () => (
+  <div className="flex items-center gap-2">
+    <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-500 to-blue-700 flex items-center justify-center shadow-lg shadow-blue-500/30">
+      <div className="w-3 h-3 bg-white rounded-sm transform rotate-45" />
+    </div>
+    <span className="text-2xl font-black tracking-tight text-white">Openlead</span>
+  </div>
+);
+
+const LogoKairo = () => (
+  <div className="flex items-center gap-2">
+    <div className="w-8 h-8 rounded-full border-[3px] border-white flex items-center justify-center">
+      <div className="w-2 h-2 bg-white rounded-full" />
+    </div>
+    <span className="text-2xl font-black tracking-tight text-white">Kairo Studio</span>
+  </div>
+);
+
 function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads: number, monthlyLeads: number, impressions: number }) {
-  const [currentFact, setCurrentFact] = useState(0);
   const [reportRequested, setReportRequested] = useState(false);
   
   const facts = [
@@ -234,292 +259,248 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
     }
   ];
 
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentFact((prev) => (prev + 1) % facts.length);
-    }, 6000);
-    return () => clearInterval(timer);
-  }, [facts.length]);
-
   return (
-    <div className="max-w-6xl mx-auto space-y-8 pb-20 px-2">
-      
-      {/* Bento Grid Header */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="w-full bg-gray-50/50 min-h-screen -mt-8 pt-8">
+      <div className="max-w-7xl mx-auto space-y-16 pb-32 px-4">
         
-        {/* Main Hero Card */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="md:col-span-2 bg-[#0A0A0A] rounded-3xl p-8 md:p-10 relative overflow-hidden border border-gray-800 shadow-2xl"
-        >
-          <div className="absolute top-0 right-0 w-[30rem] h-[30rem] bg-blue-600/10 blur-[100px] rounded-full pointer-events-none" />
-          <div className="relative z-10">
-            <div className="inline-flex items-center gap-2 px-2.5 py-1 bg-white/5 border border-white/10 rounded-md text-[9px] font-semibold text-gray-300 uppercase tracking-widest mb-6">
-              <Sparkles className="w-3 h-3 text-blue-400" /> Openlead × Kairo Studio
+        {/* HERO SECTION (Dark Premium) */}
+        <div className="relative bg-[#050505] rounded-[3rem] p-10 md:p-20 overflow-hidden shadow-2xl">
+          {/* Glowing Background Orbs */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
+             <div className="absolute top-[-20%] left-[10%] w-[50%] h-[60%] bg-blue-600/20 blur-[120px] rounded-full mix-blend-screen" />
+             <div className="absolute bottom-[-20%] right-[10%] w-[50%] h-[60%] bg-cyan-600/10 blur-[120px] rounded-full mix-blend-screen" />
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center text-center">
+            
+            {/* Logos */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-6 mb-12">
+              <LogoOpenlead />
+              <span className="text-gray-600 text-2xl font-light">×</span>
+              <LogoKairo />
             </div>
-            <h1 className="text-3xl md:text-5xl font-semibold text-white tracking-tight leading-[1.1] mb-4">
-              Dominate your local market <br />with <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-cyan-400">elite SEO.</span>
+
+            <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/5 border border-white/10 text-xs font-bold text-gray-300 mb-8 backdrop-blur-md">
+              <Sparkles className="w-3.5 h-3.5 text-amber-400" />
+              Exclusive Concierge Partnership
+            </div>
+
+            <h1 className="text-5xl md:text-7xl font-black tracking-tighter mb-8 max-w-4xl leading-[1.1] text-white">
+              Dominate Search.<br/>
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-white">
+                Automate Growth.
+              </span>
             </h1>
-            <p className="text-gray-400 text-sm max-w-md leading-relaxed mb-8">
-              We've partnered with Kairo Studio to bring enterprise-grade search engine optimization directly to your dashboard. Stop hunting for leads—let them find you.
+
+            <p className="text-lg md:text-xl text-gray-400 max-w-2xl font-medium leading-relaxed mb-12">
+              Enterprise-grade search engine optimization, delivered directly to your dashboard. Stop hunting for leads—engineer a system where they hunt for you.
             </p>
-            <div className="flex flex-wrap gap-2">
+
+            <div className="flex flex-wrap justify-center gap-3">
                <Badge icon={Globe} text="Technical Audits" />
                <Badge icon={FileText} text="Content Strategy" />
                <Badge icon={MapPin} text="Local Citations" />
                <Badge icon={Link2} text="Link Building" />
             </div>
           </div>
-        </motion.div>
-
-        {/* 25% Off Card */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="bg-blue-600 rounded-3xl p-8 relative overflow-hidden shadow-[0_0_40px_rgba(37,99,235,0.2)] flex flex-col justify-between border border-blue-500"
-        >
-          <div className="absolute -right-10 -top-10 w-40 h-40 bg-white/10 blur-3xl rounded-full pointer-events-none" />
-          <div className="relative z-10">
-            <div className="text-5xl font-bold text-white mb-1 tracking-tight">25%</div>
-            <div className="text-blue-200 text-[10px] font-semibold uppercase tracking-widest mb-4">Lifetime Discount</div>
-          </div>
-          <p className="text-blue-50 text-xs leading-relaxed relative z-10">
-            Active SEO clients receive an automatic 25% discount on every single lead purchased through the Openlead marketplace.
-          </p>
-        </motion.div>
-
-        {/* Counters & Solarpedia */}
-        <div className="md:col-span-3 grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.2 }}
-            className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center"
-          >
-            <div className="text-4xl font-semibold text-gray-900 tracking-tight">{weeklyLeads.toLocaleString()}</div>
-            <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-1">Leads / Week</div>
-            <div className="text-[9px] text-gray-400 mt-2">Across all active clients</div>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.3 }}
-            className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center"
-          >
-            <div className="text-4xl font-semibold text-gray-900 tracking-tight">{monthlyLeads.toLocaleString()}</div>
-            <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-1">SEO Growth / Mo</div>
-            <div className="text-[9px] text-gray-400 mt-2">Organic search capture</div>
-          </motion.div>
-
-          <motion.div 
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.4 }}
-            className="bg-white rounded-3xl p-6 border border-gray-200 shadow-sm flex flex-col justify-center items-center text-center"
-          >
-            <div className="text-4xl font-semibold text-gray-900 tracking-tight">{impressions.toLocaleString()}</div>
-            <div className="text-[10px] text-gray-400 font-semibold uppercase tracking-widest mt-1">Kairo Search & Ads</div>
-            <div className="text-[9px] text-gray-400 mt-2">Impressions across all campaigns</div>
-          </motion.div>
         </div>
 
-        {/* Solarpedia Featured Wide Banner */}
-        <motion.div 
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="md:col-span-3 bg-[#111] rounded-3xl p-8 border border-gray-800 shadow-lg flex flex-col sm:flex-row items-center justify-between relative overflow-hidden"
-        >
-          <div className="absolute right-0 bottom-0 w-64 h-64 bg-amber-500/10 blur-3xl pointer-events-none" />
-          <div className="flex items-center gap-4 relative z-10">
-            <div className="p-3 bg-amber-500/10 rounded-2xl border border-amber-500/20">
-              <Award className="w-8 h-8 text-amber-500" />
-            </div>
-            <div className="text-center sm:text-left">
-              <h3 className="text-lg font-semibold text-white">Solarpedia Featured Installer</h3>
-              <p className="text-sm text-gray-400 mt-1">Included in Growth & Authority plans. Gain immediate trust from 50k+ monthly visitors.</p>
-            </div>
-          </div>
-        </motion.div>
-      </div>
-
-      {/* Did You Know Carousel */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.5 }}
-        className="bg-white rounded-3xl border border-gray-200 shadow-sm p-8 relative overflow-hidden flex items-center justify-between"
-      >
-        <div className="absolute left-0 top-0 w-64 h-64 bg-blue-50/50 rounded-full blur-3xl pointer-events-none -translate-x-1/2 -translate-y-1/2" />
-        
-        <div className="flex-1 max-w-4xl relative z-10">
-          <div className="flex items-center gap-2 text-blue-600 mb-4">
-            <Info className="w-4 h-4" />
-            <span className="text-[10px] font-bold uppercase tracking-widest">Did you know?</span>
-          </div>
+        {/* METRICS & TRUST SECTION */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-20 px-4 md:-mt-24">
+          <CounterCard title="Leads / Week" value={weeklyLeads.toLocaleString()} desc="Active network capture" />
+          <CounterCard title="SEO Growth / Mo" value={monthlyLeads.toLocaleString()} desc="Organic acquisition" />
+          <CounterCard title="Impressions" value={impressions.toLocaleString()} desc="Kairo Search & Ads" />
           
-          <div className="h-24 flex items-center relative">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={currentFact}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.4 }}
-                className="absolute inset-0 flex flex-col justify-center"
-              >
-                <h3 className="text-2xl font-semibold text-gray-900 tracking-tight">
-                  <span className="text-blue-600 font-bold">{facts[currentFact].stat}</span> {facts[currentFact].title}
-                </h3>
-                <p className="text-sm text-gray-500 mt-2">{facts[currentFact].desc}</p>
-              </motion.div>
-            </AnimatePresence>
+          {/* Solarpedia Card */}
+          <div className="bg-[#111] rounded-[2rem] p-8 border border-gray-800 shadow-2xl flex flex-col justify-center relative overflow-hidden group">
+            <div className="absolute right-0 bottom-0 w-32 h-32 bg-amber-500/10 blur-2xl pointer-events-none group-hover:bg-amber-500/20 transition-colors duration-500" />
+            <Award className="w-8 h-8 text-amber-500 mb-4 relative z-10" />
+            <h3 className="text-lg font-black text-white tracking-tight relative z-10">Solarpedia Featured</h3>
+            <p className="text-xs text-gray-400 mt-2 font-medium relative z-10 leading-relaxed">Included in Growth & Authority plans. Gain trust from 50k+ monthly visitors.</p>
           </div>
         </div>
 
-        <div className="flex flex-col items-center gap-3 ml-8 relative z-10 hidden sm:flex">
-          <div className="flex gap-1.5">
-            {facts.map((_, i) => (
-              <button 
-                key={i} 
-                onClick={() => setCurrentFact(i)}
-                className={`w-1.5 h-1.5 rounded-full transition-all ${i === currentFact ? 'bg-blue-600 w-4' : 'bg-gray-200 hover:bg-gray-300'}`}
-              />
+        {/* DID YOU KNOW MARQUEE */}
+        <div className="py-24 bg-white rounded-[3rem] border border-gray-100 shadow-xl shadow-gray-200/30 relative overflow-hidden my-16">
+          <div className="absolute left-0 top-0 w-48 h-full bg-gradient-to-r from-white to-transparent z-10" />
+          <div className="absolute right-0 top-0 w-48 h-full bg-gradient-to-l from-white to-transparent z-10" />
+          
+          <div className="flex items-center justify-center gap-3 text-blue-600 mb-16 relative z-20">
+            <Info className="w-5 h-5" />
+            <span className="text-xs font-black uppercase tracking-[0.3em]">Industry Intelligence</span>
+          </div>
+
+          <motion.div 
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+            className="flex gap-32 w-max px-8"
+          >
+            {[...facts, ...facts].map((fact, i) => (
+              <div key={i} className="flex items-center gap-8 group">
+                <div className="text-[6rem] md:text-[8rem] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-cyan-300 leading-none drop-shadow-sm group-hover:scale-105 transition-transform duration-500">
+                  {fact.stat}
+                </div>
+                <div className="max-w-[320px]">
+                  <div className="text-xl md:text-2xl font-black text-gray-900 leading-tight mb-3 tracking-tight">{fact.title}</div>
+                  <div className="text-sm text-gray-500 font-medium leading-relaxed">{fact.desc}</div>
+                </div>
+              </div>
             ))}
-          </div>
-          <div className="flex gap-2">
-            <button 
-              onClick={() => setCurrentFact((prev) => (prev - 1 + facts.length) % facts.length)}
-              className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-all"
-            >
-              <ChevronLeft className="w-4 h-4" />
-            </button>
-            <button 
-              onClick={() => setCurrentFact((prev) => (prev + 1) % facts.length)}
-              className="p-1.5 rounded-lg border border-gray-200 text-gray-400 hover:text-gray-900 hover:bg-gray-50 transition-all"
-            >
-              <ChevronRight className="w-4 h-4" />
-            </button>
+          </motion.div>
+        </div>
+
+        {/* 25% OFF "BLACK CARD" SECTION */}
+        <div className="bg-[#050505] rounded-[3rem] p-1 relative overflow-hidden group shadow-2xl shadow-blue-900/20">
+          {/* Metallic / Holographic Edge Shine */}
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/40 via-cyan-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+          
+          <div className="bg-[#0A0A0A] rounded-[2.8rem] p-12 md:p-20 relative z-10 flex flex-col lg:flex-row items-center justify-between gap-16 border border-white/5">
+             <div className="max-w-2xl text-center lg:text-left">
+               <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-black uppercase tracking-[0.2em] mb-8">
+                 <Crown className="w-4 h-4" /> Lifetime Privilege
+               </div>
+               <h2 className="text-4xl md:text-6xl font-black text-white tracking-tight mb-6 leading-[1.1]">
+                 25% Off Every <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-600">Marketplace Lead.</span>
+               </h2>
+               <p className="text-gray-400 text-lg leading-relaxed font-medium">
+                 As a concierge SEO client, you unlock an automatic, permanent 25% discount across the entire Openlead marketplace. Scale your organic traffic while acquiring immediate leads at a fraction of the cost.
+               </p>
+             </div>
+             
+             <div className="relative flex-shrink-0">
+               <div className="absolute inset-0 bg-blue-500/30 blur-[60px] rounded-full" />
+               <div className="w-72 h-96 bg-gradient-to-br from-gray-800 to-black rounded-[2rem] border border-white/10 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center">
+                  <motion.div 
+                    animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
+                    transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                    className="absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)] bg-[length:200%_100%]" 
+                  />
+                  <div className="text-8xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 tracking-tighter mb-2 relative z-10">25%</div>
+                  <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.4em] relative z-10">Discount Rate</div>
+               </div>
+             </div>
           </div>
         </div>
-      </motion.div>
 
-      {/* Pricing Title */}
-      <div className="pt-8 pb-4 text-center">
-        <h2 className="text-2xl font-semibold text-gray-900 tracking-tight">Productised Packages</h2>
-        <p className="text-sm text-gray-500 mt-2">Transparent pricing designed for aggressive scaling.</p>
-      </div>
+        {/* PRICING SECTION */}
+        <div className="pt-16">
+          <div className="text-center space-y-4 mb-16">
+            <h2 className="text-4xl font-black text-gray-900 tracking-tight">Concierge Packages</h2>
+            <p className="text-lg text-gray-500 font-medium max-w-xl mx-auto">Transparent pricing designed for aggressive scaling. Zero hidden fees.</p>
+          </div>
 
-      {/* Pricing Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
-        <PricingCard 
-          title="Starter" 
-          desc="Perfect for local market entry."
-          features={['Keyword research', 'Technical audit', '4 Articles/mo', 'GBP Optimisation', 'Local citations', 'Monthly reporting']}
-          isPopular={false}
-          theme="light"
-        />
-        <PricingCard 
-          title="Growth" 
-          desc="Aggressive scaling for established businesses."
-          features={['New Website', '8 Articles/mo', 'Location landing pages', 'Schema markup', 'Conversion optimisation', 'AI content strategy', 'Solarpedia Featured']}
-          isPopular={true}
-          theme="dark"
-        />
-        <PricingCard 
-          title="Authority" 
-          desc="Unrivalled dominance and digital PR."
-          features={['New Website', '16+ Articles/mo', 'Digital PR', 'Link acquisition', 'Topic clusters', 'Dedicated manager', 'Solarpedia Featured']}
-          isPopular={false}
-          theme="light"
-        />
-      </div>
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-stretch">
+            <PricingCard 
+              title="Starter" 
+              desc="Perfect for local market entry."
+              features={['Keyword research', 'Technical audit', '4 Articles/mo', 'GBP Optimisation', 'Local citations', 'Monthly reporting']}
+              isPopular={false}
+              theme="light"
+            />
+            <PricingCard 
+              title="Growth" 
+              desc="Aggressive scaling for established businesses."
+              features={['New Website', '8 Articles/mo', 'Location landing pages', 'Schema markup', 'Conversion optimisation', 'AI content strategy', 'Solarpedia Featured']}
+              isPopular={true}
+              theme="dark"
+            />
+            <PricingCard 
+              title="Authority" 
+              desc="Unrivalled dominance and digital PR."
+              features={['New Website', '16+ Articles/mo', 'Digital PR', 'Link acquisition', 'Topic clusters', 'Dedicated manager', 'Solarpedia Featured']}
+              isPopular={false}
+              theme="light"
+            />
+          </div>
+        </div>
 
-      {/* Free SEO Report CTA */}
-      <motion.div 
-        initial={{ opacity: 0, y: 10 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        className="mt-8 bg-gradient-to-br from-blue-900 to-[#0A0A0A] rounded-3xl p-10 text-center relative overflow-hidden border border-blue-800 shadow-2xl"
-      >
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-blue-500/10 blur-[80px] pointer-events-none" />
-        <div className="relative z-10 max-w-2xl mx-auto space-y-6">
+        {/* FREE REPORT CTA */}
+        <div className="max-w-4xl mx-auto text-center pb-20 pt-16 relative z-10">
           {!reportRequested ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-6"
-            >
-              <h2 className="text-3xl font-semibold text-white tracking-tight">Curious about your current rankings?</h2>
-              <p className="text-blue-100/70 text-sm">Find out exactly what's holding your website back from the first page of Google with a comprehensive, no-obligation audit.</p>
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+              <div className="w-24 h-24 bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/50 flex items-center justify-center mx-auto mb-8 transform -rotate-6">
+                <Search className="w-10 h-10 text-blue-600 transform rotate-6" />
+              </div>
+              <h2 className="text-4xl font-black text-gray-900 tracking-tight mb-6">Request Your Private Audit</h2>
+              <p className="text-xl text-gray-500 mb-10 max-w-2xl mx-auto font-medium">
+                Find out exactly what's holding your website back from the first page of Google with a comprehensive, no-obligation technical review.
+              </p>
               <button 
                 onClick={() => setReportRequested(true)}
-                className="px-8 py-4 bg-blue-600 text-white rounded-xl text-sm font-semibold hover:bg-blue-500 transition-all shadow-lg shadow-blue-600/30 flex items-center gap-2 mx-auto group"
+                className="px-10 py-5 bg-gray-900 text-white rounded-2xl text-lg font-black hover:bg-black transition-all shadow-2xl shadow-gray-900/20 hover:-translate-y-1 flex items-center gap-3 mx-auto group"
               >
-                <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
-                Get your free current SEO report now
+                <FileText className="w-5 h-5 group-hover:scale-110 transition-transform" />
+                Get your free SEO report now
               </button>
             </motion.div>
           ) : (
             <motion.div 
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              className="py-4"
+              className="bg-white p-12 rounded-[3rem] border border-gray-100 shadow-2xl shadow-gray-200/50"
             >
-              <div className="w-16 h-16 bg-emerald-500/10 rounded-full flex items-center justify-center mx-auto mb-4 border border-emerald-500/20">
-                <Check className="w-8 h-8 text-emerald-400" />
+              <div className="w-20 h-20 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-6">
+                <Check className="w-10 h-10 text-emerald-500" />
               </div>
-              <h3 className="text-2xl font-semibold text-white tracking-tight mb-2">Request Received</h3>
-              <p className="text-emerald-100/80 text-sm">Thank you, one of the Openlead team will be in touch soon with your comprehensive SEO report.</p>
+              <h3 className="text-3xl font-black text-gray-900 tracking-tight mb-4">Request Received</h3>
+              <p className="text-lg text-gray-500 font-medium max-w-md mx-auto">Thank you. One of our concierge specialists will be in touch shortly with your comprehensive SEO report.</p>
             </motion.div>
           )}
         </div>
-      </motion.div>
+      </div>
     </div>
   );
 }
 
 // ----------------------------------------------------------------------
-// HELPERS
+// REUSABLE COMPONENTS
 // ----------------------------------------------------------------------
+
 const Badge = ({ icon: Icon, text }: { icon: any, text: string }) => (
-  <div className="flex items-center gap-1.5 px-2.5 py-1.5 bg-white/5 border border-white/10 rounded-md text-[10px] font-medium text-gray-300">
-    <Icon className="w-3 h-3 text-gray-400" />
+  <div className="flex items-center gap-2 px-3 py-1.5 bg-white/5 border border-white/10 rounded-lg text-xs font-bold text-gray-300 backdrop-blur-sm">
+    <Icon className="w-3.5 h-3.5 text-blue-400" />
     {text}
+  </div>
+);
+
+const CounterCard = ({ title, value, desc }: { title: string, value: string | number, desc: string }) => (
+  <div className="bg-white rounded-[2rem] p-8 border border-gray-100 shadow-xl shadow-gray-200/30 flex flex-col justify-center items-center text-center group hover:-translate-y-1 transition-transform duration-300">
+    <div className="text-4xl font-black text-gray-900 tracking-tighter mb-2 group-hover:text-blue-600 transition-colors">{value}</div>
+    <div className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3">{title}</div>
+    <div className="w-8 h-px bg-gray-200 mb-3" />
+    <div className="text-[11px] text-gray-500 font-bold italic">{desc}</div>
   </div>
 );
 
 const PricingCard = ({ title, desc, features, isPopular, theme }: any) => {
   const isDark = theme === 'dark';
   return (
-    <div className={`p-8 rounded-3xl flex flex-col relative overflow-hidden ${
+    <div className={`p-10 rounded-[3rem] flex flex-col relative overflow-hidden transition-transform duration-300 hover:-translate-y-2 ${
       isDark 
-        ? 'bg-[#0A0A0A] border border-blue-500/30 shadow-[0_0_30px_rgba(37,99,235,0.15)] text-white' 
-        : 'bg-white border border-gray-200 shadow-sm text-gray-900'
+        ? 'bg-[#050505] border border-blue-500/30 shadow-2xl shadow-blue-900/20 text-white z-10' 
+        : 'bg-white border border-gray-100 shadow-xl shadow-gray-200/30 text-gray-900'
     }`}>
-      {isDark && <div className="absolute top-0 right-0 w-40 h-40 bg-blue-600/10 blur-3xl rounded-full pointer-events-none" />}
+      {isDark && <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[80px] rounded-full pointer-events-none" />}
       
-      <div className="relative z-10">
-        {isPopular && <div className="text-[9px] font-bold text-blue-400 uppercase tracking-widest mb-3">Most Popular</div>}
-        <h3 className="text-xl font-semibold tracking-tight">{title}</h3>
-        <p className={`text-xs mt-1 mb-8 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{desc}</p>
+      <div className="relative z-10 flex flex-col h-full">
+        {isPopular && <div className="inline-block self-start px-3 py-1 mb-6 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Most Popular</div>}
+        <h3 className="text-3xl font-black tracking-tight mb-3">{title}</h3>
+        <p className={`text-sm font-medium mb-10 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{desc}</p>
         
-        <div className="space-y-3 flex-grow">
+        <div className="space-y-4 flex-grow mb-10">
           {features.map((f: string) => (
-            <div key={f} className="flex items-center gap-3 text-xs">
-              <Check className={`w-3.5 h-3.5 flex-shrink-0 ${isDark ? 'text-blue-400' : 'text-gray-400'}`} />
-              <span className={isDark ? 'text-gray-300' : 'text-gray-600'}>{f}</span>
+            <div key={f} className="flex items-start gap-3 text-sm font-bold">
+              <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isDark ? 'text-blue-400' : 'text-gray-400'}`} />
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>{f}</span>
             </div>
           ))}
         </div>
         
-        <button className={`mt-8 w-full py-2.5 rounded-lg text-xs font-medium transition-all ${
+        <button className={`w-full py-4 rounded-2xl text-sm font-black transition-all ${
           isDark 
-            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-md shadow-blue-900/20' 
-            : 'bg-gray-100 text-gray-900 hover:bg-gray-200'
+            ? 'bg-blue-600 text-white hover:bg-blue-500 shadow-lg shadow-blue-600/20' 
+            : 'bg-gray-50 text-gray-900 hover:bg-gray-100 border border-gray-200'
         }`}>
           Select {title}
         </button>

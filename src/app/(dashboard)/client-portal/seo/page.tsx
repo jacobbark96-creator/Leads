@@ -25,9 +25,27 @@ export default function SEOPage() {
       setIsSEOCustomer(data?.is_seo_customer || false);
       setLoading(false);
     };
-    setWeeklyLeads(Math.floor(Math.random() * (300 - 100 + 1)) + 100);
-    setMonthlyLeads(Math.floor(Math.random() * (1100 - 900 + 1)) + 900);
-    setImpressions(Math.floor(Math.random() * (999999 - 100000 + 1)) + 100000);
+    // Deterministic random logic based on time periods
+    const EPOCH = new Date('2024-01-01T00:00:00Z').getTime();
+    const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+    const now = new Date();
+    
+    const weeksSinceEpoch = Math.floor((now.getTime() - EPOCH) / MS_PER_WEEK);
+    const currentMonthKey = now.getFullYear() * 12 + now.getMonth();
+    
+    const seededRandom = (seed: number) => {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    };
+
+    // Weekly leads change only when the week changes
+    setWeeklyLeads(Math.floor(seededRandom(weeksSinceEpoch * 1337) * (300 - 100 + 1)) + 100);
+    
+    // Monthly leads change only when the month changes
+    setMonthlyLeads(Math.floor(seededRandom(currentMonthKey * 9973) * (1100 - 900 + 1)) + 900);
+    
+    // Impressions start at 150k and grow by ~3,245 per week plus some variance
+    setImpressions(150000 + (weeksSinceEpoch * 3245) + Math.floor(seededRandom(weeksSinceEpoch * 42) * 2000));
     checkSEOStatus();
   }, [profile?.id]);
 

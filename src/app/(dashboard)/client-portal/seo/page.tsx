@@ -283,7 +283,7 @@ const LogoOpenlead = () => (
     <img 
       src="/openlead-logo.png" 
       alt="Openlead Logo" 
-      className="h-8 w-auto object-contain brightness-0 invert opacity-90"
+      className="h-12 w-auto object-contain brightness-0 invert opacity-90"
     />
   </div>
 );
@@ -293,7 +293,7 @@ const LogoKairo = () => (
     <img 
       src="/kairo-logo.png" 
       alt="Kairo Studio Logo" 
-      className="h-8 w-auto object-contain brightness-0 invert opacity-90"
+      className="h-12 w-auto object-contain brightness-0 invert opacity-90"
     />
   </div>
 );

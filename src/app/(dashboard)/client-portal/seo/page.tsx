@@ -415,11 +415,6 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
         <div className="py-16 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30 relative overflow-hidden my-12">
           <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-white to-transparent z-10" />
           <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-white to-transparent z-10" />
-          
-          <div className="flex items-center justify-center gap-2 text-blue-600 mb-10 relative z-20">
-            <Info className="w-4 h-4" />
-            <span className="text-[10px] font-black uppercase tracking-[0.3em]">Industry Intelligence</span>
-          </div>
 
           <motion.div 
             animate={{ x: ["0%", "-50%"] }}

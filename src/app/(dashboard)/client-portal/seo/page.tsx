@@ -9,6 +9,7 @@ import {
 import { motion, AnimatePresence, useInView } from 'framer-motion';
 import { useAuthStore } from '../../../../store/authStore';
 import { supabase } from '../../../../lib/supabase';
+import { SEOROICalculatorModal } from '../../../../components/SEOROICalculatorModal';
 
 export default function SEOPage() {
   const { profile } = useAuthStore();
@@ -17,6 +18,7 @@ export default function SEOPage() {
   const [weeklyLeads, setWeeklyLeads] = useState(0);
   const [monthlyLeads, setMonthlyLeads] = useState(0);
   const [impressions, setImpressions] = useState(0);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
   useEffect(() => {
     const checkSEOStatus = async () => {
@@ -64,7 +66,12 @@ export default function SEOPage() {
     return <SEODashboard />;
   }
 
-  return <SEOMarketing weeklyLeads={weeklyLeads} monthlyLeads={monthlyLeads} impressions={impressions} />;
+  return (
+    <>
+      <SEOMarketing weeklyLeads={weeklyLeads} monthlyLeads={monthlyLeads} impressions={impressions} onOpenCalculator={() => setIsCalculatorOpen(true)} />
+      <SEOROICalculatorModal isOpen={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />
+    </>
+  );
 }
 
 // ----------------------------------------------------------------------
@@ -296,7 +303,7 @@ const LogoKairo = () => (
   </div>
 );
 
-function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads: number, monthlyLeads: number, impressions: number }) {
+function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator }: { weeklyLeads: number, monthlyLeads: number, impressions: number, onOpenCalculator: () => void }) {
   const [reportRequested, setReportRequested] = useState(false);
   
   const facts = [
@@ -325,7 +332,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
   return (
     <div className="w-full bg-gray-50/50 min-h-screen -mt-4 pt-4">
       {/* Floating ROI Calculator Button */}
-      <button className="fixed bottom-8 right-8 z-50 group">
+      <button onClick={onOpenCalculator} className="fixed bottom-8 right-8 z-50 group">
         <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600 rounded-full blur opacity-40 group-hover:opacity-100 transition duration-500 animate-shimmer" style={{ backgroundSize: '200% auto' }} />
         <div className="relative px-6 py-4 bg-[#050505] text-white rounded-full font-black text-sm shadow-2xl flex items-center gap-3 border border-white/10 group-hover:-translate-y-1 transition-transform duration-300">
           <div className="w-8 h-8 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shadow-[0_0_15px_rgba(59,130,246,0.3)]">

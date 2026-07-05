@@ -158,24 +158,24 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-white flex">
       {/* Left Side - Form */}
-      <div className="flex-1 flex flex-col justify-center px-4 sm:px-6 lg:px-20 xl:px-24 relative">
-        <div className="absolute top-8 left-8">
-          <a href={getHomePath()} className="inline-flex items-center text-sm font-medium text-slate-500 hover:text-slate-900 transition-colors">
-            <ArrowLeft className="w-4 h-4 mr-2" /> Back to Home
+      <div className="flex-1 flex flex-col justify-center px-6 sm:px-12 lg:px-20 xl:px-24 relative bg-slate-50/30 lg:bg-white py-12 lg:py-0">
+        <div className="absolute top-6 left-6 lg:top-8 lg:left-8">
+          <a href={getHomePath()} className="inline-flex items-center text-[10px] lg:text-xs font-black uppercase tracking-widest text-slate-400 lg:text-slate-500 hover:text-slate-900 transition-colors bg-white lg:bg-transparent px-3 py-1.5 lg:p-0 rounded-full border border-slate-100 lg:border-0 shadow-sm lg:shadow-none">
+            <ArrowLeft className="w-3 h-3 lg:w-4 lg:h-4 mr-1.5 lg:mr-2" /> Back
           </a>
         </div>
         
         <div className="mx-auto w-full max-w-sm lg:w-96">
-          <div className="mb-8">
-            <img src="/openlead-logo.png" alt="Openlead" className="h-8 object-contain mb-8" />
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+          <div className="mb-10 text-center lg:text-left">
+            <img src="/openlead-logo.png" alt="Openlead" className="h-10 lg:h-8 object-contain mb-8 mx-auto lg:mx-0" />
+            <h2 className="text-3xl lg:text-4xl font-black text-slate-900 tracking-tighter leading-tight">
               {isForgotPassword 
-                ? 'Reset your password' 
+                ? 'Reset Password' 
                 : isSignUp 
-                  ? 'Create your account' 
-                  : 'Welcome back'}
+                  ? 'Join Openlead' 
+                  : 'Welcome Back'}
             </h2>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-3 text-sm lg:text-base text-slate-500 font-medium leading-relaxed">
               {isForgotPassword 
                 ? "Enter your email and we'll send you a link to reset your password."
                 : isSignUp 
@@ -188,14 +188,14 @@ export default function Login() {
             {isForgotPassword ? (
               <form className="space-y-6" onSubmit={handlePasswordReset}>
                 <div>
-                  <label className="block text-sm font-medium text-slate-700">Email address</label>
+                  <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Email address</label>
                   <div className="mt-1">
                     <input
                       type="email"
                       required
                       value={resetEmail}
                       onChange={(e) => setResetEmail(e.target.value)}
-                      className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                      className="appearance-none block w-full px-5 py-4 border border-slate-200 lg:border-slate-300 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 focus:border-openlead-blue text-base lg:text-sm transition-all bg-white/50 lg:bg-white backdrop-blur-sm lg:backdrop-none"
                       placeholder="you@example.com"
                     />
                   </div>
@@ -205,7 +205,7 @@ export default function Login() {
                   <button
                     type="submit"
                     disabled={isLoading}
-                    className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-sm text-sm font-bold text-white bg-openlead-blue hover:bg-openlead-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-openlead-blue disabled:opacity-50 transition-all duration-200"
+                    className="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-xl text-sm font-black text-white bg-openlead-blue hover:bg-openlead-blue/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-openlead-blue disabled:opacity-50 transition-all duration-200"
                   >
                     {isLoading ? 'Sending...' : 'Send Reset Link'}
                   </button>
@@ -215,9 +215,9 @@ export default function Login() {
                   <button
                     type="button"
                     onClick={() => setIsForgotPassword(false)}
-                    className="text-sm font-bold text-openlead-blue hover:text-openlead-blue/80 transition-colors"
+                    className="text-xs font-black text-openlead-blue hover:text-openlead-blue/80 transition-colors uppercase tracking-widest"
                   >
-                    Wait, I remember my password
+                    I remember my password
                   </button>
                 </div>
               </form>
@@ -225,154 +225,149 @@ export default function Login() {
               <>
                 <form className="space-y-5" onSubmit={handleSubmit(onSubmit)}>
                   <div>
-                    <label className="block text-sm font-medium text-slate-700">Email address</label>
+                    <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Email address</label>
                     <div className="mt-1">
                       <input
                         {...register('email')}
                         type="email"
                         placeholder="you@example.com"
-                        className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                        className="appearance-none block w-full px-5 py-4 border border-slate-200 lg:border-slate-300 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 focus:border-openlead-blue text-base lg:text-sm transition-all bg-white/50 lg:bg-white backdrop-blur-sm lg:backdrop-none"
                       />
-                      {errors.email && <p className="mt-1 text-sm text-red-600">{errors.email.message}</p>}
+                      {errors.email && <p className="mt-2 text-xs font-bold text-red-500 ml-1">{errors.email.message}</p>}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-sm font-medium text-slate-700">Password</label>
+                    <div className="flex items-center justify-between mb-2 ml-1">
+                      <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest">Password</label>
+                      {!isSignUp && (
+                        <button
+                          type="button"
+                          onClick={() => setIsForgotPassword(true)}
+                          className="text-[10px] font-black text-openlead-blue hover:text-openlead-blue/80 transition-colors uppercase tracking-widest"
+                        >
+                          Forgot?
+                        </button>
+                      )}
+                    </div>
                     <div className="mt-1">
                       <input
                         {...register('password')}
                         type="password"
                         placeholder="••••••••"
-                        className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                        className="appearance-none block w-full px-5 py-4 border border-slate-200 lg:border-slate-300 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 focus:border-openlead-blue text-base lg:text-sm transition-all bg-white/50 lg:bg-white backdrop-blur-sm lg:backdrop-none"
                       />
-                      {errors.password && <p className="mt-1 text-sm text-red-600">{errors.password.message}</p>}
+                      {errors.password && <p className="mt-2 text-xs font-bold text-red-500 ml-1">{errors.password.message}</p>}
                     </div>
                   </div>
 
                   {isSignUp && (
-                    <>
+                    <div className="space-y-5 animate-in fade-in slide-in-from-top-4 duration-500">
                       <div>
-                        <label className="block text-sm font-medium text-slate-700">Full Name</label>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Full Name</label>
                         <div className="mt-1">
                           <input
                             {...register('name')}
                             type="text"
                             placeholder="John Doe"
-                            className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                            className="appearance-none block w-full px-5 py-4 border border-slate-200 lg:border-slate-300 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 focus:border-openlead-blue text-base lg:text-sm transition-all bg-white/50 lg:bg-white backdrop-blur-sm lg:backdrop-none"
                           />
-                          {errors.name && <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>}
+                          {errors.name && <p className="mt-2 text-xs font-bold text-red-500 ml-1">{errors.name.message}</p>}
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700">Company Name</label>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Company Name</label>
                         <div className="mt-1">
                           <input
                             {...register('company_name')}
                             type="text"
                             placeholder="Acme Corp"
-                            className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                            className="appearance-none block w-full px-5 py-4 border border-slate-200 lg:border-slate-300 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 focus:border-openlead-blue text-base lg:text-sm transition-all bg-white/50 lg:bg-white backdrop-blur-sm lg:backdrop-none"
                           />
-                          {errors.company_name && <p className="mt-1 text-sm text-red-600">{errors.company_name.message}</p>}
+                          {errors.company_name && <p className="mt-2 text-xs font-bold text-red-500 ml-1">{errors.company_name.message}</p>}
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700">Phone Number</label>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Phone Number</label>
                         <div className="mt-1">
                           <input
                             {...register('phone')}
                             type="tel"
                             placeholder="+44 123 456 7890"
-                            className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                            className="appearance-none block w-full px-5 py-4 border border-slate-200 lg:border-slate-300 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 focus:border-openlead-blue text-base lg:text-sm transition-all bg-white/50 lg:bg-white backdrop-blur-sm lg:backdrop-none"
                           />
-                          {errors.phone && <p className="mt-1 text-sm text-red-600">{errors.phone.message}</p>}
+                          {errors.phone && <p className="mt-2 text-xs font-bold text-red-500 ml-1">{errors.phone.message}</p>}
                         </div>
                       </div>
 
                       <div>
-                        <label className="block text-sm font-medium text-slate-700">Business Address</label>
+                        <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Business Address</label>
                         <div className="mt-1">
                           <input
                             {...register('address')}
                             type="text"
                             placeholder="123 Business Rd, London"
-                            className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                            className="appearance-none block w-full px-5 py-4 border border-slate-200 lg:border-slate-300 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 focus:border-openlead-blue text-base lg:text-sm transition-all bg-white/50 lg:bg-white backdrop-blur-sm lg:backdrop-none"
                           />
-                          {errors.address && <p className="mt-1 text-sm text-red-600">{errors.address.message}</p>}
+                          {errors.address && <p className="mt-2 text-xs font-bold text-red-500 ml-1">{errors.address.message}</p>}
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-2 gap-4">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
                         <div>
-                          <label className="block text-sm font-medium text-slate-700">Other Contacts <span className="text-slate-400 font-normal">(Optional)</span></label>
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Other Contacts</label>
                           <div className="mt-1">
                             <input
                               {...register('other_contacts')}
                               type="text"
                               placeholder="Jane Smith"
-                              className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                              className="appearance-none block w-full px-5 py-4 border border-slate-200 lg:border-slate-300 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 focus:border-openlead-blue text-base lg:text-sm transition-all bg-white/50 lg:bg-white backdrop-blur-sm lg:backdrop-none"
                             />
-                            {errors.other_contacts && <p className="mt-1 text-sm text-red-600">{errors.other_contacts.message}</p>}
                           </div>
                         </div>
 
                         <div>
-                          <label className="block text-sm font-medium text-slate-700">Other Numbers <span className="text-slate-400 font-normal">(Optional)</span></label>
+                          <label className="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2 ml-1">Other Numbers</label>
                           <div className="mt-1">
                             <input
                               {...register('other_contact_numbers')}
                               type="tel"
                               placeholder="07712345678"
-                              className="appearance-none block w-full px-4 py-3 border border-slate-300 rounded-xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-openlead-blue focus:border-openlead-blue sm:text-sm transition-colors"
+                              className="appearance-none block w-full px-5 py-4 border border-slate-200 lg:border-slate-300 rounded-2xl shadow-sm placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-openlead-blue/20 focus:border-openlead-blue text-base lg:text-sm transition-all bg-white/50 lg:bg-white backdrop-blur-sm lg:backdrop-none"
                             />
-                            {errors.other_contact_numbers && <p className="mt-1 text-sm text-red-600">{errors.other_contact_numbers.message}</p>}
                           </div>
                         </div>
-                      </div>
-                    </>
-                  )}
-
-                  {!isSignUp && (
-                    <div className="flex items-center justify-end">
-                      <div className="text-sm">
-                        <button
-                          type="button"
-                          onClick={() => setIsForgotPassword(true)}
-                          className="font-bold text-openlead-blue hover:text-openlead-blue/80 transition-colors"
-                        >
-                          Forgot your password?
-                        </button>
                       </div>
                     </div>
                   )}
 
-                  <div className="pt-2">
+                  <div className="pt-4">
                     <button
                       type="submit"
                       disabled={isLoading}
-                      className="w-full flex justify-center py-3 px-4 border border-transparent rounded-xl shadow-[0_4px_14px_0_rgba(57,204,204,0.39)] hover:shadow-[0_6px_20px_rgba(57,204,204,0.23)] hover:-translate-y-0.5 text-sm font-bold text-white bg-openlead-blue disabled:opacity-50 transition-all duration-200"
+                      className="w-full flex justify-center py-4 px-4 border border-transparent rounded-2xl shadow-[0_8px_30px_rgb(57,204,204,0.3)] hover:shadow-[0_8px_30px_rgb(57,204,204,0.5)] hover:-translate-y-0.5 text-sm font-black text-white bg-openlead-blue disabled:opacity-50 transition-all duration-300"
                     >
                       {isLoading ? 'Processing...' : isSignUp ? 'Create Account' : 'Sign In'}
                     </button>
                   </div>
                 </form>
 
-                <div className="mt-8">
+                <div className="mt-10">
                   <div className="relative">
                     <div className="absolute inset-0 flex items-center">
-                      <div className="w-full border-t border-slate-200" />
+                      <div className="w-full border-t border-slate-100 lg:border-slate-200" />
                     </div>
-                    <div className="relative flex justify-center text-sm">
-                      <span className="px-4 bg-white text-slate-500 font-medium">Or</span>
+                    <div className="relative flex justify-center text-[10px] font-black uppercase tracking-[0.2em]">
+                      <span className="px-4 bg-slate-50/30 lg:bg-white text-slate-400">Or</span>
                     </div>
                   </div>
 
-                  <div className="mt-6">
+                  <div className="mt-8">
                     <button
                       onClick={() => setIsSignUp(!isSignUp)}
-                      className="w-full flex justify-center py-3 px-4 border-2 border-slate-200 rounded-xl shadow-sm text-sm font-bold text-slate-700 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
+                      className="w-full flex justify-center py-4 px-4 border-2 border-slate-200 rounded-2xl shadow-sm text-sm font-black text-slate-600 bg-white hover:bg-slate-50 hover:border-slate-300 transition-all duration-200"
                     >
                       {isSignUp ? 'Sign in to existing account' : 'Create a new account'}
                     </button>

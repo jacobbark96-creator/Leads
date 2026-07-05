@@ -433,9 +433,9 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
         </div>
 
         {/* DID YOU KNOW MARQUEE */}
-        <div className="py-8 bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/30 relative overflow-hidden my-8">
-          <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-white to-transparent z-10" />
-          <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-white to-transparent z-10" />
+        <div className="py-4 relative overflow-hidden my-4">
+          <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-gray-50/50 to-transparent z-10" />
+          <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-gray-50/50 to-transparent z-10" />
 
           <div className="flex items-center justify-center gap-2 text-blue-600 mb-6 relative z-20">
             <Info className="w-4 h-4" />

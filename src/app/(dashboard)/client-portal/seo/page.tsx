@@ -314,10 +314,23 @@ const LogoKairo = () => (
 
 function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator }: { weeklyLeads: number, monthlyLeads: number, impressions: number, onOpenCalculator: () => void }) {
   const [reportRequested, setReportRequested] = useState(false);
+  const { profile } = useAuthStore();
   
-  const handleRequestReport = () => {
+  const handleRequestReport = async () => {
     setReportRequested(true);
-    window.location.href = 'mailto:jake.bedwell@kairostudio.co.uk?subject=SEO Report Request&body=I would like to request a free SEO report for my business.';
+    try {
+      await fetch('/api/seo/request-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName: profile?.full_name || 'Client',
+          clientEmail: profile?.email || 'Unknown Email',
+          requestType: 'audit'
+        })
+      });
+    } catch (err) {
+      console.error('Failed to send SEO audit request:', err);
+    }
   };
   
   const facts = [

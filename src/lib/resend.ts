@@ -318,6 +318,80 @@ export const sendReceiptEmail = async (email: string, leadId: string, amount: nu
   }
 };
 
+/**
+ * Sends an email to Jake when a client requests SEO information or a strategy call.
+ */
+export const sendSEOInformationRequestEmail = async (
+  clientName: string,
+  clientEmail: string,
+  requestType: 'audit' | 'strategy',
+  roiData?: {
+    projectedMonthlyRevenue: string;
+    targetLeads: number;
+    avgJobValue: string;
+  }
+) => {
+  const subject = requestType === 'audit' 
+    ? `New SEO Audit Request: ${clientName}` 
+    : `New SEO Strategy Request: ${clientName}`;
+
+  const title = requestType === 'audit'
+    ? 'Free SEO Audit Requested'
+    : 'SEO Strategy Consultation Requested';
+
+  const intro = requestType === 'audit'
+    ? `A client has requested a free private SEO audit through the Openlead Dashboard.`
+    : `A client has used the ROI calculator and requested a custom SEO strategy consultation.`;
+
+  let roiHtml = '';
+  if (roiData) {
+    roiHtml = `
+      <div style="background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 20px; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #0369a1; font-size: 16px;">Calculated ROI Projection</h3>
+        <p style="margin: 5px 0; color: #0c4a6e;"><strong>Projected Monthly Revenue:</strong> ${roiData.projectedMonthlyRevenue}</p>
+        <p style="margin: 5px 0; color: #0c4a6e;"><strong>Target Leads:</strong> ${roiData.targetLeads}</p>
+        <p style="margin: 5px 0; color: #0c4a6e;"><strong>Avg Job Value:</strong> ${roiData.avgJobValue}</p>
+      </div>
+    `;
+  }
+
+  try {
+    return await sendResendEmail({
+      from: `Openlead SEO <${defaultFromEmail}>`,
+      to: ['jake.bedwell@kairostudio.co.uk'],
+      subject: subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb; margin-top: 0;">${title} 🚀</h2>
+          
+          <p style="color: #4b5563; line-height: 1.6;">
+            Hi Jake,
+          </p>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            ${intro}
+          </p>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #1e293b; font-size: 16px;">Client Contact Details</h3>
+            <p style="margin: 5px 0; color: #334155;"><strong>Name:</strong> ${clientName}</p>
+            <p style="margin: 5px 0; color: #334155;"><strong>Email:</strong> ${clientEmail}</p>
+          </div>
+
+          ${roiHtml}
+
+          <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; border-top: 1px solid #eaeaea; pt-20px;">
+            This request was generated automatically from the Openlead Client Portal.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send SEO request email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
 export const sendCustomHtmlEmail = async (recipients: string[], subject: string, html: string) => {
   try {
     return await sendResendEmail({

@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, TrendingUp, PoundSterling, ArrowRight, Calculator, Sparkles, Target, Zap } from 'lucide-react';
+import { X, TrendingUp, PoundSterling, ArrowRight, Calculator, Sparkles, Target, Zap, Check } from 'lucide-react';
+import { useAuthStore } from '../store/authStore';
 
 interface SEOROICalculatorModalProps {
   isOpen: boolean;
@@ -10,16 +11,48 @@ interface SEOROICalculatorModalProps {
 }
 
 export function SEOROICalculatorModal({ isOpen, onClose }: SEOROICalculatorModalProps) {
+  const { profile } = useAuthStore();
   // Inputs based on what clients actually know about their own business
   const [avgJobValue, setAvgJobValue] = useState<number>(10000); // £
   const [closeRate, setCloseRate] = useState<number>(20); // % (e.g., win 1 in 5 jobs)
   const [targetLeads, setTargetLeads] = useState<number>(30); // Target leads per month
+  const [requested, setRequested] = useState(false);
+  const [requesting, setRequesting] = useState(false);
 
   // Calculations
   const leadValue = avgJobValue * (closeRate / 100);
   const projectedNewSales = Math.floor(targetLeads * (closeRate / 100));
   const projectedMonthlyRevenue = projectedNewSales * avgJobValue;
   const projectedYearlyRevenue = projectedMonthlyRevenue * 12;
+
+  const handleRequestStrategy = async () => {
+    setRequesting(true);
+    try {
+      await fetch('/api/seo/request-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName: profile?.full_name || 'Client',
+          clientEmail: profile?.email || 'Unknown Email',
+          requestType: 'strategy',
+          roiData: {
+            projectedMonthlyRevenue: formatCurrency(projectedMonthlyRevenue),
+            targetLeads: targetLeads,
+            avgJobValue: formatCurrency(avgJobValue)
+          }
+        })
+      });
+      setRequested(true);
+      setTimeout(() => {
+        onClose();
+        setRequested(false);
+      }, 2000);
+    } catch (err) {
+      console.error('Failed to send SEO strategy request:', err);
+    } finally {
+      setRequesting(false);
+    }
+  };
 
   const formatCurrency = (val: number) => 
     new Intl.NumberFormat('en-GB', { style: 'currency', currency: 'GBP', maximumFractionDigits: 0 }).format(val);
@@ -206,13 +239,21 @@ export function SEOROICalculatorModal({ isOpen, onClose }: SEOROICalculatorModal
 
             <div className="relative z-10 mt-6">
               <button 
-                onClick={() => {
-                  window.location.href = `mailto:jake.bedwell@kairostudio.co.uk?subject=SEO Strategy Request&body=I have calculated my SEO ROI and would like to discuss a custom strategy. %0D%0A%0D%0A--- ROI Projection ---%0D%0AProjected Monthly Revenue: ${formatCurrency(projectedMonthlyRevenue)}%0D%0ATarget Leads: ${targetLeads}%0D%0AAvg Job Value: ${formatCurrency(avgJobValue)}`;
-                  onClose();
-                }}
-                className="w-full py-3 bg-white text-gray-900 rounded-xl text-xs font-black hover:bg-gray-100 transition-colors flex items-center justify-center gap-2 shadow-xl"
+                onClick={handleRequestStrategy}
+                disabled={requesting || requested}
+                className={`w-full py-3 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-2 shadow-xl ${
+                  requested 
+                    ? 'bg-emerald-500 text-white' 
+                    : 'bg-white text-gray-900 hover:bg-gray-100'
+                }`}
               >
-                Get Your Custom Strategy <ArrowRight className="w-3.5 h-3.5" />
+                {requesting ? (
+                  <div className="w-4 h-4 border-2 border-gray-900 border-t-transparent rounded-full animate-spin" />
+                ) : requested ? (
+                  <>Request Sent <Check className="w-3.5 h-3.5" /></>
+                ) : (
+                  <>Get Your Custom Strategy <ArrowRight className="w-3.5 h-3.5" /></>
+                )}
               </button>
             </div>
           </div>

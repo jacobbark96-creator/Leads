@@ -246,8 +246,8 @@ const BrandCarousel = () => {
   ];
 
   return (
-    <div className="py-16 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30 overflow-hidden relative w-full mb-12 -mt-12 z-20">
-      <div className="text-center mb-12">
+    <div className="py-10 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30 overflow-hidden relative w-full mb-12 -mt-12 z-20">
+      <div className="text-center mb-8">
         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Where your leads come from & where your brand is seen</h3>
       </div>
       

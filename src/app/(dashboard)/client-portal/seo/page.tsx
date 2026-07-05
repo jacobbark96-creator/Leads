@@ -437,10 +437,6 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
           <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-gray-50/50 to-transparent z-10" />
           <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-gray-50/50 to-transparent z-10" />
 
-          <div className="flex items-center justify-center gap-2 text-blue-600 mb-6 relative z-20">
-            <Info className="w-4 h-4" />
-          </div>
-
           <motion.div 
             animate={{ x: ["0%", "-50%"] }}
             transition={{ repeat: Infinity, ease: "linear", duration: 40 }}

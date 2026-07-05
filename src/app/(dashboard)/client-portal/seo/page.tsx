@@ -376,7 +376,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
             </h1>
 
             <p className="text-base md:text-lg text-gray-400 max-w-xl font-medium leading-relaxed mb-8">
-              Enterprise-grade search engine optimization, delivered directly to your dashboard. Stop hunting for leads—engineer a system where they hunt for you.
+              Enterprise-grade search engine optimization, delivered directly to your Openlead Dashboard. Stop hunting for leads—engineer a system where they hunt for you.
             </p>
 
             <div className="flex flex-wrap justify-center gap-3">

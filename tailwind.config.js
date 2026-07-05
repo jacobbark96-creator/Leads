@@ -19,6 +19,10 @@ export default {
         'openlead-blue': '#39cccc',
       },
       keyframes: {
+        shimmer: {
+          '0%': { backgroundPosition: '200% center' },
+          '100%': { backgroundPosition: '-200% center' },
+        },
         float: {
           '0%, 100%': { transform: 'translateY(0)' },
           '50%': { transform: 'translateY(-20px)' },
@@ -29,6 +33,8 @@ export default {
         }
       },
       animation: {
+        'shimmer': 'shimmer 6s linear infinite',
+        'shimmer-delayed': 'shimmer 5s linear infinite 0.5s',
         float: 'float 6s ease-in-out infinite',
         'float-slow': 'float-slow 8s ease-in-out infinite',
       }

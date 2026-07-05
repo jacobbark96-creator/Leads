@@ -380,9 +380,9 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
 
         {/* METRICS & TRUST SECTION */}
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 relative z-20 px-2 mt-12">
-          <CounterCard title="Leads / Week" value={weeklyLeads.toLocaleString()} desc="Active network capture" />
-          <CounterCard title="SEO Growth / Mo" value={monthlyLeads.toLocaleString()} desc="Organic acquisition" />
-          <CounterCard title="Impressions" value={impressions.toLocaleString()} desc="Kairo Search & Ads" />
+          <CounterCard title="Leads / Week" value={weeklyLeads} desc="Active network capture" />
+          <CounterCard title="SEO Growth / Mo" value={monthlyLeads} desc="Organic acquisition" />
+          <CounterCard title="Impressions" value={impressions} desc="Kairo Search & Ads" />
           
           {/* Solarpedia Card */}
           <a 
@@ -544,15 +544,47 @@ const Badge = ({ icon: Icon, text }: { icon: any, text: string }) => (
   </div>
 );
 
-const CounterCard = ({ title, value, desc }: { title: string, value: string | number, desc: string }) => (
-  <div className="bg-[#050505] rounded-[2rem] p-8 border border-white/10 shadow-2xl flex flex-col justify-center items-center text-center group hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
-    <div className="absolute inset-0 bg-gradient-to-br from-gray-800/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-    <div className="text-4xl font-black text-white tracking-tighter mb-2 group-hover:text-blue-400 transition-colors relative z-10">{value}</div>
-    <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 relative z-10">{title}</div>
-    <div className="w-8 h-px bg-gray-800 mb-3 relative z-10" />
-    <div className="text-[11px] text-gray-400 font-bold italic relative z-10">{desc}</div>
-  </div>
-);
+const CounterCard = ({ title, value, desc }: { title: string, value: number, desc: string }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    // Only run the animation if we have a value
+    if (value <= 0) return;
+
+    let startTimestamp: number | null = null;
+    const duration = 2000; // 2 seconds animation
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      
+      // Easing function: easeOutQuart
+      const easeProgress = 1 - Math.pow(1 - progress, 4);
+      
+      setDisplayValue(Math.floor(easeProgress * value));
+
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        setDisplayValue(value); // Ensure it ends exactly on the value
+      }
+    };
+
+    window.requestAnimationFrame(step);
+  }, [value]);
+
+  return (
+    <div className="bg-[#050505] rounded-[2rem] p-8 border border-white/10 shadow-2xl flex flex-col justify-center items-center text-center group hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-800/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="text-4xl font-black text-white tracking-tighter mb-2 group-hover:text-blue-400 transition-colors relative z-10">
+        {displayValue.toLocaleString()}
+      </div>
+      <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 relative z-10">{title}</div>
+      <div className="w-8 h-px bg-gray-800 mb-3 relative z-10" />
+      <div className="text-[11px] text-gray-400 font-bold italic relative z-10">{desc}</div>
+    </div>
+  );
+};
 
 const PricingCard = ({ title, desc, features, isPopular, theme }: any) => {
   const isDark = theme === 'dark';

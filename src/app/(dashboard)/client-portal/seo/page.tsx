@@ -345,16 +345,12 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
               <LogoKairo />
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1] text-white">
-              <span className="relative inline-block overflow-hidden">
-                <span className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff,30%,#cbd5e1,50%,#ffffff,70%)] bg-[length:200%_auto] animate-shimmer drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]">
-                  Dominate Search.
-                </span>
+            <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1]">
+              <span className="inline-block text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff,35%,#cbd5e1,50%,#ffffff,65%)] bg-[length:200%_auto] animate-shimmer pb-1">
+                Dominate Search.
               </span><br/>
-              <span className="relative inline-block overflow-hidden">
-                <span className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#3B82F6,30%,#ffffff,50%,#22D3EE,70%)] bg-[length:200%_auto] animate-shimmer-delayed drop-shadow-[0_0_20px_rgba(59,130,246,0.5)]">
-                  Automate Growth.
-                </span>
+              <span className="inline-block text-transparent bg-clip-text bg-[linear-gradient(110deg,#3B82F6,35%,#ffffff,50%,#22D3EE,65%)] bg-[length:200%_auto] animate-shimmer-delayed pb-1">
+                Automate Growth.
               </span>
             </h1>
 

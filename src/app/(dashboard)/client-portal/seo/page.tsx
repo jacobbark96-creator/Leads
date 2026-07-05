@@ -300,11 +300,6 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
               <LogoKairo />
             </div>
 
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/5 border border-white/10 text-[10px] font-bold text-gray-300 mb-6 backdrop-blur-md">
-              <Sparkles className="w-3 h-3 text-amber-400" />
-              Exclusive Concierge Partnership
-            </div>
-
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1] text-white">
               Dominate Search.<br/>
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-white">

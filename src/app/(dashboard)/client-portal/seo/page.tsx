@@ -242,17 +242,17 @@ function SEODashboard() {
 
 const BrandCarousel = () => {
   const brands = [
-    { name: "Google", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/c/c1/Google_%22G%22_logo.svg", size: "h-10" },
-    { name: "Facebook", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/b/b8/2021_Facebook_icon.svg", size: "h-10" },
-    { name: "Instagram", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg", size: "h-10" },
-    { name: "YouTube", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg", size: "h-10" },
-    { name: "LinkedIn", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/8/81/LinkedIn_icon.svg", size: "h-10" },
+    { name: "Google", isImage: true, src: "https://logo.clearbit.com/google.com", size: "h-10" },
+    { name: "Facebook", isImage: true, src: "https://logo.clearbit.com/facebook.com", size: "h-10" },
+    { name: "Instagram", isImage: true, src: "https://logo.clearbit.com/instagram.com", size: "h-10" },
+    { name: "YouTube", isImage: true, src: "https://logo.clearbit.com/youtube.com", size: "h-10" },
+    { name: "LinkedIn", isImage: true, src: "https://logo.clearbit.com/linkedin.com", size: "h-10" },
     { name: "Solarpedia", isImage: true, src: "/solarpedia.png", size: "h-24 scale-[1.5]" },
-    { name: "Forbes", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/0/0b/Forbes_logo.svg", size: "h-8", subtext: "additional one off cost" },
-    { name: "Esquire", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/d/df/Esquire_logo.svg", size: "h-6", subtext: "additional one off cost" },
-    { name: "The Telegraph", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/4/48/The_Telegraph_logo.svg", size: "h-8", subtext: "additional one off cost" },
-    { name: "Variety", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/8/87/Variety_logo.svg", size: "h-6", subtext: "additional one off cost" },
-    { name: "Bing", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/9/9c/Bing_Fluent_Logo.svg", size: "h-10" },
+    { name: "Forbes", isImage: true, src: "https://logo.clearbit.com/forbes.com", size: "h-10", subtext: "additional one off cost" },
+    { name: "Esquire", isImage: true, src: "https://logo.clearbit.com/esquire.com", size: "h-10", subtext: "additional one off cost" },
+    { name: "The Telegraph", isImage: true, src: "https://logo.clearbit.com/telegraph.co.uk", size: "h-10", subtext: "additional one off cost" },
+    { name: "Variety", isImage: true, src: "https://logo.clearbit.com/variety.com", size: "h-10", subtext: "additional one off cost" },
+    { name: "Bing", isImage: true, src: "https://logo.clearbit.com/bing.com", size: "h-10" },
     { name: "Local Citations", color: "text-gray-900", icon: <MapPin className="w-10 h-10" /> }
   ];
 

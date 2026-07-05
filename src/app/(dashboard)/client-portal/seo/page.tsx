@@ -281,9 +281,9 @@ const BrandCarousel = () => {
 const LogoOpenlead = () => (
   <div className="flex items-center gap-2">
     <img 
-      src="/logo.png" 
+      src="/openlead-logo.png" 
       alt="Openlead Logo" 
-      className="h-8 w-auto object-contain"
+      className="h-8 w-auto object-contain brightness-0 invert opacity-90"
     />
   </div>
 );
@@ -291,9 +291,9 @@ const LogoOpenlead = () => (
 const LogoKairo = () => (
   <div className="flex items-center gap-2">
     <img 
-      src="/kairo.png" 
+      src="/kairo-logo.png" 
       alt="Kairo Studio Logo" 
-      className="h-8 w-auto object-contain"
+      className="h-8 w-auto object-contain brightness-0 invert opacity-90"
     />
   </div>
 );

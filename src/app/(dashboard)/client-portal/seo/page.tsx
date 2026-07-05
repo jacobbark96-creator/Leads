@@ -407,12 +407,11 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
             <div className="absolute right-0 bottom-0 w-64 h-64 bg-amber-200/30 blur-[80px] pointer-events-none group-hover:bg-amber-300/40 transition-colors duration-700" />
             
             <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 w-full">
-               <div className="flex-shrink-0 w-64 h-32 flex items-center justify-center bg-gradient-to-br from-gray-50 to-white rounded-3xl border border-gray-100 p-6 shadow-inner relative overflow-hidden group-hover:shadow-amber-100/50 transition-shadow duration-500">
-                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(251,191,36,0.1),transparent)]" />
+               <div className="flex-shrink-0 w-64 h-32 flex items-center justify-center p-2">
                  <img 
                    src="/solarpedia.png" 
                    alt="Solarpedia Logo" 
-                   className="h-full w-full object-contain drop-shadow-md scale-[1.5] group-hover:scale-[1.6] transition-transform duration-700"
+                   className="h-full w-full object-contain drop-shadow-sm scale-[2.5]"
                  />
                </div>
                <div className="flex-1 text-center md:text-left">

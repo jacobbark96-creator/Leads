@@ -240,7 +240,7 @@ const BrandCarousel = () => {
     { name: "Instagram", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg", size: "h-10" },
     { name: "YouTube", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/0/09/YouTube_full-color_icon_%282017%29.svg", size: "h-10" },
     { name: "LinkedIn", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/8/81/LinkedIn_icon.svg", size: "h-10" },
-    { name: "Solarpedia", isImage: true, src: "/solarpedia.png", size: "h-10" },
+    { name: "Solarpedia", isImage: true, src: "/solarpedia.png", size: "h-24 scale-[1.5]" },
     { name: "Bing", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/9/9c/Bing_Fluent_Logo.svg", size: "h-10" },
     { name: "Local Citations", color: "text-gray-900", icon: <MapPin className="w-10 h-10" /> }
   ];
@@ -407,11 +407,12 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
             <div className="absolute right-0 bottom-0 w-64 h-64 bg-amber-200/30 blur-[80px] pointer-events-none group-hover:bg-amber-300/40 transition-colors duration-700" />
             
             <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 w-full">
-               <div className="flex-shrink-0 w-64 h-32 flex items-center justify-center p-2">
+               <div className="flex-shrink-0 w-64 h-32 flex items-center justify-center bg-gradient-to-br from-gray-50 to-white rounded-3xl border border-gray-100 p-6 shadow-inner relative overflow-hidden group-hover:shadow-amber-100/50 transition-shadow duration-500">
+                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(251,191,36,0.1),transparent)]" />
                  <img 
                    src="/solarpedia.png" 
                    alt="Solarpedia Logo" 
-                   className="h-full w-full object-contain drop-shadow-sm scale-[2.5]"
+                   className="h-full w-full object-contain drop-shadow-md scale-[1.5] group-hover:scale-[1.6] transition-transform duration-700"
                  />
                </div>
                <div className="flex-1 text-center md:text-left">

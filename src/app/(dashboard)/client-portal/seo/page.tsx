@@ -346,10 +346,20 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
             </div>
 
             <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1] text-white">
-              Dominate Search.<br/>
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-white">
+              <motion.span
+                animate={{ backgroundPosition: ["200% center", "-200% center"] }}
+                transition={{ repeat: Infinity, duration: 10, ease: "linear" }}
+                className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#ffffff,45%,#e2e8f0,55%,#ffffff)] bg-[length:200%_auto]"
+              >
+                Dominate Search.
+              </motion.span><br/>
+              <motion.span 
+                animate={{ backgroundPosition: ["200% center", "-200% center"] }}
+                transition={{ repeat: Infinity, duration: 8, ease: "linear", delay: 1 }}
+                className="text-transparent bg-clip-text bg-[linear-gradient(110deg,#60A5FA,45%,#ffffff,55%,#67E8F9)] bg-[length:200%_auto]"
+              >
                 Automate Growth.
-              </span>
+              </motion.span>
             </h1>
 
             <p className="text-base md:text-lg text-gray-400 max-w-xl font-medium leading-relaxed mb-8">

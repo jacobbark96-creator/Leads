@@ -235,19 +235,19 @@ function SEODashboard() {
 
 const BrandCarousel = () => {
   const brands = [
-    { name: "Google", color: "text-blue-500", icon: <Search className="w-8 h-8" /> },
-    { name: "Facebook", color: "text-blue-600", icon: <Facebook className="w-8 h-8" /> },
-    { name: "Instagram", color: "text-pink-600", icon: <Instagram className="w-8 h-8" /> },
-    { name: "YouTube", color: "text-red-600", icon: <Youtube className="w-8 h-8" /> },
-    { name: "LinkedIn", color: "text-blue-700", icon: <Linkedin className="w-8 h-8" /> },
-    { name: "Solarpedia", isImage: true, src: "/solarpedia.png" },
-    { name: "Bing", color: "text-teal-600", icon: <Search className="w-8 h-8" /> },
-    { name: "Local Citations", color: "text-gray-900", icon: <MapPin className="w-8 h-8" /> }
+    { name: "Google", color: "text-gray-900", icon: <Globe className="w-10 h-10" /> },
+    { name: "Facebook", color: "text-[#1877F2]", icon: <Facebook className="w-10 h-10" /> },
+    { name: "Instagram", color: "text-[#E4405F]", icon: <Instagram className="w-10 h-10" /> },
+    { name: "YouTube", color: "text-[#FF0000]", icon: <Youtube className="w-10 h-10" /> },
+    { name: "LinkedIn", color: "text-[#0A66C2]", icon: <Linkedin className="w-10 h-10" /> },
+    { name: "Solarpedia", isImage: true, src: "/solarpedia.png", size: "h-10" },
+    { name: "Bing", color: "text-[#00809D]", icon: <Search className="w-10 h-10" /> },
+    { name: "Local Citations", color: "text-gray-900", icon: <MapPin className="w-10 h-10" /> }
   ];
 
   return (
     <div className="py-16 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30 overflow-hidden relative w-full mb-12 -mt-12 z-20">
-      <div className="text-center mb-10">
+      <div className="text-center mb-12">
         <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Where your leads come from & where your brand is seen</h3>
       </div>
       
@@ -257,17 +257,16 @@ const BrandCarousel = () => {
       
       <motion.div 
         animate={{ x: ["0%", "-50%"] }}
-        transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
-        className="flex gap-16 w-max items-center px-8"
+        transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+        className="flex gap-24 w-max items-center px-8"
       >
         {[...brands, ...brands, ...brands].map((brand, i) => (
-          <div key={i} className="flex items-center gap-3 opacity-60 hover:opacity-100 transition-opacity grayscale hover:grayscale-0">
+          <div key={i} className="flex items-center gap-3 opacity-50 hover:opacity-100 transition-opacity grayscale hover:grayscale-0 cursor-default hover:scale-110 duration-300">
             {brand.isImage ? (
-              <img src={brand.src} alt={brand.name} className="h-8 w-auto object-contain" />
+              <img src={brand.src} alt={brand.name} className={`${brand.size} w-auto object-contain drop-shadow-sm`} />
             ) : (
-              <div className={`flex items-center gap-2 ${brand.color}`}>
+              <div className={`flex items-center justify-center ${brand.color} drop-shadow-sm`}>
                 {brand.icon}
-                <span className="text-2xl font-black tracking-tight">{brand.name}</span>
               </div>
             )}
           </div>

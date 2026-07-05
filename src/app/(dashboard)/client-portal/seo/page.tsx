@@ -393,7 +393,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
           >
             <div className="absolute right-0 bottom-0 w-48 h-48 bg-amber-100 blur-3xl pointer-events-none group-hover:bg-amber-200/50 transition-colors duration-500" />
             <div className="flex items-center gap-6 relative z-10 w-full">
-               <div className="flex-shrink-0 w-48 h-24 flex items-center justify-center bg-gray-50 rounded-xl border border-gray-100 p-2">
+               <div className="flex-shrink-0 w-48 h-24 flex items-center justify-center p-2">
                  <img 
                    src="/solarpedia.png" 
                    alt="Solarpedia Logo" 

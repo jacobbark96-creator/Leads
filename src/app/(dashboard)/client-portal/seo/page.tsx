@@ -407,12 +407,11 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
             <div className="absolute right-0 bottom-0 w-64 h-64 bg-amber-200/30 blur-[80px] pointer-events-none group-hover:bg-amber-300/40 transition-colors duration-700" />
             
             <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 w-full">
-               <div className="flex-shrink-0 w-64 h-32 flex items-center justify-center bg-gradient-to-br from-gray-50 to-white rounded-3xl border border-gray-100 p-6 shadow-inner relative overflow-hidden group-hover:shadow-amber-100/50 transition-shadow duration-500">
-                 <div className="absolute inset-0 bg-[radial-gradient(circle_at_50%_120%,rgba(251,191,36,0.1),transparent)]" />
+               <div className="flex-shrink-0 w-48 h-24 flex items-center justify-center p-2">
                  <img 
                    src="/solarpedia.png" 
                    alt="Solarpedia Logo" 
-                   className="h-full w-full object-contain drop-shadow-md scale-[1.5] group-hover:scale-[1.6] transition-transform duration-700"
+                   className="h-full w-full object-contain drop-shadow-sm scale-[2]"
                  />
                </div>
                <div className="flex-1 text-center md:text-left">
@@ -434,9 +433,13 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
         </div>
 
         {/* DID YOU KNOW MARQUEE */}
-        <div className="py-16 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30 relative overflow-hidden my-12">
+        <div className="py-8 bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/30 relative overflow-hidden my-8">
           <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-white to-transparent z-10" />
           <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-white to-transparent z-10" />
+
+          <div className="flex items-center justify-center gap-2 text-blue-600 mb-6 relative z-20">
+            <Info className="w-4 h-4" />
+          </div>
 
           <motion.div 
             animate={{ x: ["0%", "-50%"] }}
@@ -445,11 +448,11 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
           >
             {[...facts, ...facts].map((fact, i) => (
               <div key={i} className="flex items-center gap-6 group">
-                <div className="text-[4.5rem] md:text-[6rem] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-cyan-300 leading-none drop-shadow-sm group-hover:scale-105 transition-transform duration-500">
+                <div className="text-[3.5rem] md:text-[5rem] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-cyan-300 leading-none drop-shadow-sm group-hover:scale-105 transition-transform duration-500">
                   {fact.stat}
                 </div>
                 <div className="max-w-[260px]">
-                  <div className="text-lg md:text-xl font-black text-gray-900 leading-tight mb-2 tracking-tight">{fact.title}</div>
+                  <div className="text-base md:text-lg font-black text-gray-900 leading-tight mb-1 tracking-tight">{fact.title}</div>
                   <div className="text-xs text-gray-500 font-medium leading-relaxed">{fact.desc}</div>
                 </div>
               </div>

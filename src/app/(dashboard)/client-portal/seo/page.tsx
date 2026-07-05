@@ -312,12 +312,26 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions }: { weeklyLeads:
           <CounterCard title="Impressions" value={impressions.toLocaleString()} desc="Kairo Search & Ads" />
           
           {/* Solarpedia Card */}
-          <div className="bg-[#111] rounded-[2rem] p-8 border border-gray-800 shadow-2xl flex flex-col justify-center relative overflow-hidden group">
+          <a 
+            href="https://solarpedia.co.uk" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="bg-[#111] rounded-[2rem] p-8 border border-gray-800 shadow-2xl flex flex-col justify-center relative overflow-hidden group hover:border-amber-500/50 transition-colors cursor-pointer"
+          >
             <div className="absolute right-0 bottom-0 w-32 h-32 bg-amber-500/10 blur-2xl pointer-events-none group-hover:bg-amber-500/20 transition-colors duration-500" />
-            <Award className="w-8 h-8 text-amber-500 mb-4 relative z-10" />
-            <h3 className="text-lg font-black text-white tracking-tight relative z-10">Solarpedia Featured</h3>
+            <div className="relative z-10 mb-4 h-8 flex items-center">
+              <img 
+                src="/solarpedia.png" 
+                alt="Solarpedia Logo" 
+                className="h-full w-auto object-contain"
+              />
+            </div>
+            <h3 className="text-lg font-black text-white tracking-tight relative z-10 flex items-center gap-2">
+              Solarpedia Featured
+              <ArrowUpRight className="w-4 h-4 text-amber-500 opacity-0 group-hover:opacity-100 transition-opacity" />
+            </h3>
             <p className="text-xs text-gray-400 mt-2 font-medium relative z-10 leading-relaxed">Included in Growth & Authority plans. Gain trust from 50k+ monthly visitors.</p>
-          </div>
+          </a>
         </div>
 
         {/* DID YOU KNOW MARQUEE */}

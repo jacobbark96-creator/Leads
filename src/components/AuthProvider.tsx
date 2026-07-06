@@ -9,6 +9,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     initialize();
+
+    // Handle ChunkLoadError to recover from stale deployments
+    const handleError = (e: ErrorEvent) => {
+      if (
+        e.message?.includes('ChunkLoadError') || 
+        e.message?.includes('Loading chunk') ||
+        e.error?.name === 'ChunkLoadError'
+      ) {
+        console.warn('ChunkLoadError detected, reloading page to fetch latest assets...');
+        window.location.reload();
+      }
+    };
+
+    window.addEventListener('error', handleError);
+    return () => window.removeEventListener('error', handleError);
   }, [initialize]);
 
   return (

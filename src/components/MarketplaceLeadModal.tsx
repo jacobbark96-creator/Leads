@@ -226,19 +226,19 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
         >
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-5 bg-white border-b border-gray-100">
+        <div className="flex items-center justify-between px-6 py-5 lg:py-4 bg-white border-b border-gray-100 lg:border-gray-200">
           <div className="flex items-center gap-4">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 shadow-sm">
-              <ShoppingCart className="w-6 h-6" />
+            <div className="w-12 lg:w-10 h-12 lg:h-10 rounded-2xl lg:rounded-lg bg-blue-50 flex items-center justify-center text-blue-600 border border-blue-100 shadow-sm lg:shadow-none">
+              <ShoppingCart className="w-6 lg:w-5 h-6 lg:h-5" />
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-xl sm:text-2xl font-black text-gray-900 tracking-tighter">Lead Details</h2>
+                <h2 className="text-xl sm:text-2xl lg:text-xl font-black lg:font-bold text-gray-900 tracking-tighter lg:tracking-normal">Lead Details</h2>
               </div>
               <div className="flex items-center gap-3 mt-1">
-                <p className="text-[10px] text-gray-400 font-black uppercase tracking-[0.2em]">Ref: #{lead.id.split('-')[0]}</p>
-                <span className="bg-emerald-50 text-emerald-600 border border-emerald-100 text-[10px] font-black px-2.5 py-0.5 rounded-lg uppercase tracking-widest">
-                  Verified Lead
+                <p className="text-[10px] lg:text-xs text-gray-400 lg:text-gray-500 font-black lg:font-medium uppercase tracking-[0.2em] lg:tracking-wider">Ref: #{lead.id.split('-')[0]}</p>
+                <span className="bg-emerald-50 lg:bg-green-50 text-emerald-600 lg:text-green-700 border border-emerald-100 lg:border-green-200 text-[10px] font-black lg:font-bold px-2.5 lg:px-2 py-0.5 rounded-lg lg:rounded-full uppercase lg:capitalize tracking-widest lg:tracking-normal">
+                  {window.innerWidth < 1024 ? 'Verified Lead' : 'New Lead'}
                 </span>
               </div>
             </div>
@@ -248,85 +248,103 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
               <button 
                 onClick={() => setShowMagicLink(true)}
                 title="Generate Magic Checkout Link"
-                className="w-12 h-12 flex items-center justify-center text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-2xl transition-all shadow-sm active:scale-95"
+                className="w-12 lg:w-10 h-12 lg:h-10 flex items-center justify-center text-indigo-600 bg-indigo-50 hover:bg-indigo-100 border border-indigo-200 rounded-2xl lg:rounded-lg transition-all shadow-sm active:scale-95"
               >
-                <span className="text-xl font-black">£</span>
+                <span className="text-xl lg:text-lg font-black lg:font-bold">£</span>
               </button>
             )}
-            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-all bg-gray-50 hover:bg-gray-100 p-3 rounded-2xl border border-gray-100 active:scale-95">
-              <X className="w-6 h-6" />
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-all bg-gray-50 hover:bg-gray-100 p-3 lg:p-2 rounded-2xl lg:rounded-full border border-gray-100 lg:border-gray-200 active:scale-95">
+              <X className="w-6 lg:w-5 h-6 lg:h-5" />
             </button>
           </div>
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-5 sm:p-6 space-y-6 overflow-y-auto custom-scrollbar bg-gray-50/30">
+        <div className="flex-1 p-5 lg:p-4 space-y-6 lg:space-y-3 overflow-y-auto custom-scrollbar bg-gray-50/30 lg:bg-transparent">
           
           {/* Top Row: Pricing & High-Level Summary */}
-          <div className="flex flex-col lg:flex-row gap-4">
+          <div className="flex flex-col lg:flex-row gap-4 lg:gap-3">
             {/* Pricing Card */}
-            <div className="bg-white rounded-[2rem] p-5 border border-gray-100 shadow-xl shadow-gray-200/40 flex-[0.8] flex flex-col justify-center relative overflow-hidden group">
-              <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/5 rounded-bl-full group-hover:scale-125 transition-transform duration-700"></div>
-              <div className="relative z-10">
-                <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-2">Exclusive Price</h3>
-                <div className="text-3xl font-black text-emerald-600 mb-2 tracking-tighter">
+            <div className="bg-white rounded-[2rem] lg:rounded-xl p-5 lg:p-3 border border-gray-100 lg:border-gray-200 shadow-xl lg:shadow-sm shadow-gray-200/40 flex-[0.8] flex flex-col lg:flex-row justify-center lg:justify-start relative overflow-hidden group">
+              <div className="absolute top-0 right-0 w-20 lg:hidden h-20 bg-emerald-500/5 rounded-bl-full group-hover:scale-125 transition-transform duration-700"></div>
+              <div className="relative z-10 flex-1">
+                <h3 className="text-[10px] font-black lg:font-bold text-gray-400 uppercase tracking-[0.2em] lg:tracking-wider mb-2 lg:mb-0.5">Exclusive Price</h3>
+                <div className="text-3xl lg:text-xl font-black lg:font-extrabold text-emerald-600 lg:text-green-600 mb-2 lg:mb-1 tracking-tighter lg:tracking-normal">
                   {lead.exclusive_price ? `£${lead.exclusive_price}` : <MissingValue />}
                 </div>
-                <div className="inline-flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-xl text-[10px] font-black border border-emerald-100 uppercase tracking-widest">
-                  <Zap className="w-3.5 h-3.5" /> Best Win Rate
+                <div className="inline-flex items-center gap-2 lg:gap-1 bg-emerald-50 lg:bg-green-50 text-emerald-600 lg:text-green-700 px-3 lg:px-2 py-1 lg:py-0.5 rounded-xl lg:rounded text-[10px] font-black lg:font-bold border border-emerald-100 lg:border-green-100 uppercase lg:capitalize tracking-widest lg:tracking-normal">
+                  <Zap className="w-3.5 lg:w-3 h-3.5 lg:h-3" /> {window.innerWidth < 1024 ? 'Best Win Rate' : 'Best for higher win rate'}
                 </div>
               </div>
             </div>
 
             {/* Customer Needs (Moved to Top Row) */}
-            <div className="bg-white rounded-[2rem] p-5 border border-gray-100 shadow-xl shadow-gray-200/40 flex-[1.2] flex flex-col justify-center">
-              <h3 className="text-[10px] font-black text-gray-900 uppercase tracking-[0.2em] mb-3">Customer Requirements</h3>
-              <div className="space-y-2 overflow-y-auto min-h-0 custom-scrollbar pr-1 max-h-[120px]">
+            <div className="bg-white rounded-[2rem] lg:rounded-xl p-5 lg:p-3 border border-gray-100 lg:border-gray-200 shadow-xl lg:shadow-sm shadow-gray-200/40 flex-[1.2] lg:flex-[0.6] flex flex-col justify-center">
+              <h3 className="text-[10px] lg:text-[11px] font-black lg:font-bold text-gray-900 uppercase tracking-[0.2em] lg:tracking-wider mb-3 lg:mb-1.5">Customer {window.innerWidth < 1024 ? 'Requirements' : 'Needs'}</h3>
+              <div className="space-y-2 lg:space-y-1 overflow-y-auto min-h-0 custom-scrollbar pr-1 max-h-[120px] lg:max-h-[80px]">
                 {lead.primary_need || (lead as any).pain_point ? (
                   <>
                     {lead.primary_need && (
-                      <div className="flex items-start gap-3 bg-gray-50/50 p-3 rounded-xl border border-gray-100">
-                        <Check className="w-4 h-4 text-blue-600 mt-0.5 shrink-0" />
-                        <span className="text-gray-700 text-sm font-medium leading-relaxed">{lead.primary_need}</span>
+                      <div className="flex items-start gap-3 lg:gap-1.5 bg-gray-50/50 lg:bg-transparent p-3 lg:p-0 rounded-xl lg:rounded-none border border-gray-100 lg:border-none">
+                        <Check className="w-4 lg:w-3 h-4 lg:h-3 text-blue-600 lg:text-gray-700 mt-0.5 shrink-0" />
+                        <span className={`text-gray-700 leading-relaxed lg:leading-tight ${
+                          lead.primary_need.length > 100 ? 'text-[8.5px]' : 
+                          lead.primary_need.length > 50 ? 'text-[9.5px]' : 'text-[11px]'
+                        } font-medium lg:font-normal`}>{lead.primary_need}</span>
                       </div>
                     )}
                     {(lead as any).pain_point && (
-                      <div className="flex items-start gap-3 bg-indigo-50/30 p-3 rounded-xl border border-indigo-100/50">
-                        <Check className="w-4 h-4 text-indigo-600 mt-0.5 shrink-0" />
-                        <span className="text-gray-700 text-sm font-medium leading-relaxed">{(lead as any).pain_point}</span>
+                      <div className="flex items-start gap-3 lg:gap-1.5 bg-indigo-50/30 lg:bg-transparent p-3 lg:p-0 rounded-xl lg:rounded-none border border-indigo-100/50 lg:border-none">
+                        <Check className="w-4 lg:w-3 h-4 lg:h-3 text-indigo-600 lg:text-gray-700 mt-0.5 shrink-0" />
+                        <span className={`text-gray-700 leading-relaxed lg:leading-tight ${
+                          (lead as any).pain_point.length > 100 ? 'text-[8.5px]' : 
+                          (lead as any).pain_point.length > 50 ? 'text-[9.5px]' : 'text-[11px]'
+                        } font-medium lg:font-normal`}>{(lead as any).pain_point}</span>
                       </div>
                     )}
                   </>
                 ) : (
-                  <div className="flex items-center justify-center py-4 text-gray-400 text-xs font-medium italic">No specific needs listed</div>
+                  <MissingValue />
                 )}
               </div>
             </div>
 
             {/* Stats Card */}
-            <div className="bg-white rounded-[2rem] p-5 border border-gray-100 shadow-xl shadow-gray-200/40 flex-[1.6] flex items-center justify-between divide-x divide-gray-100">
-              <div className="flex flex-col items-center justify-center text-center flex-1 px-3">
-                <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 leading-tight h-6">Est. Monthly Spend</h3>
-                <div className="text-xl font-black text-emerald-600 tracking-tighter">
-                  {lead.monthly_spend ? `£${lead.monthly_spend}` : <MissingValue />}
+            <div className="bg-white rounded-[2rem] lg:rounded-xl p-5 lg:p-3 border border-gray-100 lg:border-gray-200 shadow-xl lg:shadow-sm shadow-gray-200/40 flex-[1.6] flex items-center justify-between lg:divide-x lg:divide-gray-100">
+              <div className="flex flex-col items-center justify-center text-center flex-1 px-3 lg:px-1 h-full lg:min-h-[64px]">
+                <h3 className="text-[9px] font-black lg:font-bold text-gray-400 uppercase tracking-[0.2em] lg:tracking-wider mb-3 lg:mb-2 leading-tight h-6 flex items-center justify-center">Est. Monthly Spend</h3>
+                <div className="text-xl lg:text-base font-black lg:font-bold text-emerald-600 lg:text-green-600 tracking-tighter lg:tracking-normal h-9 flex items-center justify-center">
+                  {lead.monthly_spend ? `£${lead.monthly_spend}${window.innerWidth >= 1024 ? '/mo' : ''}` : <MissingValue />}
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center text-center flex-1 px-3">
-                <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 leading-tight h-6">Timeframe</h3>
-                <div className="text-lg font-black text-gray-900 tracking-tighter">
+              <div className="flex flex-col items-center justify-center text-center flex-1 px-3 lg:px-1 h-full lg:min-h-[64px]">
+                <h3 className="text-[9px] font-black lg:font-bold text-gray-400 uppercase tracking-[0.2em] lg:tracking-wider mb-3 lg:mb-2 leading-tight h-6 flex items-center justify-center">Timeframe</h3>
+                <div className="text-lg lg:text-base font-black lg:font-bold text-gray-900 tracking-tighter lg:tracking-normal h-9 flex items-center justify-center">
                   <DisplayValue value={lead.timeframe} />
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center text-center flex-1 px-3">
-                <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 leading-tight h-6">Bills Ready</h3>
-                <div className={`w-10 h-10 flex items-center justify-center rounded-2xl border-2 transition-colors ${hasBills ? 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-100' : 'bg-gray-50 border-gray-200 text-gray-300'}`}>
-                  {hasBills ? <Check className="w-5 h-5" strokeWidth={3} /> : <FileText className="w-5 h-5 opacity-20" />}
+              <div className="flex flex-col items-center justify-center text-center flex-1 px-3 lg:px-1 h-full lg:min-h-[64px]">
+                <h3 className="text-[9px] font-black lg:font-bold text-gray-400 uppercase tracking-[0.2em] lg:tracking-wider mb-3 lg:mb-2 leading-tight h-6 flex items-center justify-center">{window.innerWidth < 1024 ? 'Bills Ready' : 'Bills Received'}</h3>
+                <div className="h-9 flex items-center justify-center">
+                  <div className={`w-10 lg:w-9 h-10 lg:h-9 flex items-center justify-center rounded-2xl lg:rounded-full border-2 transition-colors ${hasBills ? 'bg-emerald-50 lg:bg-transparent border-emerald-500 lg:border-green-500 text-emerald-600 lg:text-green-600 shadow-lg lg:shadow-none shadow-emerald-100' : 'bg-gray-50 lg:bg-transparent border-gray-200 text-gray-300'}`}>
+                    {hasBills ? <Check className="w-5 lg:w-4 h-5 lg:h-4" strokeWidth={3} /> : <FileText className="w-5 lg:w-4 h-5 lg:h-4 opacity-20" />}
+                  </div>
                 </div>
               </div>
-              <div className="flex flex-col items-center justify-center text-center flex-1 px-3">
-                <h3 className="text-[9px] font-black text-gray-400 uppercase tracking-[0.2em] mb-3 leading-tight h-6">Decision Maker</h3>
-                <div className={`w-10 h-10 flex items-center justify-center rounded-2xl border-2 transition-colors ${lead.sole_decision_maker ? 'bg-emerald-50 border-emerald-500 text-emerald-600 shadow-lg shadow-emerald-100' : 'bg-gray-50 border-gray-200 text-gray-300'}`}>
-                  {lead.sole_decision_maker ? <Check className="w-5 h-5" strokeWidth={3} /> : <User className="w-5 h-5 opacity-20" />}
+              <div className="flex flex-col items-center justify-center text-center flex-1 px-3 lg:px-1 h-full lg:min-h-[64px]">
+                <h3 className="text-[9px] font-black lg:font-bold text-gray-400 uppercase tracking-[0.2em] lg:tracking-wider mb-3 lg:mb-2 leading-tight h-6 flex items-center justify-center">Decision Maker</h3>
+                <div className="h-9 flex items-center justify-center">
+                  <div className={`w-10 lg:w-9 h-10 lg:h-9 flex items-center justify-center rounded-2xl lg:rounded-full border-2 transition-colors ${lead.sole_decision_maker ? 'bg-emerald-50 lg:bg-transparent border-emerald-500 lg:border-green-500 text-emerald-600 lg:text-green-600 shadow-lg lg:shadow-none shadow-emerald-100' : 'bg-gray-50 lg:bg-transparent border-gray-200 text-gray-300'}`}>
+                    {lead.sole_decision_maker ? <Check className="w-5 lg:w-4 h-5 lg:h-4" strokeWidth={3} /> : <User className="w-5 lg:w-4 h-5 lg:h-4 opacity-20" />}
+                  </div>
+                </div>
+              </div>
+              <div className="hidden lg:flex flex-col items-center justify-center text-center flex-1 px-1 h-full lg:min-h-[64px]">
+                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Quality Score</h3>
+                <div className="h-9 flex items-center justify-center">
+                  <div className="relative w-9 h-9 flex items-center justify-center rounded-full border-[2px] border-green-500 text-green-600 font-bold text-base">
+                    {(lead as any).lead_score || <MissingValue />}
+                  </div>
                 </div>
               </div>
             </div>

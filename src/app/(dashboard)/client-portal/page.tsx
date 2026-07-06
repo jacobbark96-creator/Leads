@@ -365,30 +365,30 @@ export default function ClientDashboard() {
   }
 
   const getWelcomeBanner = () => (
-    <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2rem] overflow-hidden h-full shadow-2xl shadow-slate-900/20 border border-slate-700/50 group">
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay"></div>
+    <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2rem] lg:rounded-2xl overflow-hidden h-full shadow-2xl lg:shadow-lg shadow-slate-900/20 lg:shadow-slate-900/10 border border-slate-700/50 lg:border-none group">
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay lg:hidden"></div>
       <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-transparent to-transparent"></div>
-      <div className="relative z-10 flex items-center justify-between h-full px-5 sm:px-8 py-5 sm:py-6">
-        <div className="flex items-center gap-4 sm:gap-6">
-          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white font-black text-lg sm:text-xl shadow-xl shadow-blue-600/30 border border-white/20 transform group-hover:scale-105 transition-transform duration-500">
+      <div className="relative z-10 flex items-center justify-between h-full px-5 lg:px-6 py-5 lg:py-2.5">
+        <div className="flex items-center gap-4 lg:gap-4">
+          <div className="w-12 h-12 lg:w-11 lg:h-11 bg-gradient-to-br from-blue-600 to-cyan-500 lg:from-openlead-blue lg:to-blue-600 rounded-2xl lg:rounded-xl flex items-center justify-center text-white font-black text-lg lg:text-base shadow-xl lg:shadow-lg shadow-blue-600/30 border border-white/20 lg:border-none transform group-hover:scale-105 transition-transform duration-500">
             {profile?.name?.substring(0, 2).toUpperCase() || profile?.email?.substring(0, 2).toUpperCase() || 'JB'}
           </div>
           <div>
-            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight tracking-tighter">
+            <h2 className="text-xl lg:text-lg font-black text-white leading-tight tracking-tighter lg:tracking-tight">
               Welcome, {profile?.name?.split(' ')[0] || 'Jake'}
             </h2>
             <div className="flex items-center gap-2 mt-1">
-              <span className="text-[10px] sm:text-xs text-blue-400 font-black uppercase tracking-widest bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">Active Portfolio</span>
-              <p className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">{leads.length} leads</p>
+              <span className="text-[10px] lg:hidden text-blue-400 font-black uppercase tracking-widest bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">Active Portfolio</span>
+              <p className="text-[10px] lg:text-xs text-slate-400 font-bold uppercase tracking-wider">{leads.length} leads {!profile?.parent_id && 'in portfolio'}</p>
             </div>
           </div>
         </div>
-        <div className="hidden md:flex items-center gap-4 bg-white/5 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/10 shadow-inner">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-600/20">
-            <MapPin className="w-5 h-5" />
+        <div className="hidden lg:flex items-center gap-3 bg-white/10 backdrop-blur-md px-4 py-2 rounded-xl border border-white/10">
+          <div className="w-8 h-8 bg-gradient-to-br from-openlead-blue to-blue-600 rounded-lg flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-600/20">
+            <MapPin className="w-4 h-4" />
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] text-slate-500 font-black uppercase leading-none mb-1 tracking-[0.2em]">
+            <p className="text-[10px] text-slate-400 font-black uppercase leading-none mb-1 tracking-widest">
               {profile?.parent_id ? 'Company Contact' : 'Advisor'}
             </p>
             <p className="text-sm font-black text-white leading-tight truncate tracking-tight">
@@ -406,63 +406,63 @@ export default function ClientDashboard() {
     const remaining = Math.max(0, limit - usage);
 
     return (
-      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 p-5 sm:p-6 h-full flex flex-col justify-between relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500">
-        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full group-hover:scale-125 transition-transform duration-700"></div>
+      <div className="bg-white rounded-[2rem] lg:rounded-2xl border border-gray-100 shadow-xl lg:shadow-gray-200/40 p-5 lg:p-4 h-full flex flex-col justify-between relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500">
+        <div className="absolute top-0 right-0 w-24 lg:w-16 h-24 lg:h-16 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full group-hover:scale-125 lg:group-hover:scale-110 transition-transform duration-700"></div>
         <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/10 to-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0 shadow-sm border border-emerald-100">
-              <Zap className="w-5 h-5" />
+          <div className="flex items-center gap-3 lg:gap-2">
+            <div className="w-10 h-10 lg:w-8 lg:h-8 bg-gradient-to-br from-emerald-500/10 to-emerald-50 rounded-2xl lg:rounded-xl flex items-center justify-center text-emerald-600 shrink-0 shadow-sm border border-emerald-100 lg:border-none">
+              <Zap className="w-5 h-5 lg:w-4 lg:h-4" />
             </div>
-            <span className="text-sm sm:text-base font-black text-gray-900 tracking-tighter">Flex Credit</span>
+            <span className="text-sm lg:text-xs font-black text-gray-900 tracking-tighter lg:tracking-tight">Flex Credit</span>
           </div>
           <div className="text-right">
-            <div className="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] leading-none mb-1.5">Available</div>
-            <div className="text-lg sm:text-xl font-black text-gray-900 leading-none tracking-tighter">
+            <div className="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] lg:tracking-widest leading-none mb-1.5 lg:mb-1">Available</div>
+            <div className="text-lg lg:text-base font-black text-gray-900 leading-none tracking-tighter">
               £{remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
         </div>
         
-        <div className="relative z-10 flex items-center justify-between mt-6 pt-4 border-t border-gray-50">
+        <div className="relative z-10 flex items-center justify-between mt-6 lg:mt-4 pt-4 lg:pt-3 border-t border-gray-50">
           <div className="flex flex-col">
-            <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Limit</span>
-            <span className="text-xs text-gray-600 font-bold tracking-tight">£{limit.toLocaleString()}</span>
+            <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5 lg:hidden">Limit</span>
+            <span className="text-xs lg:text-[10px] text-gray-600 lg:text-gray-500 font-bold lg:font-medium tracking-tight">Limit: £{limit.toLocaleString()}</span>
           </div>
-          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">Weekly</span>
+          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] lg:tracking-widest bg-emerald-50 lg:bg-transparent px-2.5 lg:px-0 py-1 lg:py-0 rounded-lg border border-emerald-100 lg:border-none">Weekly</span>
         </div>
       </div>
     );
   };
 
   const getTopUpCard = () => (
-    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 p-5 sm:p-6 h-full flex flex-col justify-between relative overflow-hidden group hover:border-blue-500/30 transition-all duration-500">
-      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/5 to-transparent rounded-bl-full group-hover:scale-125 transition-transform duration-700"></div>
+    <div className="bg-white rounded-[2rem] lg:rounded-2xl border border-gray-100 shadow-xl lg:shadow-gray-200/40 p-5 lg:p-4 h-full flex flex-col justify-between relative overflow-hidden group hover:border-blue-500/30 transition-all duration-500">
+      <div className="absolute top-0 right-0 w-24 lg:w-16 h-24 lg:h-16 bg-gradient-to-br from-blue-500/5 to-transparent rounded-bl-full group-hover:scale-125 lg:group-hover:scale-110 transition-transform duration-700"></div>
       <div className="relative z-10 flex items-center justify-between">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-600/20 border border-white/20">
-            <ShoppingCart className="w-5 h-5" />
+        <div className="flex items-center gap-3 lg:gap-2">
+          <div className="w-10 h-10 lg:w-8 lg:h-8 bg-gradient-to-br from-blue-600 to-cyan-500 lg:from-openlead-blue lg:to-blue-600 rounded-2xl lg:rounded-xl flex items-center justify-center text-white lg:text-openlead-blue shrink-0 shadow-lg lg:shadow-sm shadow-blue-600/20 lg:shadow-none border border-white/20 lg:border-none">
+            <ShoppingCart className="w-5 h-5 lg:w-4 lg:h-4" />
           </div>
-          <span className="text-sm sm:text-base font-black text-gray-900 tracking-tighter">Wallet</span>
+          <span className="text-sm lg:text-xs font-black text-gray-900 tracking-tighter lg:tracking-tight">Wallet</span>
         </div>
         <div className="text-right">
-          <div className="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] leading-none mb-1.5">Balance</div>
-          <div className="text-lg sm:text-xl font-black text-gray-900 leading-none tracking-tighter">
+          <div className="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] lg:tracking-widest leading-none mb-1.5 lg:mb-1">Balance</div>
+          <div className="text-lg lg:text-base font-black text-gray-900 leading-none tracking-tighter">
             £{creditBalance.toFixed(2)}
           </div>
         </div>
       </div>
       
-      <div className="relative z-10 flex items-center justify-between mt-6 pt-4 border-t border-gray-50">
+      <div className="relative z-10 flex items-center justify-between mt-6 lg:mt-4 pt-4 lg:pt-3 border-t border-gray-50">
         <div className="flex flex-col">
-          <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Leads</span>
-          <span className="text-xs text-gray-600 font-bold tracking-tight">{leads.length} in total</span>
+          <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5 lg:hidden">Leads</span>
+          <span className="text-xs lg:text-[10px] text-gray-600 lg:text-gray-500 font-bold lg:font-medium tracking-tight">{leads.length} leads</span>
         </div>
         <button 
           onClick={() => {
             if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Top Up' });
             setShowTopUpModal(true);
           }}
-          className="text-[10px] font-black bg-slate-900 text-white px-5 py-2 rounded-xl shadow-xl shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-500/30 transition-all shrink-0 uppercase tracking-widest active:scale-95"
+          className="text-[10px] lg:text-[10px] font-black bg-slate-900 text-white px-5 lg:px-3 py-2 lg:py-1 rounded-xl shadow-xl lg:shadow-lg shadow-slate-900/10 hover:bg-blue-600 lg:hover:bg-openlead-blue hover:shadow-blue-500/30 transition-all shrink-0 uppercase tracking-widest active:scale-95"
         >
           Top Up
         </button>
@@ -471,21 +471,21 @@ export default function ClientDashboard() {
   );
 
   const getActionButtons = () => (
-    <div className={`h-full grid ${profile?.parent_id ? 'grid-cols-1' : 'grid-cols-2'} gap-4 w-full`}>
+    <div className={`h-full grid ${profile?.parent_id ? 'grid-cols-1' : 'grid-cols-2'} gap-4 lg:gap-4 w-full`}>
       {!profile?.parent_id && (
         <button
           onClick={() => {
             if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Invoices' });
             setShowInvoicesModal(true);
           }}
-          className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 flex flex-col justify-center items-center relative overflow-hidden group hover:border-blue-500/30 hover:shadow-blue-500/20 transition-all duration-500 h-full p-4"
+          className="bg-white rounded-[2rem] lg:rounded-2xl border border-gray-100 shadow-xl lg:shadow-gray-200/40 flex flex-col justify-center items-center relative overflow-hidden group hover:border-blue-500/30 hover:shadow-blue-500/20 transition-all duration-500 h-full p-4 lg:p-2"
         >
-          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/5 to-transparent rounded-bl-full transition-transform duration-700 group-hover:scale-125"></div>
-          <div className="relative z-10 flex flex-col items-center justify-center gap-3">
-            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-              <List className="w-6 h-6 text-blue-600" />
+          <div className="absolute top-0 right-0 w-20 lg:w-16 h-20 lg:h-16 bg-gradient-to-br from-blue-500/5 to-transparent rounded-bl-full transition-transform duration-700 lg:duration-300 group-hover:scale-125 lg:group-hover:scale-110"></div>
+          <div className="relative z-10 flex flex-col items-center justify-center gap-3 lg:gap-2">
+            <div className="w-12 h-12 lg:w-8 lg:h-8 bg-blue-50 lg:bg-transparent rounded-2xl lg:rounded-none flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+              <List className="w-6 h-6 lg:w-7 lg:h-7 text-blue-600 lg:text-openlead-blue" />
             </div>
-            <span className="text-[10px] font-black text-gray-900 tracking-[0.2em] uppercase group-hover:text-blue-600 transition-colors">Invoices</span>
+            <span className="text-[10px] lg:text-[10px] font-black text-gray-900 tracking-[0.2em] lg:tracking-widest uppercase group-hover:text-blue-600 lg:group-hover:text-openlead-blue transition-colors text-center leading-none">Invoices</span>
           </div>
         </button>
       )}
@@ -495,21 +495,21 @@ export default function ClientDashboard() {
           if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Performance' });
           setShowPerformanceModal(true);
         }}
-        className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 flex flex-col justify-center items-center relative overflow-hidden group hover:border-emerald-500/30 hover:shadow-emerald-500/20 transition-all duration-500 h-full p-4"
+        className="bg-white rounded-[2rem] lg:rounded-2xl border border-gray-100 shadow-xl lg:shadow-gray-200/40 flex flex-col justify-center items-center relative overflow-hidden group hover:border-emerald-500/30 hover:shadow-emerald-500/20 transition-all duration-500 h-full p-4 lg:p-2"
       >
-        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full transition-transform duration-700 group-hover:scale-125"></div>
-        <div className="relative z-10 flex flex-col items-center justify-center gap-3">
-          <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
-            <TrendingUp className="w-6 h-6 text-emerald-500" />
+        <div className="absolute top-0 right-0 w-20 lg:w-16 h-20 lg:h-16 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full transition-transform duration-700 lg:duration-300 group-hover:scale-125 lg:group-hover:scale-110"></div>
+        <div className="relative z-10 flex flex-col items-center justify-center gap-3 lg:gap-2">
+          <div className="w-12 h-12 lg:w-8 lg:h-8 bg-emerald-50 lg:bg-transparent rounded-2xl lg:rounded-none flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+            <TrendingUp className="w-6 h-6 lg:w-7 lg:h-7 text-emerald-500" />
           </div>
-          <span className="text-[10px] font-black text-gray-900 tracking-[0.2em] uppercase group-hover:text-emerald-600 transition-colors">Performance</span>
+          <span className="text-[10px] lg:text-[10px] font-black text-gray-900 tracking-[0.2em] lg:tracking-widest uppercase group-hover:text-emerald-600 transition-colors text-center leading-none">Performance</span>
         </div>
       </button>
     </div>
   );
 
   return (
-    <div className="flex flex-col h-auto lg:h-[calc(100vh-160px)] gap-6 lg:gap-8 pt-4 lg:pt-6">
+    <div className="flex flex-col h-auto lg:h-[calc(100vh-160px)] gap-4 lg:gap-6 pt-2 lg:pt-4">
       {/* TOP ROW - Responsive layout */}
       <div className="flex-none flex flex-col lg:flex-row gap-4 lg:gap-5">
         <div className="w-full lg:w-[40%] transition-all duration-300">
@@ -525,10 +525,10 @@ export default function ClientDashboard() {
       </div>
 
       {/* MAIN ROW - Map + Categories */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 mb-8">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-8 mb-8 lg:mb-0">
         
         {/* LEFT: MAP */}
-        <div className="lg:col-span-3 bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/60 border border-gray-100 overflow-hidden min-h-[350px] lg:min-h-0 order-2 lg:order-1 relative group">
+        <div className="lg:col-span-3 bg-white rounded-[2.5rem] lg:rounded-3xl shadow-2xl lg:shadow-2xl shadow-gray-200/60 lg:shadow-gray-200/60 border border-gray-100 overflow-hidden min-h-[350px] lg:min-h-0 order-2 lg:order-1 relative group">
           <div className="h-full relative z-0">
             {leads.length > 0 ? (
               <DynamicMap 
@@ -538,12 +538,12 @@ export default function ClientDashboard() {
               />
             ) : (
               <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-gradient-to-br from-gray-50/50 to-white">
-                <div className="w-24 h-24 bg-white rounded-[2.5rem] flex items-center justify-center mb-6 shadow-xl shadow-gray-200/50 border border-gray-100 transform group-hover:scale-110 transition-transform duration-500">
-                  <MapPin className="w-12 h-12 text-blue-600/20" />
+                <div className="w-24 h-24 bg-white lg:bg-gradient-to-br lg:from-blue-50 lg:to-indigo-50 rounded-[2.5rem] lg:rounded-[32px] flex items-center justify-center mb-6 shadow-xl lg:shadow-inner border border-gray-100 lg:border-blue-100/50 transform group-hover:scale-110 transition-transform duration-500">
+                  <MapPin className="w-12 h-12 text-blue-600/20 lg:text-openlead-blue/40" />
                 </div>
-                <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tighter">No leads on map</h3>
-                <p className="text-sm text-gray-500 mb-8 max-w-xs font-medium leading-relaxed">Purchase leads from the marketplace to see them here.</p>
-                <Link href="/marketplace" className="inline-flex items-center px-8 py-4 bg-slate-900 text-white text-[10px] font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:bg-blue-600 hover:shadow-blue-500/30 transition-all uppercase tracking-[0.2em] active:scale-95">
+                <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tighter lg:tracking-tight">No leads on map</h3>
+                <p className="text-sm lg:text-base text-gray-500 mb-8 max-w-xs font-medium leading-relaxed">Purchase leads from the marketplace to see them here.</p>
+                <Link href="/marketplace" className="inline-flex items-center px-8 py-4 bg-slate-900 text-white text-[10px] lg:text-sm font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:bg-blue-600 lg:hover:bg-openlead-blue hover:shadow-blue-500/30 transition-all uppercase tracking-[0.2em] lg:tracking-widest active:scale-95">
                   Browse Marketplace
                 </Link>
               </div>
@@ -552,41 +552,41 @@ export default function ClientDashboard() {
         </div>
 
         {/* RIGHT: CATEGORIES */}
-        <div className="lg:col-span-2 flex flex-col gap-6 min-h-0 order-1 lg:order-2">
+        <div className="lg:col-span-2 flex flex-col gap-6 lg:gap-5 min-h-0 order-1 lg:order-2">
           
           {/* Pending Requests (Child Only) */}
           {profile?.parent_id && pendingRequests.length > 0 && (
-            <div className="bg-amber-50/30 rounded-[2rem] shadow-xl shadow-amber-100/20 border border-amber-100/50 flex flex-col overflow-hidden animate-in slide-in-from-right duration-500">
+            <div className="bg-amber-50/30 lg:bg-amber-50/50 rounded-[2rem] lg:rounded-2xl shadow-xl shadow-amber-100/20 lg:shadow-amber-100/50 border border-amber-100/50 lg:border-amber-100 flex flex-col overflow-hidden animate-in slide-in-from-right duration-500">
               <button 
                 onClick={() => setActiveTab('pending')}
-                className={`flex items-center justify-between px-6 py-5 border-b border-amber-100/50 transition-all ${activeTab === 'pending' ? 'bg-white' : 'hover:bg-amber-50/50'}`}
+                className={`flex items-center justify-between px-6 lg:px-5 py-5 lg:py-4 border-b border-amber-100/50 lg:border-amber-100 transition-all ${activeTab === 'pending' ? 'bg-white lg:bg-gradient-to-r lg:from-amber-50 lg:to-orange-50/30' : 'hover:bg-amber-50/50 lg:bg-amber-50/30 lg:hover:bg-amber-50'}`}
               >
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shadow-sm border border-amber-200/50">
-                    <Clock className="w-5 h-5 text-amber-600" />
+                <div className="flex items-center gap-4 lg:gap-3">
+                  <div className="w-10 h-10 lg:w-8 lg:h-8 rounded-xl lg:rounded-lg bg-amber-100 flex items-center justify-center shadow-sm lg:shadow-none border border-amber-200/50 lg:border-none">
+                    <Clock className="w-5 h-5 lg:w-4 lg:h-4 text-amber-600" />
                   </div>
-                  <span className="text-lg font-black text-amber-900 tracking-tighter">Pending Requests</span>
+                  <span className="text-lg lg:text-base font-black text-amber-900 tracking-tighter lg:tracking-tight">Pending Requests</span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="text-[10px] font-black text-amber-600 bg-amber-100 px-3 py-1 rounded-lg uppercase tracking-widest border border-amber-200/50">
+                  <span className="text-[10px] lg:text-xs font-black text-amber-600 bg-amber-100 px-3 py-1 rounded-lg lg:rounded-full uppercase tracking-widest border border-amber-200/50 lg:border-none">
                     {pendingRequests.length}
                   </span>
                   <ChevronDown className={`w-5 h-5 text-amber-400 transition-transform duration-500 ${activeTab === 'pending' ? 'rotate-180' : ''}`} />
                 </div>
               </button>
               {activeTab === 'pending' && (
-                <div className="flex-1 overflow-y-auto max-h-[300px] p-3 space-y-3 custom-scrollbar">
+                <div className="flex-1 overflow-y-auto max-h-[300px] lg:max-h-[250px] p-3 lg:p-2 space-y-3 lg:space-y-2 custom-scrollbar">
                   {pendingRequests.map((req) => (
                     <div 
                       key={req.id} 
-                      className="flex items-center justify-between p-4 rounded-2xl bg-white border border-amber-100/50 hover:border-amber-300 hover:shadow-xl hover:shadow-amber-100/20 transition-all duration-300 group cursor-pointer"
+                      className="flex items-center justify-between p-4 rounded-2xl lg:rounded-xl bg-white border border-amber-100/50 lg:border-amber-100/50 hover:border-amber-300 hover:shadow-xl lg:hover:shadow-lg hover:shadow-amber-100/20 lg:hover:shadow-amber-100/50 transition-all duration-300 lg:duration-200 group cursor-pointer"
                       onClick={() => {
                         setSelectedPendingLead(req.leads);
                         setIsPendingModalOpen(true);
                       }}
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-xl bg-amber-50 flex items-center justify-center overflow-hidden border border-amber-100 group-hover:scale-105 transition-transform duration-500 shrink-0">
+                        <div className="w-14 h-14 lg:w-12 lg:h-12 rounded-xl bg-amber-50 flex items-center justify-center overflow-hidden border border-amber-100 group-hover:scale-105 transition-transform duration-500 lg:duration-200 shrink-0">
                           {req.leads?.image_url ? (
                             <img 
                               src={req.leads.image_url} 
@@ -594,21 +594,21 @@ export default function ClientDashboard() {
                               className="w-full h-full object-cover"
                             />
                           ) : (
-                            <Clock className="w-7 h-7 text-amber-200" />
+                            <Clock className="w-7 h-7 lg:w-6 lg:h-6 text-amber-200 lg:text-amber-300" />
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-base font-black text-gray-900 truncate tracking-tight">
+                          <p className="text-base lg:text-sm font-black text-gray-900 truncate tracking-tight">
                             {extractTown(req.leads?.location)}
                           </p>
-                          <p className="text-[9px] text-amber-600 font-black uppercase tracking-[0.2em] mt-1">
-                            Awaiting Approval
+                          <p className="text-[9px] lg:text-[10px] text-amber-600 font-black uppercase tracking-[0.2em] lg:tracking-widest mt-1 lg:mt-0.5">
+                            {profile?.parent_id ? 'Awaiting Approval' : 'Pending Approval'}
                           </p>
                         </div>
                       </div>
                       <div className="text-right shrink-0">
-                        <p className="text-base font-black text-gray-900 tracking-tighter">£{req.price_paid}</p>
-                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Total</p>
+                        <p className="text-base lg:text-sm font-black text-gray-900 tracking-tighter lg:tracking-tight">£{req.price_paid}</p>
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1 lg:mt-0.5">{profile?.parent_id ? 'Total' : 'Request'}</p>
                       </div>
                     </div>
                   ))}
@@ -618,24 +618,35 @@ export default function ClientDashboard() {
           )}
 
           {/* Purchased Leads */}
-          <div className="bg-white rounded-[2rem] shadow-2xl shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden flex-1">
-            <div className="flex flex-col h-full">
-              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50 bg-gray-50/30">
-                <div className="flex items-center gap-4">
-                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
-                    <ShoppingCart className="w-5 h-5 text-blue-600" />
+          <div className="bg-white rounded-[2rem] lg:rounded-2xl shadow-2xl lg:shadow-xl shadow-gray-200/50 lg:shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden flex-1 lg:flex-none">
+            <div className="flex flex-col h-full lg:h-auto">
+              <div 
+                onClick={() => {
+                  if (window.innerWidth >= 1024) {
+                    setActiveTab(activeTab === 'new' ? 'archive' : 'new'); // Toggle or something similar for desktop?
+                    // Actually original desktop had collapsible sections.
+                  }
+                }}
+                className={`flex items-center justify-between px-6 lg:px-5 py-5 lg:py-4 border-b border-gray-50 lg:border-gray-100 bg-gray-50/30 transition-all ${activeTab === 'new' ? 'lg:bg-gradient-to-r lg:from-openlead-blue/5 lg:to-blue-50/30' : 'lg:bg-gray-50/30 lg:hover:bg-gray-50'}`}
+              >
+                <div className="flex items-center gap-4 lg:gap-3">
+                  <div className="w-10 h-10 lg:w-8 lg:h-8 rounded-xl lg:rounded-lg bg-blue-50 flex items-center justify-center border border-blue-100 lg:border-none">
+                    <ShoppingCart className="w-5 h-5 lg:w-4 lg:h-4 text-blue-600 lg:text-openlead-blue" />
                   </div>
-                  <h3 className="text-lg font-black text-gray-900 tracking-tighter">Your Portfolio</h3>
+                  <h3 className="text-lg lg:text-base font-black text-gray-900 tracking-tighter lg:tracking-tight">
+                    {window.innerWidth < 1024 ? 'Your Portfolio' : 'Purchased'}
+                  </h3>
                 </div>
-                <div className="flex items-center gap-2">
-                  <div className="text-[10px] font-black text-gray-400 bg-white px-3 py-1 rounded-lg uppercase tracking-widest border border-gray-100 shadow-sm">
-                    {leads.length} Leads
+                <div className="flex items-center gap-3">
+                  <div className="text-[10px] lg:text-xs font-black text-gray-400 bg-white lg:bg-gray-50 px-3 py-1 rounded-lg lg:rounded-full uppercase tracking-widest border border-gray-100 lg:border-none shadow-sm lg:shadow-none">
+                    {leads.filter(l => l.purchase_status === 'new').length} {window.innerWidth < 1024 && 'Leads'}
                   </div>
+                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-500 lg:hidden ${activeTab === 'new' ? 'rotate-180' : ''}`} />
                 </div>
               </div>
 
-              {/* Tabs for Portfolio */}
-              <div className="flex items-center gap-1 p-2 bg-gray-50/50 border-b border-gray-50 overflow-x-auto no-scrollbar">
+              {/* Tabs for Portfolio - Mobile Only */}
+              <div className="flex lg:hidden items-center gap-1 p-2 bg-gray-50/50 border-b border-gray-50 overflow-x-auto no-scrollbar">
                 {[
                   { id: 'new', label: 'Purchased', icon: ShoppingCart, color: 'blue' },
                   { id: 'sat', label: 'Surveyed', icon: CalendarIcon, color: 'amber' },
@@ -657,44 +668,107 @@ export default function ClientDashboard() {
                 ))}
               </div>
 
-              <div className="flex-1 overflow-y-auto min-h-[300px] max-h-[500px] p-3 space-y-3 custom-scrollbar bg-white">
+              <div className="flex-1 lg:flex-none overflow-y-auto min-h-[300px] lg:min-h-0 max-h-[500px] lg:max-h-[250px] p-3 lg:p-2 space-y-3 lg:space-y-2 custom-scrollbar bg-white">
                 {currentTabLeads.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
-                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 border border-gray-100">
-                      <List className="w-8 h-8 text-gray-300" />
-                    </div>
-                    <p className="text-sm text-gray-400 font-black uppercase tracking-widest">No leads found</p>
+                  <div className="py-12 text-center opacity-40">
+                    <p className="text-sm text-gray-400 font-black lg:font-medium uppercase lg:capitalize tracking-widest lg:tracking-normal">No leads found</p>
                   </div>
                 ) : (
                   currentTabLeads.map((lead) => (
                     <div 
                       key={lead.id} 
                       onClick={() => handleLeadClick(lead)} 
-                      className="p-4 rounded-2xl bg-white border border-gray-100 hover:border-blue-200 hover:bg-blue-50/20 cursor-pointer flex items-center justify-between transition-all duration-300 group shadow-sm hover:shadow-xl hover:shadow-blue-500/5"
+                      className="p-4 rounded-2xl lg:rounded-xl bg-white border border-gray-100 lg:border-transparent hover:border-blue-200 lg:hover:border-blue-100 hover:bg-blue-50/20 lg:hover:bg-blue-50/30 cursor-pointer flex items-center justify-between transition-all duration-300 lg:duration-200 group shadow-sm lg:shadow-none hover:shadow-xl lg:hover:shadow-none hover:shadow-blue-500/5"
                     >
                       <div className="flex items-center gap-4">
-                        <div className="w-14 h-14 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform duration-500 shrink-0">
+                        <div className="w-14 h-14 lg:w-12 lg:h-12 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform duration-500 lg:duration-200 shrink-0">
                           {lead.photos && lead.photos[0] ? (
                             <img src={lead.photos[0]} alt="" className="w-full h-full object-cover" />
                           ) : (
-                            <User className="w-7 h-7 text-gray-200" />
+                            <User className="w-7 h-7 lg:w-6 lg:h-6 text-gray-200 lg:text-gray-300" />
                           )}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-base font-black text-gray-900 truncate tracking-tight">{lead.name}</p>
-                          <div className="flex items-center gap-2 mt-1">
+                          <p className="text-base lg:text-sm font-black text-gray-900 truncate tracking-tight">{lead.name}</p>
+                          <div className="flex items-center gap-2 mt-1 lg:mt-0.5">
                             <MapPin className="w-3 h-3 text-gray-300" />
                             <p className="text-[10px] text-gray-500 truncate uppercase font-bold tracking-widest">{lead.location || 'No location'}</p>
                           </div>
                         </div>
                       </div>
-                      <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
-                        <ChevronDown className="w-5 h-5 text-gray-300 -rotate-90 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
+                      <div className="w-10 h-10 lg:w-auto lg:h-auto rounded-full lg:rounded-none bg-gray-50 lg:bg-transparent flex items-center justify-center group-hover:bg-blue-600 lg:group-hover:bg-transparent group-hover:text-white lg:group-hover:text-openlead-blue transition-all duration-300 lg:duration-200">
+                        <ChevronDown className="w-5 h-5 lg:w-4 lg:h-4 text-gray-300 -rotate-90 group-hover:text-white lg:group-hover:text-openlead-blue group-hover:translate-x-0.5 lg:group-hover:translate-x-1 transition-all" />
                       </div>
                     </div>
                   ))
                 )}
               </div>
+            </div>
+          </div>
+
+          {/* Surveyed, Won, Archive - Desktop Only (As separate collapsible cards) */}
+          <div className="hidden lg:flex flex-col gap-5">
+            {/* Surveyed */}
+            <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden">
+              <button 
+                onClick={() => setActiveTab('sat')}
+                className={`flex items-center justify-between px-5 py-4 border-b border-gray-100 transition-all ${activeTab === 'sat' ? 'bg-gradient-to-r from-amber-50/50 to-orange-50/30' : 'bg-gray-50/30 hover:bg-gray-50'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                    <CalendarIcon className="w-4 h-4 text-amber-500" />
+                  </div>
+                  <span className="text-base font-black text-gray-900 tracking-tight">Surveyed</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-black text-gray-400 bg-gray-50 px-3 py-1 rounded-full uppercase tracking-widest">
+                    {leads.filter(l => l.purchase_status === 'sat').length}
+                  </span>
+                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${activeTab === 'sat' ? 'rotate-180' : ''}`} />
+                </div>
+              </button>
+            </div>
+
+            {/* Won */}
+            <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden">
+              <button 
+                onClick={() => setActiveTab('won')}
+                className={`flex items-center justify-between px-5 py-4 border-b border-gray-100 transition-all ${activeTab === 'won' ? 'bg-gradient-to-r from-emerald-50 to-green-50/30' : 'bg-gray-50/30 hover:bg-gray-50'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                    <CheckSquare className="w-4 h-4 text-emerald-500" />
+                  </div>
+                  <span className="text-base font-black text-gray-900 tracking-tight">Won</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-black text-gray-400 bg-gray-50 px-3 py-1 rounded-full uppercase tracking-widest">
+                    {leads.filter(l => l.purchase_status === 'won').length}
+                  </span>
+                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${activeTab === 'won' ? 'rotate-180' : ''}`} />
+                </div>
+              </button>
+            </div>
+
+            {/* Archive */}
+            <div className="bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden">
+              <button 
+                onClick={() => setActiveTab('archive')}
+                className={`flex items-center justify-between px-5 py-4 border-b border-gray-100 transition-all ${activeTab === 'archive' ? 'bg-gradient-to-r from-slate-100 to-gray-50/30' : 'bg-gray-50/30 hover:bg-gray-50'}`}
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                    <X className="w-4 h-4 text-slate-500" />
+                  </div>
+                  <span className="text-base font-black text-gray-900 tracking-tight">Archive</span>
+                </div>
+                <div className="flex items-center gap-3">
+                  <span className="text-xs font-black text-gray-400 bg-gray-50 px-3 py-1 rounded-full uppercase tracking-widest">
+                    {leads.filter(l => l.purchase_status === 'archive').length}
+                  </span>
+                  <ChevronDown className={`w-5 h-5 text-gray-400 transition-transform duration-300 ${activeTab === 'archive' ? 'rotate-180' : ''}`} />
+                </div>
+              </button>
             </div>
           </div>
 

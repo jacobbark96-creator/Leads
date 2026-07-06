@@ -1341,9 +1341,6 @@ function LeadDetailsV2Content() {
     }
   };
 
-  const [newContactEmail, setNewContactEmail] = useState('');
-  const [newContactPhone, setNewContactPhone] = useState('');
-
   const handleAddContact = async () => {
     if (!lead || !newContactName.trim()) return;
     try {

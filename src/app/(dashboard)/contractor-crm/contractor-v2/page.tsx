@@ -848,9 +848,6 @@ function ContractorDetailsV2Content() {
     }
   };
 
-  const [newContactEmail, setNewContactEmail] = useState('');
-  const [newContactPhone, setNewContactPhone] = useState('');
-
   const handleAddContact = async () => {
     if (!contractor || !newContactName.trim()) return;
     try {

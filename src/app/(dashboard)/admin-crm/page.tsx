@@ -504,7 +504,17 @@ export default function UserManagement() {
               {filteredUsers.map((user) => (
                 <tr key={user.id} className="transition-colors group hover:bg-gray-50/80 bg-white">
                   <td className="py-3 px-4 text-center">
-                    {/* Checkbox placeholder for alignment */}
+                    {user.parent_id && (
+                      <div className="relative group/tooltip inline-block">
+                        <span className="w-5 h-5 flex items-center justify-center bg-blue-100 text-blue-600 rounded-full text-[10px] font-black border border-blue-200 cursor-help">
+                          C
+                        </span>
+                        <div className="absolute left-full ml-2 top-1/2 -translate-y-1/2 px-2 py-1 bg-gray-900 text-white text-[10px] rounded shadow-lg opacity-0 group-hover/tooltip:opacity-100 transition-opacity whitespace-nowrap z-50 pointer-events-none">
+                          Child of {users.find(u => u.id === user.parent_id)?.name || 'Unknown Parent'}
+                          <div className="absolute right-full top-1/2 -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+                        </div>
+                      </div>
+                    )}
                   </td>
                   
                   <td className="py-3 px-4">

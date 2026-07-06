@@ -133,14 +133,14 @@ const CalendarModal = ({ isOpen, onClose, onSetReminder }: any) => {
   );
 };
 
-const AddContactModal = ({ isOpen, onClose, onAdd, name, setName, role, setRole, email, setEmail, phone, setPhone }: any) => {
+const AddEditContactModal = ({ isOpen, onClose, onSave, name, setName, role, setRole, email, setEmail, phone, setPhone, isEditing }: any) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" /> Add Additional Contact
+            <Users className="w-5 h-5 text-blue-600" /> {isEditing ? 'Edit Contact' : 'Add Additional Contact'}
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
@@ -188,11 +188,11 @@ const AddContactModal = ({ isOpen, onClose, onAdd, name, setName, role, setRole,
             />
           </div>
           <button
-            onClick={onAdd}
+            onClick={onSave}
             disabled={!name.trim()}
             className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 mt-2"
           >
-            Add Contact
+            {isEditing ? 'Save Changes' : 'Add Contact'}
           </button>
         </div>
       </div>
@@ -309,8 +309,11 @@ function ContractorDetailsV2Content() {
   
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
+  const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
   const [newContactName, setNewContactName] = useState('');
   const [newContactRole, setNewContactRole] = useState('');
+  const [newContactEmail, setNewContactEmail] = useState('');
+  const [newContactPhone, setNewContactPhone] = useState('');
   
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [files, setFiles] = useState<any[]>([]);
@@ -872,7 +875,11 @@ function ContractorDetailsV2Content() {
         updatedContacts = [...otherContacts];
       }
       
-      updatedContacts.push(newContact);
+      if (editingContactIndex !== null) {
+        updatedContacts[editingContactIndex] = newContact;
+      } else {
+        updatedContacts.push(newContact);
+      }
       
       const { error } = await supabase
         .from('contractors')
@@ -895,13 +902,45 @@ function ContractorDetailsV2Content() {
       setOtherContacts(updatedContacts);
       setContractor({ ...contractor, other_contacts: JSON.stringify(updatedContacts) } as any);
       setIsAddContactModalOpen(false);
+      setEditingContactIndex(null);
       setNewContactName('');
       setNewContactRole('');
       setNewContactEmail('');
       setNewContactPhone('');
-      toast.success('Contact added');
+      toast.success(editingContactIndex !== null ? 'Contact updated' : 'Contact added');
     } catch (error: any) {
-      toast.error('Failed to add contact: ' + error.message);
+      toast.error('Failed to save contact: ' + error.message);
+    }
+  };
+
+  const handleDeleteContact = async (index: number) => {
+    if (!contractor || !window.confirm('Are you sure you want to delete this contact?')) return;
+    try {
+      let updatedContacts = [...otherContacts];
+      updatedContacts.splice(index, 1);
+      
+      const { error } = await supabase
+        .from('contractors')
+        .update({ other_contacts: JSON.stringify(updatedContacts) })
+        .eq('id', contractor.id);
+
+      if (error) throw error;
+      
+      if (contractor.client_id) {
+        const contactNames = updatedContacts.map((c: any) => c.name).join(', ');
+        const contactNumbers = updatedContacts.map((c: any) => c.phone).filter(Boolean).join(', ');
+        
+        await supabase.from('clients').update({
+          other_contacts: contactNames,
+          other_contact_numbers: contactNumbers
+        }).eq('id', contractor.client_id);
+      }
+      
+      setOtherContacts(updatedContacts);
+      setContractor({ ...contractor, other_contacts: JSON.stringify(updatedContacts) } as any);
+      toast.success('Contact deleted');
+    } catch (error: any) {
+      toast.error('Failed to delete contact: ' + error.message);
     }
   };
 
@@ -1399,6 +1438,31 @@ function ContractorDetailsV2Content() {
                         <span className="text-[10px] text-gray-500 truncate">{contact.role || contact.job_title || 'Contact'}</span>
                       </div>
                       <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingContactIndex(i);
+                            setNewContactName(contact.name || '');
+                            setNewContactRole(contact.role || '');
+                            setNewContactEmail(contact.email || '');
+                            setNewContactPhone(contact.phone || '');
+                            setIsAddContactModalOpen(true);
+                          }}
+                          className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors"
+                          title="Edit"
+                        >
+                          <Pencil className="w-3 h-3" />
+                        </button>
+                        <button 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteContact(i);
+                          }}
+                          className="p-1.5 bg-white text-gray-600 hover:text-red-600 rounded shadow-sm border border-gray-200 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-3 h-3" />
+                        </button>
                         {contact.phone && (
                           <button onClick={(e) => { e.stopPropagation(); onCallClick(contact.phone); }} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Call">
                             <Phone className="w-3 h-3" />
@@ -1886,10 +1950,17 @@ function ContractorDetailsV2Content() {
         onSetReminder={setReminder}
       />
 
-      <AddContactModal
+      <AddEditContactModal
         isOpen={isAddContactModalOpen}
-        onClose={() => setIsAddContactModalOpen(false)}
-        onAdd={handleAddContact}
+        onClose={() => {
+          setIsAddContactModalOpen(false);
+          setEditingContactIndex(null);
+          setNewContactName('');
+          setNewContactRole('');
+          setNewContactEmail('');
+          setNewContactPhone('');
+        }}
+        onSave={handleAddContact}
         name={newContactName}
         setName={setNewContactName}
         role={newContactRole}
@@ -1898,6 +1969,7 @@ function ContractorDetailsV2Content() {
         setEmail={setNewContactEmail}
         phone={newContactPhone}
         setPhone={setNewContactPhone}
+        isEditing={editingContactIndex !== null}
       />
         <EditPrimaryContactModal
           isOpen={isPrimaryContactModalOpen}

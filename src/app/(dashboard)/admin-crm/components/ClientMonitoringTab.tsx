@@ -3,7 +3,7 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
-import { Activity, Clock, Eye, Target, LogIn, Search } from 'lucide-react';
+import { Activity, Clock, Eye, Target, LogIn, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ClientActivityModal } from './ClientActivityModal';
 
@@ -19,11 +19,18 @@ interface ClientStats {
   top_lead_name: string | null;
 }
 
+type SortField = 'is_online' | 'company_name' | 'last_login' | 'leads_viewed' | 'time_spent_24h_seconds' | 'top_lead_views';
+type SortDirection = 'asc' | 'desc';
+
 export const ClientMonitoringTab = () => {
   const [stats, setStats] = useState<ClientStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
   const [selectedActivityUser, setSelectedActivityUser] = useState<{id: string, name: string} | null>(null);
+  const [sortConfig, setSortConfig] = useState<{field: SortField, direction: SortDirection}>({
+    field: 'last_login',
+    direction: 'desc'
+  });
 
   const fetchStats = async () => {
     try {
@@ -36,6 +43,28 @@ export const ClientMonitoringTab = () => {
       setLoading(false);
     }
   };
+
+  const handleSort = (field: SortField) => {
+    setSortConfig(prev => ({
+      field,
+      direction: prev.field === field && prev.direction === 'desc' ? 'asc' : 'desc'
+    }));
+  };
+
+  const sortedStats = [...stats].sort((a, b) => {
+    const { field, direction } = sortConfig;
+    let aVal: any = a[field as keyof ClientStats];
+    let bVal: any = b[field as keyof ClientStats];
+
+    if (field === 'last_login') {
+      aVal = aVal ? new Date(aVal).getTime() : 0;
+      bVal = bVal ? new Date(bVal).getTime() : 0;
+    }
+
+    if (aVal === bVal) return 0;
+    const modifier = direction === 'asc' ? 1 : -1;
+    return aVal > bVal ? modifier : -modifier;
+  });
 
   useEffect(() => {
     fetchStats();
@@ -92,29 +121,64 @@ export const ClientMonitoringTab = () => {
     );
   }
 
+  const SortIcon = ({ field }: { field: SortField }) => {
+    if (sortConfig.field !== field) return null;
+    return sortConfig.direction === 'asc' ? <ChevronUp className="w-3 h-3 ml-1" /> : <ChevronDown className="w-3 h-3 ml-1" />;
+  };
+
   return (
     <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
       <div className="overflow-x-auto">
         <table className="min-w-full divide-y divide-gray-200">
           <thead className="bg-gray-50/80">
             <tr>
-              <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Status</th>
-              <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Company Name</th>
-              <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Last Login</th>
-              <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Leads Viewed</th>
-              <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Time Spent (24h)</th>
-              <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Top Lead Viewed</th>
+              <th 
+                className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('is_online')}
+              >
+                <div className="flex items-center">Status <SortIcon field="is_online" /></div>
+              </th>
+              <th 
+                className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('company_name')}
+              >
+                <div className="flex items-center">Company Name <SortIcon field="company_name" /></div>
+              </th>
+              <th 
+                className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('last_login')}
+              >
+                <div className="flex items-center">Last Login <SortIcon field="last_login" /></div>
+              </th>
+              <th 
+                className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('leads_viewed')}
+              >
+                <div className="flex items-center justify-center">Leads Viewed <SortIcon field="leads_viewed" /></div>
+              </th>
+              <th 
+                className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('time_spent_24h_seconds')}
+              >
+                <div className="flex items-center justify-center">Time Spent (24h) <SortIcon field="time_spent_24h_seconds" /></div>
+              </th>
+              <th 
+                className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left cursor-pointer hover:bg-gray-100"
+                onClick={() => handleSort('top_lead_views')}
+              >
+                <div className="flex items-center">Top Lead Viewed <SortIcon field="top_lead_views" /></div>
+              </th>
               <th className="py-3 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-right">Actions</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100 bg-white">
-            {stats.length === 0 ? (
+            {sortedStats.length === 0 ? (
               <tr>
                 <td colSpan={7} className="py-8 text-center text-gray-500 text-sm">
                   No client activity recorded yet.
                 </td>
               </tr>
-            ) : stats.map((stat) => (
+            ) : sortedStats.map((stat) => (
               <tr key={stat.user_id} className="transition-colors hover:bg-gray-50/80">
                 <td className="py-3 px-4">
                   <div className="flex items-center justify-center">

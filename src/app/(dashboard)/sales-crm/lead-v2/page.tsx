@@ -167,14 +167,14 @@ const CalendarModal = ({ isOpen, onClose, onSetReminder }: any) => {
   );
 };
 
-const AddContactModal = ({ isOpen, onClose, onAdd, name, setName, role, setRole, email, setEmail, phone, setPhone }: any) => {
+const AddEditContactModal = ({ isOpen, onClose, onSave, name, setName, role, setRole, email, setEmail, phone, setPhone, isEditing }: any) => {
   if (!isOpen) return null;
   return (
     <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/50 p-4">
       <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md overflow-hidden">
         <div className="p-6 border-b border-gray-100 flex justify-between items-center">
           <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
-            <Users className="w-5 h-5 text-blue-600" /> Add Additional Contact
+            <Users className="w-5 h-5 text-blue-600" /> {isEditing ? 'Edit Contact' : 'Add Additional Contact'}
           </h3>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
             <X className="w-5 h-5" />
@@ -222,11 +222,11 @@ const AddContactModal = ({ isOpen, onClose, onAdd, name, setName, role, setRole,
             />
           </div>
           <button
-            onClick={onAdd}
+            onClick={onSave}
             disabled={!name.trim()}
             className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 disabled:opacity-50 transition-colors flex items-center justify-center gap-2 mt-2"
           >
-            Add Contact
+            {isEditing ? 'Save Changes' : 'Add Contact'}
           </button>
         </div>
       </div>
@@ -414,8 +414,11 @@ function LeadDetailsV2Content() {
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isMagicLinkModalOpen, setIsMagicLinkModalOpen] = useState(false);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
+  const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
   const [newContactName, setNewContactName] = useState('');
   const [newContactRole, setNewContactRole] = useState('');
+  const [newContactEmail, setNewContactEmail] = useState('');
+  const [newContactPhone, setNewContactPhone] = useState('');
   
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [files, setFiles] = useState<any[]>([]);
@@ -1365,7 +1368,11 @@ function LeadDetailsV2Content() {
         updatedContacts = [...otherContacts];
       }
       
-      updatedContacts.push(newContact);
+      if (editingContactIndex !== null) {
+        updatedContacts[editingContactIndex] = newContact;
+      } else {
+        updatedContacts.push(newContact);
+      }
       
       const { error } = await supabase
         .from('leads')
@@ -1377,13 +1384,35 @@ function LeadDetailsV2Content() {
       setOtherContacts(updatedContacts);
       setLead({ ...lead, other_contacts: JSON.stringify(updatedContacts) as any });
       setIsAddContactModalOpen(false);
+      setEditingContactIndex(null);
       setNewContactName('');
       setNewContactRole('');
       setNewContactEmail('');
       setNewContactPhone('');
-      toast.success('Contact added');
+      toast.success(editingContactIndex !== null ? 'Contact updated' : 'Contact added');
     } catch (error: any) {
-      toast.error('Failed to add contact: ' + error.message);
+      toast.error('Failed to save contact: ' + error.message);
+    }
+  };
+
+  const handleDeleteContact = async (index: number) => {
+    if (!lead || !window.confirm('Are you sure you want to delete this contact?')) return;
+    try {
+      let updatedContacts = [...otherContacts];
+      updatedContacts.splice(index, 1);
+      
+      const { error } = await supabase
+        .from('leads')
+        .update({ other_contacts: JSON.stringify(updatedContacts) })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+      
+      setOtherContacts(updatedContacts);
+      setLead({ ...lead, other_contacts: JSON.stringify(updatedContacts) as any });
+      toast.success('Contact deleted');
+    } catch (error: any) {
+      toast.error('Failed to delete contact: ' + error.message);
     }
   };
 
@@ -2084,34 +2113,66 @@ function LeadDetailsV2Content() {
                   ];
 
                   return combinedContacts.length > 0 ? (
-                    combinedContacts.map((contact, i) => (
-                      <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 cursor-pointer group relative">
-                        <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
-                          {getInitials(contact.name || contact.contact_name)}
-                        </div>
-                        <div className="flex flex-col min-w-0 flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-gray-900 truncate">{contact.name || contact.contact_name}</span>
-                            {contact.source === 'Companies House' && (
-                              <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase">CH Verified</span>
+                    combinedContacts.map((contact, i) => {
+                      const isOtherContact = i < (otherContacts || []).length;
+                      return (
+                        <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 cursor-pointer group relative">
+                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
+                            {getInitials(contact.name || contact.contact_name)}
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <div className="flex items-center gap-2">
+                              <span className="text-xs font-bold text-gray-900 truncate">{contact.name || contact.contact_name}</span>
+                              {contact.source === 'Companies House' && (
+                                <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase">CH Verified</span>
+                              )}
+                            </div>
+                            <span className="text-[10px] text-gray-500 truncate">{contact.role || contact.job_title || 'Contact'}</span>
+                          </div>
+                          <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                            {isOtherContact && (
+                              <>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setEditingContactIndex(i);
+                                    setNewContactName(contact.name || '');
+                                    setNewContactRole(contact.role || '');
+                                    setNewContactEmail(contact.email || '');
+                                    setNewContactPhone(contact.phone || '');
+                                    setIsAddContactModalOpen(true);
+                                  }}
+                                  className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors"
+                                  title="Edit"
+                                >
+                                  <Pencil className="w-3 h-3" />
+                                </button>
+                                <button 
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleDeleteContact(i);
+                                  }}
+                                  className="p-1.5 bg-white text-gray-600 hover:text-red-600 rounded shadow-sm border border-gray-200 transition-colors"
+                                  title="Delete"
+                                >
+                                  <Trash2 className="w-3 h-3" />
+                                </button>
+                              </>
+                            )}
+                            {contact.phone && (
+                              <button onClick={(e) => { e.stopPropagation(); onCallClick(contact.phone); }} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Call">
+                                <Phone className="w-3 h-3" />
+                              </button>
+                            )}
+                            {contact.email && (
+                              <a href={`mailto:${contact.email}`} onClick={e => e.stopPropagation()} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Email">
+                                <Mail className="w-3 h-3" />
+                              </a>
                             )}
                           </div>
-                          <span className="text-[10px] text-gray-500 truncate">{contact.role || contact.job_title || 'Contact'}</span>
                         </div>
-                        <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                          {contact.phone && (
-                            <button onClick={(e) => { e.stopPropagation(); onCallClick(contact.phone); }} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Call">
-                              <Phone className="w-3 h-3" />
-                            </button>
-                          )}
-                          {contact.email && (
-                            <a href={`mailto:${contact.email}`} onClick={e => e.stopPropagation()} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Email">
-                              <Mail className="w-3 h-3" />
-                            </a>
-                          )}
-                        </div>
-                      </div>
-                    ))
+                      );
+                    })
                   ) : (
                     <div className="text-xs text-gray-500 text-center mt-4">No additional contacts.</div>
                   );
@@ -3016,18 +3077,26 @@ function LeadDetailsV2Content() {
         address={newBuildingAddress}
         setAddress={setNewBuildingAddress}
       />
-      <AddContactModal 
-        isOpen={isAddContactModalOpen} 
-        onClose={() => setIsAddContactModalOpen(false)} 
-        onAdd={handleAddContact} 
-        name={newContactName} 
-        setName={setNewContactName} 
-        role={newContactRole} 
-        setRole={setNewContactRole} 
-        email={newContactEmail} 
-        setEmail={setNewContactEmail} 
-        phone={newContactPhone} 
-        setPhone={setNewContactPhone} 
+      <AddEditContactModal
+        isOpen={isAddContactModalOpen}
+        onClose={() => {
+          setIsAddContactModalOpen(false);
+          setEditingContactIndex(null);
+          setNewContactName('');
+          setNewContactRole('');
+          setNewContactEmail('');
+          setNewContactPhone('');
+        }}
+        onSave={handleAddContact}
+        name={newContactName}
+        setName={setNewContactName}
+        role={newContactRole}
+        setRole={setNewContactRole}
+        email={newContactEmail}
+        setEmail={setNewContactEmail}
+        phone={newContactPhone}
+        setPhone={setNewContactPhone}
+        isEditing={editingContactIndex !== null}
       />
       <EditPrimaryContactModal
         isOpen={isPrimaryContactModalOpen}

@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useRef } from 'react';
+import { useRouter } from 'next/navigation';
 import { Bell, Check, X, Megaphone, Info, Clock, Trash2, CheckCircle2 } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { useAuthStore } from '../store/authStore';
@@ -11,15 +12,16 @@ interface Notification {
   id: string;
   user_id: string | null;
   title: string;
-  content: string;
+  body: string;
+  data: any;
   type: 'broadcast' | 'approval' | 'rejection' | 'system';
   is_read: boolean;
-  metadata: any;
   created_at: string;
 }
 
 export function ClientNotifications() {
   const { profile } = useAuthStore();
+  const router = useRouter();
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -82,6 +84,11 @@ export function ClientNotifications() {
                 toast.success(`New Notification: ${newNotif.title}`, {
                   icon: getIcon(newNotif.type, "w-5 h-5"),
                   duration: 5000,
+                  onClick: () => {
+                    if (newNotif.data?.target_url) {
+                      router.push(newNotif.data.target_url);
+                    }
+                  }
                 });
               }
             }
@@ -137,8 +144,8 @@ export function ClientNotifications() {
 
       // 3. Extract lead IDs for "New Lead Available" notifications to check their status
       const leadIdsToCheck = filteredBroadcasts
-        .filter(n => n.title === 'New Lead Available' && n.metadata?.lead_id)
-        .map(n => n.metadata.lead_id);
+        .filter(n => (n.title === 'New Lead Available' || n.title.startsWith('New Lead in')) && n.data?.lead_id)
+        .map(n => n.data.lead_id);
 
       let soldLeadIds: string[] = [];
       if (leadIdsToCheck.length > 0) {
@@ -155,8 +162,8 @@ export function ClientNotifications() {
 
       // 4. Filter out notifications for leads that are already sold
       const finalData = filteredBroadcasts.filter(notif => {
-        if (notif.title === 'New Lead Available' && notif.metadata?.lead_id) {
-          return !soldLeadIds.includes(notif.metadata.lead_id);
+        if ((notif.title === 'New Lead Available' || notif.title.startsWith('New Lead in')) && notif.data?.lead_id) {
+          return !soldLeadIds.includes(notif.data.lead_id);
         }
         return true;
       });
@@ -314,6 +321,12 @@ export function ClientNotifications() {
                   return (
                     <li
                       key={notif.id}
+                      onClick={() => {
+                        if (notif.data?.target_url) {
+                          router.push(notif.data.target_url);
+                          setIsOpen(false);
+                        }
+                      }}
                       className={`p-4 transition-all duration-500 cursor-pointer relative group ${
                         unseen ? 'bg-blue-50/80 hover:bg-blue-100/60' : 'hover:bg-gray-50'
                       }`}
@@ -330,13 +343,11 @@ export function ClientNotifications() {
                         
                         <div className="flex-1 min-w-0 flex items-center gap-2">
                           <p className={`text-xs font-bold truncate shrink-0 ${unseen ? 'text-gray-900' : 'text-gray-600'}`}>
-                            {notif.title === 'new lead' ? 'New Lead' : 
-                             notif.title === 'New Lead Available' ? 'Local Match' : 
-                             notif.title}
+                            {notif.title}
                           </p>
                           <span className="text-gray-200 shrink-0">|</span>
                           <p className={`text-[11px] truncate flex-1 ${unseen ? 'text-gray-600' : 'text-gray-400'}`}>
-                            {notif.content}
+                            {notif.body}
                           </p>
                         </div>
 

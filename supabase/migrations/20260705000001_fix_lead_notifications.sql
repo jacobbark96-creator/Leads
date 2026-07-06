@@ -23,7 +23,6 @@ BEGIN
                 SELECT 1 FROM public.notifications 
                 WHERE user_id = v_client.user_id 
                 AND data->>'type' = 'system'
-                AND title = 'New Lead Available'
                 AND data->>'lead_id' = NEW.id::text
             ) THEN
                 INSERT INTO public.notifications (
@@ -34,13 +33,14 @@ BEGIN
                 )
                 VALUES (
                     v_client.user_id,
-                    'New Lead Available',
-                    'A new lead in ' || v_lead_town || ' matches your working area.',
+                    'New Lead in ' || v_lead_town,
+                    'A new lead in ' || v_lead_town || ' matches your working area. Click to view on marketplace.',
                     jsonb_build_object(
                         'type', 'system',
                         'lead_id', NEW.id,
                         'location', v_lead_town,
-                        'category_id', NEW.category_id
+                        'category_id', NEW.category_id,
+                        'target_url', '/marketplace'
                     )
                 );
             END IF;

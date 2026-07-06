@@ -18,27 +18,26 @@ BEGIN
             SELECT * FROM public.get_matched_contractors_for_lead(NEW.id)
         LOOP
             -- Prevent duplicate "new lead" notifications for the same lead and user
-            -- Using metadata->>'lead_id' to check for existing entries
+            -- Using data->>'lead_id' to check for existing entries
             IF NOT EXISTS (
                 SELECT 1 FROM public.notifications 
                 WHERE user_id = v_client.user_id 
-                AND type = 'system'
+                AND data->>'type' = 'system'
                 AND title = 'New Lead Available'
-                AND metadata->>'lead_id' = NEW.id::text
+                AND data->>'lead_id' = NEW.id::text
             ) THEN
                 INSERT INTO public.notifications (
                     user_id, 
                     title, 
-                    content, 
-                    type, 
-                    metadata
+                    body, 
+                    data
                 )
                 VALUES (
                     v_client.user_id,
                     'New Lead Available',
                     'A new lead in ' || v_lead_town || ' matches your working area.',
-                    'system',
                     jsonb_build_object(
+                        'type', 'system',
                         'lead_id', NEW.id,
                         'location', v_lead_town,
                         'category_id', NEW.category_id

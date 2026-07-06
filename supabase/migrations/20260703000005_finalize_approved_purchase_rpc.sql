@@ -124,13 +124,16 @@ BEGIN
   END IF;
 
   -- 8. Create a notification for the child account
-  INSERT INTO public.notifications (user_id, title, content, type, metadata)
+  INSERT INTO public.notifications (user_id, title, body, data)
   VALUES (
     v_child_client.user_id,
     'Lead Purchase Approved',
     'Your manager has approved and purchased the lead in ' || public.extract_town(v_lead.location) || ' for you.',
-    'approval',
-    jsonb_build_object('purchase_id', p_purchase_id, 'lead_id', v_purchase.lead_id)
+    jsonb_build_object(
+      'type', 'approval',
+      'purchase_id', p_purchase_id, 
+      'lead_id', v_purchase.lead_id
+    )
   );
 
   RETURN jsonb_build_object('success', true);

@@ -12,6 +12,7 @@ interface Job {
   location: string;
   salary_range: string;
   type: string;
+  external_link?: string;
   created_at: string;
 }
 
@@ -90,8 +91,17 @@ export default function IntranetCareersPage() {
                 </div>
               </div>
 
-              <button className="w-full inline-flex items-center justify-center px-6 py-3 bg-emerald-50 text-emerald-700 font-bold rounded-2xl hover:bg-emerald-600 hover:text-white transition-all group/btn">
-                Apply Internally
+              <button 
+                onClick={() => {
+                  if (job.external_link) {
+                    window.open(job.external_link, '_blank', 'noopener,noreferrer');
+                  } else {
+                    window.location.href = `mailto:careers@openlead.com?subject=Internal Application: ${job.title}`;
+                  }
+                }}
+                className="w-full inline-flex items-center justify-center px-6 py-3 bg-emerald-50 text-emerald-700 font-bold rounded-2xl hover:bg-emerald-600 hover:text-white transition-all group/btn"
+              >
+                {job.external_link ? 'Apply on Flowmingo' : 'Apply Internally'}
                 <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
               </button>
             </div>

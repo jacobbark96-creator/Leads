@@ -15,6 +15,7 @@ import { toast } from 'react-hot-toast';
 interface Job {
   id: string;
   title: string;
+  external_link?: string;
 }
 
 export default function JobPageClient({ job, variant = 'sidebar' }: { job: Job, variant?: 'sidebar' | 'hero' }) {
@@ -28,6 +29,14 @@ export default function JobPageClient({ job, variant = 'sidebar' }: { job: Job, 
     cover_letter: ''
   });
   const [resumeFile, setResumeFile] = useState<File | null>(null);
+
+  const handleApplyClick = () => {
+    if (job.external_link) {
+      window.open(job.external_link, '_blank', 'noopener,noreferrer');
+    } else {
+      setIsModalOpen(true);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,10 +92,10 @@ export default function JobPageClient({ job, variant = 'sidebar' }: { job: Job, 
     return (
       <>
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleApplyClick}
           className="w-full py-4 bg-openlead-blue text-white font-black rounded-2xl shadow-2xl shadow-blue-500/20 active:scale-[0.98] transition-all"
         >
-          Apply Now
+          {job.external_link ? 'Apply on Flowmingo' : 'Apply Now'}
         </button>
 
         {isModalOpen && (
@@ -110,10 +119,10 @@ export default function JobPageClient({ job, variant = 'sidebar' }: { job: Job, 
     <>
       <div className="space-y-4">
         <button 
-          onClick={() => setIsModalOpen(true)}
+          onClick={handleApplyClick}
           className="w-full py-5 bg-openlead-blue text-white font-black rounded-2xl shadow-xl shadow-blue-500/20 hover:bg-openlead-blue/90 hover:-translate-y-1 active:scale-[0.98] transition-all flex items-center justify-center gap-2 group"
         >
-          Apply for this Role
+          {job.external_link ? 'Apply on Flowmingo' : 'Apply for this Role'}
           <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
         </button>
         <p className="text-[10px] text-center text-slate-400 font-bold uppercase tracking-widest">

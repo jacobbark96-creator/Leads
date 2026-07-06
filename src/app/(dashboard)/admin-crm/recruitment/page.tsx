@@ -13,6 +13,7 @@ interface Job {
   location: string;
   salary_range: string;
   type: string;
+  external_link: string;
   status: string;
   is_internal: boolean;
   created_at: string;
@@ -248,6 +249,18 @@ export default function RecruitmentPage() {
                     placeholder="e.g. London, Remote"
                   />
                 </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">Flowmingo Application Link (Optional)</label>
+                <input
+                  type="url"
+                  className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-2xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/20"
+                  value={editingJob?.external_link || ''}
+                  onChange={(e) => setEditingJob({...editingJob, external_link: e.target.value})}
+                  placeholder="https://flowmingo.co/apply/..."
+                />
+                <p className="text-[10px] text-gray-400 px-1">If provided, the "Apply Now" button will redirect users directly to this link.</p>
               </div>
 
               <div className="grid grid-cols-3 gap-6">

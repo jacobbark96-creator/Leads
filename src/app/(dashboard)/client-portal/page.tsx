@@ -365,38 +365,35 @@ export default function ClientDashboard() {
   }
 
   const getWelcomeBanner = () => (
-    <div className="relative bg-gradient-to-br from-slate-800 via-slate-800 to-slate-900 rounded-xl overflow-hidden h-full shadow-lg shadow-slate-900/10">
-      <div className="absolute inset-0 bg-gradient-to-r from-openlead-blue/20 via-transparent to-transparent"></div>
-      <div className="relative z-10 flex items-center justify-between h-full px-3 sm:px-4 py-2 sm:py-2.5">
-        <div className="flex items-center gap-2 sm:gap-3">
-          <div className="w-8 h-8 sm:w-9 sm:h-9 bg-gradient-to-br from-openlead-blue to-blue-600 rounded-lg flex items-center justify-center text-white font-bold text-xs sm:text-sm shadow-lg shadow-blue-600/30">
+    <div className="relative bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 rounded-[2rem] overflow-hidden h-full shadow-2xl shadow-slate-900/20 border border-slate-700/50 group">
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/carbon-fibre.png')] opacity-10 mix-blend-overlay"></div>
+      <div className="absolute inset-0 bg-gradient-to-r from-blue-600/10 via-transparent to-transparent"></div>
+      <div className="relative z-10 flex items-center justify-between h-full px-5 sm:px-8 py-5 sm:py-6">
+        <div className="flex items-center gap-4 sm:gap-6">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white font-black text-lg sm:text-xl shadow-xl shadow-blue-600/30 border border-white/20 transform group-hover:scale-105 transition-transform duration-500">
             {profile?.name?.substring(0, 2).toUpperCase() || profile?.email?.substring(0, 2).toUpperCase() || 'JB'}
           </div>
           <div>
-            <h2 className="text-sm sm:text-[15px] font-bold text-white leading-tight">
-              Welcome back, {profile?.name?.split(' ')[0] || 'Jake'}
+            <h2 className="text-xl sm:text-2xl font-black text-white leading-tight tracking-tighter">
+              Welcome, {profile?.name?.split(' ')[0] || 'Jake'}
             </h2>
-            <p className="text-[10px] sm:text-[11px] text-slate-400">{leads.length} leads in portfolio</p>
+            <div className="flex items-center gap-2 mt-1">
+              <span className="text-[10px] sm:text-xs text-blue-400 font-black uppercase tracking-widest bg-blue-500/10 px-2 py-0.5 rounded-md border border-blue-500/20">Active Portfolio</span>
+              <p className="text-[10px] sm:text-xs text-slate-400 font-bold uppercase tracking-wider">{leads.length} leads</p>
+            </div>
           </div>
         </div>
-        <div className="hidden lg:flex items-center gap-2 bg-white/10 backdrop-blur-md px-3 py-1.5 rounded-lg border border-white/10">
-          <div className="w-6 h-6 bg-gradient-to-br from-openlead-blue to-blue-600 rounded flex items-center justify-center text-white shrink-0">
-            <MapPin className="w-3 h-3" />
+        <div className="hidden md:flex items-center gap-4 bg-white/5 backdrop-blur-xl px-5 py-3 rounded-2xl border border-white/10 shadow-inner">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-600/20">
+            <MapPin className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <p className="text-[9px] text-slate-400 font-medium uppercase leading-none mb-0.5">
+            <p className="text-[9px] text-slate-500 font-black uppercase leading-none mb-1 tracking-[0.2em]">
               {profile?.parent_id ? 'Company Contact' : 'Advisor'}
             </p>
-            <p className="text-[11px] font-bold text-white leading-tight truncate">
+            <p className="text-sm font-black text-white leading-tight truncate tracking-tight">
               {profile?.parent_id ? (parentName || 'Parent Account') : (advisorDetails?.name || 'Jake Bedwell')}
             </p>
-            {!profile?.parent_id && (
-              <div className="flex items-center gap-1.5 mt-0.5">
-                <button onClick={() => setShowAdvisorModal(true)} className="text-[9px] font-medium text-blue-400 hover:text-blue-300 transition-colors">WhatsApp</button>
-                <span className="text-slate-600">•</span>
-                <button className="text-[9px] font-medium text-blue-400 hover:text-blue-300 transition-colors">Email</button>
-              </div>
-            )}
           </div>
         </div>
       </div>
@@ -409,57 +406,63 @@ export default function ClientDashboard() {
     const remaining = Math.max(0, limit - usage);
 
     return (
-      <div className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 p-2.5 h-full flex flex-col justify-between relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full"></div>
+      <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 p-5 sm:p-6 h-full flex flex-col justify-between relative overflow-hidden group hover:border-emerald-500/30 transition-all duration-500">
+        <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full group-hover:scale-125 transition-transform duration-700"></div>
         <div className="relative z-10 flex items-center justify-between">
-          <div className="flex items-center gap-1.5">
-            <div className="w-6 h-6 bg-gradient-to-br from-emerald-500/10 to-emerald-50 rounded flex items-center justify-center text-emerald-600 shrink-0">
-              <Zap className="w-3 h-3" />
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-gradient-to-br from-emerald-500/10 to-emerald-50 rounded-2xl flex items-center justify-center text-emerald-600 shrink-0 shadow-sm border border-emerald-100">
+              <Zap className="w-5 h-5" />
             </div>
-            <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 truncate">Flex Credit</span>
+            <span className="text-sm sm:text-base font-black text-gray-900 tracking-tighter">Flex Credit</span>
           </div>
           <div className="text-right">
-            <div className="text-[8px] text-gray-400 font-bold uppercase tracking-wider leading-none mb-0.5">Left to spend</div>
-            <div className="text-sm sm:text-base font-black text-gray-900 leading-none">
+            <div className="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] leading-none mb-1.5">Available</div>
+            <div className="text-lg sm:text-xl font-black text-gray-900 leading-none tracking-tighter">
               £{remaining.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
             </div>
           </div>
         </div>
         
-        <div className="relative z-10 flex items-center justify-between mt-auto pt-1.5 border-t border-gray-100">
-          <span className="text-[9px] sm:text-[10px] text-gray-500 truncate">Limit: £{limit.toLocaleString()}</span>
-          <span className="text-[9px] sm:text-[10px] font-black text-emerald-600 uppercase">Weekly</span>
+        <div className="relative z-10 flex items-center justify-between mt-6 pt-4 border-t border-gray-50">
+          <div className="flex flex-col">
+            <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Limit</span>
+            <span className="text-xs text-gray-600 font-bold tracking-tight">£{limit.toLocaleString()}</span>
+          </div>
+          <span className="text-[10px] font-black text-emerald-600 uppercase tracking-[0.2em] bg-emerald-50 px-2.5 py-1 rounded-lg border border-emerald-100">Weekly</span>
         </div>
       </div>
     );
   };
 
   const getTopUpCard = () => (
-    <div className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 p-2.5 h-full flex flex-col justify-between relative overflow-hidden">
-      <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-openlead-blue/5 to-transparent rounded-bl-full"></div>
+    <div className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 p-5 sm:p-6 h-full flex flex-col justify-between relative overflow-hidden group hover:border-blue-500/30 transition-all duration-500">
+      <div className="absolute top-0 right-0 w-24 h-24 bg-gradient-to-br from-blue-500/5 to-transparent rounded-bl-full group-hover:scale-125 transition-transform duration-700"></div>
       <div className="relative z-10 flex items-center justify-between">
-        <div className="flex items-center gap-1.5">
-          <div className="w-6 h-6 bg-gradient-to-br from-openlead-blue/10 to-blue-50 rounded flex items-center justify-center text-openlead-blue shrink-0">
-            <ShoppingCart className="w-3 h-3" />
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-2xl flex items-center justify-center text-white shrink-0 shadow-lg shadow-blue-600/20 border border-white/20">
+            <ShoppingCart className="w-5 h-5" />
           </div>
-          <span className="text-[10px] sm:text-[11px] font-bold text-gray-700 truncate">Credit</span>
+          <span className="text-sm sm:text-base font-black text-gray-900 tracking-tighter">Wallet</span>
         </div>
         <div className="text-right">
-          <div className="text-[8px] text-gray-400 font-bold uppercase tracking-wider leading-none mb-0.5">Current Balance</div>
-          <div className="text-sm sm:text-base font-black text-gray-900 leading-none">
+          <div className="text-[9px] text-gray-400 font-black uppercase tracking-[0.2em] leading-none mb-1.5">Balance</div>
+          <div className="text-lg sm:text-xl font-black text-gray-900 leading-none tracking-tighter">
             £{creditBalance.toFixed(2)}
           </div>
         </div>
       </div>
       
-      <div className="relative z-10 flex items-center justify-between mt-auto pt-1.5 border-t border-gray-100">
-        <span className="text-[9px] sm:text-[10px] text-gray-500 truncate">{leads.length} leads</span>
+      <div className="relative z-10 flex items-center justify-between mt-6 pt-4 border-t border-gray-50">
+        <div className="flex flex-col">
+          <span className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-0.5">Leads</span>
+          <span className="text-xs text-gray-600 font-bold tracking-tight">{leads.length} in total</span>
+        </div>
         <button 
           onClick={() => {
             if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Top Up' });
             setShowTopUpModal(true);
           }}
-          className="text-[9px] sm:text-[10px] font-bold bg-gradient-to-r from-openlead-blue to-blue-600 text-white px-2 py-0.5 rounded shadow shadow-blue-600/20 hover:shadow-blue-600/40 transition-all shrink-0"
+          className="text-[10px] font-black bg-slate-900 text-white px-5 py-2 rounded-xl shadow-xl shadow-slate-900/10 hover:bg-blue-600 hover:shadow-blue-500/30 transition-all shrink-0 uppercase tracking-widest active:scale-95"
         >
           Top Up
         </button>
@@ -468,19 +471,21 @@ export default function ClientDashboard() {
   );
 
   const getActionButtons = () => (
-    <div className={`h-full grid ${profile?.parent_id ? 'grid-cols-1' : 'grid-cols-2'} gap-2 lg:gap-3 w-full`}>
+    <div className={`h-full grid ${profile?.parent_id ? 'grid-cols-1' : 'grid-cols-2'} gap-4 w-full`}>
       {!profile?.parent_id && (
         <button
           onClick={() => {
             if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Invoices' });
             setShowInvoicesModal(true);
           }}
-          className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 flex flex-col justify-center items-center relative overflow-hidden group hover:border-blue-500/30 hover:shadow-blue-500/20 transition-all h-full"
+          className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 flex flex-col justify-center items-center relative overflow-hidden group hover:border-blue-500/30 hover:shadow-blue-500/20 transition-all duration-500 h-full p-4"
         >
-          <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-openlead-blue/5 to-transparent rounded-bl-full transition-transform group-hover:scale-110"></div>
-          <div className="relative z-10 flex flex-col items-center justify-center gap-1.5 h-full w-full p-2">
-            <List className="w-5 h-5 sm:w-6 sm:h-6 text-openlead-blue group-hover:scale-110 transition-transform" />
-            <span className="text-[10px] sm:text-[11px] font-black text-gray-900 tracking-tight leading-none group-hover:text-openlead-blue transition-colors text-center">Invoices</span>
+          <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-blue-500/5 to-transparent rounded-bl-full transition-transform duration-700 group-hover:scale-125"></div>
+          <div className="relative z-10 flex flex-col items-center justify-center gap-3">
+            <div className="w-12 h-12 bg-blue-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+              <List className="w-6 h-6 text-blue-600" />
+            </div>
+            <span className="text-[10px] font-black text-gray-900 tracking-[0.2em] uppercase group-hover:text-blue-600 transition-colors">Invoices</span>
           </div>
         </button>
       )}
@@ -490,39 +495,41 @@ export default function ClientDashboard() {
           if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Performance' });
           setShowPerformanceModal(true);
         }}
-        className="bg-white rounded-xl border border-gray-100 shadow-lg shadow-gray-200/50 flex flex-col justify-center items-center relative overflow-hidden group hover:border-emerald-500/30 hover:shadow-emerald-500/20 transition-all h-full"
+        className="bg-white rounded-[2rem] border border-gray-100 shadow-xl shadow-gray-200/40 flex flex-col justify-center items-center relative overflow-hidden group hover:border-emerald-500/30 hover:shadow-emerald-500/20 transition-all duration-500 h-full p-4"
       >
-        <div className="absolute top-0 right-0 w-12 h-12 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full transition-transform group-hover:scale-110"></div>
-        <div className="relative z-10 flex flex-col items-center justify-center gap-1.5 h-full w-full p-2">
-          <TrendingUp className="w-5 h-5 sm:w-6 sm:h-6 text-emerald-500 group-hover:scale-110 transition-transform" />
-          <span className="text-[10px] sm:text-[11px] font-black text-gray-900 tracking-tight leading-none group-hover:text-emerald-600 transition-colors text-center">My Performance</span>
+        <div className="absolute top-0 right-0 w-20 h-20 bg-gradient-to-br from-emerald-500/5 to-transparent rounded-bl-full transition-transform duration-700 group-hover:scale-125"></div>
+        <div className="relative z-10 flex flex-col items-center justify-center gap-3">
+          <div className="w-12 h-12 bg-emerald-50 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform duration-500">
+            <TrendingUp className="w-6 h-6 text-emerald-500" />
+          </div>
+          <span className="text-[10px] font-black text-gray-900 tracking-[0.2em] uppercase group-hover:text-emerald-600 transition-colors">Performance</span>
         </div>
       </button>
     </div>
   );
 
   return (
-    <div className="flex flex-col h-auto lg:h-[calc(100vh-160px)] gap-4 lg:gap-5 pt-2 lg:pt-4">
-      {/* TOP ROW - Direct layout */}
-      <div className="flex-none flex gap-3 lg:gap-4 h-auto lg:h-[90px]">
-        <div className={`${profile?.trade_account_enabled ? 'w-[35%] lg:w-[40%]' : 'w-[55%] lg:w-[58%]'} h-full transition-all duration-300`}>
+    <div className="flex flex-col h-auto lg:h-[calc(100vh-160px)] gap-6 lg:gap-8 pt-4 lg:pt-6">
+      {/* TOP ROW - Responsive layout */}
+      <div className="flex-none flex flex-col lg:flex-row gap-4 lg:gap-5">
+        <div className="w-full lg:w-[40%] transition-all duration-300">
           {getWelcomeBanner()}
         </div>
-        <div className="flex-1 h-full grid grid-cols-2 sm:grid-cols-3 gap-2 lg:gap-3">
+        <div className="w-full lg:flex-1 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 lg:gap-5">
           {!profile?.parent_id && getTopUpCard()}
           {!profile?.parent_id && profile?.trade_account_enabled && getLeftToSpendCard()}
-          <div className={profile?.parent_id ? 'col-span-2 sm:col-span-1 sm:col-start-3' : ''}>
+          <div className={profile?.parent_id ? 'col-span-full' : 'col-span-full sm:col-span-1 lg:col-span-1'}>
             {getActionButtons()}
           </div>
         </div>
       </div>
 
       {/* MAIN ROW - Map + Categories */}
-      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-4 lg:gap-5">
+      <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-5 gap-6 lg:gap-8 mb-8">
         
         {/* LEFT: MAP */}
-        <div className="lg:col-span-3 bg-white rounded-2xl shadow-xl shadow-gray-200/50 border border-gray-100 overflow-hidden">
-          <div className="h-full relative">
+        <div className="lg:col-span-3 bg-white rounded-[2.5rem] shadow-2xl shadow-gray-200/60 border border-gray-100 overflow-hidden min-h-[350px] lg:min-h-0 order-2 lg:order-1 relative group">
+          <div className="h-full relative z-0">
             {leads.length > 0 ? (
               <DynamicMap 
                 key={`map-container-${profile?.id}`}
@@ -530,13 +537,13 @@ export default function ClientDashboard() {
                 onLeadClick={handleLeadClick} 
               />
             ) : (
-              <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-gradient-to-br from-gray-50 to-white">
-                <div className="w-24 h-24 bg-gradient-to-br from-blue-50 to-indigo-50 rounded-2xl flex items-center justify-center mb-4 shadow-inner border border-blue-100/50">
-                  <MapPin className="w-12 h-12 text-openlead-blue/40" />
+              <div className="w-full h-full flex flex-col items-center justify-center text-center p-8 bg-gradient-to-br from-gray-50/50 to-white">
+                <div className="w-24 h-24 bg-white rounded-[2.5rem] flex items-center justify-center mb-6 shadow-xl shadow-gray-200/50 border border-gray-100 transform group-hover:scale-110 transition-transform duration-500">
+                  <MapPin className="w-12 h-12 text-blue-600/20" />
                 </div>
-                <h3 className="text-lg font-bold text-gray-900 mb-2">No leads on map</h3>
-                <p className="text-sm text-gray-500 mb-4 max-w-xs">Purchase leads from the marketplace to see them here.</p>
-                <Link href="/marketplace" className="inline-flex items-center px-5 py-2 bg-gradient-to-r from-openlead-blue to-blue-600 text-white text-sm font-semibold rounded-xl shadow-lg shadow-blue-600/25 hover:shadow-blue-600/40 transition-all">
+                <h3 className="text-2xl font-black text-gray-900 mb-3 tracking-tighter">No leads on map</h3>
+                <p className="text-sm text-gray-500 mb-8 max-w-xs font-medium leading-relaxed">Purchase leads from the marketplace to see them here.</p>
+                <Link href="/marketplace" className="inline-flex items-center px-8 py-4 bg-slate-900 text-white text-[10px] font-black rounded-2xl shadow-xl shadow-slate-900/20 hover:bg-blue-600 hover:shadow-blue-500/30 transition-all uppercase tracking-[0.2em] active:scale-95">
                   Browse Marketplace
                 </Link>
               </div>
@@ -545,235 +552,150 @@ export default function ClientDashboard() {
         </div>
 
         {/* RIGHT: CATEGORIES */}
-        <div className="lg:col-span-2 flex flex-col gap-3 lg:gap-4 min-h-0 overflow-hidden">
+        <div className="lg:col-span-2 flex flex-col gap-6 min-h-0 order-1 lg:order-2">
           
           {/* Pending Requests (Child Only) */}
           {profile?.parent_id && pendingRequests.length > 0 && (
-            <div className="bg-amber-50/50 rounded-xl shadow-lg shadow-amber-100/50 border border-amber-100 flex flex-col overflow-hidden animate-in slide-in-from-right duration-500">
+            <div className="bg-amber-50/30 rounded-[2rem] shadow-xl shadow-amber-100/20 border border-amber-100/50 flex flex-col overflow-hidden animate-in slide-in-from-right duration-500">
               <button 
                 onClick={() => setActiveTab('pending')}
-                className={`flex items-center justify-between px-4 py-3 border-b border-amber-100 transition-all ${activeTab === 'pending' ? 'bg-gradient-to-r from-amber-50 to-orange-50/30' : 'bg-amber-50/30 hover:bg-amber-50'}`}
+                className={`flex items-center justify-between px-6 py-5 border-b border-amber-100/50 transition-all ${activeTab === 'pending' ? 'bg-white' : 'hover:bg-amber-50/50'}`}
               >
-                <div className="flex items-center gap-2">
-                  <Clock className="w-4 h-4 text-amber-500" />
-                  <span className="text-sm font-bold text-amber-900">Pending Requests</span>
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-amber-100 flex items-center justify-center shadow-sm border border-amber-200/50">
+                    <Clock className="w-5 h-5 text-amber-600" />
+                  </div>
+                  <span className="text-lg font-black text-amber-900 tracking-tighter">Pending Requests</span>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-xs font-black text-amber-600 bg-amber-100 px-2 py-0.5 rounded-full">
+                <div className="flex items-center gap-3">
+                  <span className="text-[10px] font-black text-amber-600 bg-amber-100 px-3 py-1 rounded-lg uppercase tracking-widest border border-amber-200/50">
                     {pendingRequests.length}
                   </span>
-                  <ChevronDown className={`w-4 h-4 text-amber-400 transition-transform ${activeTab === 'pending' ? 'rotate-180' : ''}`} />
+                  <ChevronDown className={`w-5 h-5 text-amber-400 transition-transform duration-500 ${activeTab === 'pending' ? 'rotate-180' : ''}`} />
                 </div>
               </button>
               {activeTab === 'pending' && (
-                <div className="flex-1 overflow-y-auto max-h-[180px]">
-                  <div className="divide-y divide-amber-50">
-                    {pendingRequests.map((req) => (
-                      <div 
-                        key={req.id} 
-                        className="flex items-center justify-between p-3 rounded-xl bg-amber-50/30 border border-amber-100/50 hover:bg-amber-50/50 transition-colors group cursor-pointer"
-                        onClick={() => {
-                          setSelectedPendingLead(req.leads);
-                          setIsPendingModalOpen(true);
-                        }}
-                      >
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-lg bg-white flex items-center justify-center overflow-hidden border border-amber-100 group-hover:scale-105 transition-transform">
-                            {req.leads?.image_url ? (
-                              <img 
-                                src={req.leads.image_url} 
-                                alt={req.leads?.location || 'Lead'} 
-                                className="w-full h-full object-cover"
-                              />
-                            ) : (
-                              <div className="w-full h-full bg-amber-50 flex items-center justify-center text-amber-600">
-                                <Clock className="w-4 h-4" />
-                              </div>
-                            )}
-                          </div>
-                          <div className="min-w-0 flex-1">
-                              <p className="text-xs font-bold text-gray-900 truncate">
-                                {extractTown(req.leads?.location)}
-                              </p>
-                              <p className="text-[10px] text-amber-600 font-medium truncate uppercase tracking-wider">
-                                Pending Approval
-                              </p>
-                            </div>
+                <div className="flex-1 overflow-y-auto max-h-[300px] p-3 space-y-3 custom-scrollbar">
+                  {pendingRequests.map((req) => (
+                    <div 
+                      key={req.id} 
+                      className="flex items-center justify-between p-4 rounded-2xl bg-white border border-amber-100/50 hover:border-amber-300 hover:shadow-xl hover:shadow-amber-100/20 transition-all duration-300 group cursor-pointer"
+                      onClick={() => {
+                        setSelectedPendingLead(req.leads);
+                        setIsPendingModalOpen(true);
+                      }}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-xl bg-amber-50 flex items-center justify-center overflow-hidden border border-amber-100 group-hover:scale-105 transition-transform duration-500 shrink-0">
+                          {req.leads?.image_url ? (
+                            <img 
+                              src={req.leads.image_url} 
+                              alt="" 
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <Clock className="w-7 h-7 text-amber-200" />
+                          )}
                         </div>
-                        <div className="text-right">
-                          <p className="text-xs font-bold text-gray-900">£{req.price_paid}</p>
-                          <p className="text-[10px] text-gray-400 font-medium">Request</p>
+                        <div className="min-w-0">
+                          <p className="text-base font-black text-gray-900 truncate tracking-tight">
+                            {extractTown(req.leads?.location)}
+                          </p>
+                          <p className="text-[9px] text-amber-600 font-black uppercase tracking-[0.2em] mt-1">
+                            Awaiting Approval
+                          </p>
                         </div>
                       </div>
-                    ))}
-                  </div>
+                      <div className="text-right shrink-0">
+                        <p className="text-base font-black text-gray-900 tracking-tighter">£{req.price_paid}</p>
+                        <p className="text-[9px] text-gray-400 font-bold uppercase tracking-widest mt-1">Total</p>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               )}
             </div>
           )}
 
           {/* Purchased Leads */}
-          <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden">
-            <button 
-              onClick={() => setActiveTab('new')}
-              className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 transition-all ${activeTab === 'new' ? 'bg-gradient-to-r from-openlead-blue/5 to-blue-50/30' : 'bg-gray-50/30 hover:bg-gray-50'}`}
-            >
-              <div className="flex items-center gap-2">
-                <ShoppingCart className="w-4 h-4 text-openlead-blue" />
-                <span className="text-sm font-bold text-gray-900">Purchased</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500">{leads.filter(l => l.purchase_status === 'new').length}</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${activeTab === 'new' ? 'rotate-180' : ''}`} />
-              </div>
-            </button>
-            {activeTab === 'new' && (
-              <div className="flex-1 overflow-y-auto max-h-[180px]">
-                {leads.filter(l => l.purchase_status === 'new').length === 0 ? (
-                  <div className="p-4 text-center">
-                    <p className="text-xs text-gray-500">No purchased leads yet</p>
+          <div className="bg-white rounded-[2rem] shadow-2xl shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden flex-1">
+            <div className="flex flex-col h-full">
+              <div className="flex items-center justify-between px-6 py-5 border-b border-gray-50 bg-gray-50/30">
+                <div className="flex items-center gap-4">
+                  <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center border border-blue-100">
+                    <ShoppingCart className="w-5 h-5 text-blue-600" />
                   </div>
-                ) : (
-                  <div className="divide-y divide-gray-50">
-                    {leads.filter(l => l.purchase_status === 'new').slice(0, 5).map((lead) => (
-                      <div key={lead.id} onClick={() => handleLeadClick(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
-                        {lead.photos && lead.photos.length > 0 && (
-                          <img src={lead.photos[0]} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-gray-900 truncate">{lead.name}</p>
-                          <p className="text-[10px] text-gray-500 truncate">{lead.location || 'No location'}</p>
-                        </div>
-                      </div>
-                    ))}
+                  <h3 className="text-lg font-black text-gray-900 tracking-tighter">Your Portfolio</h3>
+                </div>
+                <div className="flex items-center gap-2">
+                  <div className="text-[10px] font-black text-gray-400 bg-white px-3 py-1 rounded-lg uppercase tracking-widest border border-gray-100 shadow-sm">
+                    {leads.length} Leads
                   </div>
-                )}
+                </div>
               </div>
-            )}
-          </div>
 
-          {/* Surveyed Leads */}
-          <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden">
-            <button 
-              onClick={() => setActiveTab('sat')}
-              className={`p-4 flex items-center justify-between transition-colors ${
-                activeTab === 'sat' ? 'bg-amber-50 border-b border-amber-100' : 'hover:bg-gray-50'
-              }`}
-            >
-              <div className="flex items-center gap-2">
-                <CalendarIcon className="w-4 h-4 text-amber-500" />
-                <span className="text-sm font-bold text-gray-900">Surveyed</span>
+              {/* Tabs for Portfolio */}
+              <div className="flex items-center gap-1 p-2 bg-gray-50/50 border-b border-gray-50 overflow-x-auto no-scrollbar">
+                {[
+                  { id: 'new', label: 'Purchased', icon: ShoppingCart, color: 'blue' },
+                  { id: 'sat', label: 'Surveyed', icon: CalendarIcon, color: 'amber' },
+                  { id: 'won', label: 'Won', icon: CheckSquare, color: 'emerald' },
+                  { id: 'archive', label: 'Archive', icon: X, color: 'slate' }
+                ].map((tab) => (
+                  <button
+                    key={tab.id}
+                    onClick={() => setActiveTab(tab.id as any)}
+                    className={`flex items-center gap-2 px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all whitespace-nowrap ${
+                      activeTab === tab.id 
+                        ? `bg-white text-${tab.color}-600 shadow-md shadow-${tab.color}-100 border border-${tab.color}-100` 
+                        : 'text-gray-400 hover:text-gray-600 hover:bg-white/50'
+                    }`}
+                  >
+                    <tab.icon className={`w-3.5 h-3.5 ${activeTab === tab.id ? `text-${tab.color}-500` : 'text-gray-300'}`} />
+                    {tab.label}
+                  </button>
+                ))}
               </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500">{leads.filter(l => l.purchase_status === 'sat').length}</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${activeTab === 'sat' ? 'rotate-180' : ''}`} />
-              </div>
-            </button>
-            {activeTab === 'sat' && (
-              <div className="flex-1 overflow-y-auto max-h-[180px]">
-                {leads.filter(l => l.purchase_status === 'sat').length === 0 ? (
-                  <div className="p-4 text-center">
-                    <p className="text-xs text-gray-500">No qualified leads yet</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-50">
-                    {leads.filter(l => l.purchase_status === 'sat').slice(0, 5).map((lead) => (
-                      <div key={lead.id} onClick={() => handleLeadClick(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
-                        {lead.photos && lead.photos.length > 0 && (
-                          <img src={lead.photos[0]} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-gray-900 truncate">{lead.name}</p>
-                          <p className="text-[10px] text-gray-500 truncate">{lead.location || 'No location'}</p>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
 
-          {/* Won Leads */}
-          <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden">
-            <button 
-              onClick={() => setActiveTab('won')}
-              className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 transition-all ${activeTab === 'won' ? 'bg-gradient-to-r from-emerald-50 to-green-50/30' : 'bg-gray-50/30 hover:bg-gray-50'}`}
-            >
-              <div className="flex items-center gap-2">
-                <CheckSquare className="w-4 h-4 text-emerald-500" />
-                <span className="text-sm font-bold text-gray-900">Won</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500">{leads.filter(l => l.purchase_status === 'won').length}</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${activeTab === 'won' ? 'rotate-180' : ''}`}
-                />
-              </div>
-            </button>
-            {activeTab === 'won' && (
-              <div className="flex-1 overflow-y-auto max-h-[180px]">
-                {leads.filter(l => l.purchase_status === 'won').length === 0 ? (
-                  <div className="p-4 text-center">
-                    <p className="text-xs text-gray-500">No won leads yet</p>
+              <div className="flex-1 overflow-y-auto min-h-[300px] max-h-[500px] p-3 space-y-3 custom-scrollbar bg-white">
+                {currentTabLeads.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-40">
+                    <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-4 border border-gray-100">
+                      <List className="w-8 h-8 text-gray-300" />
+                    </div>
+                    <p className="text-sm text-gray-400 font-black uppercase tracking-widest">No leads found</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-50">
-                    {leads.filter(l => l.purchase_status === 'won').slice(0, 5).map((lead) => (
-                      <div key={lead.id} onClick={() => handleLeadClick(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
-                        {lead.photos && lead.photos.length > 0 && (
-                          <img src={lead.photos[0]} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-gray-900 truncate">{lead.name}</p>
-                          <p className="text-[10px] text-gray-500 truncate">{lead.location || 'No location'}</p>
+                  currentTabLeads.map((lead) => (
+                    <div 
+                      key={lead.id} 
+                      onClick={() => handleLeadClick(lead)} 
+                      className="p-4 rounded-2xl bg-white border border-gray-100 hover:border-blue-200 hover:bg-blue-50/20 cursor-pointer flex items-center justify-between transition-all duration-300 group shadow-sm hover:shadow-xl hover:shadow-blue-500/5"
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className="w-14 h-14 rounded-xl bg-gray-50 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:scale-105 transition-transform duration-500 shrink-0">
+                          {lead.photos && lead.photos[0] ? (
+                            <img src={lead.photos[0]} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <User className="w-7 h-7 text-gray-200" />
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-base font-black text-gray-900 truncate tracking-tight">{lead.name}</p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <MapPin className="w-3 h-3 text-gray-300" />
+                            <p className="text-[10px] text-gray-500 truncate uppercase font-bold tracking-widest">{lead.location || 'No location'}</p>
+                          </div>
                         </div>
                       </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-
-          {/* Archive Leads */}
-          <div className="bg-white rounded-xl shadow-lg shadow-gray-200/50 border border-gray-100 flex flex-col overflow-hidden">
-            <button 
-              onClick={() => setActiveTab('archive')}
-              className={`flex items-center justify-between px-4 py-3 border-b border-gray-100 transition-all ${activeTab === 'archive' ? 'bg-gradient-to-r from-slate-100 to-gray-50/30' : 'bg-gray-50/30 hover:bg-gray-50'}`}
-            >
-              <div className="flex items-center gap-2">
-                <X className="w-4 h-4 text-slate-500" />
-                <span className="text-sm font-bold text-gray-900">Archive</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-semibold text-gray-500">{leads.filter(l => l.purchase_status === 'archive').length}</span>
-                <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${activeTab === 'archive' ? 'rotate-180' : ''}`}
-                />
-              </div>
-            </button>
-            {activeTab === 'archive' && (
-              <div className="flex-1 overflow-y-auto max-h-[180px]">
-                {leads.filter(l => l.purchase_status === 'archive').length === 0 ? (
-                  <div className="p-4 text-center">
-                    <p className="text-xs text-gray-500">No archived leads</p>
-                  </div>
-                ) : (
-                  <div className="divide-y divide-gray-50">
-                    {leads.filter(l => l.purchase_status === 'archive').slice(0, 5).map((lead) => (
-                      <div key={lead.id} onClick={() => handleLeadClick(lead)} className="px-4 py-2.5 hover:bg-gray-50 cursor-pointer flex items-center gap-3 transition-colors">
-                        {lead.photos && lead.photos.length > 0 && (
-                          <img src={lead.photos[0]} alt="" className="w-8 h-8 rounded-lg object-cover shrink-0" />
-                        )}
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-semibold text-gray-900 truncate">{lead.name}</p>
-                          <p className="text-[10px] text-gray-500 truncate">{lead.location || 'No location'}</p>
-                        </div>
+                      <div className="w-10 h-10 rounded-full bg-gray-50 flex items-center justify-center group-hover:bg-blue-600 group-hover:text-white transition-all duration-300">
+                        <ChevronDown className="w-5 h-5 text-gray-300 -rotate-90 group-hover:text-white group-hover:translate-x-0.5 transition-all" />
                       </div>
-                    ))}
-                  </div>
+                    </div>
+                  ))
                 )}
               </div>
-            )}
+            </div>
           </div>
 
         </div>

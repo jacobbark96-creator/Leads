@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
 import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard, Zap, Users, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
 import { AdminNotifications } from './AdminNotifications';
@@ -13,7 +14,8 @@ import { FlexModal } from './FlexModal';
 
 export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { profile, signOut, refreshProfile } = useAuthStore();
-  const pathname = usePathname();
+  const rawPathname = usePathname();
+  const pathname = rawPathname || '';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [clientName, setClientName] = useState<string | null>(null);
   const [clientCompanyName, setClientCompanyName] = useState<string | null>(null);
@@ -210,7 +212,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                   {navItems.filter((item: any) => !item.hidden).map((item: any) => {
                     const Icon = item.icon;
                     if (item.children) {
-                      const isActive = item.children.some((child: any) => pathname.startsWith(child.path));
+                      const isActive = item.children.some((child: any) => pathname?.startsWith(child.path));
                       return (
                         <div key={item.name} className="relative group">
                           <button
@@ -228,7 +230,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                             <div className="py-1">
                               {item.children.map((child: any) => {
                                 const ChildIcon = child.icon;
-                                const isChildActive = pathname.startsWith(child.path);
+                                const isChildActive = pathname?.startsWith(child.path);
                                 return (
                                   <Link
                                     key={child.name}
@@ -249,7 +251,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                       );
                     }
 
-                    const isActive = pathname.startsWith(item.path);
+                    const isActive = pathname?.startsWith(item.path);
                     return (
                       <Link
                           key={item.name}
@@ -346,7 +348,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
               <div className="flex items-center sm:hidden">
                 <button
                   onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="inline-flex items-center justify-center p-2 rounded-full text-gray-500 hover:text-gray-900 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-blue-500 transition-colors"
+                  className="inline-flex items-center justify-center p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all active:scale-95"
                 >
                   <span className="sr-only">Open main menu</span>
                   {mobileMenuOpen ? (
@@ -358,114 +360,116 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
               </div>
             </div>
 
-            {mobileMenuOpen && (
-              <div className="sm:hidden absolute left-0 right-0 top-full mt-3 bg-white/95 backdrop-blur-xl border border-gray-200 rounded-2xl shadow-xl overflow-hidden">
-                <div className="py-2 px-2">
-                  {navItems.filter((item: any) => !item.hidden).map((item: any) => {
-                    const Icon = item.icon;
-                    if (item.children) {
-                      return (
-                        <div key={item.name} className="mb-2">
-                          <div className="px-4 py-2 text-xs font-bold text-gray-400 uppercase tracking-wider">
-                            {item.name}
+            <AnimatePresence>
+              {mobileMenuOpen && (
+                <motion.div
+                  initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  className="sm:hidden absolute left-0 right-0 top-full mt-4 bg-white/95 backdrop-blur-2xl border border-gray-200/50 rounded-[2.5rem] shadow-2xl overflow-hidden z-[60] mx-4 origin-top"
+                >
+                  <div className="py-6 px-4 space-y-2">
+                    {(navItems || []).filter((item: any) => item && !item.hidden).map((item: any) => {
+                      const Icon = item.icon;
+                      if (item.children) {
+                        return (
+                          <div key={item.name} className="space-y-1">
+                            <div className="px-4 py-3 text-[10px] font-black text-gray-400 uppercase tracking-[0.2em]">
+                              {item.name}
+                            </div>
+                            {item.children.map((child: any) => {
+                              const ChildIcon = child.icon;
+                              const isChildActive = pathname.startsWith(child.path);
+                              return (
+                                <Link
+                                  key={child.name}
+                                  href={child.path || '#'}
+                                  onClick={() => setMobileMenuOpen(false)}
+                                  className={`${
+                                    isChildActive
+                                      ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                                      : 'text-gray-600 hover:bg-gray-100'
+                                  } flex items-center px-5 py-4 rounded-[1.5rem] text-base font-bold transition-all active:scale-[0.98]`}
+                                >
+                                  {child.name}
+                                </Link>
+                              );
+                            })}
                           </div>
-                          {item.children.map((child: any) => {
-                            const ChildIcon = child.icon;
-                            const isChildActive = pathname.startsWith(child.path);
-                            return (
-                              <Link
-                                key={child.name}
-                                href={child.path}
-                                onClick={() => setMobileMenuOpen(false)}
-                                className={`${
-                                  isChildActive
-                                    ? 'bg-blue-50 text-blue-700 font-semibold'
-                                    : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium'
-                                } flex items-center px-4 py-3 rounded-xl text-base transition-colors ml-2`}
-                              >
-                                {child.name}
-                              </Link>
-                            );
-                          })}
-                        </div>
+                        );
+                      }
+
+                      const isActive = item.path ? pathname.startsWith(item.path) : false;
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.path || '#'}
+                          onClick={() => setMobileMenuOpen(false)}
+                          className={`${
+                            isActive
+                              ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/20'
+                              : 'text-gray-600 hover:bg-gray-100'
+                          } flex items-center px-5 py-4 rounded-[1.5rem] text-base font-bold transition-all active:scale-[0.98] relative`}
+                        >
+                          {item.name === 'Partner+' ? (
+                            <>Partner<span className="text-[10px] -mt-2.5 ml-[1px]">＋</span></>
+                          ) : item.name}
+
+                          {item.name === 'Team' && pendingRequestsCount > 0 && (
+                            <span className="absolute right-5 top-1/2 -translate-y-1/2 flex h-6 w-6 items-center justify-center rounded-full bg-red-500 text-xs font-black text-white shadow-lg ring-2 ring-white">
+                              {pendingRequestsCount}
+                            </span>
+                          )}
+                        </Link>
                       );
-                    }
+                    })}
+                  </div>
 
-                    const isActive = pathname.startsWith(item.path);
-                    return (
-                      <Link
-                        key={item.name}
-                        href={item.path}
-                        onClick={() => setMobileMenuOpen(false)}
-                        className={`${
-                          isActive
-                            ? 'bg-blue-50 text-blue-700 font-semibold'
-                            : 'text-gray-600 hover:bg-gray-50 hover:text-gray-900 font-medium'
-                        } flex items-center px-4 py-3 rounded-xl text-base transition-colors mb-1 relative`}
-                      >
-                        {item.name === 'Partner+' ? (
-                          <>Partner<span className="text-[10px] -mt-2.5 ml-[1px]">＋</span></>
-                        ) : item.name}
-
-                        {item.name === 'Team' && pendingRequestsCount > 0 && (
-                          <span className="absolute right-4 top-1/2 -translate-y-1/2 flex h-5 w-5 items-center justify-center rounded-full bg-red-500 text-xs font-bold text-white shadow-sm ring-2 ring-white animate-in zoom-in duration-300">
-                            {pendingRequestsCount}
-                          </span>
-                        )}
-                      </Link>
-                    );
-                  })}
-                </div>
-                <div className="p-4 border-t border-gray-200 bg-gray-50/70">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold shadow-inner">
-                        {(clientName || profile.name)?.charAt(0).toUpperCase() || 'U'}
+                  <div className="p-6 border-t border-gray-100 bg-gray-50/50 backdrop-blur-md">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-4">
+                        <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-600/20">
+                          {(clientName || profile.name)?.charAt(0).toUpperCase() || 'U'}
+                        </div>
+                        <div>
+                          <div className="text-base font-black text-gray-900 leading-none mb-1">{clientName || profile.name}</div>
+                          <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
+                            {profile.role === 'client' ? (clientCompanyName || 'Client Account') : profile.role.replace('_', ' ')}
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <div className="text-base font-bold text-gray-900">{clientName || profile.name}</div>
-                        {profile.role === 'client' && clientCompanyName && (
-                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">{clientCompanyName}</div>
-                        )}
-                        {profile.role !== 'client' && (
-                          <div className="text-xs font-medium text-gray-500 uppercase tracking-wider">{profile.role.replace('_', ' ')}</div>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      {profile.role === 'client' && (
-                        <>
-                          <ClientNotifications />
+                      
+                      <div className="flex items-center gap-2">
+                        {profile.role === 'client' && (
                           <Link
                             href="/my-openlead"
                             onClick={() => setMobileMenuOpen(false)}
-                            className="flex items-center justify-center p-2 rounded-full text-gray-500 hover:bg-gray-100 transition-colors"
+                            className="flex items-center justify-center w-10 h-10 rounded-2xl bg-white border border-gray-200 text-gray-500 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm"
                           >
-                            <span className="sr-only">Settings</span>
-                            <Settings className="h-6 w-6" />
+                            <Settings className="h-5 w-5" />
                           </Link>
-                        </>
-                      )}
-                      <button
-                        onClick={async (e) => {
-                          e.preventDefault();
-                          await signOut();
-                        }}
-                        className="flex items-center justify-center p-2 rounded-full text-red-600 hover:bg-red-50 focus:outline-none transition-colors"
-                      >
-                        <span className="sr-only">Sign out</span>
-                        <LogOut className="h-6 w-6 pointer-events-none" />
-                      </button>
+                        )}
+                        <button
+                          onClick={async (e) => {
+                            e.preventDefault();
+                            await signOut();
+                          }}
+                          className="flex items-center justify-center w-10 h-10 rounded-2xl bg-red-50 text-red-600 hover:bg-red-100 transition-all shadow-sm"
+                        >
+                          <LogOut className="h-5 w-5" />
+                        </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </div>
-            )}
+                </motion.div>
+              )}
+            </AnimatePresence>
           </div>
         </div>
       </nav>
 
-      <main className={`flex-1 w-full mx-auto ${pathname?.startsWith('/staff') ? 'px-0 pt-0 pb-0' : 'max-w-7xl px-4 sm:px-6 lg:px-8 pt-28 pb-8'}`}>
+      <main className={`flex-1 w-full mx-auto ${pathname?.startsWith('/staff') ? 'px-0 pt-0 pb-0' : 'max-w-7xl px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-12'}`}>
         {children}
       </main>
 

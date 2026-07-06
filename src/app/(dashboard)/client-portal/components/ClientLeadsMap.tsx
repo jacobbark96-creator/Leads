@@ -75,14 +75,14 @@ export default function ClientLeadsMap({ leads, onLeadClick }: ClientLeadsMapPro
   }, []);
 
   if (!isMounted) {
-    return <div className="w-full h-[500px] lg:h-full bg-blue-50/50 flex items-center justify-center rounded-xl border border-blue-100/50">Loading map...</div>;
+    return <div className="w-full h-[350px] lg:h-full bg-blue-50/50 flex items-center justify-center rounded-xl border border-blue-100/50">Loading map...</div>;
   }
 
   // Use leads that have lat/lng
   const mapLeads = leads.filter(l => l.latitude && l.longitude);
 
   return (
-    <div className="w-full h-[500px] lg:h-full rounded-xl overflow-hidden border border-gray-200 relative z-0">
+    <div className="w-full h-[350px] lg:h-full rounded-xl overflow-hidden border border-gray-200 relative z-0">
       <MapContainer 
         id={mapIdRef.current}
         center={defaultCenter} 

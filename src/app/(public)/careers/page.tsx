@@ -86,13 +86,33 @@ export default async function CareersPage() {
                 </p>
               </div>
 
-              <Link 
-                href={`/careers/${job.id}`} 
-                className="relative z-10 w-full inline-flex items-center justify-center px-8 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-openlead-blue shadow-lg shadow-slate-900/10 hover:shadow-blue-500/20 transition-all group/btn"
-              >
-                View Details
-                <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
-              </Link>
+              <div className="flex flex-col gap-3 relative z-10">
+                <Link 
+                  href={`/careers/${job.id}`} 
+                  className="w-full inline-flex items-center justify-center px-8 py-4 bg-slate-50 text-slate-900 font-black rounded-2xl hover:bg-slate-100 transition-all border border-slate-100"
+                >
+                  View Details
+                </Link>
+                {job.external_link ? (
+                  <a 
+                    href={job.external_link}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="w-full inline-flex items-center justify-center px-8 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-openlead-blue shadow-lg shadow-slate-900/10 hover:shadow-blue-500/20 transition-all group/btn"
+                  >
+                    Apply on Flowmingo
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                  </a>
+                ) : (
+                  <Link 
+                    href={`/careers/${job.id}`} 
+                    className="w-full inline-flex items-center justify-center px-8 py-4 bg-slate-900 text-white font-black rounded-2xl hover:bg-openlead-blue shadow-lg shadow-slate-900/10 hover:shadow-blue-500/20 transition-all group/btn"
+                  >
+                    Apply for this Role
+                    <ArrowRight className="ml-2 w-4 h-4 group-hover/btn:translate-x-1 transition-transform" />
+                  </Link>
+                )}
+              </div>
             </div>
           ))}
         </div>

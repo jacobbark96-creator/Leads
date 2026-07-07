@@ -9,7 +9,7 @@ import toast from 'react-hot-toast';
 interface SmsChatModalProps {
   isOpen: boolean;
   onClose: () => void;
-  lead: Lead;
+  lead: any;
 }
 
 export function SmsChatModal({ isOpen, onClose, lead }: SmsChatModalProps) {

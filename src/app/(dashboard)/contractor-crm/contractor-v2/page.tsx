@@ -11,6 +11,8 @@ export interface ContractorNote { id: string; contractor_id: string; user_id: st
 import toast from 'react-hot-toast';
 import { useDialer } from '@/contexts/DialerContext';
 
+import { SmsChatModal } from '@/components/SmsChatModal';
+
 import { 
   LayoutDashboard, 
   Users, 
@@ -21,6 +23,7 @@ import {
   Settings,
   Phone,
   Mail,
+  MessageSquare,
   MoreHorizontal,
   Plus,
   ArrowRight,
@@ -306,6 +309,7 @@ function ContractorDetailsV2Content() {
   const [isAutoDialEnabled, setIsAutoDialEnabled] = useState(false);
   const [tasks, setTasks] = useState<any[]>([]);
   const [otherContacts, setOtherContacts] = useState<any[]>([]);
+  const [isSmsChatOpen, setIsSmsChatOpen] = useState(false);
   
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
@@ -1301,6 +1305,9 @@ function ContractorDetailsV2Content() {
                     <Phone className="w-3.5 h-3.5" />
                   </button>
                 )}
+                <button onClick={() => setIsSmsChatOpen(true)} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title="SMS">
+                  <MessageSquare className="w-3.5 h-3.5" /> SMS
+                </button>
                 {contractor.email && (
                   <a href={`mailto:${contractor.email}`} className="flex-1 py-1.5 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center gap-1.5 text-xs font-medium transition-colors shadow-sm" title="Email">
                     <Mail className="w-3.5 h-3.5" /> Email
@@ -1585,6 +1592,9 @@ function ContractorDetailsV2Content() {
                 <div className="flex items-center gap-2">
                   <button onClick={() => onCallClick(contractor.phone || '')} className="p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm" title="Call">
                     <Phone className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => setIsSmsChatOpen(true)} className="p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm" title="SMS Chat">
+                    <MessageSquare className="w-4 h-4" />
                   </button>
                   {contractor.email && (
                     <a href={`mailto:${contractor.email}`} className="p-2 bg-white border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 flex items-center justify-center transition-colors shadow-sm" title="Email">
@@ -1940,6 +1950,14 @@ function ContractorDetailsV2Content() {
           </div>
         </div>
       </main>
+
+      {isSmsChatOpen && contractor && (
+        <SmsChatModal
+          isOpen={isSmsChatOpen}
+          onClose={() => setIsSmsChatOpen(false)}
+          lead={contractor}
+        />
+      )}
 
       <CalendarModal 
         isOpen={isCalendarModalOpen} 

@@ -265,19 +265,27 @@ export function SmsChatModal({ isOpen, onClose, lead }: SmsChatModalProps) {
 
         {/* Input */}
         <form onSubmit={handleSend} className="p-3 bg-gray-50 border-t border-gray-200">
-          <div className="flex gap-2">
-            <input
-              type="text"
+          <div className="flex gap-2 items-end">
+            <textarea
               value={replyText}
               onChange={(e) => setReplyText(e.target.value)}
-              placeholder="Type your message..."
-              className="flex-1 bg-white border border-gray-300 rounded-full px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' && !e.shiftKey) {
+                  e.preventDefault();
+                  if (replyText.trim() && !sending) {
+                    handleSend(e as any);
+                  }
+                }
+              }}
+              placeholder="Type your message... (Shift+Enter for new line)"
+              className="flex-1 bg-white border border-gray-300 rounded-2xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none min-h-[40px] leading-relaxed"
               disabled={sending}
+              rows={Math.min(5, Math.max(1, replyText.split('\n').length))}
             />
             <button
               type="submit"
               disabled={!replyText.trim() || sending}
-              className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0 shadow-sm"
+              className="w-10 h-10 bg-blue-600 text-white rounded-full flex items-center justify-center hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors shrink-0 shadow-sm mb-0.5"
             >
               <Send className="w-4 h-4 ml-0.5" />
             </button>

@@ -7,17 +7,15 @@ import toast from 'react-hot-toast';
 import { Plus, Edit, Trash2, Ban, Shield, Users, Briefcase, X, Activity, BarChart2, Database, Image as ImageIcon, FileText, Eye, MessageSquare, PoundSterling } from 'lucide-react';
 import { UserDetailsModal } from '@/components/UserDetailsModal';
 import { ClientMonitoringTab } from './components/ClientMonitoringTab';
-import { LeadMonitoringTab } from './components/LeadMonitoringTab';
-import { PackMonitoringTab } from './components/PackMonitoringTab';
+import { StatsTab } from './components/StatsTab';
 import { BackgroundTab } from './components/BackgroundTab';
 import { PressCentreTab } from './components/PressCentreTab';
 import { FeedbackTab } from './components/FeedbackTab';
 import { DivisionsTab } from './components/DivisionsTab';
 import { FinanceTab } from './components/FinanceTab';
-import { BroadcastsTab } from './components/BroadcastsTab';
 
 export default function UserManagement() {
-  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'lead_monitoring' | 'pack_monitoring' | 'background' | 'press' | 'feedback' | 'divisions' | 'finance' | 'broadcasts'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'stats' | 'background' | 'press' | 'feedback' | 'divisions' | 'finance'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuthStore();
@@ -295,16 +293,10 @@ export default function UserManagement() {
           <div className="flex items-center gap-2"><Activity className="w-4 h-4" /> Client Monitoring</div>
         </button>
         <button
-          onClick={() => setActiveTab('lead_monitoring')}
-          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'lead_monitoring' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+          onClick={() => setActiveTab('stats')}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'stats' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
         >
-          <div className="flex items-center gap-2"><BarChart2 className="w-4 h-4" /> Lead Monitoring</div>
-        </button>
-        <button
-          onClick={() => setActiveTab('pack_monitoring')}
-          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'pack_monitoring' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-        >
-          <div className="flex items-center gap-2"><Database className="w-4 h-4" /> Pack Monitoring</div>
+          <div className="flex items-center gap-2"><BarChart2 className="w-4 h-4" /> Stats</div>
         </button>
         <button
           onClick={() => setActiveTab('background')}
@@ -319,17 +311,11 @@ export default function UserManagement() {
           <div className="flex items-center gap-2"><FileText className="w-4 h-4" /> Press Centre</div>
         </button>
         <button
-          onClick={() => setActiveTab('broadcasts')}
-          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'broadcasts' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-        >
-          <div className="flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Broadcasts</div>
-        </button>
-        <button
-          onClick={() => setActiveTab('feedback')}
-          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'feedback' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-        >
-          <div className="flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Feedback</div>
-        </button>
+        onClick={() => setActiveTab('feedback')}
+        className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'feedback' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+      >
+        <div className="flex items-center gap-2"><MessageSquare className="w-4 h-4" /> Feedback</div>
+      </button>
         <button
           onClick={() => setActiveTab('finance')}
           className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'finance' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
@@ -705,11 +691,9 @@ export default function UserManagement() {
       )}
 
       {activeTab === 'client_monitoring' && <ClientMonitoringTab />}
-      {activeTab === 'lead_monitoring' && <LeadMonitoringTab />}
-      {activeTab === 'pack_monitoring' && <PackMonitoringTab />}
+      {activeTab === 'stats' && <StatsTab />}
       {activeTab === 'background' && <BackgroundTab />}
       {activeTab === 'press' && <PressCentreTab />}
-      {activeTab === 'broadcasts' && <BroadcastsTab />}
       {activeTab === 'feedback' && <FeedbackTab />}
       {activeTab === 'finance' && <FinanceTab />}
       {activeTab === 'divisions' && profile?.role === 'super_admin' && <DivisionsTab />}

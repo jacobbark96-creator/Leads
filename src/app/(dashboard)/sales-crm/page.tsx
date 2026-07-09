@@ -31,8 +31,11 @@ const extractTown = (location: string) => {
   return parts.length > 1 ? parts[1] : parts[0];
 };
 
+import { useDivisionStore } from '@/store/divisionStore';
+
 function LeadProcessingContent() {
   const { profile } = useAuthStore();
+  const { activeDivisionId } = useDivisionStore();
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -89,6 +92,11 @@ function LeadProcessingContent() {
       // Helper to apply current active filters to all KPI counts
       const applyFilters = (q: any) => {
         let filtered = q;
+
+        if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
+          filtered = filtered.eq('division_id', activeDivisionId);
+        }
+
         if (['super_admin', 'admin'].includes(profile?.role || '')) {
           if (assignedUserFilter === 'me') {
             filtered = filtered.eq('assigned_to', profile?.id);
@@ -182,6 +190,12 @@ function LeadProcessingContent() {
       if (debouncedSearchQuery.trim()) {
         const search = `%${debouncedSearchQuery.trim()}%`;
         query = query.or(`name.ilike.${search},company.ilike.${search},location.ilike.${search},phone.ilike.${search},secondary_phone.ilike.${search}`);
+      }
+
+      if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
+        query = query.eq('division_id', activeDivisionId);
+      } else if (profile?.role === 'super_admin' && activeDivisionId === 'all') {
+        // Show all
       }
 
       if (['super_admin', 'admin'].includes(profile?.role || '')) {
@@ -285,7 +299,7 @@ function LeadProcessingContent() {
       clearTimeout(debounceTimer);
       supabase.removeChannel(channel);
     };
-  }, [statusFilter, debouncedSearchQuery, assignedToMe, profile?.id, assignedUserFilter, propertyTypeFilter, dataQualityFilter]);
+  }, [statusFilter, debouncedSearchQuery, assignedToMe, profile?.id, assignedUserFilter, propertyTypeFilter, dataQualityFilter, mobileFilter, activeDivisionId]);
 
   const loadMore = () => {
     const nextPage = page + 1;

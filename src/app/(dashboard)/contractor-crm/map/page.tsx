@@ -7,6 +7,7 @@ import { MapPin, Star, Briefcase, Filter, Info, Home } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 import { useRouter } from 'next/navigation';
+import { useDivisionStore } from '@/store/divisionStore';
 
 const containerStyle = {
   width: '100%',
@@ -65,6 +66,7 @@ const darkenHex = (hex: string, percent: number = 30) => {
 
 export default function MapTab() {
   const router = useRouter();
+  const { activeDivisionId } = useDivisionStore();
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || ''
@@ -114,7 +116,7 @@ export default function MapTab() {
       supabase.removeChannel(leadsChannel);
       supabase.removeChannel(contractorsChannel);
     };
-  }, []);
+  }, [activeDivisionId, profile?.role]);
 
   const fetchMapData = async () => {
     try {
@@ -161,11 +163,17 @@ export default function MapTab() {
       setClients(validClients);
 
       // Fetch marketed, unpurchased leads
-      const { data: leadsData, error: leadsError } = await supabase
+      let leadsQuery = supabase
         .from('leads')
         .select('*')
         .eq('is_marketed', true)
         .is('client_id', null);
+
+      if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
+        leadsQuery = leadsQuery.eq('division_id', activeDivisionId);
+      }
+
+      const { data: leadsData, error: leadsError } = await leadsQuery;
 
       if (leadsError) throw leadsError;
       

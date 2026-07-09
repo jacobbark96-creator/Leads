@@ -7,6 +7,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
 import { SmsNotifications } from '@/components/SmsNotifications';
+import { DivisionSelector } from '@/components/DivisionSelector';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -144,6 +145,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             </div>
 
             <div className="flex items-center gap-3">
+              <DivisionSelector />
               <AdminNotifications />
               <SmsNotifications />
               <div className="h-4 w-px bg-gray-200 mx-1"></div>

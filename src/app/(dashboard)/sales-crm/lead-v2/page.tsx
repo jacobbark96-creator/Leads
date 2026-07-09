@@ -413,6 +413,9 @@ function LeadDetailsV2Content() {
   
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isMagicLinkModalOpen, setIsMagicLinkModalOpen] = useState(false);
+  const [isReferModalOpen, setIsReferModalOpen] = useState(false);
+  const [referDivisionId, setReferDivisionId] = useState('');
+  const [divisions, setDivisions] = useState<any[]>([]);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
   const [editingContactIndex, setEditingContactIndex] = useState<number | null>(null);
   const [newContactName, setNewContactName] = useState('');
@@ -433,6 +436,27 @@ function LeadDetailsV2Content() {
   const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
 
   const [isMarketConfirmOpen, setIsMarketConfirmOpen] = useState(false);
+  const handleReferLead = async () => {
+    if (!referDivisionId) {
+      toast.error('Please select a division to refer to.');
+      return;
+    }
+
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ division_id: referDivisionId })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+      toast.success('Lead referred successfully!');
+      setIsReferModalOpen(false);
+      router.push('/sales-crm');
+    } catch (err: any) {
+      toast.error('Failed to refer lead: ' + err.message);
+    }
+  };
+
   const [isInHouseConfirmOpen, setIsInHouseConfirmOpen] = useState(false);
   const [salesStaff, setSalesStaff] = useState<any[]>([]);
   const [selectedSalesmanId, setSelectedSalesmanId] = useState<string | null>(null);
@@ -586,6 +610,12 @@ function LeadDetailsV2Content() {
   }, [packId, packMembership, profile?.id]);
 
   useEffect(() => {
+    const fetchDivisions = async () => {
+      const { data } = await supabase.from('divisions').select('*').order('name');
+      if (data) setDivisions(data);
+    };
+    fetchDivisions();
+
     if (id) {
       fetchLeadAndNotes();
       fetchStaffUsers();
@@ -1915,6 +1945,14 @@ function LeadDetailsV2Content() {
                     </button>
                   </div>
                 )}
+                {!lead.company && (
+                  <button 
+                    onClick={() => setIsReferModalOpen(true)}
+                    className="flex-1 md:flex-none bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                  >
+                    Refer
+                  </button>
+                )}
                 {(lead.is_marketed || lead.status === 'marketplace' || lead.status === 'awaiting_sales') && (
                   <button 
                     onClick={() => setIsWriteupOpen(true)}
@@ -3102,6 +3140,38 @@ function LeadDetailsV2Content() {
         form={editForm}
         setForm={setEditForm}
       />
+
+      {isReferModalOpen && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Refer Lead</h3>
+            <p className="text-sm text-gray-500 mb-4">Select the division to refer this lead to.</p>
+            
+            <div className="mb-6 text-left">
+              <label className="block text-sm font-medium text-gray-700 mb-2">Division</label>
+              <select
+                value={referDivisionId}
+                onChange={(e) => setReferDivisionId(e.target.value)}
+                className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+              >
+                <option value="">Select Division</option>
+                {divisions.map(d => (
+                  <option key={d.id} value={d.id}>{d.name}</option>
+                ))}
+              </select>
+            </div>
+
+            <div className="flex flex-col gap-3">
+              <button onClick={handleReferLead} className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700">
+                Confirm Referral
+              </button>
+              <button onClick={() => setIsReferModalOpen(false)} className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">
+                Cancel
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {isMarketConfirmOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">

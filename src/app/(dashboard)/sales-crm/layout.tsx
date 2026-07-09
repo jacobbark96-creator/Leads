@@ -7,6 +7,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
 import { SmsNotifications } from '@/components/SmsNotifications';
+import { DivisionSelector } from '@/components/DivisionSelector';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -326,6 +327,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
             </div>
 
             <div className="flex items-center gap-3">
+              <DivisionSelector />
               <AdminNotifications />
               <SmsNotifications />
               <div className="h-4 w-px bg-gray-200 mx-1"></div>

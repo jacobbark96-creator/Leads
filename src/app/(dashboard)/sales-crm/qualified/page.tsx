@@ -14,6 +14,7 @@ import { SoldLeadModal } from '@/components/SoldLeadModal';
 import { MatchingContractorsModal } from '@/components/MatchingContractorsModal';
 import { PassToSalesModal } from '@/components/PassToSalesModal';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useDivisionStore } from '@/store/divisionStore';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -34,6 +35,7 @@ const stringToColor = (str: string) => {
 
 function QualifiedLeadsContent() {
   const { profile } = useAuthStore();
+  const { activeDivisionId } = useDivisionStore();
   const searchParams = useSearchParams();
   const assignedToMe = searchParams.get('assignedToMe') === 'true';
   const filterParam = searchParams.get('filter');
@@ -128,9 +130,17 @@ function QualifiedLeadsContent() {
         query = query.or('bills_url.is.null,bills_url.eq.');
       }
 
+      if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
+        query = query.eq('division_id', activeDivisionId);
+      }
+
       if (isInitial) {
         let countQuery = supabase.from('leads').select('id', { count: 'exact', head: true });
         
+        if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
+          countQuery = countQuery.eq('division_id', activeDivisionId);
+        }
+
         // Apply same Main Filter to count
         if (mainFilter === 'marketed') {
           countQuery = countQuery.eq('is_marketed', true).neq('status', 'sold');
@@ -278,7 +288,7 @@ function QualifiedLeadsContent() {
       fetchLeads(0, true);
     }, 50);
     return () => clearTimeout(timer);
-  }, [phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, profile?.id, assignedUserFilter, mainFilter]);
+  }, [phoneFilter, propertyTypeFilter, uploadNameFilter, debouncedSearchQuery, radiusFilter, profile?.id, assignedUserFilter, mainFilter, activeDivisionId]);
 
   const loadMore = () => {
     const nextPage = page + 1;

@@ -23,6 +23,9 @@ export default function PartnerPlusKanban() {
   useEffect(() => {
     if (profile?.id) {
       fetchLeads();
+      import('@/lib/activityTracker').then(({ trackClientActivity }) => {
+        trackClientActivity(profile.id, 'page_view', { page: 'Partner+ Pipeline' });
+      });
     }
   }, [profile?.id]);
 

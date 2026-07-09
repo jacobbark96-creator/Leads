@@ -7,6 +7,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
 import { SmsNotifications } from '@/components/SmsNotifications';
+import { DivisionSelector } from '@/components/DivisionSelector';
 
 export default function ContractorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -154,7 +155,8 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
                     : 'My Leads'}
                 </button>
               )}
-              <div className="h-4 w-px bg-gray-200 mx-1"></div>
+              <div className="h-4 w-px bg-gray-200 mx-1" />
+              <DivisionSelector />
               <AdminNotifications />
               <SmsNotifications />
               <div className="h-4 w-px bg-gray-200 mx-1"></div>

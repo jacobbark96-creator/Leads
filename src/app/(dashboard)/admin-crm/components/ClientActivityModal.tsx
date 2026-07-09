@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
-import { X, Activity, Eye, MousePointer, MapPin, Search } from 'lucide-react';
+import { X, Activity, Eye, MousePointer, MapPin, Search, Smartphone, Tablet, Monitor } from 'lucide-react';
 import { format } from 'date-fns';
 
 interface ClientActivityModalProps {
@@ -43,47 +43,68 @@ export const ClientActivityModal: React.FC<ClientActivityModalProps> = ({ userId
   }, [userId]);
 
   const renderActivityDetails = (act: ActivityLog) => {
+    const DeviceIcon = act.details?.deviceType === 'mobile' ? Smartphone : act.details?.deviceType === 'tablet' ? Tablet : Monitor;
+    const deviceTitle = `Device: ${act.details?.deviceType || 'desktop'}`;
+
     switch (act.activity_type) {
       case 'view_lead':
         return (
-          <div className="flex items-center gap-2">
-            <Eye className="w-4 h-4 text-blue-500" />
-            <span className="text-sm">Viewed lead: <span className="font-semibold">{act.details?.company_name || act.details?.lead_name || 'Unknown'}</span></span>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <Eye className="w-4 h-4 text-blue-500" />
+              <span className="text-sm">Viewed lead: <span className="font-semibold">{act.details?.company_name || act.details?.lead_name || 'Unknown'}</span></span>
+            </div>
+            <div title={deviceTitle}><DeviceIcon className="w-4 h-4 text-gray-400" /></div>
           </div>
         );
       case 'openlead_max_area_select':
         return (
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-green-500" />
-            <span className="text-sm">Selected OpenLead Max Area: <span className="font-semibold">{act.details?.area}</span> (£{act.details?.price})</span>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-green-500" />
+              <span className="text-sm">Selected OpenLead Max Area: <span className="font-semibold">{act.details?.area}</span> (£{act.details?.price})</span>
+            </div>
+            <div title={deviceTitle}><DeviceIcon className="w-4 h-4 text-gray-400" /></div>
           </div>
         );
       case 'openlead_max_area_deselect':
         return (
-          <div className="flex items-center gap-2">
-            <MapPin className="w-4 h-4 text-red-500" />
-            <span className="text-sm">Deselected OpenLead Max Area: <span className="font-semibold">{act.details?.area}</span></span>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <MapPin className="w-4 h-4 text-red-500" />
+              <span className="text-sm">Deselected OpenLead Max Area: <span className="font-semibold">{act.details?.area}</span></span>
+            </div>
+            <div title={deviceTitle}><DeviceIcon className="w-4 h-4 text-gray-400" /></div>
           </div>
         );
       case 'button_click':
         return (
-          <div className="flex items-center gap-2">
-            <MousePointer className="w-4 h-4 text-purple-500" />
-            <span className="text-sm">Clicked Button: <span className="font-semibold">{act.details?.button}</span></span>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <MousePointer className="w-4 h-4 text-purple-500" />
+              <span className="text-sm">Clicked Button: <span className="font-semibold">{act.details?.button}</span></span>
+            </div>
+            <div title={deviceTitle}><DeviceIcon className="w-4 h-4 text-gray-400" /></div>
           </div>
         );
       case 'page_view':
         return (
-          <div className="flex items-center gap-2">
-            <Search className="w-4 h-4 text-gray-500" />
-            <span className="text-sm">Viewed Page: <span className="font-semibold">{act.details?.page}</span></span>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <Search className="w-4 h-4 text-gray-500" />
+              <span className="text-sm">Viewed Page: <span className="font-semibold">{act.details?.page}</span></span>
+            </div>
+            <div title={deviceTitle}><DeviceIcon className="w-4 h-4 text-gray-400" /></div>
           </div>
         );
       default:
         return (
-          <div className="flex items-center gap-2">
-            <Activity className="w-4 h-4 text-gray-400" />
-            <span className="text-sm text-gray-500">{act.activity_type}</span>
+          <div className="flex items-center justify-between w-full">
+            <div className="flex items-center gap-2">
+              <Activity className="w-4 h-4 text-gray-400" />
+              <span className="text-sm text-gray-500">{act.activity_type}</span>
+            </div>
+            <div title={deviceTitle}><DeviceIcon className="w-4 h-4 text-gray-400" /></div>
           </div>
         );
     }

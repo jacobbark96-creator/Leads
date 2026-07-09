@@ -21,6 +21,14 @@ export default function SEOPage() {
   const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
 
   useEffect(() => {
+    if (profile?.id) {
+      import('@/lib/activityTracker').then(({ trackClientActivity }) => {
+        trackClientActivity(profile.id, 'page_view', { page: 'SEO Intelligence' });
+      });
+    }
+  }, [profile?.id]);
+
+  useEffect(() => {
     const checkSEOStatus = async () => {
       if (!profile?.id) return;
       const { data } = await supabase.from('clients').select('is_seo_customer').eq('user_id', profile.id).single();

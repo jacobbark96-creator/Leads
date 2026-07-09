@@ -9,6 +9,7 @@ import { Phone, Mail, Building, User, Users, Search } from 'lucide-react';
 import { useSearchParams } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
+import { useDivisionStore } from '@/store/divisionStore';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -29,6 +30,7 @@ const stringToColor = (str: string) => {
 
 function OnboardedContractorsContent() {
   const { profile } = useAuthStore();
+  const { activeDivisionId } = useDivisionStore();
   const searchParams = useSearchParams();
   const assignedToMe = searchParams.get('assignedToMe') === 'true';
   const [contractors, setContractors] = useState<Contractor[]>([]);
@@ -67,6 +69,7 @@ function OnboardedContractorsContent() {
 
       if (isInitial) {
         let countQuery = supabase.from('contractors').select('id', { count: 'exact', head: true }).eq('status', 'onboarded');
+        
         if (assignedToMe && profile) {
           if (profile.role === 'super_admin' && assignedUserFilter !== 'me') {
             countQuery = countQuery.eq('assigned_to', assignedUserFilter);

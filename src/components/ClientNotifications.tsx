@@ -8,6 +8,16 @@ import { useAuthStore } from '../store/authStore';
 import toast from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 
+const formatNotificationText = (text: string) => {
+  if (!text) return text;
+  // Remove UK postcodes
+  let cleaned = text.replace(/,? ?\b[A-Z]{1,2}\d[A-Z\d]? ?\d[A-Z]{2}\b/gi, '');
+  // Clean up empty locations
+  cleaned = cleaned.replace(/New Lead in\s*$/i, 'New Lead in your area');
+  cleaned = cleaned.replace(/new lead in\s+matches/i, 'new lead in your area matches');
+  return cleaned;
+};
+
 interface Notification {
   id: string;
   user_id: string | null;
@@ -81,7 +91,7 @@ export function ClientNotifications() {
 
               if (!isSeen && !isRead) {
                 setNotifications(prev => [newNotif, ...prev]);
-                toast.success(`New Notification: ${newNotif.title}`, {
+                toast.success(`New Notification: ${formatNotificationText(newNotif.title)}`, {
                   icon: getIcon(newNotif.type, "w-5 h-5"),
                   duration: 5000,
                   onClick: () => {
@@ -343,11 +353,11 @@ export function ClientNotifications() {
                         
                         <div className="flex-1 min-w-0 flex items-center gap-2">
                           <p className={`text-xs font-bold truncate shrink-0 ${unseen ? 'text-gray-900' : 'text-gray-600'}`}>
-                            {notif.title}
+                            {formatNotificationText(notif.title)}
                           </p>
                           <span className="text-gray-200 shrink-0">|</span>
                           <p className={`text-[11px] truncate flex-1 ${unseen ? 'text-gray-600' : 'text-gray-400'}`}>
-                            {notif.body}
+                            {formatNotificationText(notif.body)}
                           </p>
                         </div>
 

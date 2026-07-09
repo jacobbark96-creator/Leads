@@ -6,9 +6,11 @@ import { useAuthStore } from '@/store/authStore';
 import { calculateCommission } from '@/lib/commission';
 import PipelineBoard from './components/PipelineBoard';
 import { Loader2, Users, DollarSign, Target, TrendingUp, Search, Filter } from 'lucide-react';
+import { useDivisionStore } from '@/store/divisionStore';
 
 export default function PipelinePage() {
   const { profile } = useAuthStore();
+  const { activeDivisionId } = useDivisionStore();
   const [loading, setLoading] = useState(true);
   const [leads, setLeads] = useState<any[]>([]);
   const [users, setUsers] = useState<any[]>([]);
@@ -31,7 +33,7 @@ export default function PipelinePage() {
       }
       fetchPipeline();
     }
-  }, [profile, selectedUser]);
+  }, [profile, selectedUser, activeDivisionId]);
 
   const fetchUsers = async () => {
     const { data } = await supabase
@@ -60,6 +62,10 @@ export default function PipelinePage() {
           )
         `)
         .order('created_at', { ascending: false });
+
+      if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
+        query = query.eq('division_id', activeDivisionId);
+      }
 
       if (profile?.role === 'growth_manager') {
         // Growth Managers see their leads (private or not)

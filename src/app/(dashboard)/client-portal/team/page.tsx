@@ -49,6 +49,12 @@ export default function TeamManagement() {
     role: 'Team Member'
   });
 
+  useEffect(() => {
+    if (profile?.id) {
+      trackClientActivity(profile.id, 'page_view', { page: 'Team Management' });
+    }
+  }, [profile?.id]);
+
   const fetchTeam = async () => {
     if (!profile) return;
     try {

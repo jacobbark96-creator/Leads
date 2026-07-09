@@ -9,6 +9,7 @@ import { useAuthStore } from '@/store/authStore';
 import { AddLeadModal } from '@/components/AddLeadModal';
 import { OnboardContractorModal } from '@/components/OnboardContractorModal';
 import { NearbyLeadsModal } from '@/components/NearbyLeadsModal';
+import { useDivisionStore } from '@/store/divisionStore';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -84,6 +85,7 @@ const getAdditionalNotesText = (contractor: Contractor) => {
 
 function ContractorProcessingContent() {
   const { profile } = useAuthStore();
+  const { activeDivisionId } = useDivisionStore();
   const searchParams = useSearchParams();
   const assignedToMe = searchParams.get('assignedToMe') === 'true';
   const [contractors, setContractors] = useState<Contractor[]>([]);
@@ -216,6 +218,7 @@ function ContractorProcessingContent() {
       // Base query for total count (without search)
       if (isInitial) {
         let countQuery = supabase.from('contractors').select('id', { count: 'exact', head: true }).neq('status', 'onboarded');
+        
         if (assignedToMe && profile) {
           if (['super_admin', 'admin'].includes(profile.role) && assignedUserFilter !== 'me') {
             countQuery = countQuery.eq('assigned_to', assignedUserFilter);

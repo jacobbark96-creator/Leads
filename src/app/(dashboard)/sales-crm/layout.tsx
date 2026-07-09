@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
 import { SmsNotifications } from '@/components/SmsNotifications';
 import { DivisionSelector } from '@/components/DivisionSelector';
+import { useDivisionStore } from '@/store/divisionStore';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -34,6 +35,24 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
   
   // Lead Packs
   const [leadPacks, setLeadPacks] = useState<any[]>([]);
+  const { activeDivisionId } = useDivisionStore();
+  const [activeDivisionName, setActiveDivisionName] = useState<string>('');
+
+  useEffect(() => {
+    const fetchDivisionName = async () => {
+      if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
+        const { data } = await supabase.from('divisions').select('name').eq('id', activeDivisionId).single();
+        setActiveDivisionName(data?.name || '');
+      } else if (profile?.divisions?.name) {
+        setActiveDivisionName(profile.divisions.name);
+      } else {
+        setActiveDivisionName('');
+      }
+    };
+    fetchDivisionName();
+  }, [profile, activeDivisionId]);
+
+  const isOpenEnergyResidential = activeDivisionName.toLowerCase() === 'open energy residential';
 
   useEffect(() => {
     const fetchPacks = async () => {
@@ -66,6 +85,8 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
     { id: 'sales-crm/my-clients', name: 'My Clients', path: '/sales-crm/my-clients', icon: Users },
     { id: 'sales-crm/my-sales', name: 'My Sales', path: '/sales-crm/my-sales', icon: BarChart2 },
   ].filter(item => {
+    if (isOpenEnergyResidential && item.id === 'sales-crm/fresh') return false;
+
     if (profile?.role === 'growth_manager') {
       return ['staff', 'sales-crm/my-clients', 'sales-crm/my-sales', 'sales-crm/pipeline'].includes(item.id || '');
     }
@@ -152,26 +173,28 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
                       );
                     })}
 
-                    <div className="pt-6 pb-2 px-3">
-                      <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Lead Packs</h3>
-                      <div className="space-y-1">
-                        {leadPacks.map(pack => (
-                          <Link
-                            key={pack.id}
-                            href={`/sales-crm/lead-v2?pack=${pack.id}`}
-                            className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all"
-                          >
-                            <div className="w-8 h-8 rounded-lg shadow-inner flex items-center justify-center text-white shrink-0" style={{ backgroundColor: pack.color || '#3B82F6' }}>
-                              {pack.icon ? <span className="text-sm">{pack.icon}</span> : <Database className="w-4 h-4" />}
-                            </div>
-                            <div className="flex flex-col min-w-0 flex-1">
-                              <span className="truncate leading-tight">{pack.name}</span>
-                              <span className="text-[10px] text-gray-400 font-normal">{pack.leads_remaining} remaining</span>
-                            </div>
-                          </Link>
-                        ))}
+                    {!isOpenEnergyResidential && (
+                      <div className="pt-6 pb-2 px-3">
+                        <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-3">Lead Packs</h3>
+                        <div className="space-y-1">
+                          {leadPacks.map(pack => (
+                            <Link
+                              key={pack.id}
+                              href={`/sales-crm/lead-v2?pack=${pack.id}`}
+                              className="flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-all"
+                            >
+                              <div className="w-8 h-8 rounded-lg shadow-inner flex items-center justify-center text-white shrink-0" style={{ backgroundColor: pack.color || '#3B82F6' }}>
+                                {pack.icon ? <span className="text-sm">{pack.icon}</span> : <Database className="w-4 h-4" />}
+                              </div>
+                              <div className="flex flex-col min-w-0 flex-1">
+                                <span className="truncate leading-tight">{pack.name}</span>
+                                <span className="text-[10px] text-gray-400 font-normal">{pack.leads_remaining} remaining</span>
+                              </div>
+                            </Link>
+                          ))}
+                        </div>
                       </div>
-                    </div>
+                    )}
                   </nav>
                 </div>
 
@@ -231,35 +254,37 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
             })}
 
             {/* Lead Packs Section */}
-            <div className="pt-6 pb-2 px-3">
-              <div className="flex items-center justify-between mb-2">
-                <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lead Packs</h3>
-                <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{leadPacks.length}</span>
+            {!isOpenEnergyResidential && (
+              <div className="pt-6 pb-2 px-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lead Packs</h3>
+                  <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{leadPacks.length}</span>
+                </div>
+                <div className="space-y-0.5">
+                  {leadPacks.length > 0 ? (
+                    leadPacks.map(pack => (
+                      <Link
+                        key={pack.id}
+                        href={`/sales-crm/lead-v2?pack=${pack.id}`}
+                        className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors group"
+                      >
+                        <div className="w-6 h-6 rounded shadow-inner flex items-center justify-center text-white shrink-0" style={{ backgroundColor: pack.color || '#3B82F6' }}>
+                          {pack.icon ? <span className="text-xs">{pack.icon}</span> : <Database className="w-3.5 h-3.5" />}
+                        </div>
+                        <div className="flex flex-col min-w-0 flex-1">
+                          <span className="truncate group-hover:text-blue-600 transition-colors leading-tight">{pack.name}</span>
+                          <span className="text-[10px] text-gray-400 font-normal">{pack.leads_remaining} remaining</span>
+                        </div>
+                      </Link>
+                    ))
+                  ) : (
+                    <div className="px-3 py-2 text-xs text-gray-400 italic">
+                      No active packs
+                    </div>
+                  )}
+                </div>
               </div>
-              <div className="space-y-0.5">
-                {leadPacks.length > 0 ? (
-                  leadPacks.map(pack => (
-                    <Link
-                      key={pack.id}
-                      href={`/sales-crm/lead-v2?pack=${pack.id}`}
-                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-gray-50 hover:text-gray-900 transition-colors group"
-                    >
-                      <div className="w-6 h-6 rounded shadow-inner flex items-center justify-center text-white shrink-0" style={{ backgroundColor: pack.color || '#3B82F6' }}>
-                        {pack.icon ? <span className="text-xs">{pack.icon}</span> : <Database className="w-3.5 h-3.5" />}
-                      </div>
-                      <div className="flex flex-col min-w-0 flex-1">
-                        <span className="truncate group-hover:text-blue-600 transition-colors leading-tight">{pack.name}</span>
-                        <span className="text-[10px] text-gray-400 font-normal">{pack.leads_remaining} remaining</span>
-                      </div>
-                    </Link>
-                  ))
-                ) : (
-                  <div className="px-3 py-2 text-xs text-gray-400 italic">
-                    No active packs
-                  </div>
-                )}
-              </div>
-            </div>
+            )}
           </nav>
 
           <div className="p-3 shrink-0 border-t border-gray-100">
@@ -294,7 +319,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
         {/* MAIN CONTENT WRAPPER */}
         <div className="flex-1 flex flex-col md:pl-56 min-w-0 h-screen">
           {/* TOP NAVBAR */}
-          <header className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-10 flex items-center justify-between px-4 sm:px-5 shrink-0 shadow-sm">
+          <header className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 flex items-center justify-between px-4 sm:px-5 shrink-0 shadow-sm">
             <div className="flex items-center gap-2 md:gap-4">
               <button 
                 onClick={() => setMobileMenuOpen(true)}

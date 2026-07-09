@@ -280,7 +280,7 @@ export const TrackerDashboard = () => {
 
         <div className="max-h-[220px] overflow-y-auto custom-scrollbar">
           <table className="w-full text-left">
-            <thead className="sticky top-0 bg-white/50 backdrop-blur-sm z-10">
+            <thead className="sticky top-0 bg-white/50 backdrop-blur-sm z-40">
               <tr>
                 <th className="px-3 py-2 text-[6px] font-black text-gray-400 uppercase tracking-widest">Date</th>
                 <th className="px-3 py-2 text-[6px] font-black text-gray-400 uppercase tracking-widest">Lead Name</th>

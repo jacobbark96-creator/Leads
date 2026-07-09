@@ -33,7 +33,7 @@ export const DivisionSelector = () => {
     <div className="relative">
       <button 
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-gray-50 transition-colors text-sm font-semibold text-gray-900 border border-gray-200"
+        className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white hover:bg-gray-50 transition-colors text-sm font-semibold text-gray-900 border border-gray-200"
       >
         <Building2 className="w-4 h-4 text-gray-500" />
         <span className="max-w-[120px] truncate">{currentDivision.name}</span>

@@ -24,11 +24,12 @@ export async function GET(req: Request) {
     return NextResponse.json({ error: 'Missing Authorization header.' }, { status: 401 });
   }
 
+  const token = authHeader.replace(/^Bearer\s+/i, '');
+  
   const anon = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: authHeader } },
-    auth: { persistSession: false }
+    auth: { persistSession: false, autoRefreshToken: false }
   });
-  const { data: userData, error: userError } = await anon.auth.getUser();
+  const { data: userData, error: userError } = await anon.auth.getUser(token);
   
   if (userError || !userData?.user) {
     console.error('Advisor API Auth Error:', userError || 'No user data');

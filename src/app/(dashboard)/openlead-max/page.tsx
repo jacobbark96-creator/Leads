@@ -308,7 +308,7 @@ export default function OpenleadMaxPage() {
             onClick={() => setShowHowItWorks(false)}
           />
           <div className="relative w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden animate-in zoom-in-95 duration-300 flex flex-col max-h-[85vh]">
-            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-10">
+            <div className="p-6 border-b border-slate-100 flex items-center justify-between bg-white sticky top-0 z-40">
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-xl bg-blue-50 flex items-center justify-center">
                   <HelpCircle className="w-6 h-6 text-blue-600" />

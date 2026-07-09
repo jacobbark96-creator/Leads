@@ -25,6 +25,23 @@ export default function PipelinePage() {
   const [statusFilter, setStatusFilter] = useState('all');
 
   const [showFilters, setShowFilters] = useState(false);
+  const [activeDivisionName, setActiveDivisionName] = useState<string>('');
+
+  useEffect(() => {
+    const fetchDivisionName = async () => {
+      if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
+        const { data } = await supabase.from('divisions').select('name').eq('id', activeDivisionId).single();
+        setActiveDivisionName(data?.name || '');
+      } else if (profile?.divisions?.name) {
+        setActiveDivisionName(profile.divisions.name);
+      } else {
+        setActiveDivisionName('');
+      }
+    };
+    fetchDivisionName();
+  }, [profile, activeDivisionId]);
+
+  const isOpenEnergyResidential = activeDivisionName.toLowerCase() === 'open energy residential';
 
   useEffect(() => {
     if (profile) {
@@ -33,7 +50,7 @@ export default function PipelinePage() {
       }
       fetchPipeline();
     }
-  }, [profile, selectedUser, activeDivisionId]);
+  }, [profile, selectedUser, activeDivisionId, isOpenEnergyResidential]);
 
   const fetchUsers = async () => {
     const { data } = await supabase
@@ -71,7 +88,11 @@ export default function PipelinePage() {
         // Growth Managers see their leads (private or not)
         query = query.eq('assigned_to', profile.id);
       } else {
-        query = query.in('status', ['call back', 'qualified', 'marketplace', 'awaiting_sales', 'sold']);
+        const statuses = isOpenEnergyResidential 
+          ? ['call back', 'qualified', 'awaiting_sales', 'sold']
+          : ['call back', 'qualified', 'marketplace', 'awaiting_sales', 'sold'];
+        
+        query = query.in('status', statuses);
         
         if (profile?.role !== 'super_admin' || selectedUser === 'me') {
           query = query.eq('assigned_to', profile?.id);
@@ -400,7 +421,11 @@ export default function PipelinePage() {
           <Loader2 className="w-8 h-8 animate-spin text-blue-500" />
         </div>
       ) : (
-        <PipelineBoard leads={visibleLeads} role={viewingRole} />
+        <PipelineBoard 
+          leads={visibleLeads} 
+          role={viewingRole} 
+          isOpenEnergyResidential={isOpenEnergyResidential}
+        />
       )}
     </div>
   );

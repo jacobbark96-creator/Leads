@@ -195,7 +195,7 @@ export default function RecruitmentPage() {
       {isModalOpen && (
         <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
           <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div className="sticky top-0 bg-white px-8 py-6 border-b border-gray-100 flex justify-between items-center z-10">
+            <div className="sticky top-0 bg-white px-8 py-6 border-b border-gray-100 flex justify-between items-center z-40">
               <h2 className="text-xl font-extrabold text-gray-900">
                 {editingJob?.id ? 'Edit Listing' : 'Create New Listing'}
               </h2>

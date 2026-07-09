@@ -9,6 +9,7 @@ import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { MarketplaceLeadModal } from '@/components/MarketplaceLeadModal';
 import { OrderSummaryModal } from '@/components/OrderSummaryModal';
 import { extractTown, getVagueLocation } from '@/lib/utils';
+import { trackClientActivity } from '@/lib/activityTracker';
 import { Lead } from '@/types';
 
 export default function TeamManagement() {

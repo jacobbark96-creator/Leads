@@ -7,6 +7,7 @@ import { PhoneCall, CheckCircle, Megaphone, Trophy, Briefcase, FileText, UserChe
 interface PipelineBoardProps {
   leads: any[];
   role?: string;
+  isOpenEnergyResidential?: boolean;
 }
 
 const COLUMNS = [
@@ -31,10 +32,14 @@ const SALES_COLUMNS = [
   { id: 'Lost', label: 'Lost', color: 'gray', icon: FileText },
 ];
 
-export default function PipelineBoard({ leads, role }: PipelineBoardProps) {
+export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: PipelineBoardProps) {
   const isGM = role === 'growth_manager';
   const isSales = role === 'Residential Sales' || role === 'Commercial Sales';
-  const columns = isGM ? GM_COLUMNS : isSales ? SALES_COLUMNS : COLUMNS;
+  let columns = isGM ? GM_COLUMNS : isSales ? SALES_COLUMNS : COLUMNS;
+
+  if (isOpenEnergyResidential) {
+    columns = columns.filter(c => c.id !== 'marketed');
+  }
 
   const getLeadsByStatus = (status: string) => {
     if (isGM) {

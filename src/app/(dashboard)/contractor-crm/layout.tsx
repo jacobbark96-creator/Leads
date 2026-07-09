@@ -107,7 +107,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
         {/* MAIN CONTENT WRAPPER */}
         <div className="flex-1 flex flex-col md:pl-56 min-w-0 h-screen">
           {/* TOP NAVBAR */}
-          <header className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-10 flex items-center justify-between px-4 sm:px-5 shrink-0 shadow-sm">
+          <header className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 flex items-center justify-between px-4 sm:px-5 shrink-0 shadow-sm">
             <div className="flex items-center gap-4">
               <button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
                 <Menu className="w-5 h-5" />

@@ -223,7 +223,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                           useTradeAccount 
                             ? 'border-blue-600 bg-blue-50 shadow-md' 
                             : 'border-gray-200 hover:border-blue-300'
-                        } ${((profile.trade_limit_setting || 0) <= 0) ? 'opacity-60 grayscale' : ''}`}
+                        } ${(profile?.trade_limit_setting || 0) <= 0 ? 'opacity-60 grayscale' : ''}`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
@@ -235,14 +235,14 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                             <p className="text-sm font-bold text-gray-900 leading-tight">Add to Flex Invoice</p>
                             <div className="space-y-0.5 mt-0.5">
                               <p className="text-[10px] text-gray-500 font-medium uppercase tracking-wider">
-                                { (profile.trade_limit_setting || 0) > 0 
-                                  ? `Flex Limit: £${(profile.trade_limit_setting || 0).toLocaleString()}`
+                                { (profile?.trade_limit_setting || 0) > 0 
+                                  ? `Flex Limit: £${(profile?.trade_limit_setting || 0).toLocaleString()}`
                                   : 'Flex Limit Not Set'
                                 }
                               </p>
-                              { (profile.trade_limit_setting || 0) > 0 && (
+                              { (profile?.trade_limit_setting || 0) > 0 && (
                                 <p className="text-[10px] text-blue-600 font-bold uppercase tracking-wider">
-                                  Remaining Flex: £{Math.max(0, (profile.trade_limit_setting || 0) - (profile.current_trade_usage || 0)).toLocaleString()}
+                                  Remaining Flex: £{Math.max(0, (profile?.trade_limit_setting || 0) - (profile?.current_trade_usage || 0)).toLocaleString()}
                                 </p>
                               )}
                             </div>

@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 
 import { useRouter } from 'next/navigation';
 import { useDivisionStore } from '@/store/divisionStore';
+import { useAuthStore } from '@/store/authStore';
 
 const containerStyle = {
   width: '100%',
@@ -66,6 +67,7 @@ const darkenHex = (hex: string, percent: number = 30) => {
 
 export default function MapTab() {
   const router = useRouter();
+  const { profile } = useAuthStore();
   const { activeDivisionId } = useDivisionStore();
   const { isLoaded, loadError } = useJsApiLoader({
     id: 'google-map-script',

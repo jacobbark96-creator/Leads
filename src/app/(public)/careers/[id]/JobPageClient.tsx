@@ -78,6 +78,25 @@ export default function JobPageClient({ job, variant = 'sidebar' }: { job: Job, 
 
       if (error) throw error;
 
+      // 4. Send Email Notification to careers@openlead.co.uk
+      try {
+        await fetch('/api/careers/notify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            name: formData.name,
+            email: formData.email,
+            phone: formData.phone,
+            cover_letter: formData.cover_letter,
+            resume_url: publicUrl,
+            job_title: job.title
+          })
+        });
+      } catch (notifyError) {
+        console.error('Failed to send notification email:', notifyError);
+        // We don't throw here to ensure the user still sees the success message
+      }
+
       setSubmitted(true);
       toast.success('Application submitted successfully!');
     } catch (error: any) {

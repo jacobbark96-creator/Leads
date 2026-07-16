@@ -96,7 +96,7 @@ export default function IntranetCareersPage() {
                   if (job.external_link) {
                     window.open(job.external_link, '_blank', 'noopener,noreferrer');
                   } else {
-                    window.location.href = `mailto:careers@openlead.com?subject=Internal Application: ${job.title}`;
+                    window.location.href = `mailto:careers@openlead.co.uk?subject=Internal Application: ${job.title}`;
                   }
                 }}
                 className="w-full inline-flex items-center justify-center px-6 py-3 bg-emerald-50 text-emerald-700 font-bold rounded-2xl hover:bg-emerald-600 hover:text-white transition-all group/btn"

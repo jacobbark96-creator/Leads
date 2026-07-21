@@ -41,6 +41,7 @@ export const LiveFeed = () => {
           formattedTime = formattedTime.replace(/^about /i, '');
 
           return {
+            lead_id: act.lead_id,
             time: formattedTime,
             title: title,
             status: statusLabel
@@ -97,10 +98,19 @@ export const LiveFeed = () => {
       ) : (
         <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar">
           {events.map((e, i) => (
-            <div key={i} className="flex items-center gap-2 sm:gap-3 group cursor-pointer">
+            <div key={i} className="flex items-center gap-2 sm:gap-3 group">
               <span className="text-[10px] sm:text-xs font-medium text-gray-500 w-12 sm:w-16 shrink-0">{e.time}</span>
-              <div className="flex-1 text-center text-[11px] sm:text-xs font-bold text-gray-200 group-hover:text-white transition-colors truncate">
-                {e.title}
+              <div className="flex-1 text-center text-[11px] sm:text-xs font-bold truncate">
+                {e.lead_id ? (
+                  <a 
+                    href={`/sales-crm/lead-v2?id=${e.lead_id}&tab=pipeline`} 
+                    className="text-gray-200 hover:text-blue-400 transition-colors cursor-pointer"
+                  >
+                    {e.title}
+                  </a>
+                ) : (
+                  <span className="text-gray-200">{e.title}</span>
+                )}
               </div>
               <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border shrink-0 ${getStatusStyle(e.status)}`}>
                 {e.status}

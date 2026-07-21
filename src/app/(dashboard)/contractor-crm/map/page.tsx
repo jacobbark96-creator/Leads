@@ -169,7 +169,9 @@ export default function MapTab() {
         .from('leads')
         .select('*')
         .eq('is_marketed', true)
-        .is('client_id', null);
+        .is('client_id', null)
+        .neq('status', 'sold')
+        .neq('marked_as_sold', true);
 
       if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
         leadsQuery = leadsQuery.eq('division_id', activeDivisionId);

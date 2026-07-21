@@ -48,9 +48,9 @@ export async function POST(req: Request) {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: \`Openlead Careers <\${defaultFromEmail}>\`,
+        from: `Openlead Careers <${defaultFromEmail}>`,
         to: ['careers@openlead.co.uk'],
-        subject: \`New Application: \${job_title} - \${name}\`,
+        subject: `New Application: ${job_title} - ${name}`,
         html,
       }),
     });

@@ -87,11 +87,7 @@ export const RecentlySoldCarousel: React.FC<RecentlySoldCarouselProps> = ({ sold
               {lead.company && lead.company.trim() !== '' ? 'Commercial Lead' : 'Residential Lead'}
             </span>
           </div>
-          <div className="flex items-center text-xs">
-            <span className="font-bold text-white truncate uppercase tracking-tight">
-              {lead.is_exclusive_sold ? 'Sold Exclusively' : 'Sold on Leadshare'}
-            </span>
-          </div>
+
         </div>
       </div>
       

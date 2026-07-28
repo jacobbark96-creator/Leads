@@ -207,14 +207,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           codecPreferences: ['opus', 'pcmu'] as any,
           enableRingingState: true,
           // Explicitly set edges to optimize routing and avoid high-latency "global" jumps
-          // This includes US East, Europe West (Dublin), and Singapore for global coverage
           edge: ['ashburn', 'dublin', 'singapore'],
-          // Enhance audio quality via WebRTC constraints
-          audioConstraints: {
-            autoGainControl: true,   // Helps with "quiet" voice issues
-            echoCancellation: true,  // Reduces background echo
-            noiseSuppression: true,  // Filters out background noise
-          },
           // Increase logging for quality troubleshooting if needed
           logLevel: 'error',
         } as any);
@@ -370,6 +363,17 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         // Handle Audio Device Management
         const updateDevices = async () => {
           try {
+            // Explicitly request microphone permission first to ensure we get valid device labels and IDs
+            // and to guarantee the browser allows upstream audio.
+            if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+              try {
+                const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                // Stop the tracks immediately after getting permission, Twilio will request its own stream when connecting
+                stream.getTracks().forEach(track => track.stop());
+              } catch (err) {
+                console.warn('Microphone permission was not granted during init:', err);
+              }
+            }
             const devices = await navigator.mediaDevices.enumerateDevices();
             setInputDevices(devices.filter(d => d.kind === 'audioinput'));
             setOutputDevices(devices.filter(d => d.kind === 'audiooutput'));

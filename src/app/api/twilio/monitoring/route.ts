@@ -151,11 +151,12 @@ export async function GET(request: Request) {
       }
       
       for (const chunk of chunks) {
-        const orQuery = chunk.map(num => `phone.ilike.%${num}%`).join(',');
-        const orQuerySecondary = chunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
-        const orQueryContractorPhone = chunk.map(num => `phone.ilike.%${num}%`).join(',');
-        const orQueryContractorSecondary = chunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
-        const orQueryContractorOther = chunk.map(num => `other_contact_numbers.ilike.%${num}%`).join(',');
+        // Create fuzzy patterns like %7%9%3%2%1%2%3%4%5%6% to match phone numbers with spaces or dashes
+        const orQuery = chunk.map(num => `phone.ilike.%${num.split('').join('%')}%`).join(',');
+        const orQuerySecondary = chunk.map(num => `secondary_phone.ilike.%${num.split('').join('%')}%`).join(',');
+        const orQueryContractorPhone = chunk.map(num => `phone.ilike.%${num.split('').join('%')}%`).join(',');
+        const orQueryContractorSecondary = chunk.map(num => `secondary_phone.ilike.%${num.split('').join('%')}%`).join(',');
+        const orQueryContractorOther = chunk.map(num => `other_contact_numbers.ilike.%${num.split('').join('%')}%`).join(',');
 
         const results = await Promise.all([
           supabaseAdmin.from('leads').select('id, name, company, phone').or(orQuery),
@@ -165,11 +166,12 @@ export async function GET(request: Request) {
           supabaseAdmin.from('contractors').select('id, name:contact_name, company:company_name, phone:other_contact_numbers').or(orQueryContractorOther)
         ]);
         
-        for (const res of results) {
-          if (res.data) {
-            matchedEntities = matchedEntities.concat(res.data);
-          }
-        }
+        // Add types
+        if (results[0].data) matchedEntities = matchedEntities.concat(results[0].data.map(d => ({ ...d, entityType: 'lead' })));
+        if (results[1].data) matchedEntities = matchedEntities.concat(results[1].data.map(d => ({ ...d, entityType: 'lead' })));
+        if (results[2].data) matchedEntities = matchedEntities.concat(results[2].data.map(d => ({ ...d, entityType: 'contractor' })));
+        if (results[3].data) matchedEntities = matchedEntities.concat(results[3].data.map(d => ({ ...d, entityType: 'contractor' })));
+        if (results[4].data) matchedEntities = matchedEntities.concat(results[4].data.map(d => ({ ...d, entityType: 'contractor' })));
       }
     }
 
@@ -186,10 +188,14 @@ export async function GET(request: Request) {
       rep.logs.forEach(log => {
         if (log.to) {
           const numToMatch = log.to.replace(/[^\d]/g, '').slice(-10);
-          const matched = matchedEntities.find(l => l.phone && l.phone.replace(/[^\d]/g, '').includes(numToMatch));
+          const matched = matchedEntities.find(l => {
+            const p1 = l.phone ? l.phone.replace(/[^\d]/g, '') : '';
+            return p1.includes(numToMatch);
+          });
           if (matched) {
             log.leadId = matched.id;
             log.leadName = matched.company || matched.name || 'Unknown Entity';
+            log.entityType = matched.entityType;
           }
         }
       });

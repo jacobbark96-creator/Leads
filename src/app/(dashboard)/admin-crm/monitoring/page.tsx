@@ -168,7 +168,7 @@ export default function MonitoringTab() {
                         {log.leadId ? (
                           <div className="flex flex-col">
                             <a 
-                              href={`/sales-crm/lead-v2?id=${log.leadId}`}
+                              href={log.entityType === 'contractor' ? `/admin-crm?tab=users` : `/sales-crm/lead-v2?id=${log.leadId}`}
                               className="text-blue-600 hover:text-blue-800 font-medium truncate max-w-[200px] mb-0.5"
                               target="_blank"
                               rel="noopener noreferrer"

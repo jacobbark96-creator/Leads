@@ -44,8 +44,8 @@ export async function POST(req: Request) {
     let outboundNumber = twilioNumber;
     try {
       const supabaseAdmin = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.SUPABASE_SERVICE_ROLE_KEY!
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.SUPABASE_SERVICE_ROLE_KEY || ''
       );
       const { data: aiUser } = await supabaseAdmin
         .from('users')
@@ -60,7 +60,15 @@ export async function POST(req: Request) {
       console.warn("Could not fetch Aidialler number, falling back to default", e);
     }
 
-    params.append('From', outboundNumber);
+    // Format outbound number to E.164
+    let formattedOutbound = outboundNumber.replace(/[^\d+]/g, '');
+    if (formattedOutbound.startsWith('0') && !formattedOutbound.startsWith('00')) {
+      formattedOutbound = '+44' + formattedOutbound.substring(1);
+    } else if (!formattedOutbound.startsWith('+')) {
+      formattedOutbound = '+' + formattedOutbound;
+    }
+
+    params.append('From', formattedOutbound);
     params.append('MachineDetection', 'Enable'); // Detect voicemail vs human
     params.append('AsyncAmd', 'true'); // Connect call immediately while analyzing in background
     params.append('AsyncAmdStatusCallback', `${baseUrl}/api/twilio/amd-callback`); // Where to send voicemail detection result

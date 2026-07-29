@@ -30,6 +30,10 @@ export async function POST(req: Request) {
     params.append('Url', url);
     params.append('To', phone);
     params.append('From', twilioNumber);
+    params.append('MachineDetection', 'Enable'); // Detect voicemail vs human
+    params.append('AsyncAmd', 'true'); // Connect call immediately while analyzing in background
+    params.append('AsyncAmdStatusCallback', `${baseUrl}/api/twilio/amd-callback`); // Where to send voicemail detection result
+    params.append('Timeout', '30'); // Stop ringing if no answer after 30 seconds
 
     const authHeader = 'Basic ' + btoa(`${accountSid}:${authToken}`);
 

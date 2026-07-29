@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
@@ -175,10 +175,19 @@ export default function LeadPacksPage() {
     }
   };
 
+  const cancelAutodialRef = useRef(false);
+
+  const handleStopAutodial = () => {
+    cancelAutodialRef.current = true;
+    toast.error("Stopping autodialer after current call...", { id: 'autodial' });
+  };
+
   const handleAIAutodial = async (packId: string) => {
-    if (!window.confirm('WARNING: This will immediately dispatch AI calls to ALL pending leads in this pack simultaneously. Are you sure you want to proceed?')) return;
+    if (!window.confirm('This will sequentially dial all pending leads in this pack. You can stop it at any time. Proceed?')) return;
     
     setAutodialingPack(packId);
+    cancelAutodialRef.current = false;
+
     try {
       // 1. Get all pending leads in the pack
       const { data: members, error: fetchError } = await supabase
@@ -194,19 +203,48 @@ export default function LeadPacksPage() {
         return;
       }
 
-      toast.loading(`Initiating ${members.length} AI calls...`);
-
-      // 2. Loop through and trigger the AI endpoint
+      // 2. Loop through and trigger the AI endpoint sequentially
       let successCount = 0;
-      for (const member of members) {
+      for (let i = 0; i < members.length; i++) {
+        if (cancelAutodialRef.current) {
+          toast.error('Autodialing stopped manually.', { id: 'autodial' });
+          break;
+        }
+
+        const member = members[i];
         const phone = (member.leads as any)?.phone;
+
         if (phone) {
+          toast.loading(`Dialing ${i + 1} of ${members.length}...`, { id: 'autodial' });
           try {
-            await fetch('/api/ultravox/initiate', {
+            const res = await fetch('/api/ultravox/initiate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ leadId: member.lead_id, phone })
             });
+
+            if (!res.ok) throw new Error('Failed to initiate call');
+            const { callSid } = await res.json();
+
+            // 3. Poll Twilio until the call completes or fails
+            let errorCount = 0;
+            while (true) {
+              if (cancelAutodialRef.current) break;
+              await new Promise(resolve => setTimeout(resolve, 3000)); // Poll every 3 seconds
+
+              try {
+                const statusRes = await fetch(`/api/twilio/call-status?callSid=${callSid}`);
+                if (!statusRes.ok) throw new Error('Status check failed');
+                const { status } = await statusRes.json();
+
+                if (['completed', 'busy', 'no-answer', 'canceled', 'failed'].includes(status)) {
+                  break;
+                }
+              } catch (err) {
+                errorCount++;
+                if (errorCount > 3) break; // Give up polling if API keeps failing
+              }
+            }
             successCount++;
           } catch (e) {
             console.error('Failed to initiate call for lead:', member.lead_id);
@@ -214,11 +252,11 @@ export default function LeadPacksPage() {
         }
       }
 
-      toast.dismiss();
-      toast.success(`Successfully dispatched ${successCount} AI calls!`);
+      if (!cancelAutodialRef.current) {
+        toast.success(`Finished! Completed ${successCount} calls.`, { id: 'autodial' });
+      }
     } catch (error: any) {
-      toast.dismiss();
-      toast.error('Error initiating autodialer: ' + error.message);
+      toast.error('Error initiating autodialer: ' + error.message, { id: 'autodial' });
     } finally {
       setAutodialingPack(null);
     }
@@ -313,13 +351,24 @@ export default function LeadPacksPage() {
           </h1>
           <p className="text-sm text-gray-500 mt-1">Manage grouped lead datasets for outbound calling campaigns.</p>
         </div>
-        <button 
-          onClick={() => setShowCreateModal(true)}
-          className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm"
-        >
-          <Plus className="w-4 h-4" />
-          Create Pack
-        </button>
+        <div className="flex items-center gap-3">
+          {autodialingPack && (
+            <button 
+              onClick={handleStopAutodial}
+              className="bg-red-600 hover:bg-red-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm"
+            >
+              <span className="w-2 h-2 bg-white rounded-full animate-pulse"></span>
+              Stop Autodialing
+            </button>
+          )}
+          <button 
+            onClick={() => setShowCreateModal(true)}
+            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg text-sm font-semibold flex items-center gap-2 transition-colors shadow-sm"
+          >
+            <Plus className="w-4 h-4" />
+            Create Pack
+          </button>
+        </div>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

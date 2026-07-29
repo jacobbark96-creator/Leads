@@ -10,7 +10,6 @@ export async function POST(req: Request) {
 
     // 1. Create a call on Ultravox using the specific Agent ID
     const agentId = '1fc1194d-919f-4333-8181-23b35152a813';
-    const systemPrompt = "You are an AI assistant for OpenLead. Your job is to qualify leads. Ask if they are still interested in our services. Keep your answers short and conversational.";
     const ultravoxRes = await fetch(`https://api.ultravox.ai/api/calls`, {
       method: 'POST',
       headers: {
@@ -18,10 +17,7 @@ export async function POST(req: Request) {
         'X-API-Key': process.env.ULTRAVOX_API_KEY || 'nVmkHxY4.b7TdQfBemm7VKVs6qKxStAegTVHa7XNL'
       },
       body: JSON.stringify({
-        systemPrompt: systemPrompt,
-        model: "fixie-ai/ultravox-70B",
-        voice: "terrence",
-        temperature: 0.3,
+        agentId,
         medium: { twilio: {} }
       })
     });

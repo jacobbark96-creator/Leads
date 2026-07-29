@@ -203,6 +203,8 @@ export default function LeadPacksPage() {
         return;
       }
 
+      console.log("Autodial members fetched:", members);
+
       // 2. Loop through and trigger the AI endpoint sequentially
       let successCount = 0;
       for (let i = 0; i < members.length; i++) {
@@ -212,7 +214,9 @@ export default function LeadPacksPage() {
         }
 
         const member = members[i];
-        const phone = (member.leads as any)?.phone;
+        // Handle Supabase returning either an object or an array for the join
+        const leadsData: any = member.leads;
+        const phone = leadsData?.phone || (Array.isArray(leadsData) ? leadsData[0]?.phone : null);
 
         if (phone) {
           toast.loading(`Dialing ${i + 1} of ${members.length}...`, { id: 'autodial' });
@@ -223,7 +227,10 @@ export default function LeadPacksPage() {
               body: JSON.stringify({ leadId: member.lead_id, phone })
             });
 
-            if (!res.ok) throw new Error('Failed to initiate call');
+            if (!res.ok) {
+              const errData = await res.json().catch(() => ({}));
+              throw new Error(errData.error || 'Failed to initiate call');
+            }
             const { callSid } = await res.json();
 
             // 3. Poll Twilio until the call completes or fails
@@ -246,8 +253,9 @@ export default function LeadPacksPage() {
               }
             }
             successCount++;
-          } catch (e) {
-            console.error('Failed to initiate call for lead:', member.lead_id);
+          } catch (e: any) {
+            console.error('Failed to initiate call for lead:', member.lead_id, e);
+            toast.error(`Call failed for lead: ${e.message}`, { id: 'autodial' });
           }
         }
       }

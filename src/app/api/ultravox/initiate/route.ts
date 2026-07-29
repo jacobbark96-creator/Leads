@@ -12,6 +12,14 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing leadId or phone' }, { status: 400 });
     }
 
+    // Format phone to E.164 if it's a UK number starting with 0
+    let formattedPhone = phone.replace(/[^\d+]/g, '');
+    if (formattedPhone.startsWith('0') && !formattedPhone.startsWith('00')) {
+      formattedPhone = '+44' + formattedPhone.substring(1);
+    } else if (!formattedPhone.startsWith('+')) {
+      formattedPhone = '+' + formattedPhone;
+    }
+
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
     const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
@@ -29,7 +37,7 @@ export async function POST(req: Request) {
 
     const params = new URLSearchParams();
     params.append('Url', url);
-    params.append('To', phone);
+    params.append('To', formattedPhone);
     
     // Check if Aidialler has a specific Twilio number in the database, 
     // otherwise fallback to the default Twilio number

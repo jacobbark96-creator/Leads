@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -29,7 +30,29 @@ export async function POST(req: Request) {
     const params = new URLSearchParams();
     params.append('Url', url);
     params.append('To', phone);
-    params.append('From', twilioNumber);
+    
+    // Check if Aidialler has a specific Twilio number in the database, 
+    // otherwise fallback to the default Twilio number
+    let outboundNumber = twilioNumber;
+    try {
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL!,
+        process.env.SUPABASE_SERVICE_ROLE_KEY!
+      );
+      const { data: aiUser } = await supabaseAdmin
+        .from('users')
+        .select('twilio_number')
+        .eq('email', 'Aidialler@openlead.co.uk')
+        .single();
+        
+      if (aiUser && aiUser.twilio_number) {
+        outboundNumber = aiUser.twilio_number;
+      }
+    } catch (e) {
+      console.warn("Could not fetch Aidialler number, falling back to default", e);
+    }
+
+    params.append('From', outboundNumber);
     params.append('MachineDetection', 'Enable'); // Detect voicemail vs human
     params.append('AsyncAmd', 'true'); // Connect call immediately while analyzing in background
     params.append('AsyncAmdStatusCallback', `${baseUrl}/api/twilio/amd-callback`); // Where to send voicemail detection result

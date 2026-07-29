@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
-import { Database, Plus, Edit, Upload, MoreVertical, Trash2, Users, LayoutDashboard, Target, RefreshCw } from 'lucide-react';
+import { Database, Plus, Edit, Upload, MoreVertical, Trash2, Users, LayoutDashboard, Target, RefreshCw, Bot } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
 interface LeadPack {
@@ -31,6 +31,7 @@ export default function LeadPacksPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState<LeadPack | null>(null);
   const [showUploadModal, setShowUploadModal] = useState<string | null>(null); // Pack ID
+  const [autodialingPack, setAutodialingPack] = useState<string | null>(null);
   const { profile } = useAuthStore();
   
   const [newPack, setNewPack] = useState({
@@ -169,8 +170,57 @@ export default function LeadPacksPage() {
       if (error) throw error;
       toast.success('Pack archived');
       fetchPacks();
+    } catch (e: any) {
+      toast.error('Error: ' + e.message);
+    }
+  };
+
+  const handleAIAutodial = async (packId: string) => {
+    if (!window.confirm('WARNING: This will immediately dispatch AI calls to ALL pending leads in this pack simultaneously. Are you sure you want to proceed?')) return;
+    
+    setAutodialingPack(packId);
+    try {
+      // 1. Get all pending leads in the pack
+      const { data: members, error: fetchError } = await supabase
+        .from('lead_pack_memberships')
+        .select('lead_id, leads(phone)')
+        .eq('lead_pack_id', packId)
+        .is('disposition', null);
+
+      if (fetchError) throw fetchError;
+      if (!members || members.length === 0) {
+        toast.error('No pending leads found in this pack.');
+        setAutodialingPack(null);
+        return;
+      }
+
+      toast.loading(`Initiating ${members.length} AI calls...`);
+
+      // 2. Loop through and trigger the AI endpoint
+      let successCount = 0;
+      for (const member of members) {
+        const phone = (member.leads as any)?.phone;
+        if (phone) {
+          try {
+            await fetch('/api/ultravox/initiate', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ leadId: member.lead_id, phone })
+            });
+            successCount++;
+          } catch (e) {
+            console.error('Failed to initiate call for lead:', member.lead_id);
+          }
+        }
+      }
+
+      toast.dismiss();
+      toast.success(`Successfully dispatched ${successCount} AI calls!`);
     } catch (error: any) {
-      toast.error('Failed to archive: ' + error.message);
+      toast.dismiss();
+      toast.error('Error initiating autodialer: ' + error.message);
+    } finally {
+      setAutodialingPack(null);
     }
   };
 
@@ -300,6 +350,13 @@ export default function LeadPacksPage() {
                   </button>
                   <button onClick={() => handleRegeneratePack(pack.id)} className="w-full text-left px-4 py-2 text-sm text-blue-600 hover:bg-blue-50 flex items-center gap-2">
                     <RefreshCw className="w-3.5 h-3.5" /> Regenerate Pack
+                  </button>
+                  <button 
+                    onClick={() => handleAIAutodial(pack.id)} 
+                    disabled={autodialingPack === pack.id}
+                    className="w-full text-left px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 flex items-center gap-2 disabled:opacity-50"
+                  >
+                    {autodialingPack === pack.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />} AI Autodial
                   </button>
                   <div className="h-px bg-gray-100 my-1"></div>
                   <button onClick={() => handleArchivePack(pack.id)} className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 flex items-center gap-2">

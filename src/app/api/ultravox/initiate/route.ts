@@ -73,6 +73,7 @@ export async function POST(req: Request) {
     }
 
     params.append('From', formattedOutbound);
+    params.append('Record', 'true'); // Force Twilio to record the call
     params.append('MachineDetection', 'Enable'); // Detect voicemail vs human
     params.append('AsyncAmd', 'true'); // Connect call immediately while analyzing in background
     params.append('AsyncAmdStatusCallback', `${baseUrl}/api/twilio/amd-callback`); // Where to send voicemail detection result

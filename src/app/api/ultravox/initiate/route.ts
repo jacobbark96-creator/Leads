@@ -50,7 +50,7 @@ export async function POST(req: Request) {
       const { data: aiUser } = await supabaseAdmin
         .from('users')
         .select('twilio_number')
-        .eq('email', 'ai@openlead.co.uk')
+        .ilike('email', 'ai@openlead.co.uk')
         .single();
         
       if (aiUser && aiUser.twilio_number) {

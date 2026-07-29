@@ -22,9 +22,9 @@ export async function POST(req: Request) {
 
     const accountSid = process.env.TWILIO_ACCOUNT_SID;
     const authToken = process.env.TWILIO_AUTH_TOKEN;
-    const twilioNumber = process.env.TWILIO_PHONE_NUMBER;
+    const twilioNumber = process.env.TWILIO_PHONE_NUMBER || process.env.NEXT_PUBLIC_TWILIO_PHONE_NUMBER;
 
-    if (!accountSid || !authToken || !twilioNumber) {
+    if (!accountSid || !authToken) {
       return NextResponse.json({ error: 'Missing Twilio configuration' }, { status: 500 });
     }
 
@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     
     // Check if Aidialler has a specific Twilio number in the database, 
     // otherwise fallback to the default Twilio number
-    let outboundNumber = twilioNumber;
+    let outboundNumber = twilioNumber || '';
     try {
       const supabaseAdmin = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -58,6 +58,10 @@ export async function POST(req: Request) {
       }
     } catch (e) {
       console.warn("Could not fetch Aidialler number, falling back to default", e);
+    }
+
+    if (!outboundNumber) {
+      return NextResponse.json({ error: 'Missing outbound Twilio number' }, { status: 500 });
     }
 
     // Format outbound number to E.164

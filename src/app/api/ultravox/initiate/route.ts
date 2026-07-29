@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server';
-import twilio from 'twilio';
+
+export const runtime = 'edge';
+export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
@@ -17,24 +19,36 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Missing Twilio configuration' }, { status: 500 });
     }
 
-    const client = twilio(accountSid, authToken);
-
     // Get the base URL for the webhook
     const protocol = process.env.NODE_ENV === 'development' ? 'http' : 'https';
     const host = req.headers.get('host');
     const baseUrl = `${protocol}://${host}`;
 
-    // Initiate the outbound call
-    const call = await client.calls.create({
-      url: `${baseUrl}/api/ultravox/twiml?leadId=${leadId}`,
-      to: phone,
-      from: twilioNumber,
-      // Optional: statusCallback to log when the call ends
-      // statusCallback: `${baseUrl}/api/ultravox/status`,
-      // statusCallbackEvent: ['completed']
+    const url = `${baseUrl}/api/ultravox/twiml?leadId=${leadId}`;
+
+    const params = new URLSearchParams();
+    params.append('Url', url);
+    params.append('To', phone);
+    params.append('From', twilioNumber);
+
+    const authHeader = 'Basic ' + btoa(`${accountSid}:${authToken}`);
+
+    const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json`, {
+      method: 'POST',
+      headers: {
+        'Authorization': authHeader,
+        'Content-Type': 'application/x-www-form-urlencoded'
+      },
+      body: params.toString()
     });
 
-    return NextResponse.json({ success: true, callSid: call.sid });
+    const data = await twilioRes.json();
+
+    if (!twilioRes.ok) {
+      throw new Error(data.message || 'Failed to initiate Twilio call');
+    }
+
+    return NextResponse.json({ success: true, callSid: data.sid });
   } catch (error: any) {
     console.error('Error initiating Ultravox call:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

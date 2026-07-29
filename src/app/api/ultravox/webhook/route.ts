@@ -29,7 +29,7 @@ export async function POST(req: Request) {
     const { data: aiUser } = await supabaseAdmin
       .from('users')
       .select('id')
-      .ilike('email', 'Aidialler@openlead.co.uk')
+      .ilike('email', 'ai@openlead.co.uk')
       .single();
 
     const userId = aiUser?.id || null; // Fallback to null if not created yet

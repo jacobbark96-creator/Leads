@@ -17,7 +17,9 @@ export async function POST(req: Request) {
         'X-API-Key': process.env.ULTRAVOX_API_KEY || ''
       },
       body: JSON.stringify({
-        agentId: agentId,
+        systemPrompt: "You are an AI assistant for OpenLead. Your job is to qualify leads. Ask if they are still interested in our services. Keep your answers short and conversational.",
+        model: "fixie-ai/ultravox-70B",
+        voice: "terrence",
         medium: { twilio: {} }
       })
     });

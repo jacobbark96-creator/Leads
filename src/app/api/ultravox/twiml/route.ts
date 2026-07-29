@@ -8,17 +8,16 @@ export async function POST(req: Request) {
     const url = new URL(req.url);
     const leadId = url.searchParams.get('leadId') || '';
 
-    // 1. Create a call on Ultravox
-    const ultravoxRes = await fetch('https://api.ultravox.ai/api/calls', {
+    // 1. Create a call on Ultravox using the specific Agent ID
+    const agentId = '1fc1194d-919f-4333-8181-23b35152a813';
+    const ultravoxRes = await fetch(`https://api.ultravox.ai/api/agents/${agentId}/calls`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': process.env.ULTRAVOX_API_KEY || ''
       },
       body: JSON.stringify({
-        systemPrompt: `You are an AI assistant for OpenLead. Your job is to qualify leads. Ask if they are still interested in our services. Keep your answers short and conversational.`,
-        model: "fixie-ai/ultravox-70B",
-        voice: "terrence",
+        // Override medium to ensure Twilio compatibility
         medium: { twilio: {} }
       })
     });

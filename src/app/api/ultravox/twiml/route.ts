@@ -10,14 +10,14 @@ export async function POST(req: Request) {
 
     // 1. Create a call on Ultravox using the specific Agent ID
     const agentId = '1fc1194d-919f-4333-8181-23b35152a813';
-    const ultravoxRes = await fetch(`https://api.ultravox.ai/api/agents/${agentId}/calls`, {
+    const ultravoxRes = await fetch(`https://api.ultravox.ai/api/calls`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'X-API-Key': process.env.ULTRAVOX_API_KEY || ''
       },
       body: JSON.stringify({
-        // Override medium to ensure Twilio compatibility
+        agentId: agentId,
         medium: { twilio: {} }
       })
     });

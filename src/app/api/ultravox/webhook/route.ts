@@ -8,15 +8,18 @@ export async function POST(req: Request) {
   try {
     const payload = await req.json();
     
-    // Example payload from Ultravox (this varies based on your agent setup)
-    // { callId: '...', leadId: '...', transcript: '...', extractedData: { status: 'Qualified' } }
-    
-    // In our TwiML, we didn't pass leadId directly to the webhook, 
-    // so you usually configure Ultravox to extract it or pass it via client state.
-    // Assuming the payload has leadId and notes:
-    const { leadId, transcript, summary, status } = payload;
+    // Check if this is an Ultravox event
+    if (payload.event !== 'call.ended' || !payload.call) {
+      return NextResponse.json({ success: true, ignored: true });
+    }
+
+    const callData = payload.call;
+    const leadId = callData.metadata?.leadId || null;
+    const summary = callData.shortSummary || 'No summary provided by AI.';
+    const transcript = 'Transcript not provided in webhook.'; // Alternatively fetch from Ultravox API if needed
 
     if (!leadId) {
+      console.warn('Webhook received but no leadId found in metadata');
       return NextResponse.json({ error: 'Missing leadId' }, { status: 400 });
     }
 
@@ -32,18 +35,27 @@ export async function POST(req: Request) {
       .ilike('email', 'ai@openlead.co.uk')
       .single();
 
-    const userId = aiUser?.id || null; // Fallback to null if not created yet
+    const userId = aiUser?.id || null;
 
     // 2. Add a note to the lead's timeline
     await supabaseAdmin.from('lead_notes').insert({
       lead_id: leadId,
       user_id: userId,
-      note: `AI Call Summary: ${summary}\n\nTranscript: ${transcript}`,
+      note: `AI Call Summary: ${summary}`,
     });
 
-    // 3. Update the lead's status if the AI categorized it
-    if (status) {
-      await supabaseAdmin.from('leads').update({ status }).eq('id', leadId);
+    // 3. Optional: we could determine the status from the summary if we want to do NLP here
+    // For now, we just leave status unchanged unless we have a specific extraction logic
+    let statusToUpdate = null;
+    const lowerSummary = summary.toLowerCase();
+    if (lowerSummary.includes('not interested') || lowerSummary.includes('unqualified') || lowerSummary.includes('do not call')) {
+      statusToUpdate = 'Unqualified';
+    } else if (lowerSummary.includes('interested') || lowerSummary.includes('qualified') || lowerSummary.includes('send information')) {
+      statusToUpdate = 'Qualified';
+    }
+
+    if (statusToUpdate) {
+      await supabaseAdmin.from('leads').update({ status: statusToUpdate }).eq('id', leadId);
     }
 
     return NextResponse.json({ success: true });

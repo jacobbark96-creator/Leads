@@ -18,7 +18,8 @@ export async function POST(req: Request) {
         'X-API-Key': process.env.ULTRAVOX_API_KEY || 'nVmkHxY4.b7TdQfBemm7VKVs6qKxStAegTVHa7XNL'
       },
       body: JSON.stringify({
-        medium: { twilio: {} }
+        medium: { twilio: {} },
+        metadata: { leadId }
       })
     });
 

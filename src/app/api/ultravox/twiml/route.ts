@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
@@ -7,6 +8,30 @@ export async function POST(req: Request) {
   try {
     const url = new URL(req.url);
     const leadId = url.searchParams.get('leadId') || '';
+
+    // Fetch the lead's address from Supabase
+    let leadAddress = 'Address not provided';
+    if (leadId) {
+      try {
+        const supabaseAdmin = createClient(
+          process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+          process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+        );
+        const { data: leadData } = await supabaseAdmin
+          .from('leads')
+          .select('location')
+          .eq('id', leadId)
+          .single();
+          
+        if (leadData?.location) {
+          // Extract only the first line/part of the address so the AI doesn't have to figure it out
+          const firstLine = leadData.location.split(/[,;\n]/)[0].trim();
+          leadAddress = firstLine;
+        }
+      } catch (err) {
+        console.warn("Could not fetch lead location for Ultravox call", err);
+      }
+    }
 
     // 1. Create a call on Ultravox using the specific Agent ID
     const agentId = '1fc1194d-919f-4333-8181-23b35152a813';
@@ -19,7 +44,10 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         medium: { twilio: {} },
-        metadata: { leadId }
+        metadata: { leadId },
+        templateContext: {
+          address: leadAddress
+        }
       })
     });
 

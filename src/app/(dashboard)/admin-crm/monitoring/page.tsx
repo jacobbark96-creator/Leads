@@ -115,6 +115,39 @@ export default function MonitoringTab() {
     return () => clearInterval(interval);
   }, [dateRange]);
 
+  const handleEndCall = async (callSid: string) => {
+    if (!window.confirm('Are you sure you want to end this in-progress call?')) return;
+    
+    try {
+      const toastId = toast.loading('Ending call...');
+      const res = await fetch('/api/twilio/end-call', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ callSid })
+      });
+      
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to end call');
+      }
+      
+      toast.success('Call ended successfully', { id: toastId });
+      
+      // Update local state to reflect ended call
+      setSelectedRep(current => {
+        if (!current) return null;
+        return {
+          ...current,
+          logs: current.logs.map((log: any) => 
+            log.id === callSid ? { ...log, status: 'completed' } : log
+          )
+        };
+      });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to end call');
+    }
+  };
+
   if (loading && representatives.length === 0) {
     return (
       <div className="flex justify-center items-center py-20">
@@ -197,7 +230,14 @@ export default function MonitoringTab() {
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{new Date(log.time).toLocaleString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        {log.recordingUrl ? (
+                        {log.status === 'in-progress' ? (
+                          <button
+                            onClick={() => handleEndCall(log.id)}
+                            className="text-red-600 hover:text-red-800 bg-red-50 hover:bg-red-100 px-3 py-1 rounded-lg text-xs font-semibold transition-colors"
+                          >
+                            End Call
+                          </button>
+                        ) : log.recordingUrl ? (
                           <InlineAudioPlayer src={log.recordingUrl} />
                         ) : (
                           <span className="text-gray-400">N/A</span>

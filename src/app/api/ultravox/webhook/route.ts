@@ -41,10 +41,17 @@ export async function POST(req: Request) {
     await supabaseAdmin.from('lead_notes').insert({
       lead_id: leadId,
       user_id: userId,
-      note: `AI Call Summary: ${summary}`,
+      content: `📞 AI Call Summary: ${summary}`,
     });
 
-    // 3. Optional: we could determine the status from the summary if we want to do NLP here
+    // 3. Mark the lead as dialled in lead_pack_memberships
+    await supabaseAdmin
+      .from('lead_pack_memberships')
+      .update({ disposition: 'AI Handled' })
+      .eq('lead_id', leadId)
+      .is('disposition', null);
+
+    // 4. Optional: we could determine the status from the summary if we want to do NLP here
     // For now, we just leave status unchanged unless we have a specific extraction logic
     let statusToUpdate = null;
     const lowerSummary = summary.toLowerCase();

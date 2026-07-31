@@ -10,6 +10,8 @@ export async function POST(req: Request) {
     const answeredBy = params.get('AnsweredBy');
     const callSid = params.get('CallSid');
 
+    console.log(`[Twilio AMD] Call ${callSid} answered by: ${answeredBy}`);
+
     // If Twilio detects a voicemail/answering machine, terminate the call
     if (answeredBy && answeredBy.startsWith('machine') && callSid) {
       const accountSid = process.env.TWILIO_ACCOUNT_SID;

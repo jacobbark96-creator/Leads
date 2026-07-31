@@ -43,6 +43,12 @@ export async function POST(req: Request) {
         'X-API-Key': process.env.ULTRAVOX_API_KEY || 'nVmkHxY4.b7TdQfBemm7VKVs6qKxStAegTVHa7XNL'
       },
       body: JSON.stringify({
+        systemPrompt: "You are a lead qualification agent for OpenLead. We're calling about the property at {{address}}. Ask the client if they are interested in our services. If they encounter a voicemail, an answering machine, or a carrier message (like Vodafone, O2, EE, or 'please leave your message'), you must immediately use the 'hangUp' tool to end the call.",
+        firstSpeakerSettings: {
+          agent: {
+            text: "Hello, this is OpenLead calling about the property at {{address}}. Is that correct?"
+          }
+        },
         medium: { twilio: {} },
         metadata: { leadId },
         templateContext: {

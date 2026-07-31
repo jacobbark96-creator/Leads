@@ -79,6 +79,17 @@ export async function POST(req: Request) {
     params.append('AsyncAmdStatusCallback', `${baseUrl}/api/twilio/amd-callback`); // Where to send voicemail detection result
     params.append('Timeout', '30'); // Stop ringing if no answer after 30 seconds
 
+    // Add StatusCallbacks to log the call and recording in the CRM timeline
+    const statusCallbackUrl = `${baseUrl}/api/twilio/status?entityId=${leadId}&userName=Aidialler&entityType=lead`;
+    params.append('StatusCallback', statusCallbackUrl);
+    params.append('StatusCallbackEvent', 'completed');
+    params.append('StatusCallbackEvent', 'busy');
+    params.append('StatusCallbackEvent', 'no-answer');
+    params.append('StatusCallbackEvent', 'failed');
+    params.append('StatusCallbackEvent', 'canceled');
+    params.append('RecordingStatusCallback', statusCallbackUrl);
+    params.append('RecordingStatusCallbackEvent', 'completed');
+
     const authHeader = 'Basic ' + btoa(`${accountSid}:${authToken}`);
 
     const twilioRes = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${accountSid}/Calls.json`, {

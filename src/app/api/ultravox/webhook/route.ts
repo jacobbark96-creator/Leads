@@ -41,7 +41,7 @@ export async function POST(req: Request) {
     await supabaseAdmin.from('lead_notes').insert({
       lead_id: leadId,
       user_id: userId,
-      content: `📞 AI Call Summary: ${summary}`,
+      content: `AI Call Summary: ${summary}`,
     });
 
     // 3. Mark the lead as dialled in lead_pack_memberships

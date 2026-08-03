@@ -44,7 +44,10 @@ export async function POST(req: Request) {
       },
       body: JSON.stringify({
         medium: { twilio: {} },
-        metadata: { leadId },
+        metadata: { 
+          leadId,
+          prompt_version: 'v1.0.0' // Update this version when you change the prompt in the dashboard
+        },
         templateContext: {
           address: leadAddress
         }

@@ -146,32 +146,35 @@ export async function GET(request: Request) {
 
     if (last10Digits.length > 0) {
       const chunks = [];
-      for (let i = 0; i < last10Digits.length; i += 10) {
-        chunks.push(last10Digits.slice(i, i + 10));
+      // Chunk by 20 to keep URL length reasonable but reduce concurrent requests
+      for (let i = 0; i < last10Digits.length; i += 20) {
+        chunks.push(last10Digits.slice(i, i + 20));
       }
       
-      for (const chunk of chunks) {
-        // Create fuzzy patterns like %7%9%3%2%1%2%3%4%5%6% to match phone numbers with spaces or dashes
-        const orQuery = chunk.map(num => `phone.ilike.%${num.split('').join('%')}%`).join(',');
-        const orQuerySecondary = chunk.map(num => `secondary_phone.ilike.%${num.split('').join('%')}%`).join(',');
-        const orQueryContractorPhone = chunk.map(num => `phone.ilike.%${num.split('').join('%')}%`).join(',');
-        const orQueryContractorSecondary = chunk.map(num => `secondary_phone.ilike.%${num.split('').join('%')}%`).join(',');
-        const orQueryContractorOther = chunk.map(num => `other_contact_numbers.ilike.%${num.split('').join('%')}%`).join(',');
+      const chunkPromises = chunks.flatMap(chunk => {
+        const leadOrQuery = chunk.map(num => `phone.ilike.%${num.split('').join('%')}%,secondary_phone.ilike.%${num.split('').join('%')}%`).join(',');
+        const contractorOrQuery = chunk.map(num => `phone.ilike.%${num.split('').join('%')}%,secondary_phone.ilike.%${num.split('').join('%')}%,other_contact_numbers.ilike.%${num.split('').join('%')}%`).join(',');
 
-        const results = await Promise.all([
-          supabaseAdmin.from('leads').select('id, name, company, phone').or(orQuery),
-          supabaseAdmin.from('leads').select('id, name, company, phone:secondary_phone').or(orQuerySecondary),
-          supabaseAdmin.from('contractors').select('id, name:contact_name, company:company_name, phone').or(orQueryContractorPhone),
-          supabaseAdmin.from('contractors').select('id, name:contact_name, company:company_name, phone:secondary_phone').or(orQueryContractorSecondary),
-          supabaseAdmin.from('contractors').select('id, name:contact_name, company:company_name, phone:other_contact_numbers').or(orQueryContractorOther)
-        ]);
-        
-        // Add types
-        if (results[0].data) matchedEntities = matchedEntities.concat(results[0].data.map(d => ({ ...d, entityType: 'lead' })));
-        if (results[1].data) matchedEntities = matchedEntities.concat(results[1].data.map(d => ({ ...d, entityType: 'lead' })));
-        if (results[2].data) matchedEntities = matchedEntities.concat(results[2].data.map(d => ({ ...d, entityType: 'contractor' })));
-        if (results[3].data) matchedEntities = matchedEntities.concat(results[3].data.map(d => ({ ...d, entityType: 'contractor' })));
-        if (results[4].data) matchedEntities = matchedEntities.concat(results[4].data.map(d => ({ ...d, entityType: 'contractor' })));
+        return [
+          supabaseAdmin.from('leads').select('id, name, company, phone, secondary_phone').or(leadOrQuery),
+          supabaseAdmin.from('contractors').select('id, name:contact_name, company:company_name, phone, secondary_phone, other_contact_numbers').or(contractorOrQuery)
+        ];
+      });
+      
+      // Execute in batches of 4 promises at a time to prevent exhausting Supabase connection pool
+      for (let i = 0; i < chunkPromises.length; i += 4) {
+        const batch = chunkPromises.slice(i, i + 4);
+        const results = await Promise.all(batch);
+        for (const res of results) {
+          if (res.data) {
+            // Determine entityType based on whether it has contact_name/company_name aliased to name/company
+            // The leads query returns id, name, company, phone, secondary_phone
+            // The contractors query returns id, name, company, phone, secondary_phone, other_contact_numbers
+            const isContractor = res.data.length > 0 && 'other_contact_numbers' in res.data[0];
+            const mappedData = res.data.map(d => ({ ...d, entityType: isContractor ? 'contractor' : 'lead' }));
+            matchedEntities = matchedEntities.concat(mappedData);
+          }
+        }
       }
     }
 
@@ -190,7 +193,9 @@ export async function GET(request: Request) {
           const numToMatch = log.to.replace(/[^\d]/g, '').slice(-10);
           const matched = matchedEntities.find(l => {
             const p1 = l.phone ? l.phone.replace(/[^\d]/g, '') : '';
-            return p1.includes(numToMatch);
+            const p2 = l.secondary_phone ? l.secondary_phone.replace(/[^\d]/g, '') : '';
+            const p3 = l.other_contact_numbers ? l.other_contact_numbers.replace(/[^\d]/g, '') : '';
+            return p1.includes(numToMatch) || p2.includes(numToMatch) || p3.includes(numToMatch);
           });
           if (matched) {
             log.leadId = matched.id;

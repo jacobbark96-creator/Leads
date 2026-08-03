@@ -18,8 +18,39 @@ export async function POST(req: Request) {
     
     // Fallback for leadId extraction
     const leadId = callData?.metadata?.leadId || payload.metadata?.leadId || null;
+    const promptVersion = callData?.metadata?.prompt_version || payload.metadata?.prompt_version || 'default';
     const summary = callData?.shortSummary || callData?.summary || 'No summary provided by AI.';
-    const transcript = 'Transcript not provided in webhook.'; // Alternatively fetch from Ultravox API if needed
+    const callId = callData?.callId || callData?.systemId || callData?.id || payload.call_id || null;
+
+    let transcript = 'Transcript not provided in webhook.';
+    
+    // Fetch transcript from Ultravox API if we have a callId
+    if (callId && process.env.ULTRAVOX_API_KEY) {
+      try {
+        const msgRes = await fetch(`https://api.ultravox.ai/api/calls/${callId}/messages`, {
+          headers: {
+            'X-API-Key': process.env.ULTRAVOX_API_KEY,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (msgRes.ok) {
+          const msgData = await msgRes.json();
+          // Assuming msgData.results or msgData.messages is an array of { role: 'agent'|'user', text: '...' }
+          const messages = msgData.results || msgData.messages || msgData;
+          if (Array.isArray(messages)) {
+            transcript = messages.map((m: any) => {
+              const speaker = m.role === 'agent' ? 'Agent' : 'Lead';
+              return `${speaker}: ${m.text || m.content || ''}`;
+            }).join('\n');
+          }
+        } else {
+          console.error('Failed to fetch Ultravox transcript:', await msgRes.text());
+        }
+      } catch (err) {
+        console.error('Error fetching transcript:', err);
+      }
+    }
 
     if (!leadId) {
       console.warn('Webhook received but no leadId found in metadata');
@@ -83,18 +114,69 @@ export async function POST(req: Request) {
       });
     }
 
-    // 4. Optional: we could determine the status from the summary if we want to do NLP here
-    // For now, we just leave status unchanged unless we have a specific extraction logic
+    // 4. Update status based on summary - Improved Logic
     let statusToUpdate = null;
     const lowerSummary = summary.toLowerCase();
-    if (lowerSummary.includes('not interested') || lowerSummary.includes('unqualified') || lowerSummary.includes('do not call')) {
+    
+    // Check for negative intent first (takes precedence)
+    const isUnqualified = lowerSummary.includes('not interested') || 
+                          lowerSummary.includes('not a good fit') || 
+                          lowerSummary.includes('do not call') || 
+                          lowerSummary.includes('unqualified') ||
+                          lowerSummary.includes('hung up') ||
+                          lowerSummary.includes('voicemail') ||
+                          lowerSummary.includes('not looking');
+
+    // Only check for positive intent if there's no strong negative intent
+    const isQualified = !isUnqualified && (
+                        lowerSummary.includes('is interested') || 
+                        lowerSummary.includes('wants more information') || 
+                        lowerSummary.includes('send information') ||
+                        lowerSummary.includes('qualified') ||
+                        lowerSummary.includes('wants to proceed'));
+
+    if (isUnqualified) {
       statusToUpdate = 'Unqualified';
-    } else if (lowerSummary.includes('interested') || lowerSummary.includes('qualified') || lowerSummary.includes('send information')) {
+    } else if (isQualified) {
       statusToUpdate = 'Qualified';
     }
 
     if (statusToUpdate) {
       await supabaseAdmin.from('leads').update({ status: statusToUpdate }).eq('id', leadId);
+    }
+
+    // 5. Save the call transcript and metadata for the QA / Feedback Loop
+    if (callId) {
+      // Find the recording URL from Twilio logs if available (by matching leadId)
+      // Note: Twilio recording might take a few moments to generate, so we'll grab it if it's there
+      let recordingUrl = null;
+      if (leadId) {
+        const { data: twilioLog } = await supabaseAdmin
+          .from('call_logs')
+          .select('recording_url')
+          .eq('lead_id', leadId)
+          .not('recording_url', 'is', null)
+          .order('created_at', { ascending: false })
+          .limit(1)
+          .maybeSingle();
+        
+        if (twilioLog?.recording_url) {
+          recordingUrl = twilioLog.recording_url;
+        }
+      }
+
+      const { error: aiCallError } = await supabaseAdmin.from('ai_calls').upsert({
+        call_id: callId,
+        prompt_version: promptVersion,
+        transcript: transcript,
+        recording_url: recordingUrl,
+        lead_outcome: statusToUpdate || 'Unknown',
+        reviewed: false
+      }, { onConflict: 'call_id' });
+
+      if (aiCallError) {
+        console.error('Failed to insert AI call for QA:', aiCallError);
+      }
     }
 
     return NextResponse.json({ success: true });

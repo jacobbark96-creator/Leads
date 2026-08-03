@@ -9,17 +9,33 @@ export async function POST(req: Request) {
     const payload = await req.json();
     
     // Check if this is an Ultravox event
-    if (payload.event !== 'call.ended' || !payload.call) {
+    if (payload.event !== 'call.ended') {
       return NextResponse.json({ success: true, ignored: true });
     }
 
-    const callData = payload.call;
-    const leadId = callData.metadata?.leadId || null;
-    const summary = callData.shortSummary || 'No summary provided by AI.';
+    // Ultravox payload structure might vary (call vs data)
+    const callData = payload.call || payload.data || payload;
+    
+    // Fallback for leadId extraction
+    const leadId = callData?.metadata?.leadId || payload.metadata?.leadId || null;
+    const summary = callData?.shortSummary || callData?.summary || 'No summary provided by AI.';
     const transcript = 'Transcript not provided in webhook.'; // Alternatively fetch from Ultravox API if needed
 
     if (!leadId) {
       console.warn('Webhook received but no leadId found in metadata');
+      
+      // DEBUG: Log payload so we can inspect it
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+        process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+      );
+      await supabaseAdmin.from('intranet_resources').insert({
+        title: 'Webhook Payload Debug',
+        description: JSON.stringify(payload).substring(0, 5000),
+        resource_type: 'link',
+        url: 'https://debug.com'
+      });
+      
       return NextResponse.json({ error: 'Missing leadId' }, { status: 400 });
     }
 
@@ -38,11 +54,16 @@ export async function POST(req: Request) {
     const userId = aiUser?.id || null;
 
     // 2. Add a note to the lead's timeline
-    await supabaseAdmin.from('lead_notes').insert({
+    const { error: noteError } = await supabaseAdmin.from('lead_notes').insert({
       lead_id: leadId,
       user_id: userId,
+      author_name: 'Aidialler',
       content: `AI Call Summary: ${summary}`,
     });
+
+    if (noteError) {
+      console.error('Failed to insert AI note:', noteError);
+    }
 
     // 3. Mark the lead as dialled in lead_pack_memberships
     // We must use the RPC to ensure pack stats (leads_called, leads_remaining) are updated correctly
@@ -58,7 +79,7 @@ export async function POST(req: Request) {
       await supabaseAdmin.rpc('complete_lead_in_pack', {
         p_membership_id: membership.id,
         p_disposition: 'AI Handled',
-        p_notes: `AI Call Summary: ${summary}`
+        p_notes: '' // Pass empty so the RPC doesn't create a duplicate "System" note
       });
     }
 

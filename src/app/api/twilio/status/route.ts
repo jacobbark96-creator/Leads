@@ -15,6 +15,7 @@ export async function POST(req: Request) {
     const params = new URLSearchParams(bodyText);
     const callStatus = params.get('DialCallStatus') || params.get('CallStatus') || 'unknown';
     const duration = params.get('DialCallDuration') || params.get('CallDuration') || '0';
+    const answeredBy = params.get('AnsweredBy');
     const recordingUrl = params.get('RecordingUrl');
     const candidateCallSids = Array.from(new Set([
       params.get('DialCallSid'),
@@ -94,7 +95,14 @@ export async function POST(req: Request) {
       if (callStatus === 'completed') statusText = 'Answered';
       if (callStatus === 'no-answer') statusText = 'No Answer';
       if (callStatus === 'busy') statusText = 'Busy';
-      if (callStatus === 'failed') statusText = 'Failed';
+      if (callStatus === 'failed') {
+        // If the call dropped (e.g. AI closed the WebSocket) but had a duration, it was actually answered
+        if (parseInt(duration || '0', 10) > 0 || answeredBy) {
+          statusText = 'Answered';
+        } else {
+          statusText = 'Failed';
+        }
+      }
       if (callStatus === 'canceled') statusText = 'Canceled';
 
       const noteContent = `📞 Call by ${userName}: ${statusText} (${duration} seconds)`;

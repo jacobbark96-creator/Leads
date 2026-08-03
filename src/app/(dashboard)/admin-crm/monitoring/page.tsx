@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useAuthStore } from '@/store/authStore';
-import { Activity, Phone, Clock, FileAudio, Users, AlertCircle, ChevronRight, ArrowLeft } from 'lucide-react';
+import { Activity, Phone, Clock, FileAudio, Users, AlertCircle, ChevronRight, ArrowLeft, Download } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 function InlineAudioPlayer({ src }: { src: string }) {
@@ -16,6 +16,9 @@ function InlineAudioPlayer({ src }: { src: string }) {
     setSpeed(newSpeed);
   };
 
+  // Ensure Twilio URLs append .mp3 for easier direct downloading
+  const downloadUrl = src.includes('.mp3') || src.includes('.wav') ? src : `${src}.mp3`;
+
   return (
     <div className="flex items-center justify-end gap-2 ml-auto">
       <audio ref={audioRef} controls src={src} className="h-8 w-48" preload="none" />
@@ -26,6 +29,16 @@ function InlineAudioPlayer({ src }: { src: string }) {
       >
         {speed}x
       </button>
+      <a 
+        href={downloadUrl}
+        download
+        target="_blank"
+        rel="noopener noreferrer"
+        className="p-1.5 text-gray-500 hover:text-blue-600 hover:bg-blue-50 rounded transition-colors flex items-center justify-center"
+        title="Download recording"
+      >
+        <Download className="w-4 h-4" />
+      </a>
     </div>
   );
 }

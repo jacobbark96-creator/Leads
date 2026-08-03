@@ -45,11 +45,22 @@ export async function POST(req: Request) {
     });
 
     // 3. Mark the lead as dialled in lead_pack_memberships
-    await supabaseAdmin
+    // We must use the RPC to ensure pack stats (leads_called, leads_remaining) are updated correctly
+    const { data: membership } = await supabaseAdmin
       .from('lead_pack_memberships')
-      .update({ disposition: 'AI Handled' })
+      .select('id')
       .eq('lead_id', leadId)
-      .is('disposition', null);
+      .is('disposition', null)
+      .limit(1)
+      .maybeSingle();
+
+    if (membership?.id) {
+      await supabaseAdmin.rpc('complete_lead_in_pack', {
+        p_membership_id: membership.id,
+        p_disposition: 'AI Handled',
+        p_notes: `AI Call Summary: ${summary}`
+      });
+    }
 
     // 4. Optional: we could determine the status from the summary if we want to do NLP here
     // For now, we just leave status unchanged unless we have a specific extraction logic

@@ -152,8 +152,16 @@ export async function GET(request: Request) {
       }
       
       const chunkPromises = chunks.flatMap(chunk => {
-        const leadOrQuery = chunk.map(num => `phone.ilike.%${num.split('').join('%')}%,secondary_phone.ilike.%${num.split('').join('%')}%`).join(',');
-        const contractorOrQuery = chunk.map(num => `phone.ilike.%${num.split('').join('%')}%,secondary_phone.ilike.%${num.split('').join('%')}%,other_contact_numbers.ilike.%${num.split('').join('%')}%`).join(',');
+        // Create fuzzy patterns like %7%9%3%2%1%2%3%4%5%6% to match phone numbers with spaces or dashes
+        const leadOrQuery = chunk.map(num => {
+          const fuzzyNum = num.split('').join('%');
+          return `phone.ilike.%${fuzzyNum}%,secondary_phone.ilike.%${fuzzyNum}%`;
+        }).join(',');
+        
+        const contractorOrQuery = chunk.map(num => {
+          const fuzzyNum = num.split('').join('%');
+          return `phone.ilike.%${fuzzyNum}%,secondary_phone.ilike.%${fuzzyNum}%,other_contact_numbers.ilike.%${fuzzyNum}%`;
+        }).join(',');
 
         return [
           supabaseAdmin.from('leads').select('id, name, company, phone, secondary_phone').or(leadOrQuery),

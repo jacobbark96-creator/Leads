@@ -39,9 +39,12 @@ export async function POST(req: Request) {
     params.append('Url', url);
     params.append('To', formattedPhone);
     
-    // Check if Aidialler has a specific Twilio number in the database, 
+    // Check if Aidialler or Kairo has a specific Twilio number in the database, 
     // otherwise fallback to the default Twilio number
     let outboundNumber = twilioNumber || '';
+    const lookupEmail = agentType === 'kairo' ? 'kairo@openlead.co.uk' : 'ai@openlead.co.uk';
+    const logAuthorName = agentType === 'kairo' ? 'Kairo' : 'Aidialler';
+
     try {
       const supabaseAdmin = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL || '',
@@ -50,14 +53,14 @@ export async function POST(req: Request) {
       const { data: aiUser } = await supabaseAdmin
         .from('users')
         .select('twilio_number')
-        .ilike('email', 'ai@openlead.co.uk')
+        .ilike('email', lookupEmail)
         .single();
         
       if (aiUser && aiUser.twilio_number) {
         outboundNumber = aiUser.twilio_number;
       }
     } catch (e) {
-      console.warn("Could not fetch Aidialler number, falling back to default", e);
+      console.warn(`Could not fetch number for ${lookupEmail}, falling back to default`, e);
     }
 
     if (!outboundNumber) {
@@ -80,7 +83,7 @@ export async function POST(req: Request) {
     params.append('Timeout', '30'); // Stop ringing if no answer after 30 seconds
 
     // Add StatusCallbacks to log the call and recording in the CRM timeline
-    const statusCallbackUrl = `${baseUrl}/api/twilio/status?entityId=${leadId}&userName=Aidialler&entityType=lead`;
+    const statusCallbackUrl = `${baseUrl}/api/twilio/status?entityId=${leadId}&userName=${logAuthorName}&entityType=lead`;
     params.append('StatusCallback', statusCallbackUrl);
     params.append('StatusCallbackEvent', 'completed');
     params.append('StatusCallbackEvent', 'busy');

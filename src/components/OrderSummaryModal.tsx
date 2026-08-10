@@ -11,7 +11,7 @@ interface OrderSummaryModalProps {
   onClose: () => void;
   lead: Lead;
   creditBalance: number;
-  onProceedToPay: (creditToUse: number, purchaseType: 'exclusive' | 'share', discountedPrice: number, useTradeAccount: boolean) => void;
+  onProceedToPay: (creditToUse: number, purchaseType: 'exclusive' | 'share', discountedPrice: number, useTradeAccount: boolean, addConcierge: boolean) => void;
 }
 
 export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, onClose, lead, creditBalance, onProceedToPay }) => {
@@ -21,6 +21,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
   const [isApplying, setIsApplying] = useState(false);
   const [purchaseType, setPurchaseType] = useState<'exclusive' | 'share'>('exclusive');
   const [useTradeAccount, setUseTradeAccount] = useState(false);
+  const [addConcierge, setAddConcierge] = useState(false);
 
   if (!isOpen) return null;
 
@@ -32,7 +33,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
     setPurchaseType('share');
   }
 
-  const basePrice = (lead.exclusive_price || 135);
+  const basePrice = (lead.exclusive_price || 135) + (addConcierge ? 15 : 0);
   const discountedPrice = Math.max(0, basePrice - (appliedDiscount?.amount || 0));
   const creditToUse = Math.min(creditBalance, discountedPrice);
   const totalToPay = useTradeAccount ? 0 : Math.max(0, discountedPrice - creditToUse);
@@ -206,6 +207,38 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                     </p>
                   </div>
 
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Add-ons</h3>
+
+                  <div className="mb-4">
+                    <label 
+                      onClick={() => setAddConcierge(!addConcierge)}
+                      className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
+                        addConcierge 
+                          ? 'border-blue-600 bg-blue-50 shadow-md' 
+                          : 'border-gray-200 hover:border-blue-300 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
+                          addConcierge ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'
+                        }`}>
+                          <Sparkles className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-sm font-bold text-gray-900 leading-tight">Concierge Booking (+£15)</p>
+                          <p className="text-[10px] text-gray-500 font-medium leading-tight mt-1">
+                            We will contact the lead and book the site assessment for you at your preferred dates.
+                          </p>
+                        </div>
+                      </div>
+                      <div className={`w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${
+                        addConcierge ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
+                      }`}>
+                        {addConcierge && <div className="w-2 h-2 rounded-full bg-white" />}
+                      </div>
+                    </label>
+                  </div>
+
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Payment Summary</h3>
                   
                   {profile?.trade_account_enabled && (
@@ -330,7 +363,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                   </div>
 
                   <button
-                    onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice, useTradeAccount)}
+                    onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge)}
                     className={`w-full flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
                       profile?.parent_id
                         ? 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'

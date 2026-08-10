@@ -7,6 +7,7 @@ import {
   Battery, TrendingUp, ChevronRight, Check, Building, Phone, Mail, Download, Briefcase, Paperclip
 } from 'lucide-react';
 import { extractTown } from '../lib/utils';
+import toast from 'react-hot-toast';
 
 interface PurchasedLeadModalProps {
   isOpen: boolean;
@@ -41,6 +42,8 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
   const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
   const [showSaleAmountPrompt, setShowSaleAmountPrompt] = useState(false);
   const [saleAmount, setSaleAmount] = useState('');
+  const [conciergeDates, setConciergeDates] = useState(['', '', '']);
+  const [submittingDates, setSubmittingDates] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !lead?.id) return;
@@ -53,6 +56,31 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
     };
     fetchDocuments();
   }, [isOpen, lead?.id]);
+
+  const handleSubmitConciergeDates = async () => {
+    if (!lead.purchase_id) return;
+    const validDates = conciergeDates.filter(d => d.trim() !== '');
+    if (validDates.length < 3) {
+      toast.error('Please provide 3 dates and times.');
+      return;
+    }
+    
+    setSubmittingDates(true);
+    try {
+      const { error } = await supabase
+        .from('lead_purchases')
+        .update({ concierge_dates: validDates })
+        .eq('id', lead.purchase_id);
+        
+      if (error) throw error;
+      toast.success('Preferred dates submitted!');
+      lead.concierge_dates = validDates;
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setSubmittingDates(false);
+    }
+  };
 
   if (!isOpen) return null;
 
@@ -114,9 +142,15 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
               </div>
               <div className="flex items-center gap-3 mt-1">
                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Ref: #{lead.id.split('-')[0]}</p>
-                <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                  Unlocked
-                </span>
+                {lead.has_concierge && lead.concierge_status === 'pending' ? (
+                  <span className="bg-amber-50 text-amber-700 border border-amber-200 text-[10px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+                    <Clock className="w-3 h-3" /> Awaiting Booking
+                  </span>
+                ) : (
+                  <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                    Unlocked
+                  </span>
+                )}
               </div>
             </div>
           </div>
@@ -136,7 +170,8 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
               <h3 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-2.5 flex items-center gap-1.5 relative z-10">
                 <User className="w-3.5 h-3.5" /> Contact Details
               </h3>
-              <div className="grid grid-cols-2 gap-y-3 gap-x-4 relative z-10">
+              
+              <div className={`grid grid-cols-2 gap-y-3 gap-x-4 relative z-10 ${lead.has_concierge && lead.concierge_status === 'pending' ? 'blur-sm select-none pointer-events-none' : ''}`}>
                 <div className="flex flex-col">
                   <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><User className="w-3 h-3 text-gray-400"/> Name</span>
                   <span className="text-xs font-bold text-gray-900 truncate">{lead.name || <MissingValue />}</span>
@@ -158,6 +193,57 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                   <span className="text-xs font-bold text-gray-900 truncate">{lead.location || 'No address provided'}</span>
                 </div>
               </div>
+
+              {lead.has_concierge && lead.concierge_status === 'pending' && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-[2px]">
+                  {(!lead.concierge_dates || lead.concierge_dates.length === 0) ? (
+                    <div className="bg-white p-4 rounded-xl shadow-2xl border border-amber-200 text-center w-64 max-w-[90%]">
+                      <Clock className="w-6 h-6 text-amber-500 mx-auto mb-2" />
+                      <h4 className="text-sm font-bold text-gray-900 mb-1">Awaiting Booking</h4>
+                      <p className="text-[10px] text-gray-500 mb-3">Please provide 3 preferred dates/times for the site assessment.</p>
+                      
+                      <div className="space-y-2 mb-3">
+                        {[0, 1, 2].map((idx) => (
+                          <input
+                            key={idx}
+                            type="text"
+                            placeholder={`Option ${idx + 1} (e.g. Wed 2pm)`}
+                            value={conciergeDates[idx]}
+                            onChange={(e) => {
+                              const newDates = [...conciergeDates];
+                              newDates[idx] = e.target.value;
+                              setConciergeDates(newDates);
+                            }}
+                            className="w-full text-xs p-2 border border-gray-200 rounded focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                          />
+                        ))}
+                      </div>
+                      
+                      <button
+                        onClick={handleSubmitConciergeDates}
+                        disabled={submittingDates}
+                        className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors"
+                      >
+                        {submittingDates ? 'Submitting...' : 'Submit Dates'}
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="bg-white px-5 py-4 rounded-xl shadow-xl border border-amber-200 text-center">
+                      <Clock className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                      <p className="text-sm font-bold text-gray-900">Awaiting Booking</p>
+                      <p className="text-[10px] text-gray-500 mt-1">We are contacting the client to confirm your appointment.</p>
+                      <div className="mt-3 text-left bg-gray-50 p-2 rounded border border-gray-100">
+                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Your Preferences:</p>
+                        <ul className="text-[10px] text-gray-700 list-disc list-inside pl-2">
+                          {lead.concierge_dates.map((d, i) => (
+                            <li key={i}>{d}</li>
+                          ))}
+                        </ul>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* Stats Card */}

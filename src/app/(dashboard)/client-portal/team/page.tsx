@@ -334,7 +334,7 @@ export default function TeamManagement() {
     setIsOrderModalOpen(true);
   };
 
-  const handleProceedToPayApproval = async (creditToUse: number, purchaseType: 'exclusive' | 'share', discountedPrice: number, useTradeAccount: boolean) => {
+  const handleProceedToPayApproval = async (creditToUse: number, purchaseType: 'exclusive' | 'share', discountedPrice: number, useTradeAccount: boolean, addConcierge: boolean = false) => {
     if (!profile || !selectedLeadForCheckout || !pendingPurchaseId) return;
 
     try {
@@ -355,7 +355,8 @@ export default function TeamManagement() {
           creditToUse: creditToUse.toString(),
           purchaseType: purchaseType,
           pendingPurchaseId: pendingPurchaseId,
-          useTradeAccount: useTradeAccount
+          useTradeAccount: useTradeAccount,
+          addConcierge: addConcierge
         }),
       });
 

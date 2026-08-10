@@ -162,6 +162,9 @@ export interface Lead {
   sales_pipeline_status?: 'Upcoming' | 'Pitched' | 'No Show' | 'Sold' | 'Lost';
   partner_plus_status?: string | null;
   buildings?: Building[];
+  has_concierge?: boolean;
+  concierge_status?: string;
+  concierge_dates?: any[];
 }
 
 export interface Building {

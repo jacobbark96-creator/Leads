@@ -179,6 +179,7 @@ export async function POST(req: Request) {
           const purchaseType = session.metadata?.purchaseType || 'exclusive'; // fallback for old sessions
           const pricePaid = (session.amount_total || 0) / 100;
           const pendingPurchaseId = session.metadata?.pendingPurchaseId;
+          const addConcierge = session.metadata?.addConcierge === 'true';
 
           if (leadId && clientId) {
             if (pendingPurchaseId) {
@@ -234,7 +235,7 @@ export async function POST(req: Request) {
               }
             } else {
               // Standard direct purchase logic
-              const { error: purchaseError } = await supabaseAdmin.rpc('purchase_lead', {
+              const { data: purchaseData, error: purchaseError } = await supabaseAdmin.rpc('purchase_lead', {
                 p_lead_id: leadId,
                 p_client_id: clientId,
                 p_purchase_type: purchaseType,
@@ -247,6 +248,32 @@ export async function POST(req: Request) {
                 console.error('Error assigning purchased lead via RPC:', purchaseError);
               } else {
                 console.log(`Successfully assigned lead ${leadId} to client ${clientId} (${purchaseType})`);
+                
+                if (addConcierge) {
+                  try {
+                    const targetPurchaseId = (purchaseData as any)?.purchase_id;
+                    if (targetPurchaseId) {
+                      await supabaseAdmin
+                        .from('lead_purchases')
+                        .update({ has_concierge: true, concierge_status: 'pending' })
+                        .eq('id', targetPurchaseId);
+                    }
+                  } catch (err) {
+                    console.error('Failed to set concierge flags on direct purchase:', err);
+                  }
+                }
+              }
+            }
+
+            // Also handle concierge flag for the approval flow
+            if (pendingPurchaseId && addConcierge) {
+              try {
+                await supabaseAdmin
+                  .from('lead_purchases')
+                  .update({ has_concierge: true, concierge_status: 'pending' })
+                  .eq('id', pendingPurchaseId);
+              } catch (err) {
+                console.error('Failed to set concierge flags on approved purchase:', err);
               }
             }
           } else {

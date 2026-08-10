@@ -85,7 +85,8 @@ export async function POST(req: Request) {
         creditToUse, 
         purchaseType,
         pendingPurchaseId,
-        useTradeAccount 
+        useTradeAccount,
+        addConcierge
       } = body;
       
       if (!userId || !email || !leadId || !clientId || !purchaseType) {
@@ -174,6 +175,23 @@ export async function POST(req: Request) {
             }
           }
 
+          if (addConcierge) {
+            try {
+              // Either we have pendingPurchaseId or we use the returned purchase_id from result.data.purchase_id
+              // Wait, finalize_approved_purchase doesn't return purchase_id, but we already have pendingPurchaseId
+              const targetPurchaseId = pendingPurchaseId || (result.data as any)?.purchase_id;
+              
+              if (targetPurchaseId) {
+                await supabaseAdmin
+                  .from('lead_purchases')
+                  .update({ has_concierge: true, concierge_status: 'pending' })
+                  .eq('id', targetPurchaseId);
+              }
+            } catch (conciergeErr) {
+              console.error('Failed to set concierge flags (non-fatal):', conciergeErr);
+            }
+          }
+
           console.log('Purchase successful:', result.data);
           return NextResponse.json({ skipStripe: true, url: `${appUrl}/my-openlead?purchase_success=true` });
         } catch (rpcErr: any) {
@@ -196,6 +214,8 @@ export async function POST(req: Request) {
       formData.append('metadata[clientId]', clientId);
       formData.append('metadata[usedCredit]', appliedCredit.toString());
       formData.append('metadata[purchaseType]', purchaseType);
+      formData.append('metadata[addConcierge]', addConcierge ? 'true' : 'false');
+      
       if (pendingPurchaseId) {
         formData.append('metadata[pendingPurchaseId]', pendingPurchaseId);
       }

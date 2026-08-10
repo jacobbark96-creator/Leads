@@ -169,7 +169,7 @@ export default function ClientDashboard() {
 
       const { data: purchasesData, error: purchasesError } = await supabase
         .from('lead_purchases')
-        .select('id, status, purchase_type, price_paid, sale_amount, purchased_at, leads(*, buildings(*))')
+        .select('id, status, purchase_type, price_paid, sale_amount, purchased_at, has_concierge, concierge_status, concierge_dates, leads(*, buildings(*))')
         .eq('client_id', clientData.id)
         .neq('status', 'rejected')
         .order('purchased_at', { ascending: false })
@@ -184,7 +184,10 @@ export default function ClientDashboard() {
           purchase_id: p.id,
           purchase_status: p.status || 'new',
           price_paid: p.price_paid || 0,
-          sale_amount: p.sale_amount || 0
+          sale_amount: p.sale_amount || 0,
+          has_concierge: p.has_concierge,
+          concierge_status: p.concierge_status,
+          concierge_dates: p.concierge_dates
         })) as Lead[];
 
       const hasNextPage = fetchedLeads.length > PAGE_SIZE;

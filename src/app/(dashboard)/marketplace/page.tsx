@@ -270,7 +270,7 @@ export default function MarketplacePage() {
     }
   };
 
-  const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive', discountedPrice?: number, useTradeAccount: boolean = false) => {
+  const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive', discountedPrice?: number, useTradeAccount: boolean = false, addConcierge: boolean = false) => {
     if (!profile) return;
     try {
       trackLeadEvent(leadId, profile.id, 'checkout');
@@ -401,7 +401,8 @@ export default function MarketplacePage() {
           leadCategory: lead.category_id,
           leadPrice: targetPrice.toString(),
           creditToUse,
-          purchaseType
+          purchaseType,
+          addConcierge
         }),
       });
 
@@ -600,7 +601,7 @@ export default function MarketplacePage() {
           onClose={() => setLeadToPurchase(null)}
           lead={leadToPurchase}
           creditBalance={creditBalance}
-          onProceedToPay={(creditToUse, purchaseType, discountedPrice, useTradeAccount) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType, discountedPrice, useTradeAccount)}
+          onProceedToPay={(creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge)}
         />
       )}
     </ProtectedRoute>

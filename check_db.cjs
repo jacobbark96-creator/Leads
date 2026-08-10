@@ -1,28 +1,44 @@
+const fs = require('fs');
+const path = require('path');
 const { createClient } = require('@supabase/supabase-js');
-require('dotenv').config();
 
-const supabase = createClient(
-  process.env.NEXT_PUBLIC_SUPABASE_URL,
-  process.env.SUPABASE_SERVICE_ROLE_KEY
-);
-
-async function check() {
-  const { data, error } = await supabase.rpc('get_function_def', { func_name: 'purchase_lead' });
-  if (error) {
-    console.error("RPC failed, trying raw query via a temporary RPC");
-    
-    // We can't execute raw SQL directly, but we can create a temporary RPC to fetch pg_proc
-    const sql = `
-      CREATE OR REPLACE FUNCTION get_purchase_lead_code()
-      RETURNS TEXT AS $$
-      BEGIN
-        RETURN (SELECT prosrc FROM pg_proc WHERE proname = 'purchase_lead' ORDER BY pronargs DESC LIMIT 1);
-      END;
-      $$ LANGUAGE plpgsql SECURITY DEFINER;
-    `;
-    
-    // Wait, we can't create an RPC from JS without an existing RPC that runs SQL.
+const envPaths = ['.env.local', '.env'];
+for (const ePath of envPaths) {
+  const fullPath = path.join(__dirname, ePath);
+  if (fs.existsSync(fullPath)) {
+    const envConfig = fs.readFileSync(fullPath, 'utf8').split('\n');
+    for (const line of envConfig) {
+      if (line.trim() && !line.startsWith('#')) {
+        const idx = line.indexOf('=');
+        if (idx !== -1) {
+          const key = line.slice(0, idx).trim();
+          let val = line.slice(idx + 1).trim();
+          val = val.replace(/^["']|["']$/g, '');
+          if (!process.env[key]) process.env[key] = val;
+        }
+      }
+    }
   }
 }
 
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!supabaseUrl || !supabaseKey) {
+  console.log("Missing Supabase credentials");
+  process.exit(1);
+}
+
+const supabase = createClient(supabaseUrl, supabaseKey);
+
+async function check() {
+  const { data: notes, error: notesError } = await supabase
+    .from('lead_notes')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(10);
+  console.log("Last 10 notes:");
+  console.log(JSON.stringify(notes, null, 2));
+  if (notesError) console.error("Notes error:", notesError);
+}
 check();

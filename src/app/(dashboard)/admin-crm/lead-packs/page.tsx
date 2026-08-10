@@ -182,8 +182,8 @@ export default function LeadPacksPage() {
     toast.error("Stopping autodialer after current call...", { id: 'autodial' });
   };
 
-  const handleAIAutodial = async (packId: string) => {
-    if (!window.confirm('This will sequentially dial all pending leads in this pack. You can stop it at any time. Proceed?')) return;
+  const handleAIAutodial = async (packId: string, agentType: 'ai' | 'kairo') => {
+    if (!window.confirm(`This will sequentially dial all pending leads in this pack using the ${agentType === 'kairo' ? 'Kairo' : 'Standard AI'} agent. You can stop it at any time. Proceed?`)) return;
     
     setAutodialingPack(packId);
     cancelAutodialRef.current = false;
@@ -224,7 +224,7 @@ export default function LeadPacksPage() {
             const res = await fetch('/api/ultravox/initiate', {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ leadId: member.lead_id, phone })
+              body: JSON.stringify({ leadId: member.lead_id, phone, agentType })
             });
 
             if (!res.ok) {
@@ -409,11 +409,18 @@ export default function LeadPacksPage() {
                     <RefreshCw className="w-3.5 h-3.5" /> Regenerate Pack
                   </button>
                   <button 
-                    onClick={() => handleAIAutodial(pack.id)} 
+                    onClick={() => handleAIAutodial(pack.id, 'kairo')} 
                     disabled={autodialingPack === pack.id}
                     className="w-full text-left px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 flex items-center gap-2 disabled:opacity-50 font-semibold"
                   >
                     {autodialingPack === pack.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />} Start Kairo Autodial
+                  </button>
+                  <button 
+                    onClick={() => handleAIAutodial(pack.id, 'ai')} 
+                    disabled={autodialingPack === pack.id}
+                    className="w-full text-left px-4 py-2 text-sm text-indigo-600 hover:bg-indigo-50 flex items-center gap-2 disabled:opacity-50 font-semibold"
+                  >
+                    {autodialingPack === pack.id ? <RefreshCw className="w-3.5 h-3.5 animate-spin" /> : <Bot className="w-3.5 h-3.5" />} Start AI Autodial
                   </button>
                   <div className="h-px bg-gray-100 my-1"></div>
                   <button onClick={() => handleArchivePack(pack.id)} className="w-full text-left px-4 py-2 text-sm text-yellow-600 hover:bg-yellow-50 flex items-center gap-2">

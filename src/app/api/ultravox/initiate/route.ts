@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const { leadId, phone } = await req.json();
+    const { leadId, phone, agentType = 'ai' } = await req.json();
 
     if (!leadId || !phone) {
       return NextResponse.json({ error: 'Missing leadId or phone' }, { status: 400 });
@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const host = req.headers.get('host');
     const baseUrl = `${protocol}://${host}`;
 
-    const url = `${baseUrl}/api/ultravox/twiml?leadId=${leadId}`;
+    const url = `${baseUrl}/api/ultravox/twiml?leadId=${leadId}&agentType=${agentType}`;
 
     const params = new URLSearchParams();
     params.append('Url', url);

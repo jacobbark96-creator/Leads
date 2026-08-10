@@ -8,6 +8,7 @@ export async function POST(req: Request) {
   try {
     const url = new URL(req.url);
     const leadId = url.searchParams.get('leadId') || '';
+    const agentType = url.searchParams.get('agentType') || 'ai';
 
     // Fetch the lead's address from Supabase
     let leadAddress = 'Address not provided';
@@ -34,7 +35,14 @@ export async function POST(req: Request) {
     }
 
     // 1. Create a call on Ultravox using the specific Agent ID
-    const agentId = '1fc1194d-919f-4333-8181-23b35152a813';
+    // Default agent ID (Standard AI Autodialler)
+    let agentId = '1fc1194d-919f-4333-8181-23b35152a813'; 
+    
+    // Kairo specific agent ID
+    if (agentType === 'kairo') {
+      agentId = '782f5261-25dd-4de2-9ff7-e2e6d57dbc93';
+    }
+    
     // Instead of passing agentId in the body of /api/calls, we use the specific agent calls endpoint
     const ultravoxRes = await fetch(`https://api.ultravox.ai/api/agents/${agentId}/calls`, {
       method: 'POST',

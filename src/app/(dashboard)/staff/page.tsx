@@ -242,17 +242,15 @@ export default function StaffPortal() {
 
             {/* Top KPI Cards (Only for Admins/Super Admins) */}
             {isAdmin && (
-              <div className="xl:col-span-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3 xl:gap-4">
+              <div className="xl:col-span-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 xl:gap-4">
                 <div className="col-span-1 h-full">
                   <TargetBox />
                 </div>
                 <GlassCard delay={0.1} className="flex flex-col items-center justify-center h-full p-3 xl:p-4">
-                  <h3 className="text-xl xl:text-2xl font-bold text-white mb-1 tracking-tight text-center">{currentDate || '-'}</h3>
-                </GlassCard>
-                <GlassCard delay={0.15} className="flex flex-col items-center justify-center h-full p-3 xl:p-4">
-                  <h3 className="text-xl xl:text-3xl font-bold text-emerald-400 tracking-widest" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <h3 className="text-xl xl:text-3xl font-bold text-emerald-400 tracking-widest mb-1" style={{ fontVariantNumeric: 'tabular-nums' }}>
                     {currentTime || '-'}
                   </h3>
+                  <p className="text-xs xl:text-sm font-medium text-gray-300 text-center">{currentDate || '-'}</p>
                 </GlassCard>
                 <KpiCard 
                   title="New Leads" 

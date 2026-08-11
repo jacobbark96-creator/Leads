@@ -14,9 +14,10 @@ import { FeedbackTab } from './components/FeedbackTab';
 import { DivisionsTab } from './components/DivisionsTab';
 import { FinanceTab } from './components/FinanceTab';
 import { ConciergeTab } from './components/ConciergeTab';
+import { TargetsTab } from './components/TargetsTab';
 
 export default function UserManagement() {
-  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'stats' | 'background' | 'press' | 'feedback' | 'divisions' | 'finance' | 'concierge'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'stats' | 'background' | 'press' | 'feedback' | 'divisions' | 'finance' | 'concierge' | 'targets'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuthStore();
@@ -328,6 +329,12 @@ export default function UserManagement() {
           className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'concierge' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
         >
           <div className="flex items-center gap-2"><Calendar className="w-4 h-4" /> Concierge</div>
+        </button>
+        <button
+          onClick={() => setActiveTab('targets')}
+          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'targets' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+        >
+          <div className="flex items-center gap-2"><Activity className="w-4 h-4" /> Targets</div>
         </button>
         {profile?.role === 'super_admin' && (
           <button
@@ -704,6 +711,7 @@ export default function UserManagement() {
       {activeTab === 'feedback' && <FeedbackTab />}
       {activeTab === 'finance' && <FinanceTab />}
       {activeTab === 'concierge' && <ConciergeTab />}
+      {activeTab === 'targets' && <TargetsTab />}
       {activeTab === 'divisions' && profile?.role === 'super_admin' && <DivisionsTab />}
     </div>
   );

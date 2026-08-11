@@ -27,6 +27,7 @@ export interface UserProfile {
   allowed_child_accounts?: boolean;
   parent_id?: string | null;
   requires_password_change?: boolean;
+  sales_target?: number | null;
   created_at: string;
 }
 

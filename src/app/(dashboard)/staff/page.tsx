@@ -18,6 +18,7 @@ import { GmailPanel } from './components/GmailPanel';
 import { RepPerformanceCard } from './components/RepPerformanceCard';
 import { GMPerformanceCard } from './components/GMPerformanceCard';
 import { RepMonitoringCard } from './components/RepMonitoringCard';
+import { TargetBox } from './components/TargetBox';
 
 export default function StaffPortal() {
   const { profile } = useAuthStore();
@@ -217,14 +218,14 @@ export default function StaffPortal() {
       >
         <div className="w-full max-w-[1600px] mx-auto">
           
-          {/* Header & KPIs Row (4 Columns total) */}
+          {/* Header & KPIs Row */}
           <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mb-4">
             {/* Welcome Header */}
             <motion.div 
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.5 }}
-              className={`xl:col-span-1 flex flex-col justify-center pl-0 xl:pl-6 ${!isAdmin ? 'xl:col-span-4 mb-2' : 'mb-4 xl:mb-0'}`}
+              className={`flex flex-col justify-center pl-0 xl:pl-6 ${!isAdmin ? 'xl:col-span-3 mb-2' : 'xl:col-span-1 mb-4 xl:mb-0'}`}
             >
               <h1 className="text-2xl md:text-3xl 2xl:text-4xl font-extrabold text-white tracking-tight mb-1">
                 Good morning, {profile.name.split(' ')[0]} <span className="inline-block animate-wave origin-bottom-right">👋</span>
@@ -232,14 +233,24 @@ export default function StaffPortal() {
               <p className="text-sm text-gray-400 font-medium">Here's what's happening at Openlead today.</p>
             </motion.div>
 
+            {/* Target Box for non-admins (Admins have their own KPI row which includes it now, or we can put it there) */}
+            {!isAdmin && (
+              <div className="xl:col-span-1 h-24 xl:h-auto">
+                <TargetBox />
+              </div>
+            )}
+
             {/* Top KPI Cards (Only for Admins/Super Admins) */}
             {isAdmin && (
-              <div className="xl:col-span-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 xl:gap-4">
+              <div className="xl:col-span-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-8 gap-3 xl:gap-4">
+                <div className="col-span-1 h-full">
+                  <TargetBox />
+                </div>
                 <GlassCard delay={0.1} className="flex flex-col items-center justify-center h-full p-3 xl:p-4">
-                  <h3 className="text-xl xl:text-3xl font-bold text-white mb-1 tracking-tight text-center">{currentDate || '-'}</h3>
+                  <h3 className="text-xl xl:text-2xl font-bold text-white mb-1 tracking-tight text-center">{currentDate || '-'}</h3>
                 </GlassCard>
                 <GlassCard delay={0.15} className="flex flex-col items-center justify-center h-full p-3 xl:p-4">
-                  <h3 className="text-2xl xl:text-4xl font-bold text-emerald-400 tracking-widest" style={{ fontVariantNumeric: 'tabular-nums' }}>
+                  <h3 className="text-xl xl:text-3xl font-bold text-emerald-400 tracking-widest" style={{ fontVariantNumeric: 'tabular-nums' }}>
                     {currentTime || '-'}
                   </h3>
                 </GlassCard>

@@ -284,22 +284,26 @@ export async function POST(req: Request) {
       
       break;
     }
+    case 'invoice.payment_succeeded':
     case 'invoice.paid': {
       const invoice = event.data.object as any;
       const userId = invoice.metadata?.userId || invoice.subscription_details?.metadata?.userId;
       const localInvoiceId = invoice.metadata?.localInvoiceId;
       
-      // If this was a trade account invoice, reset usage
+      // If this was a trade account invoice, reduce usage by amount paid
       if (invoice.metadata?.type === 'trade_account' && userId) {
-        console.log(`Resetting trade usage for user ${userId} following paid invoice ${invoice.id}`);
+        const amountPaid = (invoice.amount_paid || 0) / 100;
+        console.log(`Reducing trade usage for user ${userId} by £${amountPaid} following paid invoice ${invoice.id}`);
         
-        // 1. Reset usage on user profile
-        const { error: userError } = await supabaseAdmin
-          .from('users')
-          .update({ current_trade_usage: 0 })
-          .eq('id', userId);
-          
-        if (userError) console.error('Error resetting trade usage:', userError);
+        if (amountPaid > 0) {
+          // 1. Reduce usage on user profile safely via RPC
+          const { error: userError } = await supabaseAdmin.rpc('decrement_trade_usage', {
+            p_user_id: userId,
+            p_amount: amountPaid
+          });
+            
+          if (userError) console.error('Error reducing trade usage:', userError);
+        }
 
         // 2. Update local invoice status to 'paid'
         if (localInvoiceId) {

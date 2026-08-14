@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { MarketplaceLeadModal } from '@/components/MarketplaceLeadModal';
 import { OrderSummaryModal } from '@/components/OrderSummaryModal';
+import { MultiServiceArea } from '@/components/MultiServiceArea';
 import { extractTown, getVagueLocation } from '@/lib/utils';
 import { trackClientActivity } from '@/lib/activityTracker';
 import { Lead } from '@/types';
@@ -20,6 +21,8 @@ export default function TeamManagement() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [isCreating, setIsCreating] = useState(false);
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
+  const [selectedUserClient, setSelectedUserClient] = useState<any>(null);
+  const [isUpdatingAreas, setIsUpdatingAreas] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [isResetting, setIsResetting] = useState(false);
@@ -219,10 +222,58 @@ export default function TeamManagement() {
   useEffect(() => {
     if (selectedUser) {
       fetchUserHistory(selectedUser.id);
+      fetchUserClient(selectedUser.id);
     } else {
       setSelectedUserHistory([]);
+      setSelectedUserClient(null);
     }
   }, [selectedUser]);
+
+  const fetchUserClient = async (userId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .eq('user_id', userId)
+        .single();
+      if (error) throw error;
+      setSelectedUserClient(data);
+    } catch (error) {
+      console.error('Failed to fetch user client data:', error);
+    }
+  };
+
+  const handleUpdateServiceAreas = async (areas: any[]) => {
+    if (!selectedUser || !profile) return;
+    setIsUpdatingAreas(true);
+    try {
+      const { data: session } = await supabase.auth.getSession();
+      const res = await fetch('/api/team/update-areas', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${session?.session?.access_token}`
+        },
+        body: JSON.stringify({
+          childUserId: selectedUser.id,
+          parentId: profile.id,
+          serviceAreas: areas
+        }),
+      });
+
+      if (!res.ok) {
+        const err = await res.json();
+        throw new Error(err.error || 'Failed to update service areas');
+      }
+
+      setSelectedUserClient((prev: any) => ({ ...prev, service_areas: areas }));
+      toast.success('Service areas updated successfully');
+    } catch (error: any) {
+      toast.error(error.message);
+    } finally {
+      setIsUpdatingAreas(false);
+    }
+  };
 
   const handleAddUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -798,6 +849,27 @@ export default function TeamManagement() {
                     </p>
                   </div>
                 </div>
+
+                {selectedUserClient && (
+                  <div className="mb-8 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm">
+                    <h4 className="text-[10px] font-black text-gray-900 uppercase tracking-widest mb-4 flex items-center gap-2">
+                      <MapPin className="w-3 h-3 text-blue-600" />
+                      Service Areas & Radius
+                    </h4>
+                    <div className="relative">
+                      {isUpdatingAreas && (
+                        <div className="absolute inset-0 bg-white/50 backdrop-blur-sm z-10 flex items-center justify-center rounded-xl">
+                          <div className="w-6 h-6 border-2 border-blue-600/30 border-t-blue-600 rounded-full animate-spin" />
+                        </div>
+                      )}
+                      <MultiServiceArea
+                        areas={selectedUserClient.service_areas || []}
+                        onChange={handleUpdateServiceAreas}
+                        allowNational={true}
+                      />
+                    </div>
+                  </div>
+                )}
 
                 <div className="space-y-6">
                   {/* Filters */}

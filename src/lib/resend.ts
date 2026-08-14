@@ -433,3 +433,54 @@ export const addContactToMarketingAudience = async (email: string, firstName: st
     console.error('Failed to add contact to marketing audience:', err);
   }
 };
+
+/**
+ * Sends an email to support when a user purchases a lead with the concierge service.
+ */
+export const sendConciergeRequestEmail = async ({
+  clientEmail,
+  leadId,
+  leadLocation,
+  dates,
+}: {
+  clientEmail: string;
+  leadId: string;
+  leadLocation: string;
+  dates: string;
+}) => {
+  try {
+    return await sendResendEmail({
+      from: `Openlead Concierge <${defaultFromEmail}>`,
+      to: ['support@openlead.co.uk'],
+      subject: `New Concierge Request - Lead #${leadId.split('-')[0]}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb; margin-top: 0;">New Concierge Request 🗓️</h2>
+          
+          <p style="color: #4b5563; line-height: 1.6;">
+            A client has purchased a lead with the Concierge Service add-on.
+          </p>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #1e293b; font-size: 16px;">Request Details</h3>
+            <p style="margin: 5px 0; color: #334155;"><strong>Client Email:</strong> ${clientEmail}</p>
+            <p style="margin: 5px 0; color: #334155;"><strong>Lead ID:</strong> ${leadId}</p>
+            <p style="margin: 5px 0; color: #334155;"><strong>Location:</strong> ${leadLocation}</p>
+          </div>
+
+          <div style="background-color: #fffbeb; border: 1px solid #bae6fd; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #0369a1; font-size: 16px;">Requested Dates/Times</h3>
+            <p style="margin: 5px 0; color: #0c4a6e; white-space: pre-wrap;">${dates}</p>
+          </div>
+
+          <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; border-top: 1px solid #eaeaea; pt-20px;">
+            This request was generated automatically from the Openlead Client Portal.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send concierge request email:', err);
+    return { success: false, error: err.message };
+  }
+};

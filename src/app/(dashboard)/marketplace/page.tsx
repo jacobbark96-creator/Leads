@@ -270,7 +270,7 @@ export default function MarketplacePage() {
     }
   };
 
-  const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive', discountedPrice?: number, useTradeAccount: boolean = false, addConcierge: boolean = false) => {
+  const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive', discountedPrice?: number, useTradeAccount: boolean = false, addConcierge: boolean = false, conciergeDates: string = '') => {
     if (!profile) return;
     try {
       trackLeadEvent(leadId, profile.id, 'checkout');
@@ -402,7 +402,8 @@ export default function MarketplacePage() {
           leadPrice: targetPrice.toString(),
           creditToUse,
           purchaseType,
-          addConcierge
+          addConcierge,
+          conciergeDates: conciergeDates
         }),
       });
 
@@ -601,7 +602,7 @@ export default function MarketplacePage() {
           onClose={() => setLeadToPurchase(null)}
           lead={leadToPurchase}
           creditBalance={creditBalance}
-          onProceedToPay={(creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge)}
+          onProceedToPay={(creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge, conciergeDates) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge, conciergeDates)}
         />
       )}
     </ProtectedRoute>

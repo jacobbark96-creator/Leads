@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
+import { sendConciergeRequestEmail } from '@/lib/resend';
 
 export const runtime = 'edge';
 
@@ -86,7 +87,8 @@ export async function POST(req: Request) {
         purchaseType,
         pendingPurchaseId,
         useTradeAccount,
-        addConcierge
+        addConcierge,
+        conciergeDates
       } = body;
       
       if (!userId || !email || !leadId || !clientId || !purchaseType) {
@@ -184,8 +186,16 @@ export async function POST(req: Request) {
               if (targetPurchaseId) {
                 await supabaseAdmin
                   .from('lead_purchases')
-                  .update({ has_concierge: true, concierge_status: 'pending' })
+                  .update({ has_concierge: true, concierge_status: 'pending', concierge_dates: conciergeDates ? [conciergeDates] : null })
                   .eq('id', targetPurchaseId);
+                  
+                // Notify support via Resend
+                await sendConciergeRequestEmail({
+                  clientEmail: email,
+                  leadId: leadId,
+                  leadLocation: extractTown(leadLocation),
+                  dates: conciergeDates
+                }).catch((e: any) => console.error('Failed to send concierge email:', e));
               }
             } catch (conciergeErr) {
               console.error('Failed to set concierge flags (non-fatal):', conciergeErr);
@@ -215,6 +225,11 @@ export async function POST(req: Request) {
       formData.append('metadata[usedCredit]', appliedCredit.toString());
       formData.append('metadata[purchaseType]', purchaseType);
       formData.append('metadata[addConcierge]', addConcierge ? 'true' : 'false');
+      
+      if (addConcierge && conciergeDates) {
+        // Truncate to 500 chars to fit Stripe metadata limits if necessary, though 500 is usually enough for 3 dates
+        formData.append('metadata[conciergeDates]', conciergeDates.substring(0, 500));
+      }
       
       if (pendingPurchaseId) {
         formData.append('metadata[pendingPurchaseId]', pendingPurchaseId);

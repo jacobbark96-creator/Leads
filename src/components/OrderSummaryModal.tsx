@@ -11,7 +11,7 @@ interface OrderSummaryModalProps {
   onClose: () => void;
   lead: Lead;
   creditBalance: number;
-  onProceedToPay: (creditToUse: number, purchaseType: 'exclusive' | 'share', discountedPrice: number, useTradeAccount: boolean, addConcierge: boolean) => void;
+  onProceedToPay: (creditToUse: number, purchaseType: 'exclusive' | 'share', discountedPrice: number, useTradeAccount: boolean, addConcierge: boolean, conciergeDates: string) => void;
 }
 
 export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, onClose, lead, creditBalance, onProceedToPay }) => {
@@ -22,6 +22,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
   const [purchaseType, setPurchaseType] = useState<'exclusive' | 'share'>('exclusive');
   const [useTradeAccount, setUseTradeAccount] = useState(false);
   const [addConcierge, setAddConcierge] = useState(false);
+  const [conciergeDates, setConciergeDates] = useState('');
 
   if (!isOpen) return null;
 
@@ -237,6 +238,26 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                         {addConcierge && <div className="w-2 h-2 rounded-full bg-white" />}
                       </div>
                     </label>
+
+                    {/* Concierge Dates Input */}
+                    {addConcierge && (
+                      <div className="mt-3 p-4 bg-blue-50 border border-blue-100 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
+                        <label className="block text-sm font-bold text-gray-900 mb-2">
+                          Preferred Survey Dates & Times
+                        </label>
+                        <p className="text-[10px] text-gray-600 mb-3">
+                          Please provide 3 dates and times that work for you. We will contact the lead and confirm one of these slots.
+                        </p>
+                        <textarea
+                          value={conciergeDates}
+                          onChange={(e) => setConciergeDates(e.target.value)}
+                          placeholder="e.g.&#10;1. Monday 14th Oct - Morning&#10;2. Tuesday 15th Oct - 2pm&#10;3. Thursday 17th Oct - Anytime"
+                          rows={4}
+                          className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                          required
+                        />
+                      </div>
+                    )}
                   </div>
 
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Payment Summary</h3>
@@ -363,8 +384,10 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                   </div>
 
                   <button
-                    onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge)}
-                    className={`w-full flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors ${
+                    type="button"
+                    disabled={addConcierge && !conciergeDates.trim()}
+                    onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge, conciergeDates)}
+                    className={`w-full flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
                       profile?.parent_id
                         ? 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
                         : useTradeAccount 

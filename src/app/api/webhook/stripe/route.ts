@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { sendWelcomeEmail } from '@/lib/resend';
+import { sendWelcomeEmail, sendConciergeRequestEmail } from '@/lib/resend';
 
 // Removed 'edge' runtime to allow Node.js environment variables resolution on Vercel build
 export const runtime = 'edge';
@@ -180,6 +180,7 @@ export async function POST(req: Request) {
           const pricePaid = (session.amount_total || 0) / 100;
           const pendingPurchaseId = session.metadata?.pendingPurchaseId;
           const addConcierge = session.metadata?.addConcierge === 'true';
+          const conciergeDates = session.metadata?.conciergeDates;
 
           if (leadId && clientId) {
             if (pendingPurchaseId) {
@@ -255,8 +256,29 @@ export async function POST(req: Request) {
                     if (targetPurchaseId) {
                       await supabaseAdmin
                         .from('lead_purchases')
-                        .update({ has_concierge: true, concierge_status: 'pending' })
+                        .update({ has_concierge: true, concierge_status: 'pending', concierge_dates: conciergeDates ? [conciergeDates] : null })
                         .eq('id', targetPurchaseId);
+                        
+                      // Notify support via Resend
+                      try {
+                        // We need the lead location for the email
+                        const { data: leadData } = await supabaseAdmin
+                          .from('leads')
+                          .select('location')
+                          .eq('id', leadId)
+                          .single();
+                          
+                        const leadLoc = leadData?.location ? leadData.location.split(',')[0].trim() : 'Unknown';
+                        
+                        await sendConciergeRequestEmail({
+                          clientEmail: customerEmail,
+                          leadId: leadId,
+                          leadLocation: leadLoc,
+                          dates: conciergeDates
+                        });
+                      } catch (e: any) {
+                        console.error('Failed to send concierge email in webhook:', e);
+                      }
                     }
                   } catch (err) {
                     console.error('Failed to set concierge flags on direct purchase:', err);
@@ -270,8 +292,29 @@ export async function POST(req: Request) {
               try {
                 await supabaseAdmin
                   .from('lead_purchases')
-                  .update({ has_concierge: true, concierge_status: 'pending' })
+                  .update({ has_concierge: true, concierge_status: 'pending', concierge_dates: conciergeDates ? [conciergeDates] : null })
                   .eq('id', pendingPurchaseId);
+                  
+                // Notify support via Resend
+                try {
+                  // We need the lead location for the email
+                  const { data: leadData } = await supabaseAdmin
+                    .from('leads')
+                    .select('location')
+                    .eq('id', leadId)
+                    .single();
+                    
+                  const leadLoc = leadData?.location ? leadData.location.split(',')[0].trim() : 'Unknown';
+                  
+                  await sendConciergeRequestEmail({
+                    clientEmail: customerEmail,
+                    leadId: leadId,
+                    leadLocation: leadLoc,
+                    dates: conciergeDates
+                  });
+                } catch (e: any) {
+                  console.error('Failed to send concierge email in webhook:', e);
+                }
               } catch (err) {
                 console.error('Failed to set concierge flags on approved purchase:', err);
               }

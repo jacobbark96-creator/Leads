@@ -21,8 +21,8 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
   const [isApplying, setIsApplying] = useState(false);
   const [purchaseType, setPurchaseType] = useState<'exclusive' | 'share'>('exclusive');
   const [useTradeAccount, setUseTradeAccount] = useState(false);
-  const [addConcierge, setAddConcierge] = useState(false);
-  const [conciergeDates, setConciergeDates] = useState('');
+  const [addConcierge, setAddConcierge] = useState(lead.has_concierge || false);
+  const [conciergeDates, setConciergeDates] = useState(lead.concierge_dates ? lead.concierge_dates[0] : '');
 
   if (!isOpen) return null;
 

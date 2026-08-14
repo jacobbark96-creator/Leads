@@ -381,7 +381,11 @@ export default function TeamManagement() {
 
   const handleApproveRequest = (request: any) => {
     setPendingPurchaseId(request.id);
-    setSelectedLeadForCheckout(request.leads);
+    setSelectedLeadForCheckout({
+      ...request.leads,
+      has_concierge: request.has_concierge,
+      concierge_dates: request.concierge_dates
+    });
     setIsOrderModalOpen(true);
   };
 

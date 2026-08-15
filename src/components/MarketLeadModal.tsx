@@ -4,6 +4,7 @@ import { Lead, Category } from '../types';
 import { X, Upload, Trash2, MapPin, CheckCircle, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+import { calculateEstimatedSystemSize } from '../lib/utils';
 
 const libraries: "places"[] = ['places'];
 
@@ -104,32 +105,13 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
   });
 
   useEffect(() => {
-    // Auto-calculate System Size (kW) based on roof size and skylights
     const calculateSystemSize = () => {
-      const sizeStr = formData.roof_size || '';
-      const sizeNum = parseFloat(sizeStr.replace(/[^0-9.]/g, ''));
-      
-      if (isNaN(sizeNum) || sizeNum <= 0) {
-        setFormData(prev => ({ ...prev, est_system_size: '' }));
-        return;
-      }
-
-      // If 'cover_skylights' is false (meaning "No"), assume property has skylights we cannot cover -> 40% unusable (60% usable).
-      // Otherwise, 20% unusable (80% usable).
-      const usablePercentage = formData.cover_skylights === false ? 0.60 : 0.80;
-      const usableArea = sizeNum * usablePercentage;
-
-      // Assuming ~2 sqm per panel
-      const numberOfPanels = Math.floor(usableArea / 2);
-      
-      // System size (kW) = (number of panels * 420W) / 1000
-      const systemSizeKw = (numberOfPanels * 420) / 1000;
-
-      setFormData(prev => ({ ...prev, est_system_size: systemSizeKw > 0 ? `${systemSizeKw.toFixed(1)} kW` : '' }));
+      const estKw = calculateEstimatedSystemSize(formData.roof_size, formData.monthly_spend, formData.unit_rate);
+      setFormData(prev => ({ ...prev, est_system_size: estKw && estKw > 0 ? `${estKw.toFixed(1)} kW` : '' }));
     };
 
     calculateSystemSize();
-  }, [formData.roof_size, formData.cover_skylights]);
+  }, [formData.roof_size, formData.monthly_spend, formData.unit_rate]);
 
   const { isLoaded, loadError } = useLoadScript({
     googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',

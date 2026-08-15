@@ -10,7 +10,7 @@ import { Lead, StaffUser, LeadNote } from '@/types';
 import toast from 'react-hot-toast';
 import { useDialer } from '@/contexts/DialerContext';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
-import { calculateMatchScore } from '@/lib/utils';
+import { calculateMatchScore, calculateEstimatedSystemSize } from '@/lib/utils';
 
 const libraries: "places"[] = ['places'];
 
@@ -526,30 +526,19 @@ function LeadDetailsV2Content() {
 
   useEffect(() => {
     const calculateSystemSize = () => {
-      const sizeStr = editForm.roof_size || '';
-      const sizeNum = parseFloat(String(sizeStr).replace(/[^0-9.]/g, ''));
-      
-      if (isNaN(sizeNum) || sizeNum <= 0) {
-        return;
-      }
-
-      const usablePercentage = editForm.cover_skylights === false ? 0.60 : 0.80;
-      const usableArea = sizeNum * usablePercentage;
-      const numberOfPanels = Math.floor(usableArea / 2);
-      const systemSizeKw = (numberOfPanels * 420) / 1000;
-
-      if (systemSizeKw > 0) {
+      const estKw = calculateEstimatedSystemSize(editForm.roof_size, editForm.monthly_spend, editForm.unit_rate);
+      if (estKw && estKw > 0) {
          setEditForm(prev => {
-            if (prev.est_system_size === `${systemSizeKw.toFixed(1)} kW`) return prev;
-            return { ...prev, est_system_size: `${systemSizeKw.toFixed(1)} kW` };
+            if (prev.est_system_size === `${estKw.toFixed(1)} kW`) return prev;
+            return { ...prev, est_system_size: `${estKw.toFixed(1)} kW` };
          });
       }
     };
 
-    if (editingCard === 'building' || editingCard === 'opportunity') {
+    if (editingCard === 'building' || editingCard === 'opportunity' || editingCard === 'keyinfo') {
       calculateSystemSize();
     }
-  }, [editForm.roof_size, editForm.cover_skylights, editingCard]);
+  }, [editForm.roof_size, editForm.monthly_spend, editForm.unit_rate, editingCard]);
 
   const { makeCall, activeCall } = useDialer();
   

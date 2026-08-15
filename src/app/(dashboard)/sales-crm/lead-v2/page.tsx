@@ -2698,7 +2698,7 @@ function LeadDetailsV2Content() {
                     </div>
                   )}
                 </div>
-                <div className="w-full md:w-[55%] grid grid-cols-2 gap-x-3 gap-y-2 flex-1 overflow-y-auto pr-2 custom-scrollbar">
+                <div className={`w-full md:w-[55%] grid grid-cols-2 gap-x-3 gap-y-2 flex-1 overflow-y-auto pr-2 custom-scrollbar ${editingCard === 'building' ? 'pb-32' : ''}`}>
                   <div className="flex flex-col col-span-2">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Address</span>
                     {editingCard === 'building' ? (
@@ -2817,7 +2817,7 @@ function LeadDetailsV2Content() {
                           <span className="text-gray-400 text-[10px] ml-1">▼</span>
                         </button>
                         {isRoofTypeDropdownOpen && (
-                          <div className="absolute top-full left-0 mt-1 w-full min-w-[180px] bg-white border border-gray-200 rounded-md shadow-lg z-[100] p-2 grid grid-cols-2 gap-2">
+                          <div className="absolute bottom-full left-0 mb-1 w-full min-w-[180px] bg-white border border-gray-200 rounded-md shadow-lg z-[100] p-2 grid grid-cols-2 gap-2">
                             {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate', 'Fiber Cement', 'Asbestos'].map(roof => {
                               const currentTypes = ((editForm as any).roof_material || '').split(',').map((t: string) => t.trim()).filter(Boolean);
                               return (

@@ -444,7 +444,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto flex-1">
+        <div className={`p-6 overflow-y-auto flex-1 ${isRoofTypeDropdownOpen ? 'pb-40' : ''}`}>
           <form id="market-form" onSubmit={handleSubmit} className="space-y-6">
             
             <div className="bg-blue-50 border border-blue-100 p-4 rounded-lg flex flex-col md:flex-row gap-4">

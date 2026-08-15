@@ -426,6 +426,7 @@ function LeadDetailsV2Content() {
   const [newContactPhone, setNewContactPhone] = useState('');
   
   const [editingCard, setEditingCard] = useState<string | null>(null);
+  const [isRoofTypeDropdownOpen, setIsRoofTypeDropdownOpen] = useState(false);
   const [files, setFiles] = useState<any[]>([]);
   const [uploadingFile, setUploadingFile] = useState(false);
   const [editForm, setEditForm] = useState<Partial<Lead>>({});
@@ -2803,12 +2804,44 @@ function LeadDetailsV2Content() {
                       </span>
                     )}
                   </div>
-                  <div className="flex flex-col">
+                  <div className="flex flex-col relative">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Roof Type</span>
                     {editingCard === 'building' ? (
-                      <input type="text" value={(editForm as any).roof_material || ''} onChange={e => setEditForm({...editForm, roof_material: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
+                      <div className="relative mt-1">
+                        <button 
+                          type="button"
+                          onClick={() => setIsRoofTypeDropdownOpen(!isRoofTypeDropdownOpen)}
+                          className="border rounded px-1.5 py-0.5 text-sm text-left bg-white w-full flex justify-between items-center focus:ring-1 focus:ring-blue-500 h-[26px]"
+                        >
+                          <span className="truncate">{(editForm as any).roof_material || 'Select...'}</span>
+                          <span className="text-gray-400 text-[10px] ml-1">▼</span>
+                        </button>
+                        {isRoofTypeDropdownOpen && (
+                          <div className="absolute top-full left-0 mt-1 w-full min-w-[180px] bg-white border border-gray-200 rounded-md shadow-lg z-[100] p-2 grid grid-cols-2 gap-2">
+                            {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate'].map(roof => {
+                              const currentTypes = ((editForm as any).roof_material || '').split(',').map((t: string) => t.trim()).filter(Boolean);
+                              return (
+                                <label key={roof} className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
+                                  <input 
+                                    type="checkbox" 
+                                    className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3"
+                                    checked={currentTypes.includes(roof)}
+                                    onChange={(e) => {
+                                      const updated = e.target.checked 
+                                        ? [...currentTypes, roof] 
+                                        : currentTypes.filter((r: string) => r !== roof);
+                                      setEditForm({...editForm, roof_material: updated.join(', ')} as any);
+                                    }}
+                                  />
+                                  <span>{roof}</span>
+                                </label>
+                              );
+                            })}
+                          </div>
+                        )}
+                      </div>
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(lead as any).roof_material || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium mt-1">{(lead as any).roof_material || 'N/A'}</span>
                     )}
                   </div>
                   <div className="flex flex-col">

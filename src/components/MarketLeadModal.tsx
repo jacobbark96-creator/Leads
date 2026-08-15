@@ -16,6 +16,7 @@ interface MarketLeadModalProps {
 
 export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClose, lead, onSuccess }) => {
   const [loading, setLoading] = useState(false);
+  const [isRoofTypeDropdownOpen, setIsRoofTypeDropdownOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [photos, setPhotos] = useState<string[]>(() => {
     const p = lead.photos as any;
@@ -590,14 +591,41 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                   />
                 </div>
 
-                <div>
-                  <label className="block text-sm font-medium text-gray-700">Roof Material</label>
-                  <input
-                    type="text"
-                    value={formData.roof_material}
-                    onChange={(e) => setFormData({...formData, roof_material: e.target.value})}
-                    className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm"
-                  />
+                <div className="relative">
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Roof Material</label>
+                  <button 
+                    type="button"
+                    onClick={() => setIsRoofTypeDropdownOpen(!isRoofTypeDropdownOpen)}
+                    className="w-full bg-white border border-gray-300 rounded-md shadow-sm pl-3 pr-10 py-2 text-left cursor-default focus:outline-none focus:ring-1 focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                  >
+                    <span className="block truncate">{formData.roof_material || 'Select...'}</span>
+                    <span className="absolute inset-y-0 right-0 flex items-center pr-2 pt-6 pointer-events-none">
+                      <span className="text-gray-400 text-xs">▼</span>
+                    </span>
+                  </button>
+                  {isRoofTypeDropdownOpen && (
+                    <div className="absolute z-[100] mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm grid grid-cols-2 gap-2 p-2">
+                      {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate'].map(roof => {
+                        const currentTypes = (formData.roof_material || '').split(',').map((t: string) => t.trim()).filter(Boolean);
+                        return (
+                          <label key={roof} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">
+                            <input 
+                              type="checkbox" 
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-4 h-4"
+                              checked={currentTypes.includes(roof)}
+                              onChange={(e) => {
+                                const updated = e.target.checked 
+                                  ? [...currentTypes, roof] 
+                                  : currentTypes.filter((r: string) => r !== roof);
+                                setFormData({...formData, roof_material: updated.join(', ')});
+                              }}
+                            />
+                            <span className="text-gray-700">{roof}</span>
+                          </label>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700">Owned? *</label>

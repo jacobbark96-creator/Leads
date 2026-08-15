@@ -763,7 +763,7 @@ function ContractorDetailsV2Content() {
   const saveEdit = async () => {
     if (!contractor) return;
     try {
-      const { id, created_at, clients, contractor_notes, other_contacts, csv_data, category, categories, ...updatePayload } = editForm as any;
+      const { id, created_at, clients, contractor_notes, other_contacts, csv_data, category, categories, min_system_size_kw, preferred_roof_types, ...updatePayload } = editForm as any;
       const { error } = await supabase
         .from('contractors')
         .update(updatePayload)
@@ -776,8 +776,8 @@ function ContractorDetailsV2Content() {
         const clientUpdate: any = {};
         if (updatePayload.location !== undefined) clientUpdate.address = updatePayload.location;
         if (updatePayload.assigned_to !== undefined) clientUpdate.assigned_to = updatePayload.assigned_to;
-        if (updatePayload.min_system_size_kw !== undefined) clientUpdate.min_system_size_kw = updatePayload.min_system_size_kw;
-        if (updatePayload.preferred_roof_types !== undefined) clientUpdate.preferred_roof_types = updatePayload.preferred_roof_types;
+        if (min_system_size_kw !== undefined) clientUpdate.min_system_size_kw = min_system_size_kw;
+        if (preferred_roof_types !== undefined) clientUpdate.preferred_roof_types = preferred_roof_types;
         
         if (Object.keys(clientUpdate).length > 0) {
           await supabase.from('clients').update(clientUpdate).eq('id', contractor.client_id);

@@ -209,17 +209,23 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
   totalScore += sizeScore;
 
   // 3. Roof Type (10 points)
-  // Matches preferred = 10, does not match = 5
+  // Matches preferred = 10, does not match = 5 (0 if asbestos and not preferred)
   let roofScore = 7;
+  const leadRoof = (lead.roof_type || lead.roof_material || '').toLowerCase();
+  const isAsbestosRoof = leadRoof.includes('asbestos');
+
   if (installerPrefs.preferred_roof_types && installerPrefs.preferred_roof_types.length > 0) {
-    const leadRoof = lead.roof_type || '';
-    // Basic string matching, assuming lead.roof_type is a string
     const isMatch = installerPrefs.preferred_roof_types.some((rt: string) => 
-      leadRoof.toLowerCase().includes(rt.toLowerCase())
+      leadRoof.includes(rt.toLowerCase())
     );
-    roofScore = isMatch ? 10 : 5;
+    if (isMatch) {
+      roofScore = 10;
+    } else {
+      roofScore = isAsbestosRoof ? 0 : 5;
+    }
   } else {
-    roofScore = 10; // No preference
+    // No preference set (assume they do standard roofs, but not asbestos unless specified)
+    roofScore = isAsbestosRoof ? 0 : 10;
   }
   totalScore += roofScore;
 

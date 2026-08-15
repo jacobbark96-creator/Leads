@@ -522,7 +522,7 @@ export default function MarketplacePage() {
                   
                   return (
                     <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-sm border ${colorClass}`}>
-                      {score}% Match
+                      {score}%
                     </div>
                   );
                 })()}

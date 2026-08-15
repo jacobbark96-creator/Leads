@@ -230,10 +230,20 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 </span>
               </div>
               <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Your Score</span>
-                <div className="w-8 h-8 rounded-full border-[2px] border-emerald-500 flex items-center justify-center text-emerald-600 font-bold text-xs">
-                   {clientPrefs ? `${calculateMatchScore(lead, clientPrefs)}%` : <span className="text-gray-300">-</span>}
-                </div>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 leading-tight">Your Match</span>
+                {clientPrefs ? (() => {
+                  const score = calculateMatchScore(lead, clientPrefs);
+                  let colorClass = "text-emerald-600 bg-emerald-50";
+                  if (score < 40) colorClass = "text-red-600 bg-red-50";
+                  else if (score < 60) colorClass = "text-amber-600 bg-amber-50";
+                  else if (score < 80) colorClass = "text-blue-600 bg-blue-50";
+                  
+                  return (
+                    <div className={`px-2.5 py-1 rounded-md font-bold text-sm ${colorClass}`}>
+                      {score}%
+                    </div>
+                  );
+                })() : <span className="text-gray-300">-</span>}
               </div>
             </div>
           </div>

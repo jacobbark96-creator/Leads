@@ -3101,7 +3101,18 @@ function LeadDetailsV2Content() {
                             {match.installer.company_name || match.installer.contact_name}
                           </span>
                         </div>
-                        <span className="text-xs font-bold text-gray-700">{match.score}%</span>
+                        {(() => {
+                          let colorClass = "text-emerald-600 bg-emerald-50";
+                          if (match.score < 40) colorClass = "text-red-600 bg-red-50";
+                          else if (match.score < 60) colorClass = "text-amber-600 bg-amber-50";
+                          else if (match.score < 80) colorClass = "text-blue-600 bg-blue-50";
+                          
+                          return (
+                            <div className={`px-2 py-0.5 rounded text-[10px] font-bold ${colorClass}`}>
+                              {match.score}%
+                            </div>
+                          );
+                        })()}
                       </div>
                       
                       <div className="flex flex-col gap-1">

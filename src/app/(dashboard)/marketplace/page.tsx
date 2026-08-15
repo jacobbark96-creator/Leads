@@ -5,10 +5,10 @@ import { Lead } from '../../../types';
 import { useAuthStore } from '../../../store/authStore';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import toast from 'react-hot-toast';
-import { Search, MapPin, Building, Calendar, FileText, CheckCircle } from 'lucide-react';
+import { Search, MapPin, Building, Calendar, FileText, CheckCircle, Zap } from 'lucide-react';
 import { MarketplaceLeadModal } from '../../../components/MarketplaceLeadModal';
 import { OrderSummaryModal } from '../../../components/OrderSummaryModal';
-import { extractTown, getVagueLocation, calculateMatchScore } from '../../../lib/utils';
+import { extractTown, getVagueLocation, calculateMatchScore, calculateEstimatedSystemSize } from '../../../lib/utils';
 import { trackLeadEvent } from '../../../utils/tracking';
 import { trackClientActivity } from '@/lib/activityTracker';
 import { RecentlySoldCarousel } from '../../../components/RecentlySoldCarousel';
@@ -513,6 +513,18 @@ export default function MarketplacePage() {
                     Residential
                   </div>
                 )}
+                {(() => {
+                  const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+                  if (estSize && estSize > 0) {
+                    return (
+                      <div className="absolute bottom-3 right-3 bg-gray-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm border border-gray-700/50 flex items-center gap-1">
+                        <Zap className="w-3 h-3 text-yellow-400" />
+                        {estSize.toFixed(1)} kWp
+                      </div>
+                    );
+                  }
+                  return null;
+                })()}
               </div>
               
               <div className="p-4 flex-1 flex flex-col">

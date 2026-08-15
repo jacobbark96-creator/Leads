@@ -814,7 +814,7 @@ function ContractorDetailsV2Content() {
   const saveEdit = async () => {
     if (!contractor) return;
     try {
-      const { id, created_at, clients, contractor_notes, other_contacts, csv_data, category, categories, min_system_size_kw, preferred_roof_types, total_purchases, total_spent, avg_lead_cost, leads_won, conversion_rate, roi, ...updatePayload } = editForm as any;
+      const { id, created_at, clients, contractor_notes, other_contacts, csv_data, category, categories, min_system_size_kw, preferred_roof_types, total_purchases, total_spent, avg_lead_cost, leads_won, conversion_rate, roi, service_areas, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting, ...updatePayload } = editForm as any;
       const { error } = await supabase
         .from('contractors')
         .update(updatePayload)

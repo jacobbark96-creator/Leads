@@ -562,7 +562,7 @@ function ContractorDetailsV2Content() {
       
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, service_areas, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting, users(email, created_at))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, service_areas, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
         .eq('id', id)
         .single();
         
@@ -583,10 +583,10 @@ function ContractorDetailsV2Content() {
         contractorData.min_system_size_kw = contractorData.clients.min_system_size_kw;
         contractorData.preferred_roof_types = contractorData.clients.preferred_roof_types;
         
-        contractorData.trade_account_enabled = contractorData.clients.trade_account_enabled;
-        contractorData.approved_trade_amount = contractorData.clients.approved_trade_amount;
-        contractorData.current_trade_usage = contractorData.clients.current_trade_usage;
-        contractorData.trade_limit_setting = contractorData.clients.trade_limit_setting;
+        contractorData.trade_account_enabled = contractorData.clients.users?.trade_account_enabled;
+        contractorData.approved_trade_amount = contractorData.clients.users?.approved_trade_amount;
+        contractorData.current_trade_usage = contractorData.clients.users?.current_trade_usage;
+        contractorData.trade_limit_setting = contractorData.clients.users?.trade_limit_setting;
         
         if (!contractorData.service_areas && contractorData.clients.service_areas) {
            contractorData.service_areas = contractorData.clients.service_areas;
@@ -773,7 +773,7 @@ function ContractorDetailsV2Content() {
       
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting, users(email, created_at))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
         .eq('id', contractor.id)
         .single();
         
@@ -787,10 +787,10 @@ function ContractorDetailsV2Content() {
            freshContractor.email = freshContractor.clients.users.email;
         }
 
-        freshContractor.trade_account_enabled = freshContractor.clients.trade_account_enabled;
-        freshContractor.approved_trade_amount = freshContractor.clients.approved_trade_amount;
-        freshContractor.current_trade_usage = freshContractor.clients.current_trade_usage;
-        freshContractor.trade_limit_setting = freshContractor.clients.trade_limit_setting;
+        freshContractor.trade_account_enabled = freshContractor.clients.users?.trade_account_enabled;
+        freshContractor.approved_trade_amount = freshContractor.clients.users?.approved_trade_amount;
+        freshContractor.current_trade_usage = freshContractor.clients.users?.current_trade_usage;
+        freshContractor.trade_limit_setting = freshContractor.clients.users?.trade_limit_setting;
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (freshContractor.clients.services_offered) {
@@ -838,7 +838,7 @@ function ContractorDetailsV2Content() {
       // Force a fresh fetch to ensure all data is in sync
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting, users(email, created_at))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
         .eq('id', contractor.id)
         .single();
         
@@ -855,10 +855,10 @@ function ContractorDetailsV2Content() {
         freshContractor.min_system_size_kw = freshContractor.clients.min_system_size_kw;
         freshContractor.preferred_roof_types = freshContractor.clients.preferred_roof_types;
 
-        freshContractor.trade_account_enabled = freshContractor.clients.trade_account_enabled;
-        freshContractor.approved_trade_amount = freshContractor.clients.approved_trade_amount;
-        freshContractor.current_trade_usage = freshContractor.clients.current_trade_usage;
-        freshContractor.trade_limit_setting = freshContractor.clients.trade_limit_setting;
+        freshContractor.trade_account_enabled = freshContractor.clients.users?.trade_account_enabled;
+        freshContractor.approved_trade_amount = freshContractor.clients.users?.approved_trade_amount;
+        freshContractor.current_trade_usage = freshContractor.clients.users?.current_trade_usage;
+        freshContractor.trade_limit_setting = freshContractor.clients.users?.trade_limit_setting;
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (freshContractor.clients.services_offered) {

@@ -3078,19 +3078,19 @@ function LeadDetailsV2Content() {
                             {match.installer.company_name || match.installer.contact_name}
                           </span>
                         </div>
-                        <span className="text-xs font-bold text-gray-700">{Math.round((match.score / 80) * 100)}%</span>
+                        <span className="text-xs font-bold text-gray-700">{match.score}%</span>
                       </div>
                       
                       <div className="flex flex-col gap-1">
                         <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
                           <div 
                             className={`h-full rounded-full ${
-                              (match.score / 80) * 100 >= 80 ? 'bg-green-500' :
-                              (match.score / 80) * 100 >= 60 ? 'bg-blue-500' :
-                              (match.score / 80) * 100 >= 40 ? 'bg-yellow-500' :
+                              match.score >= 80 ? 'bg-green-500' :
+                              match.score >= 60 ? 'bg-blue-500' :
+                              match.score >= 40 ? 'bg-yellow-500' :
                               'bg-gray-400'
                             }`}
-                            style={{ width: `${Math.min(100, Math.max(0, (match.score / 80) * 100))}%` }}
+                            style={{ width: `${Math.min(100, Math.max(0, match.score))}%` }}
                           ></div>
                         </div>
                       </div>

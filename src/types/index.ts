@@ -245,6 +245,10 @@ export interface Contractor {
   phone?: string | null;
   email: string | null;
   company: string | null;
+  trade_account_enabled?: boolean;
+  approved_trade_amount?: number;
+  current_trade_usage?: number;
+  trade_limit_setting?: number;
   status: string;
   csv_data: any | null;
   assigned_to: string | null;

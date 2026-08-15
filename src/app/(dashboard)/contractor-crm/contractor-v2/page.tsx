@@ -4,6 +4,7 @@ import React, { useEffect, useState, useRef, Suspense, useMemo } from 'react';
 import Link from 'next/link';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, ResponsiveContainer } from 'recharts';
 
 import { useAuthStore } from '@/store/authStore';
 import { Contractor, StaffUser } from '@/types';
@@ -561,7 +562,7 @@ function ContractorDetailsV2Content() {
       
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, service_areas, users(email, created_at))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, service_areas, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting, users(email, created_at))')
         .eq('id', id)
         .single();
         
@@ -581,6 +582,11 @@ function ContractorDetailsV2Content() {
         
         contractorData.min_system_size_kw = contractorData.clients.min_system_size_kw;
         contractorData.preferred_roof_types = contractorData.clients.preferred_roof_types;
+        
+        contractorData.trade_account_enabled = contractorData.clients.trade_account_enabled;
+        contractorData.approved_trade_amount = contractorData.clients.approved_trade_amount;
+        contractorData.current_trade_usage = contractorData.clients.current_trade_usage;
+        contractorData.trade_limit_setting = contractorData.clients.trade_limit_setting;
         
         if (!contractorData.service_areas && contractorData.clients.service_areas) {
            contractorData.service_areas = contractorData.clients.service_areas;
@@ -767,7 +773,7 @@ function ContractorDetailsV2Content() {
       
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, users(email, created_at))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting, users(email, created_at))')
         .eq('id', contractor.id)
         .single();
         
@@ -780,6 +786,11 @@ function ContractorDetailsV2Content() {
         if (!freshContractor.email && freshContractor.clients.users?.email) {
            freshContractor.email = freshContractor.clients.users.email;
         }
+
+        freshContractor.trade_account_enabled = freshContractor.clients.trade_account_enabled;
+        freshContractor.approved_trade_amount = freshContractor.clients.approved_trade_amount;
+        freshContractor.current_trade_usage = freshContractor.clients.current_trade_usage;
+        freshContractor.trade_limit_setting = freshContractor.clients.trade_limit_setting;
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (freshContractor.clients.services_offered) {
@@ -827,7 +838,7 @@ function ContractorDetailsV2Content() {
       // Force a fresh fetch to ensure all data is in sync
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, users(email, created_at))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting, users(email, created_at))')
         .eq('id', contractor.id)
         .single();
         
@@ -843,6 +854,11 @@ function ContractorDetailsV2Content() {
         
         freshContractor.min_system_size_kw = freshContractor.clients.min_system_size_kw;
         freshContractor.preferred_roof_types = freshContractor.clients.preferred_roof_types;
+
+        freshContractor.trade_account_enabled = freshContractor.clients.trade_account_enabled;
+        freshContractor.approved_trade_amount = freshContractor.clients.approved_trade_amount;
+        freshContractor.current_trade_usage = freshContractor.clients.current_trade_usage;
+        freshContractor.trade_limit_setting = freshContractor.clients.trade_limit_setting;
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (freshContractor.clients.services_offered) {
@@ -2101,9 +2117,60 @@ function ContractorDetailsV2Content() {
 
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col flex-1 min-h-0">
               <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Credit Terms</h3>
-              <div className="flex-1 flex items-center justify-center">
-                <span className="text-sm font-medium text-gray-500 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">Coming Soon</span>
-              </div>
+              {contractor?.trade_account_enabled ? (
+                <div className="flex-1 flex flex-col items-center justify-center">
+                  <div className="h-[140px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <PieChart>
+                        <Pie
+                          data={[
+                            { name: 'Current Usage', value: contractor.current_trade_usage || 0, color: '#ef4444' },
+                            { name: 'Available Balance', value: Math.max(0, (contractor.approved_trade_amount || 0) - (contractor.current_trade_usage || 0)), color: '#10b981' }
+                          ]}
+                          cx="50%"
+                          cy="50%"
+                          innerRadius={45}
+                          outerRadius={65}
+                          paddingAngle={2}
+                          dataKey="value"
+                          stroke="none"
+                        >
+                          {
+                            [
+                              { name: 'Current Usage', value: contractor.current_trade_usage || 0, color: '#ef4444' },
+                              { name: 'Available Balance', value: Math.max(0, (contractor.approved_trade_amount || 0) - (contractor.current_trade_usage || 0)), color: '#10b981' }
+                            ].map((entry, index) => (
+                              <Cell key={`cell-${index}`} fill={entry.color} />
+                            ))
+                          }
+                        </Pie>
+                        <RechartsTooltip 
+                          formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
+                          contentStyle={{ borderRadius: '8px', border: 'none', boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)' }}
+                        />
+                      </PieChart>
+                    </ResponsiveContainer>
+                  </div>
+                  <div className="w-full mt-4 flex justify-between text-xs px-2">
+                    <div className="flex flex-col items-center">
+                      <span className="text-gray-500 font-medium">Limit</span>
+                      <span className="font-bold text-gray-900">£{(contractor.approved_trade_amount || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-gray-500 font-medium">Usage</span>
+                      <span className="font-bold text-red-500">£{(contractor.current_trade_usage || 0).toLocaleString()}</span>
+                    </div>
+                    <div className="flex flex-col items-center">
+                      <span className="text-gray-500 font-medium">Available</span>
+                      <span className="font-bold text-emerald-500">£{Math.max(0, (contractor.approved_trade_amount || 0) - (contractor.current_trade_usage || 0)).toLocaleString()}</span>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <div className="flex-1 flex items-center justify-center">
+                  <span className="text-sm font-medium text-gray-500 bg-gray-50 px-4 py-2 rounded-lg border border-gray-100">Flex Not Active</span>
+                </div>
+              )}
             </div>
           </aside>
           </div>

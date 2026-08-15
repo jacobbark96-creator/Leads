@@ -1849,7 +1849,7 @@ function ContractorDetailsV2Content() {
                     <span className="text-gray-500 text-xs mt-0.5">Preferred Roof Types</span>
                     {editingCard === 'criteria' ? (
                       <div className="flex flex-col items-end gap-1">
-                        {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate'].map(roof => (
+                        {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate', 'Fiber Cement', 'Asbestos'].map(roof => (
                           <label key={roof} className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
                             <span className="select-none">{roof}</span>
                             <input 

@@ -576,7 +576,7 @@ export default function MyOpenlead() {
                           Select the roof types you prefer to work with.
                         </p>
                         <div className="grid grid-cols-2 gap-2">
-                          {['Tile', 'Slate', 'Metal', 'Flat', 'Felt', 'Other'].map(roofType => (
+                          {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate', 'Fiber Cement', 'Asbestos'].map(roofType => (
                             <label 
                               key={roofType} 
                               className={`flex items-center gap-2.5 p-2 rounded-xl border transition-all ${

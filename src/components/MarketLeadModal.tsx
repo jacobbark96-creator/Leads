@@ -605,7 +605,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                   </button>
                   {isRoofTypeDropdownOpen && (
                     <div className="absolute z-[100] mt-1 w-full bg-white shadow-lg max-h-60 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto focus:outline-none sm:text-sm grid grid-cols-2 gap-2 p-2">
-                      {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate'].map(roof => {
+                      {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate', 'Fiber Cement', 'Asbestos'].map(roof => {
                         const currentTypes = (formData.roof_material || '').split(',').map((t: string) => t.trim()).filter(Boolean);
                         return (
                           <label key={roof} className="flex items-center gap-2 cursor-pointer p-1 hover:bg-gray-50 rounded">

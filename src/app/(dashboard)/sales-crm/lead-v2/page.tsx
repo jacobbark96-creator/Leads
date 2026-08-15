@@ -2818,7 +2818,7 @@ function LeadDetailsV2Content() {
                         </button>
                         {isRoofTypeDropdownOpen && (
                           <div className="absolute top-full left-0 mt-1 w-full min-w-[180px] bg-white border border-gray-200 rounded-md shadow-lg z-[100] p-2 grid grid-cols-2 gap-2">
-                            {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate'].map(roof => {
+                            {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate', 'Fiber Cement', 'Asbestos'].map(roof => {
                               const currentTypes = ((editForm as any).roof_material || '').split(',').map((t: string) => t.trim()).filter(Boolean);
                               return (
                                 <label key={roof} className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">

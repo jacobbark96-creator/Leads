@@ -12,6 +12,7 @@ import toast from 'react-hot-toast';
 import { useDialer } from '@/contexts/DialerContext';
 
 import { SmsChatModal } from '@/components/SmsChatModal';
+import { calculateMatchScore, extractTown } from '@/lib/utils';
 
 import { 
   LayoutDashboard, 
@@ -356,23 +357,21 @@ function ContractorDetailsV2Content() {
   };
 
   const relevantLeads = useMemo(() => {
-    if (!mapCenter || !mapLeads || !contractor) return [];
-    const R = 3958.8; // Radius of the earth in miles
-    const maxDistance = parseInt((contractor as any).max_distance) || 50;
+    if (!mapLeads || !contractor) return [];
     
-    return mapLeads.map(lead => {
-      if (!lead.latitude || !lead.longitude) return { ...lead, distance: Infinity };
-      const dLat = (lead.latitude - mapCenter.lat) * Math.PI / 180;
-      const dLon = (lead.longitude - mapCenter.lng) * Math.PI / 180;
-      const a = 
-        Math.sin(dLat/2) * Math.sin(dLat/2) +
-        Math.cos(mapCenter.lat * Math.PI / 180) * Math.cos(lead.latitude * Math.PI / 180) * 
-        Math.sin(dLon/2) * Math.sin(dLon/2);
-      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)); 
-      const distance = R * c;
-      return { ...lead, distance };
-    }).filter(lead => lead.distance <= maxDistance).sort((a, b) => a.distance - b.distance);
-  }, [mapCenter, mapLeads, contractor]);
+    const prefs = {
+      min_system_size_kw: (contractor as any).min_system_size_kw,
+      preferred_roof_types: (contractor as any).preferred_roof_types,
+      latitude: (contractor as any).latitude,
+      longitude: (contractor as any).longitude,
+      service_areas: (contractor as any).service_areas
+    };
+    
+    return mapLeads.map(lead => ({
+      ...lead,
+      score: calculateMatchScore(lead, prefs)
+    })).sort((a, b) => b.score - a.score).slice(0, 20); // Top 20 best matching leads
+  }, [mapLeads, contractor]);
 
   useEffect(() => {
     if (contractor && isLoaded) {
@@ -596,6 +595,32 @@ function ContractorDetailsV2Content() {
         }
       }
 
+      // Fetch performance metrics from lead_purchases
+      if (contractorData.client_id) {
+        const { data: purchasesData } = await supabase
+          .from('lead_purchases')
+          .select('price_paid, status, sale_amount')
+          .eq('client_id', contractorData.client_id);
+          
+        if (purchasesData) {
+          const total_purchases = purchasesData.length;
+          const total_spent = purchasesData.reduce((sum, p) => sum + (Number(p.price_paid) || 0), 0);
+          const leads_won = purchasesData.filter(p => p.status === 'won').length;
+          const avg_lead_cost = total_purchases > 0 ? (total_spent / total_purchases) : 0;
+          const conversion_rate = total_purchases > 0 ? ((leads_won / total_purchases) * 100) : 0;
+          
+          const total_revenue = purchasesData.reduce((sum, p) => sum + (Number(p.sale_amount) || 0), 0);
+          const roi = total_spent > 0 ? (((total_revenue - total_spent) / total_spent) * 100) : 0;
+          
+          contractorData.total_purchases = total_purchases;
+          contractorData.total_spent = total_spent.toFixed(2);
+          contractorData.avg_lead_cost = avg_lead_cost.toFixed(2);
+          contractorData.leads_won = leads_won;
+          contractorData.conversion_rate = conversion_rate.toFixed(1);
+          contractorData.roi = roi.toFixed(1);
+        }
+      }
+
       setContractor(contractorData);
 
       // Extract other contacts if stored in JSON or similar (depends on DB structure)
@@ -638,7 +663,7 @@ function ContractorDetailsV2Content() {
       // Fetch leads for the map
       let leadsQuery = supabase
         .from('leads')
-        .select('id, name, company, latitude, longitude, exclusive_price, share_price, status, est_system_size')
+        .select('id, name, company, latitude, longitude, exclusive_price, share_price, status, est_system_size, location, roof_size, monthly_spend, unit_rate, roof_material, timeframe, property_ownership, decision_maker, has_bills_available')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .eq('is_marketed', true)
@@ -1878,25 +1903,43 @@ function ContractorDetailsV2Content() {
                 </div>
                 <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
                   {relevantLeads.length > 0 ? (
-                    relevantLeads.map((lead: any) => (
+                    relevantLeads.map((lead: any, index: number) => (
                       <div 
                         key={lead.id} 
                         onClick={() => window.open(`/sales-crm/lead-v2?id=${lead.id}&tab=unqualified`, '_blank')}
                         className="p-3 rounded-lg border border-gray-100 hover:border-blue-300 hover:bg-blue-50 transition-colors cursor-pointer group"
                       >
                         <div className="flex justify-between items-start mb-1">
-                          <span className="text-sm font-bold text-gray-900 group-hover:text-blue-700 truncate mr-2">{lead.company || lead.name}</span>
-                          <span className="text-[10px] font-bold px-2 py-0.5 bg-green-100 text-green-700 rounded whitespace-nowrap">Active</span>
+                          <div className="flex items-center gap-2 overflow-hidden">
+                            <span className="w-5 h-5 rounded-full bg-gray-100 text-gray-600 flex items-center justify-center text-xs font-bold shrink-0">{index + 1}</span>
+                            <span className="text-sm font-bold text-gray-900 group-hover:text-blue-700 truncate">{lead.company || lead.name}</span>
+                          </div>
+                          <span className="text-[10px] font-bold px-2 py-0.5 bg-blue-100 text-blue-700 rounded whitespace-nowrap">{lead.score}% Match</span>
                         </div>
-                        <div className="text-xs text-gray-500 flex items-center gap-3">
-                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {Math.round(lead.distance)} miles</span>
+                        <div className="text-xs text-gray-500 flex items-center gap-3 pl-7">
+                          <span className="flex items-center gap-1"><MapPin className="w-3 h-3" /> {extractTown(lead.location) || 'Unknown'}</span>
                           {lead.est_system_size && <span className="flex items-center gap-1"><Building2 className="w-3 h-3" /> {lead.est_system_size}</span>}
+                        </div>
+                        
+                        {/* Progress Bar */}
+                        <div className="mt-2 pl-7">
+                          <div className="h-1.5 w-full bg-gray-100 rounded-full overflow-hidden">
+                            <div 
+                              className={`h-full rounded-full transition-all duration-500 ${
+                                lead.score >= 80 ? 'bg-green-500' :
+                                lead.score >= 60 ? 'bg-blue-500' :
+                                lead.score >= 40 ? 'bg-amber-500' :
+                                'bg-red-500'
+                              }`}
+                              style={{ width: `${Math.min(100, Math.max(0, lead.score))}%` }}
+                            />
+                          </div>
                         </div>
                       </div>
                     ))
                   ) : (
                     <div className="text-xs text-gray-500 flex items-center justify-center h-full">
-                      No active marketplace leads found within radius.
+                      No active marketplace leads available.
                     </div>
                   )}
                 </div>

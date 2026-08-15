@@ -3001,81 +3001,7 @@ function LeadDetailsV2Content() {
             </div>
 
             {/* BOTTOM SECTION */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 shrink-0 mb-4">
-              <div className="flex items-center justify-between mb-4">
-                <div className="flex items-center gap-2">
-                  <Flame className="w-5 h-5 text-orange-500" />
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Installer Match Leaderboard</h3>
-                </div>
-              </div>
-              
-              {isLoadingLeaderboard ? (
-                <div className="flex justify-center items-center h-24">
-                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
-                </div>
-              ) : installerMatchScores.length > 0 ? (
-                <div className="overflow-x-auto">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-gray-50 text-gray-500 uppercase">
-                      <tr>
-                        <th className="px-4 py-3 font-medium rounded-l-lg">Rank</th>
-                        <th className="px-4 py-3 font-medium">Installer</th>
-                        <th className="px-4 py-3 font-medium">Contact</th>
-                        <th className="px-4 py-3 font-medium">Score</th>
-                        <th className="px-4 py-3 font-medium rounded-r-lg">Match %</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                      {installerMatchScores.slice(0, 10).map((match, idx) => (
-                        <tr key={match.installer.id} className="hover:bg-gray-50/50 transition-colors">
-                          <td className="px-4 py-3">
-                            <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
-                              idx === 0 ? 'bg-yellow-100 text-yellow-700' :
-                              idx === 1 ? 'bg-gray-100 text-gray-600' :
-                              idx === 2 ? 'bg-orange-100 text-orange-700' :
-                              'bg-gray-50 text-gray-500'
-                            }`}>
-                              {idx + 1}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3 font-medium text-gray-900">
-                            {match.installer.company_name || match.installer.contact_name}
-                          </td>
-                          <td className="px-4 py-3 text-gray-500">
-                            {match.installer.contact_name}
-                          </td>
-                          <td className="px-4 py-3 font-semibold text-gray-700">
-                            {Math.round(match.score)} / 80
-                          </td>
-                          <td className="px-4 py-3">
-                            <div className="flex items-center gap-2">
-                              <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
-                                <div 
-                                  className={`h-full rounded-full ${
-                                    (match.score / 80) * 100 >= 80 ? 'bg-green-500' :
-                                    (match.score / 80) * 100 >= 60 ? 'bg-blue-500' :
-                                    (match.score / 80) * 100 >= 40 ? 'bg-yellow-500' :
-                                    'bg-gray-300'
-                                  }`}
-                                  style={{ width: `${Math.min(100, Math.max(0, (match.score / 80) * 100))}%` }}
-                                ></div>
-                              </div>
-                              <span className="font-semibold text-gray-900">
-                                {Math.round((match.score / 80) * 100)}%
-                              </span>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div className="text-center py-6 text-gray-500 text-sm italic">
-                  No active installers found.
-                </div>
-              )}
-            </div>
+            {/* REMOVED: Other Active Leads */}
 
           </div>
 
@@ -3108,25 +3034,59 @@ function LeadDetailsV2Content() {
             </div>
 
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col flex-1 min-h-[200px]">
-              <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Available Grants</h3>
-              <div className="flex-1 flex flex-col gap-3 overflow-y-auto pr-2">
-                {availableGrants && availableGrants.length > 0 ? (
-                  availableGrants.map(grant => (
-                    <div key={grant.id} className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col">
-                      <span className="text-xs font-bold text-gray-900">{grant.title}</span>
-                      <span className="text-[10px] text-gray-500 mt-0.5 line-clamp-2">
-                        {grant.amount ? `${grant.amount} ` : ''}
-                        {grant.who_can_apply ? `- ${grant.who_can_apply}` : ''}
-                      </span>
-                      <a href={grant.url} target="_blank" rel="noopener noreferrer" className="text-[10px] font-medium text-blue-600 self-start mt-1 hover:underline">
-                        View Details
-                      </a>
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-xs text-gray-500 text-center mt-2">No available grants found.</div>
-                )}
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-orange-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Installer Match</h3>
+                </div>
               </div>
+              
+              {isLoadingLeaderboard ? (
+                <div className="flex justify-center items-center flex-1">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                </div>
+              ) : installerMatchScores.length > 0 ? (
+                <div className="overflow-y-auto pr-2 flex-1 space-y-3">
+                  {installerMatchScores.slice(0, 5).map((match, idx) => (
+                    <div key={match.installer.id} className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col gap-2">
+                      <div className="flex justify-between items-start">
+                        <div className="flex items-center gap-2">
+                          <div className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
+                            idx === 0 ? 'bg-yellow-100 text-yellow-700' :
+                            idx === 1 ? 'bg-gray-100 text-gray-600' :
+                            idx === 2 ? 'bg-orange-100 text-orange-700' :
+                            'bg-gray-200 text-gray-500'
+                          }`}>
+                            {idx + 1}
+                          </div>
+                          <span className="text-xs font-bold text-gray-900 truncate max-w-[120px]" title={match.installer.company_name || match.installer.contact_name}>
+                            {match.installer.company_name || match.installer.contact_name}
+                          </span>
+                        </div>
+                        <span className="text-xs font-bold text-gray-700">{Math.round((match.score / 80) * 100)}%</span>
+                      </div>
+                      
+                      <div className="flex flex-col gap-1">
+                        <div className="w-full h-1.5 bg-gray-200 rounded-full overflow-hidden">
+                          <div 
+                            className={`h-full rounded-full ${
+                              (match.score / 80) * 100 >= 80 ? 'bg-green-500' :
+                              (match.score / 80) * 100 >= 60 ? 'bg-blue-500' :
+                              (match.score / 80) * 100 >= 40 ? 'bg-yellow-500' :
+                              'bg-gray-400'
+                            }`}
+                            style={{ width: `${Math.min(100, Math.max(0, (match.score / 80) * 100))}%` }}
+                          ></div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500 text-xs italic">
+                  No active installers found.
+                </div>
+              )}
             </div>
 
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col h-auto md:h-1/2">

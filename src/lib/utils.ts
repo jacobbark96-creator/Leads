@@ -293,12 +293,12 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
   // Apply -20% penalty if lead is outside installer's working area
   let isOutwithWorkingArea = false;
   if (lead.latitude && lead.longitude && installerPrefs.service_areas && Array.isArray(installerPrefs.service_areas) && installerPrefs.service_areas.length > 0) {
-    const isNational = installerPrefs.service_areas.some((sa: any) => sa.area && sa.area.isNational);
+    const isNational = installerPrefs.service_areas.some((sa: any) => sa.radiusMiles === 99999);
     if (!isNational) {
       const isWithinAny = installerPrefs.service_areas.some((sa: any) => {
-        if (sa.area && sa.area.lat && sa.area.lng && sa.area.radiusMiles) {
-          const dist = calculateDistance(lead.latitude, lead.longitude, sa.area.lat, sa.area.lng);
-          return dist <= sa.area.radiusMiles;
+        if (sa.lat && sa.lng && sa.radiusMiles) {
+          const dist = calculateDistance(lead.latitude, lead.longitude, sa.lat, sa.lng);
+          return dist <= sa.radiusMiles;
         }
         return false;
       });

@@ -115,7 +115,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
   return (
     <>
       <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-gray-900/60 backdrop-blur-sm">
-        <div className="bg-[#F8FAFC] shadow-2xl flex flex-col w-full max-w-[1100px] rounded-2xl border border-gray-200 overflow-hidden relative max-h-[96vh]">
+        <div className="bg-[#F8FAFC] shadow-2xl flex flex-col w-full max-w-[1100px] rounded-2xl border border-gray-200 overflow-visible relative max-h-[96vh]">
         
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-100 shrink-0">
@@ -150,7 +150,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
         </div>
 
         {/* Content */}
-        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+        <div className="p-6 overflow-visible custom-scrollbar flex-1">
           <div className="space-y-5" style={{ zoom: 0.8 }}>
           
           {/* Building Tabs (If multiple) */}

@@ -5,9 +5,9 @@ import { supabase } from '../lib/supabase';
 import { 
   X, MapPin, User, Calendar, Home, CheckCircle, Zap, ShieldCheck, 
   ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, 
-  Battery, TrendingUp, ChevronRight, Check, Building, AlertCircle
+  Battery, TrendingUp, ChevronRight, Check, Building, AlertCircle, Info
 } from 'lucide-react';
-import { extractTown, getVagueLocation, calculateMatchScore, calculateEstimatedSystemSize } from '../lib/utils';
+import { extractTown, getVagueLocation, calculateMatchScore, calculateMatchScoreDetails, calculateEstimatedSystemSize } from '../lib/utils';
 import { trackLeadEvent } from '../utils/tracking';
 import { MagicCheckoutModal } from './MagicCheckoutModal';
 
@@ -222,7 +222,14 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 </div>
               </div>
               <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Est. System Size</span>
+                <div className="relative group flex items-center justify-center mb-2">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. System Size</span>
+                  <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
+                    This is an automated calculation based on the monthly spend and roof size. It may be incorrect should the shape and design of the roof be intricate.
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                  </div>
+                </div>
                 <span className="text-sm font-bold text-gray-900">
                   {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
                     ? `${calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)?.toFixed(1)} kWp`
@@ -230,9 +237,36 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 </span>
               </div>
               <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1.5 leading-tight">Your Match</span>
+                <div className="relative group flex items-center justify-center mb-1.5">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Your Match</span>
+                  <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                  {clientPrefs && (() => {
+                    const matchDetails = calculateMatchScoreDetails(lead, clientPrefs).details;
+                    return (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-56 p-3 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal shadow-xl normal-case">
+                        <div className="font-bold mb-2 text-gray-200 border-b border-gray-700 pb-1">Score Breakdown (Max 80 pts)</div>
+                        <ul className="space-y-1">
+                          <li className="flex justify-between"><span>Distance:</span> <span className="font-bold text-emerald-400">{matchDetails.distance}/10</span></li>
+                          <li className="flex justify-between"><span>System Size:</span> <span className="font-bold text-emerald-400">{matchDetails.systemSize}/10</span></li>
+                          <li className="flex justify-between"><span>Roof Type:</span> <span className="font-bold text-emerald-400">{matchDetails.roofType}/10</span></li>
+                          <li className="flex justify-between"><span>Monthly Spend:</span> <span className="font-bold text-emerald-400">{matchDetails.monthlySpend}/10</span></li>
+                          <li className="flex justify-between"><span>Timeframe:</span> <span className="font-bold text-emerald-400">{matchDetails.timeframe}/10</span></li>
+                          <li className="flex justify-between"><span>Decision Maker:</span> <span className="font-bold text-emerald-400">{matchDetails.decisionMaker}/10</span></li>
+                          <li className="flex justify-between"><span>Property Ownership:</span> <span className="font-bold text-emerald-400">{matchDetails.ownership}/10</span></li>
+                          <li className="flex justify-between"><span>Energy Bills:</span> <span className="font-bold text-emerald-400">{matchDetails.billsAvailable}/10</span></li>
+                        </ul>
+                        {matchDetails.outwithWorkingArea && (
+                          <div className="mt-2 pt-2 border-t border-gray-700 text-red-400 font-bold">
+                            -20% Penalty (Out of service area)
+                          </div>
+                        )}
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
+                    );
+                  })()}
+                </div>
                 {clientPrefs ? (() => {
-                  const score = calculateMatchScore(lead, clientPrefs);
+                  const score = calculateMatchScoreDetails(lead, clientPrefs).score;
                   let colorClass = "text-emerald-600 bg-emerald-50";
                   if (score < 40) colorClass = "text-red-600 bg-red-50";
                   else if (score < 60) colorClass = "text-amber-600 bg-amber-50";

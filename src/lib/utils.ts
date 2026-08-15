@@ -164,8 +164,8 @@ export function calculateEstimatedSystemSize(
   return sizeByRoof ?? sizeBySpend;
 }
 
-export function calculateMatchScore(lead: any, installerPrefs: any): number {
-  if (!lead || !installerPrefs) return 0;
+export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
+  if (!lead || !installerPrefs) return { score: 0, details: {} };
 
   let totalScore = 0;
   const maxScore = 80;
@@ -312,5 +312,22 @@ export function calculateMatchScore(lead: any, installerPrefs: any): number {
     finalPercentage = Math.max(0, finalPercentage - 20);
   }
 
-  return finalPercentage;
+  return {
+    score: finalPercentage,
+    details: {
+      distance: Math.round(distanceScore),
+      systemSize: Math.round(sizeScore),
+      roofType: Math.round(roofScore),
+      monthlySpend: Math.round(spendScore),
+      timeframe: Math.round(timeframeScore),
+      decisionMaker: Math.round(decisionScore),
+      ownership: Math.round(ownershipScore),
+      billsAvailable: Math.round(billsScore),
+      outwithWorkingArea: isOutwithWorkingArea
+    }
+  };
+}
+
+export function calculateMatchScore(lead: any, installerPrefs: any): number {
+  return calculateMatchScoreDetails(lead, installerPrefs).score;
 }

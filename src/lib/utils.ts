@@ -258,7 +258,7 @@ export function calculateMatchScore(lead: any, installerPrefs: any): number {
 
   // 6. Decision Maker (10 points)
   let decisionScore = 5;
-  const dm = (lead.decision_maker || '').toLowerCase();
+  const dm = (lead.sole_decision_maker !== undefined ? lead.sole_decision_maker : lead.decision_maker || '').toString().toLowerCase();
   if (dm === 'yes' || dm === 'true') {
     decisionScore = 10;
   } else if (dm === 'no' || dm === 'false') {
@@ -280,8 +280,8 @@ export function calculateMatchScore(lead: any, installerPrefs: any): number {
 
   // 8. Bills Available (10 points)
   let billsScore = 5;
-  const bills = lead.has_bills_available; // boolean or string
-  if (bills === true || bills === 'true' || bills === 'yes') {
+  const bills = lead.bills_url !== undefined ? lead.bills_url : lead.has_bills_available; // boolean or string
+  if (bills === true || bills === 'true' || bills === 'yes' || (typeof bills === 'string' && bills.length > 5)) {
     billsScore = 10;
   } else {
     billsScore = 5;

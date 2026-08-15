@@ -663,7 +663,7 @@ function ContractorDetailsV2Content() {
       // Fetch leads for the map
       let leadsQuery = supabase
         .from('leads')
-        .select('id, name, company, latitude, longitude, exclusive_price, share_price, status, est_system_size, location, roof_size, monthly_spend, unit_rate, roof_material, timeframe, property_ownership, decision_maker, has_bills_available')
+        .select('id, name, company, latitude, longitude, exclusive_price, share_price, status, est_system_size, location, roof_size, monthly_spend, unit_rate, roof_material, timeframe, property_ownership, sole_decision_maker, bills_url')
         .not('latitude', 'is', null)
         .not('longitude', 'is', null)
         .eq('is_marketed', true)

@@ -513,6 +513,19 @@ export default function MarketplacePage() {
                     Residential
                   </div>
                 )}
+                {clientPrefs && (() => {
+                  const score = calculateMatchScore(lead, clientPrefs);
+                  let colorClass = "text-emerald-600 bg-emerald-50 border-emerald-200";
+                  if (score < 40) colorClass = "text-red-600 bg-red-50 border-red-200";
+                  else if (score < 60) colorClass = "text-amber-600 bg-amber-50 border-amber-200";
+                  else if (score < 80) colorClass = "text-blue-600 bg-blue-50 border-blue-200";
+                  
+                  return (
+                    <div className={`absolute top-3 left-3 px-2.5 py-1 rounded-md text-[10px] font-bold shadow-sm border ${colorClass}`}>
+                      {score}% Match
+                    </div>
+                  );
+                })()}
                 {(() => {
                   const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
                   if (estSize && estSize > 0) {

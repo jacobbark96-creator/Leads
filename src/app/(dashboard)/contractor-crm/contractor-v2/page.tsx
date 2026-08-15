@@ -562,7 +562,7 @@ function ContractorDetailsV2Content() {
       
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, service_areas, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, service_areas, latitude, longitude, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
         .eq('id', id)
         .single();
         
@@ -587,6 +587,9 @@ function ContractorDetailsV2Content() {
         contractorData.approved_trade_amount = contractorData.clients.users?.approved_trade_amount;
         contractorData.current_trade_usage = contractorData.clients.users?.current_trade_usage;
         contractorData.trade_limit_setting = contractorData.clients.users?.trade_limit_setting;
+        
+        contractorData.latitude = contractorData.clients.latitude;
+        contractorData.longitude = contractorData.clients.longitude;
         
         if (!contractorData.service_areas && contractorData.clients.service_areas) {
            contractorData.service_areas = contractorData.clients.service_areas;
@@ -773,7 +776,7 @@ function ContractorDetailsV2Content() {
       
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, latitude, longitude, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
         .eq('id', contractor.id)
         .single();
         
@@ -791,6 +794,9 @@ function ContractorDetailsV2Content() {
         freshContractor.approved_trade_amount = freshContractor.clients.users?.approved_trade_amount;
         freshContractor.current_trade_usage = freshContractor.clients.users?.current_trade_usage;
         freshContractor.trade_limit_setting = freshContractor.clients.users?.trade_limit_setting;
+        
+        freshContractor.latitude = freshContractor.clients.latitude;
+        freshContractor.longitude = freshContractor.clients.longitude;
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (freshContractor.clients.services_offered) {
@@ -838,7 +844,7 @@ function ContractorDetailsV2Content() {
       // Force a fresh fetch to ensure all data is in sync
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, latitude, longitude, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
         .eq('id', contractor.id)
         .single();
         
@@ -859,6 +865,9 @@ function ContractorDetailsV2Content() {
         freshContractor.approved_trade_amount = freshContractor.clients.users?.approved_trade_amount;
         freshContractor.current_trade_usage = freshContractor.clients.users?.current_trade_usage;
         freshContractor.trade_limit_setting = freshContractor.clients.users?.trade_limit_setting;
+        
+        freshContractor.latitude = freshContractor.clients.latitude;
+        freshContractor.longitude = freshContractor.clients.longitude;
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (freshContractor.clients.services_offered) {

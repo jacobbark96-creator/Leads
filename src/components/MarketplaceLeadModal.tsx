@@ -148,7 +148,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-4 overflow-y-auto custom-scrollbar flex-1">
+        <div className="p-6 overflow-y-auto custom-scrollbar flex-1">
+          <div className="space-y-5" style={{ zoom: 0.8 }}>
           
           {/* Building Tabs (If multiple) */}
           {(buildings.length > 0) && (
@@ -409,7 +410,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
               </div>
             </div>
           </div>
-
+          </div>
         </div>
 
         {/* Footer */}

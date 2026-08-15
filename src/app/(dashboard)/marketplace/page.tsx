@@ -8,7 +8,7 @@ import toast from 'react-hot-toast';
 import { Search, MapPin, Building, Calendar, FileText, CheckCircle } from 'lucide-react';
 import { MarketplaceLeadModal } from '../../../components/MarketplaceLeadModal';
 import { OrderSummaryModal } from '../../../components/OrderSummaryModal';
-import { extractTown, getVagueLocation } from '../../../lib/utils';
+import { extractTown, getVagueLocation, calculateMatchScore } from '../../../lib/utils';
 import { trackLeadEvent } from '../../../utils/tracking';
 import { trackClientActivity } from '@/lib/activityTracker';
 import { RecentlySoldCarousel } from '../../../components/RecentlySoldCarousel';
@@ -24,6 +24,7 @@ export default function MarketplacePage() {
   const [hasMore, setHasMore] = useState(true);
   const [categoryOptions, setCategoryOptions] = useState<Array<{ id: string; name: string }>>([]);
   const [allowedCategoryIds, setAllowedCategoryIds] = useState<string[] | null>(null);
+  const [clientPrefs, setClientPrefs] = useState<any>(null);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [sortBy, setSortBy] = useState<string>('newest');
   const { profile, refreshProfile } = useAuthStore();
@@ -91,19 +92,20 @@ export default function MarketplacePage() {
         
         const { data: clientData, error: clientError } = await supabase
           .from('clients')
-          .select('id, services_offered, credit_balance, property_type_preference')
+          .select('id, services_offered, credit_balance, property_type_preference, min_system_size_kw, preferred_roof_types, latitude, longitude, service_areas')
           .eq('user_id', profile.id)
           .single();
 
         if (clientError) throw new Error('Could not find client profile.');
         setCreditBalance(clientData.credit_balance || 0);
+        setClientPrefs(clientData);
 
         // Use RPC to get leads within service area
         const res = await supabase.rpc('get_local_marketplace_leads', {
           p_client_id: clientData.id,
           p_limit: 1000, // Fetch more to allow client-side property type filtering
           p_offset: 0,
-          p_sort_by: sortBy
+          p_sort_by: sortBy === 'highest_score' ? 'newest' : sortBy
         });
         
         const allowed = parseServicesOfferedToIds(clientData.services_offered || '');
@@ -115,6 +117,15 @@ export default function MarketplacePage() {
           rawLeads = rawLeads.filter(l => l.company && l.company.trim() !== '');
         } else if (clientData.property_type_preference === 'residential') {
           rawLeads = rawLeads.filter(l => !l.company || l.company.trim() === '');
+        }
+
+        // Apply Highest Score sort locally if requested
+        if (sortBy === 'highest_score') {
+          rawLeads.sort((a, b) => {
+            const scoreA = calculateMatchScore(a, clientData);
+            const scoreB = calculateMatchScore(b, clientData);
+            return scoreB - scoreA;
+          });
         }
 
         data = allowed.length > 0
@@ -466,6 +477,7 @@ export default function MarketplacePage() {
               <option value="lowest_price">Lowest Price</option>
               <option value="highest_price">Highest Price</option>
               <option value="highest_spend">Highest Spend</option>
+              <option value="highest_score">Highest Match Score</option>
               <option value="timeframe">Timeframe</option>
             </select>
           </div>
@@ -523,6 +535,24 @@ export default function MarketplacePage() {
                 </div>
 
                 <div className="space-y-2 flex-1">
+                  {clientPrefs && (
+                    <div className="flex items-center justify-between text-xs">
+                      <span className="text-gray-500">Your Match:</span>
+                      {(() => {
+                        const score = calculateMatchScore(lead, clientPrefs);
+                        let colorClass = "text-emerald-600 bg-emerald-50";
+                        if (score < 40) colorClass = "text-red-600 bg-red-50";
+                        else if (score < 60) colorClass = "text-amber-600 bg-amber-50";
+                        else if (score < 80) colorClass = "text-blue-600 bg-blue-50";
+                        
+                        return (
+                          <span className={`px-2 py-0.5 rounded text-[10px] font-bold ${colorClass}`}>
+                            {score}%
+                          </span>
+                        );
+                      })()}
+                    </div>
+                  )}
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-gray-500">Est. Spend:</span>
                     <span className="font-semibold text-gray-900 truncate pl-2">

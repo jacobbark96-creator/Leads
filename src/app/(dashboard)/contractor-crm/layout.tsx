@@ -25,7 +25,6 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
 
   const sidebarItems = [
     { name: 'Home', path: '/staff', icon: Home, exact: true, id: 'staff-home' },
-    { name: 'Potential Contractors', path: '/contractor-crm', icon: Users, exact: true, id: 'contractor-crm/potential' },
     { name: 'Onboarded Contractors', path: '/contractor-crm/onboarded', icon: CheckCircle, id: 'contractor-crm/onboarded' },
     { name: 'Marketplace', path: '/contractor-crm/marketplace', icon: Store, id: 'contractor-crm/marketplace' },
     { name: 'Import Leads', path: '/contractor-crm/import', icon: Upload, id: 'contractor-crm/import' },

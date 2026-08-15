@@ -376,11 +376,22 @@ function ContractorDetailsV2Content() {
 
   useEffect(() => {
     if (contractor && isLoaded) {
-      if ((contractor as any).latitude && (contractor as any).longitude) {
-        setMapCenter({ lat: (contractor as any).latitude, lng: (contractor as any).longitude });
-      } else if ((contractor as any).location) {
+      const c = contractor as any;
+      
+      // If service_areas exist, use the first valid area as center
+      if (c.service_areas && Array.isArray(c.service_areas) && c.service_areas.length > 0) {
+        const firstValidArea = c.service_areas.find((sa: any) => sa.area && sa.area.lat && sa.area.lng && !sa.area.isNational);
+        if (firstValidArea) {
+          setMapCenter({ lat: firstValidArea.area.lat, lng: firstValidArea.area.lng });
+          return;
+        }
+      }
+      
+      if (c.latitude && c.longitude) {
+        setMapCenter({ lat: c.latitude, lng: c.longitude });
+      } else if (c.location) {
         const geocoder = new window.google.maps.Geocoder();
-        geocoder.geocode({ address: (contractor as any).location }, (results, status) => {
+        geocoder.geocode({ address: c.location }, (results, status) => {
           if (status === 'OK' && results && results[0]) {
             setMapCenter({
               lat: results[0].geometry.location.lat(),
@@ -551,7 +562,7 @@ function ContractorDetailsV2Content() {
       
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, users(email, created_at))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, service_areas, users(email, created_at))')
         .eq('id', id)
         .single();
         
@@ -571,6 +582,10 @@ function ContractorDetailsV2Content() {
         
         contractorData.min_system_size_kw = contractorData.clients.min_system_size_kw;
         contractorData.preferred_roof_types = contractorData.clients.preferred_roof_types;
+        
+        if (!contractorData.service_areas && contractorData.clients.service_areas) {
+           contractorData.service_areas = contractorData.clients.service_areas;
+        }
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (contractorData.clients.services_offered) {
@@ -1511,46 +1526,105 @@ function ContractorDetailsV2Content() {
                     options={{ disableDefaultUI: true, mapTypeControl: false, streetViewControl: false, fullscreenControl: false, zoomControl: true }}
                     onLoad={(map) => {
                       if (mapCenter) {
-                        const radiusMiles = parseInt((contractor as any).max_distance) || 50;
-                        const radiusMeters = radiusMiles * 1609.34;
+                        const bounds = new window.google.maps.LatLngBounds();
+                        let hasBounds = false;
                         
-                        // Calculate bounds roughly based on circle radius
-                        const earthRadius = 6371000; // meters
-                        const latOffset = (radiusMeters / earthRadius) * (180 / Math.PI);
-                        const lngOffset = (radiusMeters / (earthRadius * Math.cos((Math.PI * mapCenter.lat) / 180))) * (180 / Math.PI);
+                        if ((contractor as any).service_areas && Array.isArray((contractor as any).service_areas) && (contractor as any).service_areas.length > 0) {
+                          (contractor as any).service_areas.forEach((sa: any) => {
+                            if (sa.area && !sa.area.isNational && sa.area.lat && sa.area.lng && sa.area.radiusMiles) {
+                              const radiusMeters = sa.area.radiusMiles * 1609.34;
+                              const earthRadius = 6371000;
+                              const latOffset = (radiusMeters / earthRadius) * (180 / Math.PI);
+                              const lngOffset = (radiusMeters / (earthRadius * Math.cos((Math.PI * sa.area.lat) / 180))) * (180 / Math.PI);
+                              
+                              bounds.extend(new window.google.maps.LatLng(sa.area.lat - latOffset, sa.area.lng - lngOffset));
+                              bounds.extend(new window.google.maps.LatLng(sa.area.lat + latOffset, sa.area.lng + lngOffset));
+                              hasBounds = true;
+                            }
+                          });
+                        }
                         
-                        const bounds = new window.google.maps.LatLngBounds(
-                          new window.google.maps.LatLng(mapCenter.lat - latOffset, mapCenter.lng - lngOffset), // SW
-                          new window.google.maps.LatLng(mapCenter.lat + latOffset, mapCenter.lng + lngOffset)  // NE
-                        );
-                        map.fitBounds(bounds);
+                        if (!hasBounds) {
+                          const radiusMiles = parseInt((contractor as any).max_distance) || 50;
+                          const radiusMeters = radiusMiles * 1609.34;
+                          const earthRadius = 6371000; // meters
+                          const latOffset = (radiusMeters / earthRadius) * (180 / Math.PI);
+                          const lngOffset = (radiusMeters / (earthRadius * Math.cos((Math.PI * mapCenter.lat) / 180))) * (180 / Math.PI);
+                          
+                          bounds.extend(new window.google.maps.LatLng(mapCenter.lat - latOffset, mapCenter.lng - lngOffset));
+                          bounds.extend(new window.google.maps.LatLng(mapCenter.lat + latOffset, mapCenter.lng + lngOffset));
+                          hasBounds = true;
+                        }
+                        
+                        if (hasBounds) {
+                          map.fitBounds(bounds);
+                        }
                       }
                     }}
                   >
-                    <Marker 
-                      position={mapCenter || { lat: 54.5, lng: -2.5 }}
-                      icon={typeof window !== 'undefined' && window.google ? {
-                        path: window.google.maps.SymbolPath.CIRCLE,
-                        scale: 8,
-                        fillColor: '#3b82f6',
-                        fillOpacity: 1,
-                        strokeColor: '#ffffff',
-                        strokeWeight: 2,
-                      } : undefined}
-                    />
-                    <Circle 
-                      center={mapCenter || { lat: 54.5, lng: -2.5 }}
-                      radius={(parseInt((contractor as any).max_distance) || 50) * 1609.34}
-                      options={{
-                        fillColor: '#3b82f6',
-                        fillOpacity: 0.1,
-                        strokeColor: '#3b82f6',
-                        strokeOpacity: 0.8,
-                        strokeWeight: 2,
-                        clickable: false,
-                        zIndex: 1
-                      }}
-                    />
+                    {/* Render service areas if available, otherwise fallback to mapCenter + max_distance */}
+                    {((contractor as any).service_areas && Array.isArray((contractor as any).service_areas) && (contractor as any).service_areas.length > 0) ? (
+                      (contractor as any).service_areas.map((sa: any, idx: number) => {
+                        if (sa.area && !sa.area.isNational && sa.area.lat && sa.area.lng && sa.area.radiusMiles) {
+                          return (
+                            <React.Fragment key={idx}>
+                              <Marker 
+                                position={{ lat: sa.area.lat, lng: sa.area.lng }}
+                                icon={typeof window !== 'undefined' && window.google ? {
+                                  path: window.google.maps.SymbolPath.CIRCLE,
+                                  scale: 6,
+                                  fillColor: '#3b82f6',
+                                  fillOpacity: 1,
+                                  strokeColor: '#ffffff',
+                                  strokeWeight: 2,
+                                } : undefined}
+                              />
+                              <Circle 
+                                center={{ lat: sa.area.lat, lng: sa.area.lng }}
+                                radius={sa.area.radiusMiles * 1609.34}
+                                options={{
+                                  fillColor: '#3b82f6',
+                                  fillOpacity: 0.1,
+                                  strokeColor: '#3b82f6',
+                                  strokeOpacity: 0.8,
+                                  strokeWeight: 2,
+                                  clickable: false,
+                                  zIndex: 1
+                                }}
+                              />
+                            </React.Fragment>
+                          );
+                        }
+                        return null;
+                      })
+                    ) : (
+                      <>
+                        <Marker 
+                          position={mapCenter || { lat: 54.5, lng: -2.5 }}
+                          icon={typeof window !== 'undefined' && window.google ? {
+                            path: window.google.maps.SymbolPath.CIRCLE,
+                            scale: 8,
+                            fillColor: '#3b82f6',
+                            fillOpacity: 1,
+                            strokeColor: '#ffffff',
+                            strokeWeight: 2,
+                          } : undefined}
+                        />
+                        <Circle 
+                          center={mapCenter || { lat: 54.5, lng: -2.5 }}
+                          radius={(parseInt((contractor as any).max_distance) || 50) * 1609.34}
+                          options={{
+                            fillColor: '#3b82f6',
+                            fillOpacity: 0.1,
+                            strokeColor: '#3b82f6',
+                            strokeOpacity: 0.8,
+                            strokeWeight: 2,
+                            clickable: false,
+                            zIndex: 1
+                          }}
+                        />
+                      </>
+                    )}
                     {relevantLeads.map((lead: any) => (
                       <Marker 
                         key={lead.id}
@@ -1565,7 +1639,11 @@ function ContractorDetailsV2Content() {
                   <div className="text-xs text-gray-500">Loading map...</div>
                 )}
                 
-                <span className="absolute bottom-2 right-2 text-[10px] font-bold text-blue-700 bg-white/80 px-1.5 py-0.5 rounded z-10 shadow-sm pointer-events-none">{(contractor as any).max_distance || '50 miles'} Radius</span>
+                <span className="absolute bottom-2 right-2 text-[10px] font-bold text-blue-700 bg-white/80 px-1.5 py-0.5 rounded z-10 shadow-sm pointer-events-none">
+                  {((contractor as any).service_areas && Array.isArray((contractor as any).service_areas) && (contractor as any).service_areas.length > 0) 
+                    ? `${(contractor as any).service_areas.length} Area${(contractor as any).service_areas.length > 1 ? 's' : ''}`
+                    : `${(contractor as any).max_distance || '50'} Miles`}
+                </span>
               </div>
             </div>
             </aside>

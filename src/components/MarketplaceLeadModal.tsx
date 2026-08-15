@@ -183,7 +183,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
           {/* TOP ROW */}
           <div className="grid grid-cols-12 gap-4">
             {/* Price */}
-            <div className="bg-white rounded-xl p-4 border border-gray-200 col-span-12 md:col-span-3 flex flex-col justify-center">
+            <div className="bg-white rounded-xl p-4 border border-gray-200 col-span-12 md:col-span-4 flex flex-col justify-center">
                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">Exclusive Price</span>
                <div className="text-2xl font-bold text-emerald-600 mb-2">
                  {lead.exclusive_price ? `£${lead.exclusive_price}` : <MissingValue />}
@@ -193,28 +193,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                </div>
             </div>
 
-            {/* Customer Needs */}
-            <div className="bg-white rounded-xl p-4 border border-gray-200 col-span-12 md:col-span-3 flex flex-col">
-               <span className="text-[10px] font-bold text-gray-900 uppercase tracking-wider mb-2 block">Customer Needs</span>
-               <div className="space-y-1 overflow-y-auto max-h-[60px] custom-scrollbar pr-1 flex-1">
-                 {lead.primary_need && (
-                   <div className="flex items-start gap-1.5">
-                     <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                     <span className="text-[11px] text-gray-700 font-medium leading-tight">{lead.primary_need}</span>
-                   </div>
-                 )}
-                 {(lead as any).pain_point && (
-                   <div className="flex items-start gap-1.5">
-                     <Check className="w-3.5 h-3.5 text-emerald-500 mt-0.5 shrink-0" />
-                     <span className="text-[11px] text-gray-700 font-medium leading-tight">{(lead as any).pain_point}</span>
-                   </div>
-                 )}
-                 {!lead.primary_need && !(lead as any).pain_point && <MissingValue />}
-               </div>
-            </div>
-
             {/* Stats */}
-            <div className="bg-white rounded-xl p-4 border border-gray-200 col-span-12 md:col-span-6 flex justify-between divide-x divide-gray-100 items-center">
+            <div className="bg-white rounded-xl p-4 border border-gray-200 col-span-12 md:col-span-8 flex justify-between divide-x divide-gray-100 items-center">
               <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Est. Monthly Spend</span>
                 <span className="text-sm font-bold text-emerald-600">
@@ -378,10 +358,6 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 <div className="flex justify-between items-center">
                   <span className="text-[11px] text-gray-500 flex items-center gap-1.5"><Calendar className="w-3 h-3" /> Payment Option</span>
                   <DisplayValue value={lead.payment_options} className="text-right text-[11px]" />
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-[11px] text-gray-500 flex items-center gap-1.5"><Activity className="w-3 h-3" /> Funding Interest</span>
-                  <MissingValue />
                 </div>
               </div>
             </div>

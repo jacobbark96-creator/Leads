@@ -3086,22 +3086,23 @@ function LeadDetailsV2Content() {
               ) : installerMatchScores.length > 0 ? (
                 <div className="overflow-y-auto pr-2 flex-1 space-y-3">
                   {installerMatchScores.slice(0, 5).map((match, idx) => (
-                    <div key={match.installer.id} className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col gap-2">
-                      <div className="flex justify-between items-start">
-                        <div className="flex items-center gap-2">
-                          <div className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
-                            idx === 0 ? 'bg-yellow-100 text-yellow-700' :
-                            idx === 1 ? 'bg-gray-100 text-gray-600' :
-                            idx === 2 ? 'bg-orange-100 text-orange-700' :
-                            'bg-gray-200 text-gray-500'
-                          }`}>
-                            {idx + 1}
+                    <Link href={`/contractor-crm/contractor-v2?id=${match.installer.id}`} key={match.installer.id}>
+                      <div className="p-3 rounded-lg border border-gray-100 bg-gray-50 flex flex-col gap-2 hover:bg-gray-100 transition-colors cursor-pointer mb-3">
+                        <div className="flex justify-between items-start">
+                          <div className="flex items-center gap-2">
+                            <div className={`flex items-center justify-center w-5 h-5 rounded-full text-[10px] font-bold ${
+                              idx === 0 ? 'bg-yellow-100 text-yellow-700' :
+                              idx === 1 ? 'bg-gray-100 text-gray-600' :
+                              idx === 2 ? 'bg-orange-100 text-orange-700' :
+                              'bg-gray-200 text-gray-500'
+                            }`}>
+                              {idx + 1}
+                            </div>
+                            <span className="text-xs font-bold text-gray-900 truncate max-w-[120px] hover:text-blue-600 transition-colors" title={match.installer.company_name || match.installer.contact_name}>
+                              {match.installer.company_name || match.installer.contact_name}
+                            </span>
                           </div>
-                          <span className="text-xs font-bold text-gray-900 truncate max-w-[120px]" title={match.installer.company_name || match.installer.contact_name}>
-                            {match.installer.company_name || match.installer.contact_name}
-                          </span>
-                        </div>
-                        {(() => {
+                          {(() => {
                           let colorClass = "text-emerald-600 bg-emerald-50";
                           if (match.score < 40) colorClass = "text-red-600 bg-red-50";
                           else if (match.score < 60) colorClass = "text-amber-600 bg-amber-50";
@@ -3128,7 +3129,8 @@ function LeadDetailsV2Content() {
                           ></div>
                         </div>
                       </div>
-                    </div>
+                      </div>
+                    </Link>
                   ))}
                 </div>
               ) : (

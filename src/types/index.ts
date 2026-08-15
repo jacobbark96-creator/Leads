@@ -56,6 +56,8 @@ export interface Client {
   longitude?: number | null;
   assigned_to?: string | null;
   is_partner_plus?: boolean;
+  min_system_size_kw?: number | null;
+  preferred_roof_types?: string[] | null;
   created_at: string;
 }
 

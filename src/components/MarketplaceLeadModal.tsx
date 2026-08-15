@@ -7,7 +7,7 @@ import {
   ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, 
   Battery, TrendingUp, ChevronRight, Check, Building, AlertCircle
 } from 'lucide-react';
-import { extractTown, getVagueLocation } from '../lib/utils';
+import { extractTown, getVagueLocation, calculateMatchScore, calculateEstimatedSystemSize } from '../lib/utils';
 import { trackLeadEvent } from '../utils/tracking';
 import { MagicCheckoutModal } from './MagicCheckoutModal';
 
@@ -37,6 +37,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
   const [existingRequest, setExistingRequest] = useState<any>(null);
   const [orgRequest, setOrgRequest] = useState<any>(null);
   const [isLoadingRequest, setIsLoadingRequest] = useState(false);
+  const [clientPrefs, setClientPrefs] = useState<any>(null);
   const { profile } = useAuthStore();
   const hasTrackedView = useRef(false);
 
@@ -64,8 +65,9 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
       if (!isOpen || !lead?.id || !profile?.id) return;
       setIsLoadingRequest(true);
       try {
-        const { data: clientData } = await supabase.from('clients').select('id').eq('user_id', profile.id).single();
+        const { data: clientData } = await supabase.from('clients').select('id, min_system_size_kw, preferred_roof_types, latitude, longitude').eq('user_id', profile.id).single();
         if (clientData) {
+          setClientPrefs(clientData);
           const { data: myReq } = await supabase.from('lead_purchases').select('id, status').eq('lead_id', lead.id).eq('client_id', clientData.id).limit(1).single();
           setExistingRequest(myReq);
           if (profile.parent_id || profile.allowed_child_accounts) {
@@ -220,9 +222,17 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 </div>
               </div>
               <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Quality Score</span>
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Est. System Size</span>
+                <span className="text-sm font-bold text-gray-900">
+                  {calculateEstimatedSystemSize(parseFloat(String(lead.roof_size)) || null, lead.monthly_spend) 
+                    ? `${calculateEstimatedSystemSize(parseFloat(String(lead.roof_size)) || null, lead.monthly_spend)?.toFixed(1)} kWp`
+                    : <MissingValue />}
+                </span>
+              </div>
+              <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Your Score</span>
                 <div className="w-8 h-8 rounded-full border-[2px] border-emerald-500 flex items-center justify-center text-emerald-600 font-bold text-xs">
-                   {(lead as any).lead_score || <span className="text-gray-300">-</span>}
+                   {clientPrefs ? `${calculateMatchScore(lead, clientPrefs)}%` : <span className="text-gray-300">-</span>}
                 </div>
               </div>
             </div>

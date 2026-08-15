@@ -10,6 +10,7 @@ import { Lead, StaffUser, LeadNote } from '@/types';
 import toast from 'react-hot-toast';
 import { useDialer } from '@/contexts/DialerContext';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+import { calculateMatchScore } from '@/lib/utils';
 
 const libraries: "places"[] = ['places'];
 
@@ -38,7 +39,8 @@ import {
   AlertTriangle,
   Database,
   Eye,
-  CheckCircle
+  CheckCircle,
+  Flame
 } from 'lucide-react';
 
 import { AdminNotifications } from '@/components/AdminNotifications';
@@ -468,6 +470,8 @@ function LeadDetailsV2Content() {
   const [isSmsChatOpen, setIsSmsChatOpen] = useState(false);
   const [matchedContractors, setMatchedContractors] = useState<any[]>([]);
   const [isFetchingMatches, setIsFetchingMatches] = useState(false);
+  const [installerMatchScores, setInstallerMatchScores] = useState<{installer: any, score: number}[]>([]);
+  const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
   const [isEditConfirmOpen, setIsEditConfirmOpen] = useState(false);
   const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
@@ -1149,6 +1153,31 @@ function LeadDetailsV2Content() {
       fetchSalesStaff();
     }
   }, [isInHouseConfirmOpen, profile, lead?.division_id]);
+
+  useEffect(() => {
+    const fetchMatches = async () => {
+      if (!lead) return;
+      setIsLoadingLeaderboard(true);
+      
+      const { data, error } = await supabase
+        .from('clients')
+        .select('*')
+        .in('role', ['client', 'installer'])
+        .eq('status', 'active');
+        
+      if (!error && data) {
+        const scored = data.map(client => ({
+          installer: client,
+          score: calculateMatchScore(lead, client)
+        })).sort((a, b) => b.score - a.score);
+        
+        setInstallerMatchScores(scored);
+      }
+      setIsLoadingLeaderboard(false);
+    };
+
+    fetchMatches();
+  }, [lead]);
 
   const fetchAvailability = async (userId: string) => {
     setLoadingSlots(true);
@@ -2972,7 +3001,81 @@ function LeadDetailsV2Content() {
             </div>
 
             {/* BOTTOM SECTION */}
-            {/* REMOVED: Other Active Leads */}
+            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 shrink-0 mb-4">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center gap-2">
+                  <Flame className="w-5 h-5 text-orange-500" />
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Installer Match Leaderboard</h3>
+                </div>
+              </div>
+              
+              {isLoadingLeaderboard ? (
+                <div className="flex justify-center items-center h-24">
+                  <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600"></div>
+                </div>
+              ) : installerMatchScores.length > 0 ? (
+                <div className="overflow-x-auto">
+                  <table className="w-full text-sm text-left">
+                    <thead className="bg-gray-50 text-gray-500 uppercase">
+                      <tr>
+                        <th className="px-4 py-3 font-medium rounded-l-lg">Rank</th>
+                        <th className="px-4 py-3 font-medium">Installer</th>
+                        <th className="px-4 py-3 font-medium">Contact</th>
+                        <th className="px-4 py-3 font-medium">Score</th>
+                        <th className="px-4 py-3 font-medium rounded-r-lg">Match %</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100">
+                      {installerMatchScores.slice(0, 10).map((match, idx) => (
+                        <tr key={match.installer.id} className="hover:bg-gray-50/50 transition-colors">
+                          <td className="px-4 py-3">
+                            <div className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-bold ${
+                              idx === 0 ? 'bg-yellow-100 text-yellow-700' :
+                              idx === 1 ? 'bg-gray-100 text-gray-600' :
+                              idx === 2 ? 'bg-orange-100 text-orange-700' :
+                              'bg-gray-50 text-gray-500'
+                            }`}>
+                              {idx + 1}
+                            </div>
+                          </td>
+                          <td className="px-4 py-3 font-medium text-gray-900">
+                            {match.installer.company_name || match.installer.contact_name}
+                          </td>
+                          <td className="px-4 py-3 text-gray-500">
+                            {match.installer.contact_name}
+                          </td>
+                          <td className="px-4 py-3 font-semibold text-gray-700">
+                            {Math.round(match.score)} / 80
+                          </td>
+                          <td className="px-4 py-3">
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 h-2 bg-gray-100 rounded-full overflow-hidden">
+                                <div 
+                                  className={`h-full rounded-full ${
+                                    (match.score / 80) * 100 >= 80 ? 'bg-green-500' :
+                                    (match.score / 80) * 100 >= 60 ? 'bg-blue-500' :
+                                    (match.score / 80) * 100 >= 40 ? 'bg-yellow-500' :
+                                    'bg-gray-300'
+                                  }`}
+                                  style={{ width: `${Math.min(100, Math.max(0, (match.score / 80) * 100))}%` }}
+                                ></div>
+                              </div>
+                              <span className="font-semibold text-gray-900">
+                                {Math.round((match.score / 80) * 100)}%
+                              </span>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div className="text-center py-6 text-gray-500 text-sm italic">
+                  No active installers found.
+                </div>
+              )}
+            </div>
 
           </div>
 

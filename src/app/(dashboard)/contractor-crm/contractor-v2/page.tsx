@@ -551,7 +551,7 @@ function ContractorDetailsV2Content() {
       
       const { data: contractorData, error: contractorError } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, users(email, created_at))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, users(email, created_at))')
         .eq('id', id)
         .single();
         
@@ -568,6 +568,9 @@ function ContractorDetailsV2Content() {
         if (!contractorData.email && contractorData.clients.users?.email) {
            contractorData.email = contractorData.clients.users.email;
         }
+        
+        contractorData.min_system_size_kw = contractorData.clients.min_system_size_kw;
+        contractorData.preferred_roof_types = contractorData.clients.preferred_roof_types;
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (contractorData.clients.services_offered) {
@@ -773,6 +776,8 @@ function ContractorDetailsV2Content() {
         const clientUpdate: any = {};
         if (updatePayload.location !== undefined) clientUpdate.address = updatePayload.location;
         if (updatePayload.assigned_to !== undefined) clientUpdate.assigned_to = updatePayload.assigned_to;
+        if (updatePayload.min_system_size_kw !== undefined) clientUpdate.min_system_size_kw = updatePayload.min_system_size_kw;
+        if (updatePayload.preferred_roof_types !== undefined) clientUpdate.preferred_roof_types = updatePayload.preferred_roof_types;
         
         if (Object.keys(clientUpdate).length > 0) {
           await supabase.from('clients').update(clientUpdate).eq('id', contractor.client_id);
@@ -782,7 +787,7 @@ function ContractorDetailsV2Content() {
       // Force a fresh fetch to ensure all data is in sync
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, users(email, created_at))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, users(email, created_at))')
         .eq('id', contractor.id)
         .single();
         
@@ -795,6 +800,9 @@ function ContractorDetailsV2Content() {
         if (!freshContractor.email && freshContractor.clients.users?.email) {
            freshContractor.email = freshContractor.clients.users.email;
         }
+        
+        freshContractor.min_system_size_kw = freshContractor.clients.min_system_size_kw;
+        freshContractor.preferred_roof_types = freshContractor.clients.preferred_roof_types;
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (freshContractor.clients.services_offered) {
@@ -1727,11 +1735,41 @@ function ContractorDetailsV2Content() {
                     )}
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">System Size</span>
+                    <span className="text-gray-500 text-xs">Min System Size (kWp)</span>
                     {editingCard === 'criteria' ? (
-                      <input type="text" value={(editForm as any).system_size || ''} onChange={e => setEditForm({...editForm, system_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                      <input type="number" value={(editForm as any).min_system_size_kw || ''} onChange={e => setEditForm({...editForm, min_system_size_kw: e.target.value ? Number(e.target.value) : null} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).system_size || '50kW+'}</span>
+                      <span className="text-gray-900 text-sm font-medium">{(contractor as any).min_system_size_kw ? `${(contractor as any).min_system_size_kw} kWp` : 'Not set'}</span>
+                    )}
+                  </div>
+                  <div className="flex justify-between items-start py-1 border-b border-gray-50">
+                    <span className="text-gray-500 text-xs mt-0.5">Preferred Roof Types</span>
+                    {editingCard === 'criteria' ? (
+                      <div className="flex flex-col items-end gap-1">
+                        {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate'].map(roof => (
+                          <label key={roof} className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
+                            <span className="select-none">{roof}</span>
+                            <input 
+                              type="checkbox" 
+                              className="rounded border-gray-300 text-blue-600 focus:ring-blue-500 w-3 h-3 cursor-pointer"
+                              checked={((editForm as any).preferred_roof_types || []).includes(roof)}
+                              onChange={(e) => {
+                                const current = (editForm as any).preferred_roof_types || [];
+                                const updated = e.target.checked 
+                                  ? [...current, roof] 
+                                  : current.filter((r: string) => r !== roof);
+                                setEditForm({...editForm, preferred_roof_types: updated} as any);
+                              }}
+                            />
+                          </label>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-900 text-sm font-medium text-right max-w-[120px]">
+                        {((contractor as any).preferred_roof_types && (contractor as any).preferred_roof_types.length > 0)
+                          ? (contractor as any).preferred_roof_types.join(', ')
+                          : 'Not set'}
+                      </span>
                     )}
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">

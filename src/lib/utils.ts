@@ -106,3 +106,166 @@ export function getVagueLocation(lat: number | null | undefined, lng: number | n
 
   return `Around ${roundedDist} miles ${direction} of ${nearestCity.name}`;
 }
+
+export function calculateEstimatedSystemSize(
+  roofAreaSqm: number | null | undefined,
+  monthlySpend: number | null | undefined,
+  unitRate: number = 0.24 // Default average UK unit rate if not specified
+): number | null {
+  if (!roofAreaSqm && !monthlySpend) return null;
+
+  let sizeByRoof: number | null = null;
+  let sizeBySpend: number | null = null;
+
+  if (roofAreaSqm) {
+    // Calculation 1: Based on roof size
+    // Roof size / 2.2 (avg panel size) = max panels
+    // Max panels minus 25% = realistic maximum panels
+    // real max panels * 550 (commercial panel wattage) = total watts -> divide by 1000 for kWp
+    const maxPanels = roofAreaSqm / 2.2;
+    const realMaxPanels = maxPanels * 0.75;
+    sizeByRoof = (realMaxPanels * 550) / 1000;
+  }
+
+  if (monthlySpend) {
+    // Calculation 2: Based on monthly spend
+    // (monthly spend / unit rate) * 12 = KWh per annum
+    // KWh per annum / 950 = KWp system size
+    const annualKwh = (monthlySpend / unitRate) * 12;
+    sizeBySpend = annualKwh / 950;
+  }
+
+  if (sizeByRoof !== null && sizeBySpend !== null) {
+    return Math.min(sizeByRoof, sizeBySpend);
+  }
+
+  return sizeByRoof ?? sizeBySpend;
+}
+
+export function calculateMatchScore(lead: any, installerPrefs: any): number {
+  if (!lead || !installerPrefs) return 0;
+
+  let totalScore = 0;
+  const maxScore = 80;
+
+  // 1. Distance (10 points)
+  // 20 miles = 10, 150+ miles = 5
+  let distanceScore = 5;
+  if (lead.latitude && lead.longitude && installerPrefs.latitude && installerPrefs.longitude) {
+    const dist = calculateDistance(lead.latitude, lead.longitude, installerPrefs.latitude, installerPrefs.longitude);
+    if (dist <= 20) {
+      distanceScore = 10;
+    } else if (dist >= 150) {
+      distanceScore = 5;
+    } else {
+      // Linear interpolation between 20 and 150 miles
+      distanceScore = 10 - ((dist - 20) / 130) * 5;
+    }
+  } else {
+    distanceScore = 7; // Default average if no coords
+  }
+  totalScore += distanceScore;
+
+  // 2. System Size (10 points)
+  // Within minimum kWp = 10, below but within 20% = 6, outwith = 4
+  let sizeScore = 7;
+  if (installerPrefs.min_system_size_kw) {
+    const parsedRoofSize = parseFloat(String(lead.roof_size)) || null;
+    const estSize = calculateEstimatedSystemSize(parsedRoofSize, lead.monthly_spend);
+    if (estSize) {
+      const minSize = Number(installerPrefs.min_system_size_kw);
+      if (estSize >= minSize) {
+        sizeScore = 10;
+      } else if (estSize >= minSize * 0.8) {
+        sizeScore = 6;
+      } else {
+        sizeScore = 4;
+      }
+    }
+  } else {
+    sizeScore = 10; // If no preference, perfect match
+  }
+  totalScore += sizeScore;
+
+  // 3. Roof Type (10 points)
+  // Matches preferred = 10, does not match = 5
+  let roofScore = 7;
+  if (installerPrefs.preferred_roof_types && installerPrefs.preferred_roof_types.length > 0) {
+    const leadRoof = lead.roof_type || '';
+    // Basic string matching, assuming lead.roof_type is a string
+    const isMatch = installerPrefs.preferred_roof_types.some((rt: string) => 
+      leadRoof.toLowerCase().includes(rt.toLowerCase())
+    );
+    roofScore = isMatch ? 10 : 5;
+  } else {
+    roofScore = 10; // No preference
+  }
+  totalScore += roofScore;
+
+  // 4. Monthly Spend (10 points)
+  // > 2500 = 10, > 1000 = 9, decreases to 5 incrementally below 1000
+  let spendScore = 5;
+  const spend = lead.monthly_spend || 0;
+  if (spend >= 2500) {
+    spendScore = 10;
+  } else if (spend >= 1000) {
+    spendScore = 9;
+  } else if (spend >= 750) {
+    spendScore = 8;
+  } else if (spend >= 500) {
+    spendScore = 7;
+  } else if (spend >= 250) {
+    spendScore = 6;
+  } else {
+    spendScore = 5;
+  }
+  totalScore += spendScore;
+
+  // 5. Timeframe (10 points)
+  let timeframeScore = 5;
+  const tf = (lead.timeframe || '').toLowerCase();
+  if (tf.includes('asap') || tf.includes('emergency') || tf.includes('immediately')) {
+    timeframeScore = 10;
+  } else if (tf.includes('1-3') || tf.includes('1 - 3') || tf.includes('within 3')) {
+    timeframeScore = 8;
+  } else if (tf.includes('3-6') || tf.includes('3 - 6')) {
+    timeframeScore = 6;
+  } else {
+    timeframeScore = 4;
+  }
+  totalScore += timeframeScore;
+
+  // 6. Decision Maker (10 points)
+  let decisionScore = 5;
+  const dm = (lead.decision_maker || '').toLowerCase();
+  if (dm === 'yes' || dm === 'true') {
+    decisionScore = 10;
+  } else if (dm === 'no' || dm === 'false') {
+    decisionScore = 5;
+  } else {
+    decisionScore = 7;
+  }
+  totalScore += decisionScore;
+
+  // 7. Ownership (10 points)
+  let ownershipScore = 5;
+  const owner = (lead.property_ownership || '').toLowerCase();
+  if (owner.includes('own')) {
+    ownershipScore = 10;
+  } else {
+    ownershipScore = 5;
+  }
+  totalScore += ownershipScore;
+
+  // 8. Bills Available (10 points)
+  let billsScore = 5;
+  const bills = lead.has_bills_available; // boolean or string
+  if (bills === true || bills === 'true' || bills === 'yes') {
+    billsScore = 10;
+  } else {
+    billsScore = 5;
+  }
+  totalScore += billsScore;
+
+  return Math.round((totalScore / maxScore) * 100);
+}

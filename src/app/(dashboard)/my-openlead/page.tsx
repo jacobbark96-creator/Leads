@@ -27,6 +27,8 @@ export default function MyOpenlead() {
     phone: '',
     services_offered: '',
     property_type_preference: 'both' as 'residential' | 'commercial' | 'both',
+    min_system_size_kw: '' as string | number,
+    preferred_roof_types: [] as string[],
     service_areas: [] as any[],
     address: '',
     other_contacts: '',
@@ -128,6 +130,8 @@ export default function MyOpenlead() {
           phone: client.phone || '',
           services_offered: client.services_offered || '',
           property_type_preference: client.property_type_preference || 'both',
+          min_system_size_kw: client.min_system_size_kw || '',
+          preferred_roof_types: client.preferred_roof_types || [],
           service_areas: client.service_areas || [],
           address: client.address || '',
           other_contacts: client.other_contacts || '',
@@ -226,6 +230,8 @@ export default function MyOpenlead() {
           other_contact_numbers: formData.other_contact_numbers,
           services_offered: selectedCategoryIds.join(', '),
           property_type_preference: formData.property_type_preference,
+          min_system_size_kw: formData.min_system_size_kw === '' ? null : Number(formData.min_system_size_kw),
+          preferred_roof_types: formData.preferred_roof_types,
           service_areas: formData.service_areas,
           is_profile_complete: isComplete
         })
@@ -540,6 +546,68 @@ export default function MyOpenlead() {
 
               {activeTab === 'targeting' && (
                 <div className="space-y-4 animate-in fade-in slide-in-from-bottom-4 duration-500">
+                  <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
+                    <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-3">Lead Compatibility</h3>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Minimum System Size (kWp)</label>
+                        <p className="text-[9px] text-slate-500 font-medium leading-relaxed">
+                          We use this to calculate your match score. Leads below this size will receive a lower compatibility score.
+                        </p>
+                        <div className="relative">
+                          <input 
+                            type="number" 
+                            step="0.1"
+                            min="0"
+                            disabled={isCompleteProfile} 
+                            value={formData.min_system_size_kw} 
+                            onChange={e => setFormData({...formData, min_system_size_kw: e.target.value})} 
+                            className="w-full bg-slate-50 border-slate-200 rounded-lg px-3 py-2 text-xs font-bold focus:bg-white focus:ring-2 focus:ring-blue-500 transition-all"
+                            placeholder="e.g. 4.0"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] font-black text-slate-400">kWp</span>
+                        </div>
+                      </div>
+
+                      <div className="space-y-3">
+                        <label className="text-[10px] font-black text-slate-900 uppercase tracking-widest">Preferred Roof Types</label>
+                        <p className="text-[9px] text-slate-500 font-medium leading-relaxed">
+                          Select the roof types you prefer to work with.
+                        </p>
+                        <div className="grid grid-cols-2 gap-2">
+                          {['Tile', 'Slate', 'Metal', 'Flat', 'Felt', 'Other'].map(roofType => (
+                            <label 
+                              key={roofType} 
+                              className={`flex items-center gap-2.5 p-2 rounded-xl border transition-all ${
+                                formData.preferred_roof_types.includes(roofType) 
+                                  ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                                  : 'bg-slate-50 border-slate-100'
+                              } ${isCompleteProfile ? 'cursor-not-allowed opacity-70' : 'cursor-pointer hover:border-blue-200'}`}
+                            >
+                              <input
+                                type="checkbox"
+                                disabled={isCompleteProfile}
+                                checked={formData.preferred_roof_types.includes(roofType)}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setFormData({...formData, preferred_roof_types: [...formData.preferred_roof_types, roofType]});
+                                  } else {
+                                    setFormData({...formData, preferred_roof_types: formData.preferred_roof_types.filter(t => t !== roofType)});
+                                  }
+                                }}
+                                className="rounded-md border-slate-300 text-blue-600 focus:ring-blue-500 w-3.5 h-3.5 disabled:opacity-50"
+                              />
+                              <span className={`text-[9px] font-black uppercase tracking-tight ${formData.preferred_roof_types.includes(roofType) ? 'text-blue-700' : 'text-slate-600'}`}>
+                                {roofType}
+                              </span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6 space-y-4">
                     <h3 className="text-xs font-black text-slate-900 uppercase tracking-widest border-b border-slate-100 pb-3">Property Type Preference</h3>
                     <div className="space-y-3">

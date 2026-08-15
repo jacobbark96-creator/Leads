@@ -1159,19 +1159,34 @@ function LeadDetailsV2Content() {
       if (!lead) return;
       setIsLoadingLeaderboard(true);
       
+      // Installers in the CRM are represented by contractors with 'onboarded' status
       const { data, error } = await supabase
-        .from('clients')
-        .select('*')
-        .in('role', ['client', 'installer'])
-        .eq('status', 'active');
+        .from('contractors')
+        .select('*, clients(min_system_size_kw, preferred_roof_types)')
+        .eq('status', 'onboarded');
         
       if (!error && data) {
-        const scored = data.map(client => ({
-          installer: client,
-          score: calculateMatchScore(lead, client)
-        })).sort((a, b) => b.score - a.score);
+        const scored = data.map(contractor => {
+          // Combine the contractor data with their client preferences
+          const prefs = contractor.clients ? {
+            min_system_size_kw: contractor.clients.min_system_size_kw,
+            preferred_roof_types: contractor.clients.preferred_roof_types,
+            latitude: contractor.latitude,
+            longitude: contractor.longitude
+          } : {
+            latitude: contractor.latitude,
+            longitude: contractor.longitude
+          };
+          
+          return {
+            installer: contractor,
+            score: calculateMatchScore(lead, prefs)
+          };
+        }).sort((a, b) => b.score - a.score);
         
         setInstallerMatchScores(scored);
+      } else if (error) {
+        console.error('Error fetching matches:', error);
       }
       setIsLoadingLeaderboard(false);
     };

@@ -65,7 +65,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
       if (!isOpen || !lead?.id || !profile?.id) return;
       setIsLoadingRequest(true);
       try {
-        const { data: clientData } = await supabase.from('clients').select('id, min_system_size_kw, preferred_roof_types, latitude, longitude').eq('user_id', profile.id).single();
+        const { data: clientData } = await supabase.from('clients').select('id, min_system_size_kw, preferred_roof_types, latitude, longitude, service_areas').eq('user_id', profile.id).single();
         if (clientData) {
           setClientPrefs(clientData);
           const { data: myReq } = await supabase.from('lead_purchases').select('id, status').eq('lead_id', lead.id).eq('client_id', clientData.id).limit(1).single();

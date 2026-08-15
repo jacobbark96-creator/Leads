@@ -1152,7 +1152,7 @@ function LeadDetailsV2Content() {
       // Installers in the CRM are represented by contractors with 'onboarded' status
       const { data, error } = await supabase
         .from('contractors')
-        .select('*, clients(min_system_size_kw, preferred_roof_types)')
+        .select('*, clients(min_system_size_kw, preferred_roof_types, service_areas)')
         .eq('status', 'onboarded');
         
       if (!error && data) {
@@ -1161,6 +1161,7 @@ function LeadDetailsV2Content() {
           const prefs = contractor.clients ? {
             min_system_size_kw: contractor.clients.min_system_size_kw,
             preferred_roof_types: contractor.clients.preferred_roof_types,
+            service_areas: contractor.clients.service_areas,
             latitude: contractor.latitude,
             longitude: contractor.longitude
           } : {

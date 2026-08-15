@@ -288,5 +288,29 @@ export function calculateMatchScore(lead: any, installerPrefs: any): number {
   }
   totalScore += billsScore;
 
-  return Math.round((totalScore / maxScore) * 100);
+  let finalPercentage = Math.round((totalScore / maxScore) * 100);
+
+  // Apply -20% penalty if lead is outside installer's working area
+  let isOutwithWorkingArea = false;
+  if (lead.latitude && lead.longitude && installerPrefs.service_areas && Array.isArray(installerPrefs.service_areas) && installerPrefs.service_areas.length > 0) {
+    const isNational = installerPrefs.service_areas.some((sa: any) => sa.area && sa.area.isNational);
+    if (!isNational) {
+      const isWithinAny = installerPrefs.service_areas.some((sa: any) => {
+        if (sa.area && sa.area.lat && sa.area.lng && sa.area.radiusMiles) {
+          const dist = calculateDistance(lead.latitude, lead.longitude, sa.area.lat, sa.area.lng);
+          return dist <= sa.area.radiusMiles;
+        }
+        return false;
+      });
+      if (!isWithinAny) {
+        isOutwithWorkingArea = true;
+      }
+    }
+  }
+
+  if (isOutwithWorkingArea) {
+    finalPercentage = Math.max(0, finalPercentage - 20);
+  }
+
+  return finalPercentage;
 }

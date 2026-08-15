@@ -224,8 +224,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
               <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Est. System Size</span>
                 <span className="text-sm font-bold text-gray-900">
-                  {calculateEstimatedSystemSize(parseFloat(String(lead.roof_size)) || null, lead.monthly_spend) 
-                    ? `${calculateEstimatedSystemSize(parseFloat(String(lead.roof_size)) || null, lead.monthly_spend)?.toFixed(1)} kWp`
+                  {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
+                    ? `${calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)?.toFixed(1)} kWp`
                     : <MissingValue />}
                 </span>
               </div>

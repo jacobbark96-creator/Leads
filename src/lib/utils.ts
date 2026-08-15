@@ -108,10 +108,32 @@ export function getVagueLocation(lat: number | null | undefined, lng: number | n
 }
 
 export function calculateEstimatedSystemSize(
-  roofAreaSqm: number | null | undefined,
-  monthlySpend: number | null | undefined,
-  unitRate: number = 0.24 // Default average UK unit rate if not specified
+  roofAreaSqmRaw: any,
+  monthlySpendRaw: any,
+  unitRateRaw?: any
 ): number | null {
+  // Clean strings (remove commas, currency symbols, spaces)
+  const parseClean = (val: any) => {
+    if (val === null || val === undefined || val === '') return null;
+    const cleaned = String(val).replace(/[,£$€]/g, '').trim();
+    const parsed = parseFloat(cleaned);
+    return isNaN(parsed) ? null : parsed;
+  };
+
+  const roofAreaSqm = parseClean(roofAreaSqmRaw);
+  const monthlySpend = parseClean(monthlySpendRaw);
+  let unitRate = parseClean(unitRateRaw);
+
+  // If unit rate is provided in pence (e.g., 24 instead of 0.24), convert it to pounds
+  if (unitRate !== null && unitRate > 1) {
+    unitRate = unitRate / 100;
+  }
+  
+  // Default to 0.24 (£0.24) if not provided or 0
+  if (!unitRate) {
+    unitRate = 0.24;
+  }
+
   if (!roofAreaSqm && !monthlySpend) return null;
 
   let sizeByRoof: number | null = null;
@@ -170,8 +192,7 @@ export function calculateMatchScore(lead: any, installerPrefs: any): number {
   // Within minimum kWp = 10, below but within 20% = 6, outwith = 4
   let sizeScore = 7;
   if (installerPrefs.min_system_size_kw) {
-    const parsedRoofSize = parseFloat(String(lead.roof_size)) || null;
-    const estSize = calculateEstimatedSystemSize(parsedRoofSize, lead.monthly_spend);
+    const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
     if (estSize) {
       const minSize = Number(installerPrefs.min_system_size_kw);
       if (estSize >= minSize) {

@@ -2210,8 +2210,8 @@ function LeadDetailsV2Content() {
                     Company Snapshot
                   </h3>
                   <div className="flex items-center gap-2">
-                    {lead.status === 'qualified' && (
-                      <div className="flex items-center gap-1">
+                      {(lead.status === 'qualified' || lead.status === 'marketplace') && (
+                        <div className="flex items-center gap-1">
                         <button 
                           onClick={enrichCompanyData}
                           disabled={isEnrichingCompany}

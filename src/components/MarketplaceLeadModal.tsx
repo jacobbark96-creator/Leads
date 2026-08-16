@@ -272,11 +272,11 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><Home className="w-3 h-3" /> Roof Material</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? (lead.roof_type || lead.roof_material) : activeBuilding?.roof_material} className="text-right text-[11px]" />
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material} className="text-right text-[11px]" />
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><Zap className="w-3 h-3" /> Elec Supply</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? lead.electricity_supply : activeBuilding?.electricity_supply} className="text-right text-[11px]" />
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.electrical_supply : activeBuilding?.grid_connection} className="text-right text-[11px]" />
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Solar Location</span>
@@ -299,15 +299,15 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     </div>
                     <div className="bg-blue-50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
                       <Globe className="w-4 h-4 text-blue-400 mb-1" />
-                      <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-1">Lead Source</span>
-                      <DisplayValue value={lead.source} className="text-xs text-blue-900" />
+                      <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-1">Lead Industry</span>
+                      <DisplayValue value={lead.industry} className="text-xs text-blue-900" />
                     </div>
                   </div>
 
                   <div className="bg-gray-50 rounded-lg p-3 flex-1 border border-gray-100">
                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Notes</span>
                     <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
-                      {lead.notes || <MissingValue />}
+                      {lead.marketplace_notes || lead.qualification_notes || <MissingValue />}
                     </p>
                   </div>
                 </div>
@@ -369,7 +369,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                   const minSize = clientPrefs?.min_system_size_kw ? Number(clientPrefs.min_system_size_kw) : 0;
                   const isSizeMatch = minSize === 0 || (sysSize !== null && sysSize >= minSize);
 
-                  const leadRoof = (lead.roof_type || lead.roof_material || '').toLowerCase();
+                  const leadRoof = (lead.roof_material || '').toLowerCase();
                   const isAsbestos = leadRoof.includes('asbestos');
                   const prefsHasAsbestos = clientPrefs?.preferred_roof_types?.some((rt: string) => rt.toLowerCase().includes('asbestos'));
                   const noRoofPrefs = !clientPrefs?.preferred_roof_types || clientPrefs.preferred_roof_types.length === 0;
@@ -392,7 +392,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       roofMatchTitle = 'Property Type Warning';
                       roofMatchText = 'This roof contains asbestos, which is not in your preferences.';
                     } else {
-                      roofMatchText = `${lead.property_type || lead.roof_type || lead.roof_material || 'Commercial'} - matches your expertise`;
+                      roofMatchText = `${lead.property_type || lead.roof_material || 'Commercial'} - matches your expertise`;
                     }
                   }
 

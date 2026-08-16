@@ -264,7 +264,11 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_size : activeBuilding?.roof_size_sqm} suffix={activeBuildingIndex === 0 ? "" : " Sqm"} className="text-right text-[11px]" />
+                      <DisplayValue 
+                        value={activeBuildingIndex === 0 ? lead.roof_size?.toString().replace(/\s*sqm\s*/i, '').trim() : activeBuilding?.roof_size_sqm} 
+                        suffix=" SqM" 
+                        className="text-right text-[11px]" 
+                      />
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>

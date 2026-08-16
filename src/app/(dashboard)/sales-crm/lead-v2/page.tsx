@@ -2657,7 +2657,9 @@ function LeadDetailsV2Content() {
                       <span className="text-gray-900 text-sm font-medium">
                         {buildingEnrichment?.max_array_panels_count 
                           ? `${((buildingEnrichment.max_array_panels_count * 0.4) * 850).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh/yr`
-                          : (lead as any).est_ann_generation || 'N/A'}
+                          : lead.est_ann_consumption && (lead.roof_size || (lead as any).roof_size_sqm)
+                            ? `${(Math.min(calculateEstimatedSystemSize(lead, lead.monthly_spend || 0) * 850, lead.est_ann_consumption)).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh/yr`
+                            : (lead as any).est_ann_generation || 'N/A'}
                       </span>
                     )}
                   </div>
@@ -2669,7 +2671,9 @@ function LeadDetailsV2Content() {
                       <span className="text-green-600 text-sm font-bold">
                         {buildingEnrichment?.max_array_panels_count 
                           ? `£${((buildingEnrichment.max_array_panels_count * 0.4) * 900).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
-                          : (lead as any).est_savings ? `£${(lead as any).est_savings}` : 'N/A'}
+                          : lead.est_ann_consumption && (lead.roof_size || (lead as any).roof_size_sqm)
+                            ? `£${(calculateEstimatedSystemSize(lead, lead.monthly_spend || 0) * 900).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
+                            : (lead as any).est_savings ? `£${(lead as any).est_savings}` : 'N/A'}
                       </span>
                     )}
                   </div>

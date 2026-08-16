@@ -559,28 +559,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         );
                       }
                     },
-                    {
-                      id: 'decisionMaker',
-                      score: details.decisionMaker,
-                      render: () => {
-                        const isGood = details.decisionMaker >= 7;
-                        return (
-                          <div key="decisionMaker" className="flex gap-2.5">
-                            {isGood ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
-                            <div>
-                              <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
-                                {isGood ? 'Direct Decision Maker' : 'Multiple Decision Makers'}
-                              </h4>
-                              <p className="text-[10px] text-gray-500 leading-snug">
-                                {isGood ? 'You\'ll be speaking directly with the person who can authorize the project.' : 'Multiple stakeholders may be involved in the decision process.'}
-                              </p>
-                            </div>
-                          </div>
-                        );
-                      }
-                    },
-                    {
-                      id: 'ownership',
+                      {
+                        id: 'ownership',
                       score: details.ownership,
                       render: () => {
                         const isGood = details.ownership >= 7;

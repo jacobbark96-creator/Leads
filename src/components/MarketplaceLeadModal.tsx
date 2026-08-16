@@ -4,7 +4,7 @@ import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
 import { 
   X, MapPin, User, Calendar, Home, CheckCircle, Zap, ShieldCheck, 
-  ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, 
+  ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, Moon,
   Battery, TrendingUp, ChevronRight, Check, Building, AlertCircle, Info
 } from 'lucide-react';
 import { extractTown, getVagueLocation, calculateMatchScore, calculateMatchScoreDetails, calculateEstimatedSystemSize } from '../lib/utils';
@@ -288,9 +288,15 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       )}
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Roof Material</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material} className="text-[11px]" />
+                    <div className="bg-gray-50 rounded-lg flex overflow-hidden">
+                      <div className="flex-1 p-2.5 flex flex-col justify-center border-r border-gray-200">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Roof Material</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material} className="text-[11px]" />
+                      </div>
+                      <div className="flex-1 p-2.5 flex flex-col justify-center">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Condition</span>
+                        <DisplayValue value={lead.roof_condition} className="text-[11px]" />
+                      </div>
                     </div>
 
                     <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
@@ -303,19 +309,15 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       <DisplayValue value={activeBuildingIndex === 0 ? lead.solar_location : activeBuilding?.orientation} className="text-[11px]" />
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Day Rate</span>
-                      <DisplayValue value={lead.unit_rate ? `£${lead.unit_rate}` : null} className="text-[11px]" />
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Night Rate</span>
-                      <DisplayValue value={lead.night_unit_rate ? `£${lead.night_unit_rate}` : null} className="text-[11px]" />
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Roof Condition</span>
-                      <DisplayValue value={lead.roof_condition} className="text-[11px]" />
+                    <div className="bg-gray-50 rounded-lg flex overflow-hidden">
+                      <div className="flex-1 p-2.5 flex flex-col justify-center border-r border-gray-200">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Day Rate</span>
+                        <DisplayValue value={lead.unit_rate ? `£${lead.unit_rate}` : null} className="text-[11px]" />
+                      </div>
+                      <div className="flex-1 p-2.5 flex flex-col justify-center">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Moon className="w-3 h-3" /> Night Rate</span>
+                        <DisplayValue value={lead.night_unit_rate ? `£${lead.night_unit_rate}` : null} className="text-[11px]" />
+                      </div>
                     </div>
 
                     <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">

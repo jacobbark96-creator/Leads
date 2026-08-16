@@ -399,6 +399,168 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                   const details = matchDetails.details;
                   const isHighIntent = details.timeframe >= 6;
 
+                  const allStats = [
+                    {
+                      id: 'distance',
+                      score: details.distance,
+                      render: () => (
+                        <div key="distance" className="flex gap-2.5">
+                          {details.outwithWorkingArea ? <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" /> : <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
+                          <div>
+                            <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
+                              {details.outwithWorkingArea ? 'Outside Your Location' : 'Close to Your Location'}
+                            </h4>
+                            <p className="text-[10px] text-gray-500 leading-snug">
+                              {details.outwithWorkingArea 
+                                 ? "Outside your immediate service area, but still a match" 
+                                 : "Within your service area"}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    },
+                    {
+                      id: 'systemSize',
+                      score: details.systemSize,
+                      render: () => (
+                        <div key="systemSize" className="flex gap-2.5">
+                          {isSizeMatch ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
+                          <div>
+                            <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
+                              {isSizeMatch ? 'Within Your Preferred System Size' : 'Below Your Preferred System Size'}
+                            </h4>
+                            <p className="text-[10px] text-gray-500 leading-snug">
+                              {minSize > 0 
+                                ? (isSizeMatch 
+                                  ? `${sysSize?.toFixed(1) || 'The'} kWp is in your target range` 
+                                  : `${sysSize?.toFixed(1) || 'The'} kWp is below your minimum target of ${minSize} kWp`)
+                                : "As you accept all system sizes"}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    },
+                    {
+                      id: 'timeframe',
+                      score: details.timeframe,
+                      render: () => (
+                        <div key="timeframe" className="flex gap-2.5">
+                          {isHighIntent ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
+                          <div>
+                            <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
+                              {isHighIntent ? 'High Intent' : 'Lower Intent / Longer Timeframe'}
+                            </h4>
+                            <p className="text-[10px] text-gray-500 leading-snug">
+                              Looking to proceed {lead.timeframe || 'soon'} and open to {lead.payment_options || 'all payment options'}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    },
+                    {
+                      id: 'roofType',
+                      score: details.roofType,
+                      render: () => (
+                        <div key="roofType" className="flex gap-2.5">
+                          {isRoofMatch ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />}
+                          <div>
+                            <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">{roofMatchTitle}</h4>
+                            <p className={`text-[10px] leading-snug ${isRoofMatch ? 'text-gray-500' : 'text-red-600'}`}>
+                              {roofMatchText}
+                            </p>
+                          </div>
+                        </div>
+                      )
+                    },
+                    {
+                      id: 'monthlySpend',
+                      score: details.monthlySpend,
+                      render: () => {
+                        const isGood = details.monthlySpend >= 7;
+                        return (
+                          <div key="monthlySpend" className="flex gap-2.5">
+                            {isGood ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
+                            <div>
+                              <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
+                                {isGood ? 'High Energy Consumer' : 'Lower Energy Spend'}
+                              </h4>
+                              <p className="text-[10px] text-gray-500 leading-snug">
+                                {isGood ? 'High monthly energy spend indicates strong solar potential.' : 'Monthly spend is lower, meaning a smaller system requirement.'}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+                    },
+                    {
+                      id: 'decisionMaker',
+                      score: details.decisionMaker,
+                      render: () => {
+                        const isGood = details.decisionMaker >= 7;
+                        return (
+                          <div key="decisionMaker" className="flex gap-2.5">
+                            {isGood ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
+                            <div>
+                              <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
+                                {isGood ? 'Direct Decision Maker' : 'Multiple Decision Makers'}
+                              </h4>
+                              <p className="text-[10px] text-gray-500 leading-snug">
+                                {isGood ? 'You\'ll be speaking directly with the person who can authorize the project.' : 'Multiple stakeholders may be involved in the decision process.'}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+                    },
+                    {
+                      id: 'ownership',
+                      score: details.ownership,
+                      render: () => {
+                        const isGood = details.ownership >= 7;
+                        return (
+                          <div key="ownership" className="flex gap-2.5">
+                            {isGood ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
+                            <div>
+                              <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
+                                {isGood ? 'Property Owner' : 'Tenant / Leaseholder'}
+                              </h4>
+                              <p className="text-[10px] text-gray-500 leading-snug">
+                                {isGood ? 'The lead owns the property, simplifying installation approval.' : 'May require landlord permission for installation.'}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+                    },
+                    {
+                      id: 'billsAvailable',
+                      score: details.billsAvailable,
+                      render: () => {
+                        const isGood = details.billsAvailable >= 7;
+                        return (
+                          <div key="billsAvailable" className="flex gap-2.5">
+                            {isGood ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
+                            <div>
+                              <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
+                                {isGood ? 'Energy Bills Ready' : 'Energy Bills Not Provided'}
+                              </h4>
+                              <p className="text-[10px] text-gray-500 leading-snug">
+                                {isGood ? 'Energy bills are available for accurate system sizing and ROI calculations.' : 'Energy bills are not currently available.'}
+                              </p>
+                            </div>
+                          </div>
+                        );
+                      }
+                    }
+                  ];
+
+                  // Dynamically pick the 4 stats to show
+                  // If it's a good fit, highlight the highest scoring stats
+                  // If it's a poor fit, highlight the lowest scoring stats to explain why
+                  const sortedStats = allStats.sort((a, b) => {
+                    return isGoodFit ? b.score - a.score : a.score - b.score;
+                  }).slice(0, 4);
+
                   return (
                     <>
                       <div className="flex items-center justify-between mb-4">
@@ -437,57 +599,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       </div>
 
                       <div className="space-y-4 mt-2">
-                        <div className="flex gap-2.5">
-                          {isSizeMatch ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
-                          <div>
-                            <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
-                              {isSizeMatch ? 'Within Your Preferred System Size' : 'Below Your Preferred System Size'}
-                            </h4>
-                            <p className="text-[10px] text-gray-500 leading-snug">
-                              {minSize > 0 
-                                ? (isSizeMatch 
-                                  ? `${sysSize?.toFixed(1) || 'The'} kWp is in your target range` 
-                                  : `${sysSize?.toFixed(1) || 'The'} kWp is below your minimum target of ${minSize} kWp`)
-                                : "As you accept all system sizes"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2.5">
-                          {details.outwithWorkingArea ? <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" /> : <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
-                          <div>
-                            <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
-                              {details.outwithWorkingArea ? 'Outside Your Location' : 'Close to Your Location'}
-                            </h4>
-                            <p className="text-[10px] text-gray-500 leading-snug">
-                              {details.outwithWorkingArea 
-                                 ? "Outside your immediate service area, but still a match" 
-                                 : "Within your service area"}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2.5">
-                          {isHighIntent ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
-                          <div>
-                            <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
-                              {isHighIntent ? 'High Intent' : 'Lower Intent / Longer Timeframe'}
-                            </h4>
-                            <p className="text-[10px] text-gray-500 leading-snug">
-                              Looking to proceed {lead.timeframe || 'soon'} and open to {lead.payment_options || 'all payment options'}
-                            </p>
-                          </div>
-                        </div>
-
-                        <div className="flex gap-2.5">
-                          {isRoofMatch ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />}
-                          <div>
-                            <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">{roofMatchTitle}</h4>
-                            <p className={`text-[10px] leading-snug ${isRoofMatch ? 'text-gray-500' : 'text-red-600'}`}>
-                              {roofMatchText}
-                            </p>
-                          </div>
-                        </div>
+                        {sortedStats.map(stat => stat.render())}
                       </div>
                     </>
                   );

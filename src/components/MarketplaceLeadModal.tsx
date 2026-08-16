@@ -321,7 +321,12 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       <DisplayValue value={lead.cover_skylights !== undefined ? (lead.cover_skylights ? 'Yes' : 'No') : null} className="text-[11px]" />
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center col-span-2">
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Finance Option</span>
+                        <DisplayValue value={lead.payment_options} className="text-[11px]" />
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
                         <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Activity className="w-3 h-3" /> Annual Consumption</span>
                         <DisplayValue value={lead.est_ann_consumption ? `${lead.est_ann_consumption.toLocaleString()} kWh` : null} className="text-[11px]" />
                       </div>
@@ -397,7 +402,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
             <div className="col-span-12 md:col-span-4 flex flex-col gap-4">
               
               {/* WHY THIS IS A GREAT FIT FOR YOU */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col flex-1">
+              <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col">
                 {clientPrefs ? (() => {
                   const matchDetails = calculateMatchScoreDetails(lead, clientPrefs);
                   const score = matchDetails.score;
@@ -601,8 +606,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                   // If it's a good fit, highlight the highest scoring stats
                   // If it's a poor fit, highlight the lowest scoring stats to explain why
                   const sortedStats = allStats.sort((a, b) => {
-                    return isGoodFit ? b.score - a.score : a.score - b.score;
-                  }).slice(0, 4);
+                      return isGoodFit ? b.score - a.score : a.score - b.score;
+                    }).slice(0, 3);
 
                   return (
                     <>
@@ -658,7 +663,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
 
               {/* IMAGE */}
               <div 
-                className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 h-[220px] relative group cursor-pointer shrink-0"
+                className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex-1 min-h-[220px] relative group cursor-pointer"
                 onClick={() => setLightboxUrl(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url)}
               >
                 {(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url) ? (

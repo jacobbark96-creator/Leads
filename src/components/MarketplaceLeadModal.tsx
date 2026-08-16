@@ -369,27 +369,96 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-emerald-500" /> Roof Suitability
                     </h3>
-                    <div className="grid grid-cols-2 gap-3">
+                    <div className="grid grid-cols-4 gap-2">
                       <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
-                        <CheckCircle className="w-3 h-3 text-emerald-500 mb-1.5" />
-                        <span className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mb-1">Suitability</span>
-                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).roof_suitability : (activeBuilding?.suitability_score ? `${activeBuilding.suitability_score}/100` : null)} className="text-[10px]" />
+                        <CheckCircle className="w-3 h-3 text-emerald-500 mb-1" />
+                        <span className="text-[7px] text-gray-400 uppercase tracking-wider font-bold mb-1 line-clamp-1">Suitability</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).roof_suitability : (activeBuilding?.suitability_score ? `${activeBuilding.suitability_score}/100` : null)} className="text-[9px]" />
                       </div>
                       <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
-                        <Sun className="w-3 h-3 text-amber-500 mb-1.5" />
-                        <span className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mb-1">Exposure</span>
-                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).solar_exposure : (activeBuilding?.solar_potential_score ? `${activeBuilding.solar_potential_score}/100` : null)} className="text-[10px]" />
+                        <Sun className="w-3 h-3 text-amber-500 mb-1" />
+                        <span className="text-[7px] text-gray-400 uppercase tracking-wider font-bold mb-1 line-clamp-1">Exposure</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).solar_exposure : (activeBuilding?.solar_potential_score ? `${activeBuilding.solar_potential_score}/100` : null)} className="text-[9px]" />
                       </div>
                       <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
-                        <Activity className="w-3 h-3 text-emerald-500 mb-1.5" />
-                        <span className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mb-1">Shading</span>
-                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).shading : (activeBuilding?.shading_score !== null ? `${activeBuilding.shading_score}/10` : null)} className="text-[10px]" />
+                        <Activity className="w-3 h-3 text-emerald-500 mb-1" />
+                        <span className="text-[7px] text-gray-400 uppercase tracking-wider font-bold mb-1 line-clamp-1">Shading</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).shading : (activeBuilding?.shading_score !== null ? `${activeBuilding.shading_score}/10` : null)} className="text-[9px]" />
                       </div>
                       <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
-                        <Globe className="w-3 h-3 text-blue-500 mb-1.5" />
-                        <span className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mb-1">Orientation</span>
-                        <DisplayValue value={activeBuildingIndex === 0 ? ((lead as any).orientation || lead.solar_location) : activeBuilding?.orientation} className="text-[10px]" />
+                        <Globe className="w-3 h-3 text-blue-500 mb-1" />
+                        <span className="text-[7px] text-gray-400 uppercase tracking-wider font-bold mb-1 line-clamp-1">Orientation</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? ((lead as any).orientation || lead.solar_location) : activeBuilding?.orientation} className="text-[9px]" />
                       </div>
+                    </div>
+                  </div>
+
+                  {/* Openlead Business View */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col flex-1">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <Building className="w-4 h-4 text-purple-500" /> Openlead Business View
+                    </h3>
+                    
+                    <div className="flex flex-col items-center justify-center flex-1 text-center">
+                      {lead.csv_data?.ch_enrichment ? (
+                        <>
+                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-2xl mb-3 shadow-sm ${
+                            lead.csv_data.ch_enrichment.finance_grade === 'A' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' :
+                            lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'bg-yellow-100 text-yellow-600 border border-yellow-200' :
+                            lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'bg-[#8B4513] text-white border border-[#5c2e0c]' :
+                            lead.csv_data.ch_enrichment.finance_grade === 'P' ? 'bg-purple-100 text-purple-600 border border-purple-200' :
+                            'bg-red-100 text-red-600 border border-red-200'
+                          }`}>
+                            {lead.csv_data.ch_enrichment.finance_grade}
+                          </div>
+                          
+                          <div className="text-xs font-bold text-gray-900 mb-1">
+                            {lead.csv_data.ch_enrichment.finance_score_label}
+                          </div>
+                          
+                          {lead.csv_data.ch_enrichment.finance_grade === 'P' ? (
+                            <p className="text-[10px] text-gray-500 mt-2 max-w-[200px]">
+                              This is a sole trader and their finance is subject to personal credit checks.
+                            </p>
+                          ) : (
+                            <div className="mt-4 w-full text-left bg-gray-50 rounded-lg p-3 border border-gray-100">
+                              <div className="grid grid-cols-2 gap-y-2 gap-x-4">
+                                <div>
+                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Active</span>
+                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.active_company}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Years Trading</span>
+                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.years_trading}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Net Assets</span>
+                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.positive_net_assets}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Accounts</span>
+                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.latest_accounts_filed}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Insolvency</span>
+                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.insolvency_indicators}</span>
+                                </div>
+                                <div>
+                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Charges</span>
+                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.charges}</span>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-6">
+                          <Building className="w-8 h-8 text-gray-200 mb-2" />
+                          <p className="text-[10px] text-gray-400 text-center max-w-[180px]">
+                            No business intelligence data available for this lead yet.
+                          </p>
+                        </div>
+                      )}
                     </div>
                   </div>
                   

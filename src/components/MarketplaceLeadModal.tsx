@@ -7,7 +7,7 @@ import {
   ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, Moon,
   Battery, TrendingUp, ChevronRight, Check, Building, AlertCircle, Info
 } from 'lucide-react';
-import { extractTown, getVagueLocation, calculateMatchScore, calculateMatchScoreDetails, calculateEstimatedSystemSize } from '../lib/utils';
+import { extractTown, getVagueLocation, calculateMatchScore, calculateMatchScoreDetails, calculateEstimatedSystemSize, calculateIndicativeSystemValue } from '../lib/utils';
 import { trackLeadEvent } from '../utils/tracking';
 import { MagicCheckoutModal } from './MagicCheckoutModal';
 
@@ -361,10 +361,40 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Property Type</span>
                         <DisplayValue value={lead.property_type || 'warehouse/factory'} className="text-xs text-purple-900" />
                       </div>
-                      <div className="bg-blue-50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
+                      <div className="bg-blue-50 rounded-lg p-3 flex flex-col items-center justify-center text-center relative group">
                         <Globe className="w-4 h-4 text-blue-400 mb-1" />
-                        <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-1">Lead Industry</span>
-                        <DisplayValue value={lead.industry} className="text-xs text-blue-900" />
+                        <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                          Estimated Range <Info className="w-3 h-3 text-blue-300" />
+                        </span>
+                        {(() => {
+                          const systemSizeKwp = activeBuilding?.max_array_panels_count
+                            ? (activeBuilding.max_array_panels_count * 0.4)
+                            : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate)
+                              || ((lead as any).est_system_size ? parseFloat((lead as any).est_system_size) : null);
+                              
+                          const indicativeValue = calculateIndicativeSystemValue(systemSizeKwp);
+
+                          return (
+                            <>
+                              <DisplayValue 
+                                value={indicativeValue ? `£${Math.round(indicativeValue.rangeMin / 1000)}k - £${Math.round(indicativeValue.rangeMax / 1000)}k` : null} 
+                                className="text-xs text-blue-900" 
+                              />
+                              
+                              {/* Tooltip */}
+                              {indicativeValue && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none shadow-xl text-left">
+                                  <div className="font-bold text-blue-300 mb-1">Estimated Cost</div>
+                                  <div className="text-sm font-bold mb-2">£{indicativeValue.rate}/kWp</div>
+                                  <div className="text-gray-300 leading-tight">
+                                    Indicative estimate based on typical UK commercial solar installation costs. Final pricing is subject to site survey, roof condition, DNO requirements, system design and installer specification.
+                                  </div>
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
                       </div>
                     </div>
                   </div>

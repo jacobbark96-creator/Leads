@@ -399,7 +399,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 {clientPrefs && (() => {
                   const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
                   const minSize = clientPrefs?.min_system_size_kw ? Number(clientPrefs.min_system_size_kw) : 0;
-                  const isSizeMatch = minSize === 0 || (sysSize && sysSize >= minSize * 0.8);
+                  const isSizeMatch = minSize === 0 || (sysSize !== null && sysSize >= minSize);
 
                   const leadRoof = (lead.roof_type || lead.roof_material || '').toLowerCase();
                   const isAsbestos = leadRoof.includes('asbestos');
@@ -435,10 +435,14 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       <div className="flex gap-2.5">
                         {isSizeMatch ? <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" /> : <AlertCircle className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />}
                         <div>
-                          <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">Within Your Preferred System Size</h4>
+                          <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
+                            {isSizeMatch ? 'Within Your Preferred System Size' : 'Below Your Preferred System Size'}
+                          </h4>
                           <p className="text-[10px] text-gray-500 leading-snug">
                             {minSize > 0 
-                              ? `${sysSize?.toFixed(1) || 'The'} kWp is in your target range`
+                              ? (isSizeMatch 
+                                ? `${sysSize?.toFixed(1) || 'The'} kWp is in your target range` 
+                                : `${sysSize?.toFixed(1) || 'The'} kWp is below your minimum target of ${minSize} kWp`)
                               : "As you accept all system sizes"}
                           </p>
                         </div>
@@ -483,12 +487,12 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
               {/* IMAGE */}
               <div 
                 className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 h-[220px] relative group cursor-pointer shrink-0"
-                onClick={() => setLightboxUrl(activeBuildingIndex === 0 ? lead.photo_url : activeBuilding?.photo_url)}
+                onClick={() => setLightboxUrl(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url)}
               >
-                {(activeBuildingIndex === 0 ? lead.photo_url : activeBuilding?.photo_url) ? (
+                {(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url) ? (
                   <>
                     <img 
-                      src={activeBuildingIndex === 0 ? lead.photo_url : activeBuilding?.photo_url} 
+                      src={activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url} 
                       alt="Property" 
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       onError={(e) => {

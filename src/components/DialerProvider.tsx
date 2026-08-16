@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import { useAuthStore } from '@/store/authStore';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
-import { MessageSquare, Phone, PhoneOff, Mic, MicOff, Volume2, Hash, Settings, Check } from 'lucide-react';
+import { MessageSquare, Phone, PhoneOff, Mic, MicOff, Volume2, Hash, Settings, Check, ChevronLeft, ChevronRight } from 'lucide-react';
 import { DialerContext } from '@/contexts/DialerContext';
 import { InternalChat } from './InternalChat';
 
@@ -32,6 +32,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [selectedOutput, setSelectedOutput] = useState<string>('default');
   const [dtmfDigits, setDtmfDigits] = useState('');
   const [toastMessage, setToastMessage] = useState<{ senderName: string, content: string } | null>(null);
+  const [isToolbarExpanded, setIsToolbarExpanded] = useState(false);
 
   useEffect(() => {
     const handleToggleChat = () => setIsInternalChatOpen(prev => !prev);
@@ -675,48 +676,72 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             </div>
           )}
 
-          <div className="flex items-center gap-3">
-            {canUseInternalChat && (
-              <div className="relative">
+          <div className="relative flex items-center">
+            {!isToolbarExpanded ? (
+              <button
+                onClick={() => setIsToolbarExpanded(true)}
+                className="absolute right-[-24px] w-10 h-16 bg-gray-900 border border-r-0 border-gray-700 text-gray-400 rounded-l-xl flex items-center justify-center shadow-2xl hover:text-white hover:bg-gray-800 transition-all group"
+                title="Show Dialer Toolbar"
+              >
+                <ChevronLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+              </button>
+            ) : (
+              <div className="flex items-center gap-3 animate-in slide-in-from-right-10 duration-300 fade-in">
                 <button
                   onClick={() => {
-                    if (isStaffRoute) {
-                      const element = document.getElementById('staff-team-messages');
-                      if (element) {
-                        element.scrollIntoView({
-                          behavior: 'smooth',
-                          block: 'center'
-                        });
-                      }
-                      return;
-                    }
-
-                    window.dispatchEvent(new CustomEvent('toggle-internal-chat'));
+                    setIsToolbarExpanded(false);
+                    setIsDialpadOpen(false);
+                    setShowSettings(false);
                   }}
-                  className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-transform hover:scale-105 active:scale-95 relative"
-                  title={isStaffRoute ? 'Jump to Team Messages' : 'Internal Chat'}
+                  className="w-10 h-10 bg-gray-800 text-gray-400 rounded-full flex items-center justify-center shadow-lg hover:text-white hover:bg-gray-700 transition-colors"
+                  title="Hide Toolbar"
                 >
-                  <MessageSquare className="w-6 h-6" />
-                  <span id="global-unread-badge" className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full hidden"></span>
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+
+                {canUseInternalChat && (
+                  <div className="relative">
+                    <button
+                      onClick={() => {
+                        if (isStaffRoute) {
+                          const element = document.getElementById('staff-team-messages');
+                          if (element) {
+                            element.scrollIntoView({
+                              behavior: 'smooth',
+                              block: 'center'
+                            });
+                          }
+                          return;
+                        }
+
+                        window.dispatchEvent(new CustomEvent('toggle-internal-chat'));
+                      }}
+                      className="w-14 h-14 bg-blue-500 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-transform hover:scale-105 active:scale-95 relative"
+                      title={isStaffRoute ? 'Jump to Team Messages' : 'Internal Chat'}
+                    >
+                      <MessageSquare className="w-6 h-6" />
+                      <span id="global-unread-badge" className="absolute -top-1 -right-1 bg-red-500 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full hidden"></span>
+                    </button>
+                  </div>
+                )}
+
+                <button
+                  onClick={() => setShowSettings(!showSettings)}
+                  className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 ${showSettings ? 'bg-gray-700 text-white shadow-gray-700/30' : 'bg-gray-800 text-gray-400 hover:text-white shadow-gray-800/30'}`}
+                  title="Audio Settings"
+                >
+                  <Settings className="w-6 h-6" />
+                </button>
+
+                <button
+                  onClick={() => setIsDialpadOpen(!isDialpadOpen)}
+                  className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition-transform hover:scale-105 active:scale-95"
+                  title="Open Dialer"
+                >
+                  <Phone className="w-6 h-6" />
                 </button>
               </div>
             )}
-
-            <button
-              onClick={() => setShowSettings(!showSettings)}
-              className={`w-14 h-14 rounded-full flex items-center justify-center shadow-lg transition-transform hover:scale-105 active:scale-95 ${showSettings ? 'bg-gray-700 text-white shadow-gray-700/30' : 'bg-gray-800 text-gray-400 hover:text-white shadow-gray-800/30'}`}
-              title="Audio Settings"
-            >
-              <Settings className="w-6 h-6" />
-            </button>
-
-            <button
-              onClick={() => setIsDialpadOpen(!isDialpadOpen)}
-              className="w-14 h-14 bg-blue-600 text-white rounded-full flex items-center justify-center shadow-lg shadow-blue-600/30 hover:bg-blue-700 transition-transform hover:scale-105 active:scale-95"
-              title="Open Dialer"
-            >
-              <Phone className="w-6 h-6" />
-            </button>
           </div>
 
           {/* Audio Settings Panel */}

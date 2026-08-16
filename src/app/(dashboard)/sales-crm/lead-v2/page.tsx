@@ -28,6 +28,8 @@ import {
   Plus,
   ArrowRight,
   ArrowLeft,
+  Sparkles,
+  MapPin,
   MessageSquare,
   Pin,
   Pencil,
@@ -424,6 +426,8 @@ function LeadDetailsV2Content() {
   const [newContactRole, setNewContactRole] = useState('');
   const [newContactEmail, setNewContactEmail] = useState('');
   const [newContactPhone, setNewContactPhone] = useState('');
+  
+  const [isEnhancingNotes, setIsEnhancingNotes] = useState(false);
   
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [isRoofTypeDropdownOpen, setIsRoofTypeDropdownOpen] = useState(false);
@@ -1106,6 +1110,42 @@ function LeadDetailsV2Content() {
       setIsEditConfirmOpen(true);
     } else {
       await confirmSaveEdit();
+    }
+  };
+
+  const enhanceMarketplaceNotes = async () => {
+    if (!editForm) return;
+    setIsEnhancingNotes(true);
+    try {
+      const response = await fetch('/api/enhance-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          notes: (editForm as any).marketplace_notes,
+          leadData: {
+            monthly_spend: lead?.monthly_spend,
+            timeframe: lead?.timeframe,
+            roof_size: lead?.roof_size,
+            payment_options: lead?.payment_options,
+            property_type: lead?.property_type,
+            industry: lead?.industry
+          }
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to enhance notes');
+      }
+
+      const data = await response.json();
+      if (data.enhancedNotes) {
+        setEditForm({ ...editForm, marketplace_notes: data.enhancedNotes } as any);
+        toast.success('Notes enhanced by AI');
+      }
+    } catch (err: any) {
+      toast.error('Failed to enhance notes: ' + err.message);
+    } finally {
+      setIsEnhancingNotes(false);
     }
   };
 
@@ -2934,9 +2974,22 @@ function LeadDetailsV2Content() {
                     )}
                   </div>
                   <div className="flex flex-col col-span-2 mt-2">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-gray-500 text-[11px] uppercase tracking-wider">Marketplace Notes</span>
-                      {editingCard === 'building' && activeBuildingIndex > 0 && (
+                      <div className="flex items-center justify-between mb-1">
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-500 text-[11px] uppercase tracking-wider">Marketplace Notes</span>
+                          {editingCard === 'building' && !(editForm as any).use_primary_notes && (
+                            <button
+                              onClick={enhanceMarketplaceNotes}
+                              disabled={isEnhancingNotes}
+                              className="flex items-center gap-1 text-[10px] font-bold text-purple-600 bg-purple-50 hover:bg-purple-100 px-2 py-0.5 rounded transition-colors disabled:opacity-50"
+                              title="Use AI to rewrite notes to make them attractive to installers"
+                            >
+                              <Sparkles className="w-3 h-3" />
+                              {isEnhancingNotes ? 'Enhancing...' : 'AI Enhance'}
+                            </button>
+                          )}
+                        </div>
+                        {editingCard === 'building' && activeBuildingIndex > 0 && (
                         <label className="flex items-center gap-1.5 cursor-pointer">
                           <input 
                             type="checkbox" 

@@ -39,28 +39,68 @@ export async function POST(req: Request) {
     }
 
     // Find best match: Exact name match OR slightly different name but matching location
+    function cleanString(str: string) {
+      return (str || '').toLowerCase()
+        .replace(/[^a-z0-9\s]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+    
+    function removeCommonWords(str: string) {
+      const common = ['ltd', 'limited', 'plc', 'llp', 'co', 'company', 'uk', 'group'];
+      return str.split(' ').filter(w => !common.includes(w)).join(' ');
+    }
+
+    const leadNameClean = removeCommonWords(cleanString(companyName));
+    const leadLocationClean = cleanString(location || '');
+
     let bestMatch = null;
-    const cleanLeadName = companyName.toLowerCase().replace(/[^a-z0-9]/g, '');
-    const cleanLocation = location ? location.toLowerCase().replace(/[^a-z0-9]/g, '') : '';
+    let highestScore = 0;
 
     for (const item of items) {
-      const cleanItemName = item.title.toLowerCase().replace(/[^a-z0-9]/g, '');
-      const itemAddressSnippet = item.address_snippet ? item.address_snippet.toLowerCase() : '';
+      const itemTitleClean = removeCommonWords(cleanString(item.title));
+      const itemAddressClean = cleanString(item.address_snippet || '');
 
-      if (cleanItemName === cleanLeadName) {
-        bestMatch = item;
-        break;
+      let score = 0;
+      
+      if (itemTitleClean === leadNameClean && leadNameClean.length > 0) {
+        score += 100;
+      } else {
+        const leadWords = leadNameClean.split(' ').filter(w => w.length > 1);
+        const itemWords = itemTitleClean.split(' ').filter(w => w.length > 1);
+        let matches = 0;
+        for (const w of leadWords) {
+          if (itemWords.includes(w)) matches++;
+        }
+        
+        if (leadWords.length > 0 && matches === leadWords.length) {
+          score += 80;
+        } else if (leadWords.length > 0 && matches / leadWords.length >= 0.5) {
+          score += 40;
+        }
       }
 
-      if (cleanLocation && itemAddressSnippet.includes(cleanLocation)) {
+      if (leadLocationClean && itemAddressClean) {
+        const locWords = leadLocationClean.split(' ').filter(w => w.length > 2);
+        const addressWords = itemAddressClean.split(' ');
+        let locMatches = 0;
+        for (const w of locWords) {
+          if (addressWords.includes(w)) locMatches++;
+        }
+        if (locWords.length > 0 && locMatches > 0) {
+          score += 30;
+        }
+      }
+
+      if (score > highestScore) {
+        highestScore = score;
         bestMatch = item;
-        break;
       }
     }
 
-    // Fallback to first result if no perfect match, but only if it's somewhat close
-    if (!bestMatch) {
-       bestMatch = items[0];
+    // Require a minimum score to accept the match (e.g., 40 points means at least half the words matched)
+    if (!bestMatch || highestScore < 40) {
+      return NextResponse.json({ error: 'No sufficiently close match found on Companies House.' }, { status: 404 });
     }
 
     const companyNumber = bestMatch.company_number;

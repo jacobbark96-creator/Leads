@@ -402,31 +402,48 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
             <div className="col-span-12 md:col-span-4 flex flex-col gap-4">
               
               {/* WHY THIS IS A GREAT FIT FOR YOU */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col">
-                {clientPrefs ? (() => {
-                  const matchDetails = calculateMatchScoreDetails(lead, clientPrefs);
-                  const score = matchDetails.score;
-                  const isGoodFit = score >= 60;
-                  
-                  let colorClass = "text-emerald-600 bg-emerald-50 border-emerald-200";
-                  if (score < 40) colorClass = "text-red-600 bg-red-50 border-red-200";
-                  else if (score < 60) colorClass = "text-amber-600 bg-amber-50 border-amber-200";
-                  else if (score < 80) colorClass = "text-blue-600 bg-blue-50 border-blue-200";
+              {(() => {
+                if (!clientPrefs) {
+                  return (
+                    <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-[10px] font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Why this is a great fit for you
+                        </h3>
+                        <span className="text-gray-300">-</span>
+                      </div>
+                    </div>
+                  );
+                }
 
-                  const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
-                  const minSize = clientPrefs?.min_system_size_kw ? Number(clientPrefs.min_system_size_kw) : 0;
-                  const isSizeMatch = minSize === 0 || (sysSize !== null && sysSize >= minSize);
+                const matchDetails = calculateMatchScoreDetails(lead, clientPrefs);
+                const score = matchDetails.score;
+                const isGoodFit = score >= 60;
+                
+                let colorClass = "text-emerald-600 bg-emerald-50 border-emerald-200";
+                let boxBgClass = "bg-emerald-50 border-emerald-200";
+                if (score < 40) {
+                  colorClass = "text-red-600 bg-red-50 border-red-200";
+                  boxBgClass = "bg-red-50 border-red-200";
+                } else if (score < 60) {
+                  colorClass = "text-amber-600 bg-amber-50 border-amber-200";
+                  boxBgClass = "bg-amber-50 border-amber-200";
+                }
 
-                  const leadRoof = (lead.roof_material || '').toLowerCase();
-                  const isAsbestos = leadRoof.includes('asbestos');
-                  const prefsHasAsbestos = clientPrefs?.preferred_roof_types?.some((rt: string) => rt.toLowerCase().includes('asbestos'));
-                  const noRoofPrefs = !clientPrefs?.preferred_roof_types || clientPrefs.preferred_roof_types.length === 0;
+                const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+                const minSize = clientPrefs?.min_system_size_kw ? Number(clientPrefs.min_system_size_kw) : 0;
+                const isSizeMatch = minSize === 0 || (sysSize !== null && sysSize >= minSize);
 
-                  let isRoofMatch = true;
-                  let roofMatchText = '';
-                  let roofMatchTitle = 'Ideal Property Type';
-                  
-                  if (noRoofPrefs) {
+                const leadRoof = (lead.roof_material || '').toLowerCase();
+                const isAsbestos = leadRoof.includes('asbestos');
+                const prefsHasAsbestos = clientPrefs?.preferred_roof_types?.some((rt: string) => rt.toLowerCase().includes('asbestos'));
+                const noRoofPrefs = !clientPrefs?.preferred_roof_types || clientPrefs.preferred_roof_types.length === 0;
+
+                let isRoofMatch = true;
+                let roofMatchText = '';
+                let roofMatchTitle = 'Ideal Property Type';
+                
+                if (noRoofPrefs) {
                     if (isAsbestos) {
                       isRoofMatch = false;
                       roofMatchTitle = 'Property Type Warning';
@@ -610,7 +627,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     }).slice(0, 3);
 
                   return (
-                    <>
+                    <div className={`${boxBgClass} rounded-xl p-4 border flex flex-col`}>
                       <div className="flex items-center justify-between mb-4">
                         <h3 className="text-[10px] font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
                           {isGoodFit ? (
@@ -649,17 +666,9 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       <div className="space-y-4 mt-2">
                         {sortedStats.map(stat => stat.render())}
                       </div>
-                    </>
+                    </div>
                   );
-                })() : (
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-[10px] font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5 text-emerald-500" /> Why this is a great fit for you
-                    </h3>
-                    <span className="text-gray-300">-</span>
-                  </div>
-                )}
-              </div>
+                })()}
 
               {/* IMAGE */}
               <div 

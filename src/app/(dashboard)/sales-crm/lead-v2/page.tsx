@@ -2640,9 +2640,8 @@ function LeadDetailsV2Content() {
                 {(() => {
                   const systemSizeKwp = buildingEnrichment?.max_array_panels_count
                     ? (buildingEnrichment.max_array_panels_count * 0.4)
-                    : (lead.est_ann_consumption && (lead.roof_size || (lead as any).roof_size_sqm))
-                      ? calculateEstimatedSystemSize(lead, lead.monthly_spend || 0)
-                      : (lead as any).est_system_size ? parseFloat((lead as any).est_system_size) : null;
+                    : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate)
+                      || ((lead as any).est_system_size ? parseFloat((lead as any).est_system_size) : null);
                       
                   const indicativeValue = calculateIndicativeSystemValue(systemSizeKwp);
                   
@@ -2714,24 +2713,8 @@ function LeadDetailsV2Content() {
                               <span className="text-gray-900 text-sm font-medium">{lead.exclusive_price ? `£${lead.exclusive_price}` : 'N/A'}</span>
                             )}
                           </div>
-                          <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                            <span className="text-gray-500 text-xs">Share Price</span>
-                            {editingCard === 'opportunity' ? (
-                              <input type="number" value={editForm.share_price || ''} onChange={e => setEditForm({...editForm, share_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 45" />
-                            ) : (
-                              <span className="text-gray-900 text-sm font-medium">{lead.share_price ? `£${lead.share_price}` : 'N/A'}</span>
-                            )}
-                          </div>
                         </>
                       )}
-                      <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                        <span className="text-gray-500 text-xs">Payback Period</span>
-                        {editingCard === 'opportunity' ? (
-                          <input type="text" value={(editForm as any).est_payback || ''} onChange={e => setEditForm({...editForm, est_payback: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                        ) : (
-                          <span className="text-gray-900 text-sm font-medium">{(lead as any).est_payback || 'N/A'}</span>
-                        )}
-                      </div>
                     </div>
                   );
                 })()}

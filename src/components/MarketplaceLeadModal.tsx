@@ -492,8 +492,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       alt="Property" 
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       onError={(e) => {
-                        (e.target).style.display = 'none';
-                        (e.target).nextElementSibling?.classList.remove('hidden');
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                       }}
                     />
                     <div className="absolute inset-0 bg-black/5 flex flex-col items-center justify-center hidden">
@@ -512,6 +512,9 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
               
             </div>
           </div>
+
+          </div>
+        </div>
 
         {/* Footer */}
         <div className="px-6 py-4 bg-white border-t border-gray-200 flex items-center justify-between shrink-0">

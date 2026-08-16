@@ -41,6 +41,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
   const { profile } = useAuthStore();
   const hasTrackedView = useRef(false);
 
+  const [showBusinessDetails, setShowBusinessDetails] = useState(false);
+  
   useEffect(() => {
     const fetchBuildings = async () => {
       if (!isOpen || !lead?.id) return;
@@ -421,34 +423,51 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                               This is a sole trader and their finance is subject to personal credit checks.
                             </p>
                           ) : (
-                            <div className="mt-4 w-full text-left bg-gray-50 rounded-lg p-3 border border-gray-100">
-                              <div className="grid grid-cols-2 gap-y-2 gap-x-4">
-                                <div>
-                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Active</span>
-                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.active_company}</span>
+                            <>
+                              {!showBusinessDetails ? (
+                                <button 
+                                  onClick={() => setShowBusinessDetails(true)}
+                                  className="mt-3 text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-1.5 rounded-full transition-colors"
+                                >
+                                  Click for details
+                                </button>
+                              ) : (
+                                <div className="mt-4 w-full text-left bg-gray-50 rounded-lg p-3 border border-gray-100 relative animate-in slide-in-from-top-2">
+                                  <button 
+                                    onClick={() => setShowBusinessDetails(false)}
+                                    className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                  <div className="grid grid-cols-2 gap-y-2 gap-x-4 mt-1">
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Active</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.active_company}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Years Trading</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.years_trading}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Net Assets</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.positive_net_assets}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Accounts</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.latest_accounts_filed}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Insolvency</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.insolvency_indicators}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Charges</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.charges}</span>
+                                    </div>
+                                  </div>
                                 </div>
-                                <div>
-                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Years Trading</span>
-                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.years_trading}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Net Assets</span>
-                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.positive_net_assets}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Accounts</span>
-                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.latest_accounts_filed}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Insolvency</span>
-                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.insolvency_indicators}</span>
-                                </div>
-                                <div>
-                                  <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Charges</span>
-                                  <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.charges}</span>
-                                </div>
-                              </div>
-                            </div>
+                              )}
+                            </>
                           )}
                         </>
                       ) : (

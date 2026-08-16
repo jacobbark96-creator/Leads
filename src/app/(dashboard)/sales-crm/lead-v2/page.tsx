@@ -2110,9 +2110,20 @@ function LeadDetailsV2Content() {
               <button className="absolute top-3 right-3 text-gray-400 hover:text-gray-600">
                 <MoreHorizontal className="w-4 h-4" />
               </button>
-              <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200 mb-3 overflow-hidden">
-                <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(lead.company || lead.name)}&background=0D8ABC&color=fff&size=64`} alt="Company Logo" className="w-full h-full object-cover" />
-              </div>
+              {lead.csv_data?.ch_enrichment?.finance_grade ? (
+                <div className={`w-16 h-16 rounded-xl flex items-center justify-center font-black text-3xl mb-3 shadow-sm ${
+                  lead.csv_data.ch_enrichment.finance_grade === 'A' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' :
+                  lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'bg-yellow-100 text-yellow-600 border border-yellow-200' :
+                  lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'bg-[#8B4513] text-white border border-[#5c2e0c]' :
+                  'bg-red-100 text-red-600 border border-red-200'
+                }`}>
+                  {lead.csv_data.ch_enrichment.finance_grade}
+                </div>
+              ) : (
+                <div className="w-16 h-16 rounded-xl bg-gray-100 flex items-center justify-center text-gray-400 border border-gray-200 mb-3 overflow-hidden">
+                  <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(lead.company || lead.name)}&background=0D8ABC&color=fff&size=64`} alt="Company Logo" className="w-full h-full object-cover" />
+                </div>
+              )}
               <h1 className="text-lg font-bold text-gray-900 tracking-tight leading-tight">{lead.company || lead.name}</h1>
               {/* @ts-ignore */}
               {lead.website && <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs mt-1">{lead.website}</a>}
@@ -2188,11 +2199,15 @@ function LeadDetailsV2Content() {
               </div>
               <div className="flex flex-col gap-2.5">
                 {lead.csv_data?.ch_enrichment && editingCard !== 'snapshot' ? (
-                  <>
-                    <div className="flex justify-between items-center py-0.5">
-                      <span className="text-gray-500 text-xs">Active Company</span>
-                      <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.active_company}</span>
-                    </div>
+                    <>
+                      <div className="flex justify-between items-center py-0.5">
+                        <span className="text-gray-500 text-xs">Company No.</span>
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.company_number || companyEnrichment?.company_number || (lead as any).company_number || 'N/A'}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-0.5">
+                        <span className="text-gray-500 text-xs">Active Company</span>
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.active_company}</span>
+                      </div>
                     <div className="flex justify-between items-center py-0.5">
                       <span className="text-gray-500 text-xs">Years Trading</span>
                       <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.years_trading}</span>
@@ -2221,8 +2236,8 @@ function LeadDetailsV2Content() {
                       <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Openlead Finance Score</span>
                       <div className={`text-sm font-black ${
                         lead.csv_data.ch_enrichment.finance_grade === 'A' ? 'text-emerald-600' :
-                        lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'text-blue-600' :
-                        lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'text-amber-600' :
+                        lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'text-yellow-600' :
+                        lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'text-[#8B4513]' :
                         'text-red-600'
                       }`}>
                         Grade {lead.csv_data.ch_enrichment.finance_grade}
@@ -2277,98 +2292,7 @@ function LeadDetailsV2Content() {
                 </div>
               </div>
 
-            {/* 3. ADDITIONAL CONTACTS CARD */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex-1 flex flex-col min-h-[200px]">
-              <div className="flex items-center justify-between mb-3 shrink-0">
-                <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                  <Users className="w-3.5 h-3.5 text-gray-500" />
-                  Additional Contacts
-                </h3>
-                <button onClick={() => setIsAddContactModalOpen(true)} className="text-blue-600 hover:text-blue-700 bg-blue-50 p-1 rounded-md transition-colors">
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-              </div>
-              
-              <div className="flex flex-col gap-3 mt-1 flex-1 overflow-y-auto pr-1">
-                {(() => {
-                  const combinedContacts = [
-                    ...(otherContacts || []),
-                    ...(additionalContacts?.map((c: any) => ({
-                      name: c.full_name,
-                      role: c.role,
-                      email: c.email,
-                      phone: c.mobile,
-                      source: c.source
-                    })) || [])
-                  ];
 
-                  return combinedContacts.length > 0 ? (
-                    combinedContacts.map((contact, i) => {
-                      const isOtherContact = i < (otherContacts || []).length;
-                      return (
-                        <div key={i} className="flex items-center gap-3 p-2 rounded-lg hover:bg-gray-50 transition-colors border border-transparent hover:border-gray-100 cursor-pointer group relative">
-                          <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 flex-shrink-0">
-                            {getInitials(contact.name || contact.contact_name)}
-                          </div>
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-xs font-bold text-gray-900 truncate">{contact.name || contact.contact_name}</span>
-                              {contact.source === 'Companies House' && (
-                                <span className="px-1.5 py-0.5 rounded text-[8px] font-bold bg-blue-50 text-blue-600 border border-blue-100 uppercase">CH Verified</span>
-                              )}
-                            </div>
-                            <span className="text-[10px] text-gray-500 truncate">{contact.role || contact.job_title || 'Contact'}</span>
-                          </div>
-                          <div className="flex items-center gap-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
-                            {isOtherContact && (
-                              <>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    setEditingContactIndex(i);
-                                    setNewContactName(contact.name || '');
-                                    setNewContactRole(contact.role || '');
-                                    setNewContactEmail(contact.email || '');
-                                    setNewContactPhone(contact.phone || '');
-                                    setIsAddContactModalOpen(true);
-                                  }}
-                                  className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors"
-                                  title="Edit"
-                                >
-                                  <Pencil className="w-3 h-3" />
-                                </button>
-                                <button 
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    handleDeleteContact(i);
-                                  }}
-                                  className="p-1.5 bg-white text-gray-600 hover:text-red-600 rounded shadow-sm border border-gray-200 transition-colors"
-                                  title="Delete"
-                                >
-                                  <Trash2 className="w-3 h-3" />
-                                </button>
-                              </>
-                            )}
-                            {contact.phone && (
-                              <button onClick={(e) => { e.stopPropagation(); onCallClick(contact.phone); }} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Call">
-                                <Phone className="w-3 h-3" />
-                              </button>
-                            )}
-                            {contact.email && (
-                              <a href={`mailto:${contact.email}`} onClick={e => e.stopPropagation()} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded shadow-sm border border-gray-200 transition-colors" title="Email">
-                                <Mail className="w-3 h-3" />
-                              </a>
-                            )}
-                          </div>
-                        </div>
-                      );
-                    })
-                  ) : (
-                    <div className="text-xs text-gray-500 text-center mt-4">No additional contacts.</div>
-                  );
-                })()}
-              </div>
-            </div>
 
             {/* 4. FILES & DOCUMENTS CARD */}
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 h-auto md:flex-1">
@@ -2427,8 +2351,10 @@ function LeadDetailsV2Content() {
           {/* CENTER CONTENT AREA */}
           <div className="flex-1 flex flex-col min-w-0 h-auto md:h-full gap-4">
             
-            {/* PRIMARY CONTACT HEADER CARD */}
-              <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between shrink-0 overflow-visible relative gap-4">
+            {/* TOP CONTACT & ADDITIONAL CONTACTS ROW */}
+            <div className="flex flex-col md:flex-row gap-4 shrink-0 overflow-visible relative">
+              {/* PRIMARY CONTACT HEADER CARD */}
+              <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between w-full md:w-[60%] overflow-visible relative gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg flex-shrink-0 relative overflow-hidden">
                     <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name || 'Unknown')}&background=0D8ABC&color=fff`} alt="Contact Avatar" className="w-full h-full object-cover" />
@@ -2489,6 +2415,96 @@ function LeadDetailsV2Content() {
                 </button>
               </div>
             </div>
+
+            {/* ADDITIONAL CONTACTS HEADER CARD */}
+            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 w-full md:w-[40%] flex flex-col overflow-visible relative">
+               <div className="flex items-center justify-between mb-3 shrink-0">
+                <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
+                  <Users className="w-3.5 h-3.5 text-gray-500" />
+                  Additional Contacts
+                </h3>
+                <button onClick={() => setIsAddContactModalOpen(true)} className="text-blue-600 hover:text-blue-700 bg-blue-50 p-1 rounded-md transition-colors">
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+              <div className="flex flex-wrap gap-3 mt-1 flex-1 overflow-y-auto">
+                {(() => {
+                  const combinedContacts = [
+                    ...(otherContacts || []),
+                    ...(additionalContacts?.map((c: any) => ({
+                      name: c.full_name,
+                      role: c.role,
+                      email: c.email,
+                      phone: c.mobile,
+                      source: c.source
+                    })) || [])
+                  ];
+
+                  return combinedContacts.length > 0 ? (
+                    combinedContacts.map((contact, i) => {
+                      const isOtherContact = i < (otherContacts || []).length;
+                      return (
+                        <div key={i} className="flex flex-col items-center p-3 bg-gray-50 border border-gray-100 rounded-xl hover:bg-gray-100 transition-colors w-32 shrink-0 group relative">
+                          <div className="w-8 h-8 rounded-full bg-white border border-gray-200 flex items-center justify-center text-xs font-bold text-gray-600 mb-2">
+                            {getInitials(contact.name || contact.contact_name)}
+                          </div>
+                          <span className="text-xs font-bold text-gray-900 text-center w-full truncate mb-1" title={contact.name || contact.contact_name}>
+                            {contact.name || contact.contact_name}
+                          </span>
+                          <span className="text-[9px] text-gray-500 text-center w-full truncate mb-2" title={contact.role || contact.job_title || 'Contact'}>
+                            {contact.role || contact.job_title || 'Contact'}
+                          </span>
+                          <div className="flex items-center gap-1.5 mt-auto">
+                            {contact.phone && (
+                              <button onClick={(e) => { e.stopPropagation(); onCallClick(contact.phone); }} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded-lg shadow-sm border border-gray-200 transition-colors" title="Call">
+                                <Phone className="w-3 h-3" />
+                              </button>
+                            )}
+                            {contact.email && (
+                              <a href={`mailto:${contact.email}`} onClick={e => e.stopPropagation()} className="p-1.5 bg-white text-gray-600 hover:text-blue-600 rounded-lg shadow-sm border border-gray-200 transition-colors" title="Email">
+                                <Mail className="w-3 h-3" />
+                              </a>
+                            )}
+                          </div>
+                          
+                          {/* Delete/Edit buttons overlay */}
+                          {isOtherContact && (
+                            <div className="absolute top-1 right-1 opacity-0 group-hover:opacity-100 flex flex-col gap-1 transition-opacity">
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setEditingContactIndex(i);
+                                  setNewContactName(contact.name || '');
+                                  setNewContactRole(contact.role || '');
+                                  setNewContactEmail(contact.email || '');
+                                  setNewContactPhone(contact.phone || '');
+                                  setIsAddContactModalOpen(true);
+                                }}
+                                className="p-1 bg-white text-gray-500 hover:text-blue-600 rounded shadow-sm border border-gray-200"
+                              >
+                                <Pencil className="w-2.5 h-2.5" />
+                              </button>
+                              <button 
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleDeleteContact(i);
+                                }}
+                                className="p-1 bg-white text-gray-500 hover:text-red-600 rounded shadow-sm border border-gray-200"
+                              >
+                                <Trash2 className="w-2.5 h-2.5" />
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <div className="text-xs text-gray-500 w-full mt-2">No additional contacts.</div>
+                  );
+                })()}
+              </div>
+            </div>
+          </div>
 
             {/* TOP 3 CARDS */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0 mb-4">

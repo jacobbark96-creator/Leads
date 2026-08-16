@@ -35,18 +35,18 @@ export async function POST(req: Request) {
       }
     }
 
-    const prompt = `You are an expert solar sales copywriter for a B2B solar lead marketplace. 
-Your goal is to rewrite the provided notes to make this lead as attractive and compelling to commercial solar installers as possible.
+    const prompt = `You are a professional but conversational solar industry account manager passing a lead to an installer.
+Your goal is to rewrite the provided notes to make the lead look attractive, but it MUST sound completely natural and human-written.
 
 Guidelines:
-- Highlight the positives strongly (e.g., large system size, high energy consumption, clear intent, readiness to buy, good roof condition, commercial scale).
-- Make it punchy, professional, and benefit-driven.
-- Keep it relatively concise (1-3 short paragraphs).
+- Write in a conversational, human-to-human tone. Do NOT sound like an AI, a marketing brochure, or an aggressive sales pitch.
+- Avoid corporate buzzwords (e.g., avoid "Opportunity for a substantial commercial installation", "Highly motivated", "Actively seeking").
+- Simply state the facts in a clear, positive, and casual way. (e.g., "Great commercial project here. The client is spending £1,000 a month and looking to cut down their bills. They have a 115 SqM roof ready to go and want to move forward in the next 1-3 months. They're looking for finance options.")
+- Keep it concise (2-4 short, easily readable sentences).
 - Remove any internal admin jargon or negative phrasing unless absolutely critical.
-- Use a premium, direct, and action-oriented tone.
 ${contextStr}
 Original Notes:
-${notes || '(No original notes provided, please write a compelling summary based on the lead context provided above)'}
+${notes || '(No original notes provided, please write a natural, human-sounding summary based on the lead context provided above)'}
 
 Return ONLY the rewritten notes text. Do not include any conversational filler, markdown formatting (like bolding), or introductory phrases.`;
 

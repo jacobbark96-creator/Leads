@@ -245,10 +245,11 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 </div>
               </div>
 
-              {/* MIDDLE ROW: Property & Insights */}
-              <div className="flex gap-4">
-                {/* Property & Installation */}
-                <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex flex-col">
+              {/* MIDDLE & BOTTOM: Property & Insights Stack */}
+              <div className="flex gap-4 items-stretch">
+                
+                {/* Property & Installation (Left, Taller) */}
+                <div className="bg-white rounded-xl p-4 border border-gray-200 flex-[1.5] flex flex-col">
                   <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <Home className="w-4 h-4 text-gray-400" /> Property & Installation
                   </h3>
@@ -264,6 +265,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         )}
                       </div>
                     </div>
+                    
                     <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
                       <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
                       <DisplayValue 
@@ -272,85 +274,120 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         className="text-[11px]" 
                       />
                     </div>
+
                     <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
                       <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>
                       <DisplayValue value={activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status} className="text-[11px]" />
+                      {(activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status)?.toLowerCase() === 'leased' && (
+                        <div className="mt-1.5 pt-1.5 border-t border-gray-200 flex flex-col gap-0.5">
+                          <span className="text-[9px] text-gray-500 font-medium">Lease: {lead.lease_duration || 'Unknown'}</span>
+                          <span className="text-[9px] text-gray-500 font-medium">Landlord OK: {lead.landlord_permission || 'Unknown'}</span>
+                        </div>
+                      )}
                     </div>
+
                     <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
                       <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Roof Material</span>
                       <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material} className="text-[11px]" />
                     </div>
+
                     <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
                       <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Zap className="w-3 h-3" /> Elec Supply</span>
                       <DisplayValue value={activeBuildingIndex === 0 ? lead.electrical_supply : activeBuilding?.grid_connection} className="text-[11px]" />
                     </div>
+
                     <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
                       <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Solar Location</span>
                       <DisplayValue value={activeBuildingIndex === 0 ? lead.solar_location : activeBuilding?.orientation} className="text-[11px]" />
                     </div>
+
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Day Rate</span>
+                      <DisplayValue value={lead.unit_rate ? `£${lead.unit_rate}` : null} className="text-[11px]" />
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Night Rate</span>
+                      <DisplayValue value={lead.night_unit_rate ? `£${lead.night_unit_rate}` : null} className="text-[11px]" />
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Roof Condition</span>
+                      <DisplayValue value={lead.roof_condition} className="text-[11px]" />
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Skylights</span>
+                      <DisplayValue value={lead.cover_skylights !== undefined ? (lead.cover_skylights ? 'Yes' : 'No') : null} className="text-[11px]" />
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center col-span-2">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Activity className="w-3 h-3" /> Annual Consumption</span>
+                        <DisplayValue value={lead.est_ann_consumption ? `${lead.est_ann_consumption.toLocaleString()} kWh` : null} className="text-[11px]" />
+                      </div>
+
                   </div>
                 </div>
 
-                {/* Lead Insights */}
-                <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex flex-col">
-                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                    <Activity className="w-4 h-4 text-blue-500" /> Lead Insights
-                  </h3>
+                {/* Right Side Stack: Lead Insights + Roof Suitability */}
+                <div className="flex-[1] flex flex-col gap-4">
                   
-                  <div className="grid grid-cols-2 gap-3 mb-4">
-                    <div className="bg-purple-50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
-                      <Building className="w-4 h-4 text-purple-400 mb-1" />
-                      <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Property Type</span>
-                      <DisplayValue value={lead.property_type || 'warehouse/factory'} className="text-xs text-purple-900" />
+                  {/* Lead Insights */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex flex-col">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <Activity className="w-4 h-4 text-blue-500" /> Lead Insights
+                    </h3>
+                    
+                    <div className="grid grid-cols-2 gap-3 mb-4">
+                      <div className="bg-purple-50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
+                        <Building className="w-4 h-4 text-purple-400 mb-1" />
+                        <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Property Type</span>
+                        <DisplayValue value={lead.property_type || 'warehouse/factory'} className="text-xs text-purple-900" />
+                      </div>
+                      <div className="bg-blue-50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
+                        <Globe className="w-4 h-4 text-blue-400 mb-1" />
+                        <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-1">Lead Industry</span>
+                        <DisplayValue value={lead.industry} className="text-xs text-blue-900" />
+                      </div>
                     </div>
-                    <div className="bg-blue-50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
-                      <Globe className="w-4 h-4 text-blue-400 mb-1" />
-                      <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-1">Lead Industry</span>
-                      <DisplayValue value={lead.industry} className="text-xs text-blue-900" />
+
+                    <div className="bg-gray-50 rounded-lg p-3 flex-1 border border-gray-100">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Notes</span>
+                      <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                        {lead.marketplace_notes || lead.qualification_notes || <MissingValue />}
+                      </p>
                     </div>
                   </div>
 
-                  <div className="bg-gray-50 rounded-lg p-3 flex-1 border border-gray-100">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Notes</span>
-                    <p className="text-xs text-gray-600 leading-relaxed whitespace-pre-wrap">
-                      {lead.marketplace_notes || lead.qualification_notes || <MissingValue />}
-                    </p>
-                  </div>
-                </div>
-              </div>
-
-              {/* BOTTOM ROW: Financial & Roof Specs */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col">
-                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                  <FileText className="w-4 h-4 text-gray-400" /> Financial & Payment
-                </h3>
-                <div className="flex items-stretch">
-                  <div className="w-1/3 flex flex-col justify-center border-r border-gray-100 pr-4 py-2">
-                    <span className="text-[10px] text-gray-500 mb-1">Payment Option</span>
-                    <DisplayValue value={lead.payment_options} className="text-[11px] font-bold text-gray-900" />
-                  </div>
-                  <div className="w-2/3 flex items-center justify-between divide-x divide-gray-100 pl-4">
-                    <div className="flex-1 flex flex-col items-center justify-center px-2 text-center">
-                      <CheckCircle className="w-4 h-4 text-emerald-500 mb-2" />
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1">Roof Suitability</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).roof_suitability : (activeBuilding?.suitability_score ? `${activeBuilding.suitability_score}/100` : null)} className="text-xs text-center" />
-                    </div>
-                    <div className="flex-1 flex flex-col items-center justify-center px-2 text-center">
-                      <Sun className="w-4 h-4 text-amber-500 mb-2" />
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1">Solar Exposure</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).solar_exposure : (activeBuilding?.solar_potential_score ? `${activeBuilding.solar_potential_score}/100` : null)} className="text-xs text-center" />
-                    </div>
-                    <div className="flex-1 flex flex-col items-center justify-center px-2 text-center">
-                      <Activity className="w-4 h-4 text-emerald-500 mb-2" />
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1">Shading</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).shading : (activeBuilding?.shading_score !== null ? `${activeBuilding.shading_score}/10` : null)} className="text-xs text-center" />
-                    </div>
-                    <div className="flex-1 flex flex-col items-center justify-center px-2 text-center">
-                      <Globe className="w-4 h-4 text-blue-500 mb-2" />
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1">Orientation</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? ((lead as any).orientation || lead.solar_location) : activeBuilding?.orientation} className="text-xs text-center" />
+                  {/* Roof Suitability */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-500" /> Roof Suitability
+                    </h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
+                        <CheckCircle className="w-3 h-3 text-emerald-500 mb-1.5" />
+                        <span className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mb-1">Suitability</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).roof_suitability : (activeBuilding?.suitability_score ? `${activeBuilding.suitability_score}/100` : null)} className="text-[10px]" />
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
+                        <Sun className="w-3 h-3 text-amber-500 mb-1.5" />
+                        <span className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mb-1">Exposure</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).solar_exposure : (activeBuilding?.solar_potential_score ? `${activeBuilding.solar_potential_score}/100` : null)} className="text-[10px]" />
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
+                        <Activity className="w-3 h-3 text-emerald-500 mb-1.5" />
+                        <span className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mb-1">Shading</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).shading : (activeBuilding?.shading_score !== null ? `${activeBuilding.shading_score}/10` : null)} className="text-[10px]" />
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
+                        <Globe className="w-3 h-3 text-blue-500 mb-1.5" />
+                        <span className="text-[8px] text-gray-400 uppercase tracking-wider font-bold mb-1">Orientation</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? ((lead as any).orientation || lead.solar_location) : activeBuilding?.orientation} className="text-[10px]" />
+                      </div>
                     </div>
                   </div>
+                  
                 </div>
               </div>
 

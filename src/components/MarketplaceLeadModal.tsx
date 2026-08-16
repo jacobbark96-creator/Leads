@@ -472,15 +472,17 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         <div key="distance" className="flex gap-2.5">
                           {details.outwithWorkingArea ? <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" /> : <CheckCircle className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />}
                           <div>
-                            <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
-                              {details.outwithWorkingArea ? 'Outside Your Location' : 'Close to Your Location'}
-                            </h4>
-                            <p className="text-[10px] text-gray-500 leading-snug">
-                              {details.outwithWorkingArea 
-                                 ? "Outside your immediate service area, but still a match" 
-                                 : "Within your service area"}
-                            </p>
-                          </div>
+                              <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">
+                                {details.outwithWorkingArea 
+                                  ? 'Outside Your Location' 
+                                  : (details.distanceMiles !== null ? `Only ${details.distanceMiles} miles away from you` : 'Close to Your Location')}
+                              </h4>
+                              <p className="text-[10px] text-gray-500 leading-snug">
+                                {details.outwithWorkingArea 
+                                   ? "Outside your immediate service area, but still a match" 
+                                   : "Within your service area"}
+                              </p>
+                            </div>
                         </div>
                       )
                     },

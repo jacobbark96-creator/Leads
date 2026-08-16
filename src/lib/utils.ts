@@ -173,8 +173,10 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
   // 1. Distance (10 points)
   // 20 miles = 10, 150+ miles = 5
   let distanceScore = 5;
+  let actualDistanceMiles: number | null = null;
   if (lead.latitude && lead.longitude && installerPrefs.latitude && installerPrefs.longitude) {
     const dist = calculateDistance(lead.latitude, lead.longitude, installerPrefs.latitude, installerPrefs.longitude);
+    actualDistanceMiles = dist;
     if (dist <= 20) {
       distanceScore = 10;
     } else if (dist >= 150) {
@@ -319,10 +321,11 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
   }
 
   return {
-    score: finalPercentage,
-    details: {
-      distance: Math.round(distanceScore),
-      systemSize: Math.round(sizeScore),
+      score: finalPercentage,
+      details: {
+        distance: Math.round(distanceScore),
+        distanceMiles: actualDistanceMiles ? Math.round(actualDistanceMiles) : null,
+        systemSize: Math.round(sizeScore),
       roofType: Math.round(roofScore),
       monthlySpend: Math.round(spendScore),
       timeframe: Math.round(timeframeScore),

@@ -355,7 +355,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       <Activity className="w-4 h-4 text-blue-500" /> Lead Insights
                     </h3>
                     
-                    <div className="grid grid-cols-2 gap-3 mb-4 shrink-0">
+                    <div className="grid grid-cols-2 gap-3 shrink-0">
                       <div className="bg-purple-50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
                         <Building className="w-4 h-4 text-purple-400 mb-1" />
                         <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Property Type</span>
@@ -365,15 +365,6 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         <Globe className="w-4 h-4 text-blue-400 mb-1" />
                         <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-1">Lead Industry</span>
                         <DisplayValue value={lead.industry} className="text-xs text-blue-900" />
-                      </div>
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-3 flex-1 border border-gray-100 flex flex-col min-h-0">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 block shrink-0">Notes</span>
-                      <div className="overflow-y-auto min-h-0 flex-1 pr-1 custom-scrollbar">
-                        <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
-                          {lead.marketplace_notes || lead.qualification_notes || <MissingValue />}
-                        </p>
                       </div>
                     </div>
                   </div>
@@ -780,6 +771,16 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <span className="text-xs font-medium text-gray-400">No image provided</span>
                   </div>
                 )}
+              </div>
+
+              {/* NOTES */}
+              <div className="bg-gray-50 rounded-lg p-3 flex-1 border border-gray-100 flex flex-col min-h-0">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 block shrink-0">Notes</span>
+                <div className="overflow-y-auto min-h-0 flex-1 pr-1 custom-scrollbar">
+                  <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                    {lead.marketplace_notes || lead.qualification_notes || <MissingValue />}
+                  </p>
+                </div>
               </div>
               
             </div>

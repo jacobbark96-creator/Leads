@@ -2115,6 +2115,7 @@ function LeadDetailsV2Content() {
                   lead.csv_data.ch_enrichment.finance_grade === 'A' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' :
                   lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'bg-yellow-100 text-yellow-600 border border-yellow-200' :
                   lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'bg-[#8B4513] text-white border border-[#5c2e0c]' :
+                  lead.csv_data.ch_enrichment.finance_grade === 'P' ? 'bg-purple-100 text-purple-600 border border-purple-200' :
                   'bg-red-100 text-red-600 border border-red-200'
                 }`}>
                   {lead.csv_data.ch_enrichment.finance_grade}
@@ -2238,6 +2239,7 @@ function LeadDetailsV2Content() {
                         lead.csv_data.ch_enrichment.finance_grade === 'A' ? 'text-emerald-600' :
                         lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'text-yellow-600' :
                         lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'text-[#8B4513]' :
+                        lead.csv_data.ch_enrichment.finance_grade === 'P' ? 'text-purple-600' :
                         'text-red-600'
                       }`}>
                         Grade {lead.csv_data.ch_enrichment.finance_grade}

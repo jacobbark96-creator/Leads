@@ -100,7 +100,37 @@ export async function POST(req: Request) {
 
     // Require a minimum score to accept the match (e.g., 40 points means at least half the words matched)
     if (!bestMatch || highestScore < 40) {
-      return NextResponse.json({ error: 'No sufficiently close match found on Companies House.' }, { status: 404 });
+      // Fallback: Assume Sole Trader / Unregistered Entity
+      const soleTraderData = {
+        active_company: 'Unregistered',
+        years_trading: 'N/A',
+        positive_net_assets: 'Unknown',
+        latest_accounts_filed: 'N/A',
+        insolvency_indicators: 'Unknown',
+        charges: 'N/A',
+        number_of_directors: 'N/A',
+        finance_score_label: 'Sole Trader (Subject to Personal Credit)',
+        finance_grade: 'P',
+        company_number: 'N/A',
+        company_name: companyName
+      };
+
+      if (leadId) {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+        const supabaseKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+        if (supabaseUrl && supabaseKey) {
+          const supabase = createClient(supabaseUrl, supabaseKey);
+          
+          const { data: leadData } = await supabase.from('leads').select('csv_data').eq('id', leadId).single();
+          const currentCsvData = leadData?.csv_data || {};
+          
+          await supabase.from('leads').update({
+            csv_data: { ...currentCsvData, ch_enrichment: soleTraderData }
+          }).eq('id', leadId);
+        }
+      }
+
+      return NextResponse.json({ enrichmentData: soleTraderData });
     }
 
     const companyNumber = bestMatch.company_number;

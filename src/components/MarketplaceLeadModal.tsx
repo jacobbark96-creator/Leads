@@ -252,41 +252,41 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                   <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
                     <Home className="w-4 h-4 text-gray-400" /> Property & Installation
                   </h3>
-                  <div className="grid grid-cols-2 gap-x-6 gap-y-3 flex-1">
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Location</span>
-                      <div className="text-right flex flex-col items-end">
+                  <div className="grid grid-cols-2 gap-2 flex-1">
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Location</span>
+                      <div className="flex flex-col">
                         <DisplayValue value={extractTown(activeBuildingIndex === 0 ? lead.location : activeBuilding?.address)} className="text-[11px]" />
                         {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude) && (
-                          <span className="text-[9px] text-gray-400 font-medium italic mt-0.5">
+                          <span className="text-[9px] text-gray-400 font-medium italic mt-0.5 leading-tight">
                             {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude)}
                           </span>
                         )}
                       </div>
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
                       <DisplayValue 
                         value={activeBuildingIndex === 0 ? lead.roof_size?.toString().replace(/\s*sqm\s*/i, '').trim() : activeBuilding?.roof_size_sqm} 
                         suffix=" SqM" 
-                        className="text-right text-[11px]" 
+                        className="text-[11px]" 
                       />
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status} className="text-right text-[11px]" />
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status} className="text-[11px]" />
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><Home className="w-3 h-3" /> Roof Material</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material} className="text-right text-[11px]" />
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Roof Material</span>
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material} className="text-[11px]" />
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><Zap className="w-3 h-3" /> Elec Supply</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? lead.electrical_supply : activeBuilding?.grid_connection} className="text-right text-[11px]" />
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Zap className="w-3 h-3" /> Elec Supply</span>
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.electrical_supply : activeBuilding?.grid_connection} className="text-[11px]" />
                     </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-[10px] text-gray-500 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Solar Location</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? lead.solar_location : activeBuilding?.orientation} className="text-right text-[11px]" />
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Solar Location</span>
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.solar_location : activeBuilding?.orientation} className="text-[11px]" />
                     </div>
                   </div>
                 </div>

@@ -2654,15 +2654,23 @@ function LeadDetailsV2Content() {
                     {editingCard === 'opportunity' ? (
                       <input type="text" value={(editForm as any).est_ann_generation || ''} onChange={e => setEditForm({...editForm, est_ann_generation: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(lead as any).est_ann_generation || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">
+                        {buildingEnrichment?.max_array_panels_count 
+                          ? `${((buildingEnrichment.max_array_panels_count * 0.4) * 850).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh/yr`
+                          : (lead as any).est_ann_generation || 'N/A'}
+                      </span>
                     )}
                   </div>
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Est. Savings</span>
+                    <span className="text-gray-500 text-xs">Indicative Project Size</span>
                     {editingCard === 'opportunity' ? (
                       <input type="text" value={(editForm as any).est_savings || ''} onChange={e => setEditForm({...editForm, est_savings: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
                     ) : (
-                      <span className="text-green-600 text-sm font-bold">{(lead as any).est_savings ? `£${(lead as any).est_savings}/yr` : 'N/A'}</span>
+                      <span className="text-green-600 text-sm font-bold">
+                        {buildingEnrichment?.max_array_panels_count 
+                          ? `£${((buildingEnrichment.max_array_panels_count * 0.4) * 900).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
+                          : (lead as any).est_savings ? `£${(lead as any).est_savings}` : 'N/A'}
+                      </span>
                     )}
                   </div>
                   {profile?.role === 'super_admin' && (

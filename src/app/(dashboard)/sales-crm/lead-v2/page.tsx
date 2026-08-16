@@ -1192,6 +1192,33 @@ function LeadDetailsV2Content() {
     }
   };
 
+  const clearEnrichmentData = async () => {
+    if (!lead) return;
+    
+    try {
+      // Optimistic local update
+      const updatedCsvData = { ...lead.csv_data };
+      delete updatedCsvData.ch_enrichment;
+      
+      setLead({
+        ...lead,
+        csv_data: updatedCsvData
+      });
+
+      // DB Update
+      const { error } = await supabase
+        .from('leads')
+        .update({ csv_data: updatedCsvData })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+      toast.success('Companies House data cleared');
+    } catch (error) {
+      console.error('Error clearing company data:', error);
+      toast.error('Failed to clear data');
+    }
+  };
+
   const openMarketConfirmModal = async () => {
     setIsMarketConfirmOpen(true);
     if (!lead) return;
@@ -2184,14 +2211,25 @@ function LeadDetailsV2Content() {
                   </h3>
                   <div className="flex items-center gap-2">
                     {lead.status === 'qualified' && (
-                      <button 
-                        onClick={enrichCompanyData}
-                        disabled={isEnrichingCompany}
-                        className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 p-1 rounded transition-colors disabled:opacity-50"
-                        title="Pull data from Companies House"
-                      >
-                        {isEnrichingCompany ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                      </button>
+                      <div className="flex items-center gap-1">
+                        <button 
+                          onClick={enrichCompanyData}
+                          disabled={isEnrichingCompany}
+                          className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 p-1 rounded transition-colors disabled:opacity-50"
+                          title="Pull data from Companies House"
+                        >
+                          {isEnrichingCompany ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                        </button>
+                        {lead.csv_data?.ch_enrichment && (
+                          <button
+                            onClick={clearEnrichmentData}
+                            className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded transition-colors"
+                            title="Clear Companies House data"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                      </div>
                     )}
                     <button onClick={() => handleEditClick('snapshot')} className="text-gray-400 hover:text-blue-600 transition-colors">
                       {editingCard === 'snapshot' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}

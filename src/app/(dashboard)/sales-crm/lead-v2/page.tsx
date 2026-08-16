@@ -33,6 +33,8 @@ import {
   MessageSquare,
   Pin,
   Pencil,
+  CheckCircle2,
+  Loader2,
   X,
   Bell,
   Save,
@@ -428,6 +430,7 @@ function LeadDetailsV2Content() {
   const [newContactPhone, setNewContactPhone] = useState('');
   
   const [isEnhancingNotes, setIsEnhancingNotes] = useState(false);
+  const [isEnrichingCompany, setIsEnrichingCompany] = useState(false);
   
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [isRoofTypeDropdownOpen, setIsRoofTypeDropdownOpen] = useState(false);
@@ -1146,6 +1149,46 @@ function LeadDetailsV2Content() {
       toast.error('Failed to enhance notes: ' + err.message);
     } finally {
       setIsEnhancingNotes(false);
+    }
+  };
+
+  const enrichCompanyData = async () => {
+    if (!lead || !lead.company) {
+      toast.error('Lead does not have a company name.');
+      return;
+    }
+    setIsEnrichingCompany(true);
+    try {
+      const response = await fetch('/api/enrich-company', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          companyName: lead.company,
+          location: lead.location,
+          leadId: lead.id
+        })
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'Failed to enrich company data');
+      }
+
+      const data = await response.json();
+      if (data.enrichmentData) {
+        setLead({
+          ...lead,
+          csv_data: {
+            ...lead.csv_data,
+            ch_enrichment: data.enrichmentData
+          }
+        });
+        toast.success('Company data pulled from Companies House');
+      }
+    } catch (err: any) {
+      toast.error('Enrichment failed: ' + err.message);
+    } finally {
+      setIsEnrichingCompany(false);
     }
   };
 
@@ -2124,12 +2167,24 @@ function LeadDetailsV2Content() {
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 shrink-0">
               <div className="flex items-center justify-between mb-3">
                 <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
-                  <Building2 className="w-3.5 h-3.5 text-gray-500" />
-                  Company Snapshot
-                </h3>
-                <button onClick={() => handleEditClick('snapshot')} className="text-gray-400 hover:text-blue-600 transition-colors">
-                  {editingCard === 'snapshot' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
-                </button>
+                    <Building2 className="w-3.5 h-3.5 text-gray-500" />
+                    Company Snapshot
+                  </h3>
+                  <div className="flex items-center gap-2">
+                    {lead.status === 'qualified' && (
+                      <button 
+                        onClick={enrichCompanyData}
+                        disabled={isEnrichingCompany}
+                        className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 p-1 rounded transition-colors disabled:opacity-50"
+                        title="Pull data from Companies House"
+                      >
+                        {isEnrichingCompany ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+                      </button>
+                    )}
+                    <button onClick={() => handleEditClick('snapshot')} className="text-gray-400 hover:text-blue-600 transition-colors">
+                      {editingCard === 'snapshot' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+                    </button>
+                  </div>
               </div>
               <div className="flex flex-col gap-2.5">
                 <div className="flex justify-between items-center py-0.5">
@@ -2187,15 +2242,61 @@ function LeadDetailsV2Content() {
                   )}
                 </div>
                 <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Employees</span>
-                  {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).employees || ''} onChange={e => setEditForm({...editForm, employees: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
-                  ) : (
-                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.employee_count || (lead as any).employees || 'N/A'}</span>
+                    <span className="text-gray-500 text-xs">Employees</span>
+                    {editingCard === 'snapshot' ? (
+                      <input type="text" value={(editForm as any).employees || ''} onChange={e => setEditForm({...editForm, employees: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                    ) : (
+                      <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.employee_count || (lead as any).employees || 'N/A'}</span>
+                    )}
+                  </div>
+                  {/* Additional data pulled from Companies House API */}
+                  {lead.csv_data?.ch_enrichment && editingCard !== 'snapshot' && (
+                    <>
+                      <div className="border-t border-gray-100 my-1"></div>
+                      <div className="flex justify-between items-center py-0.5">
+                        <span className="text-gray-500 text-xs">Active Company</span>
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.active_company}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-0.5">
+                        <span className="text-gray-500 text-xs">Years Trading</span>
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.years_trading}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-0.5">
+                        <span className="text-gray-500 text-xs">Positive Net Assets</span>
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.positive_net_assets}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-0.5">
+                        <span className="text-gray-500 text-xs">Latest Accounts</span>
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.latest_accounts_filed}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-0.5">
+                        <span className="text-gray-500 text-xs">Insolvency</span>
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.insolvency_indicators}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-0.5">
+                        <span className="text-gray-500 text-xs">Charges</span>
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.charges}</span>
+                      </div>
+                      <div className="flex justify-between items-center py-0.5">
+                        <span className="text-gray-500 text-xs">Directors</span>
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.number_of_directors}</span>
+                      </div>
+                      <div className="mt-2 p-2 bg-gray-50 rounded-lg border border-gray-100 flex flex-col items-center justify-center text-center">
+                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Openlead Finance Score</span>
+                        <div className={`text-sm font-black ${
+                          lead.csv_data.ch_enrichment.finance_grade === 'A' ? 'text-emerald-600' :
+                          lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'text-blue-600' :
+                          lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'text-amber-600' :
+                          'text-red-600'
+                        }`}>
+                          Grade {lead.csv_data.ch_enrichment.finance_grade}
+                        </div>
+                        <span className="text-[10px] text-gray-600 mt-0.5">{lead.csv_data.ch_enrichment.finance_score_label}</span>
+                      </div>
+                    </>
                   )}
                 </div>
               </div>
-            </div>
 
             {/* 3. ADDITIONAL CONTACTS CARD */}
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex-1 flex flex-col min-h-[200px]">

@@ -3165,17 +3165,19 @@ function LeadDetailsV2Content() {
                       <textarea 
                         value={(editForm as any).marketplace_notes || ''} 
                         onChange={e => setEditForm({...editForm, marketplace_notes: e.target.value} as any)} 
-                        className={`border rounded px-2 py-1.5 text-sm focus:ring-1 focus:ring-blue-500 w-full min-h-[60px] ${(editForm as any).use_primary_notes && activeBuildingIndex > 0 ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : ''}`}
+                        className={`border rounded px-2 py-1.5 text-sm font-bold focus:ring-1 focus:ring-blue-500 w-full h-32 resize-none ${(editForm as any).use_primary_notes && activeBuildingIndex > 0 ? 'bg-gray-50 text-gray-400 cursor-not-allowed' : ''}`}
                         placeholder="These notes will be visible to contractors on the marketplace..."
                         disabled={(editForm as any).use_primary_notes && activeBuildingIndex > 0}
                       />
                     ) : (
-                      <p className="text-gray-900 text-sm bg-gray-50 p-2 rounded border border-gray-100 min-h-[60px] whitespace-pre-wrap">
-                        {activeBuildingIndex > 0 && (buildingEnrichment as any)?.use_primary_notes 
-                          ? (lead as any).marketplace_notes 
-                          : (buildingEnrichment as any)?.marketplace_notes || (lead as any).marketplace_notes || 'No marketplace notes added.'
-                        }
-                      </p>
+                      <div className="bg-gray-50 p-2 rounded border border-gray-100 h-32 overflow-y-auto custom-scrollbar">
+                        <p className="text-gray-900 text-sm font-bold whitespace-pre-wrap">
+                          {activeBuildingIndex > 0 && (buildingEnrichment as any)?.use_primary_notes 
+                            ? (lead as any).marketplace_notes 
+                            : (buildingEnrichment as any)?.marketplace_notes || (lead as any).marketplace_notes || 'No marketplace notes added.'
+                          }
+                        </p>
+                      </div>
                     )}
                   </div>
                 </div>

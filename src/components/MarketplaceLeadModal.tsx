@@ -288,16 +288,24 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       )}
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg flex overflow-hidden">
-                      <div className="flex-1 p-2.5 flex flex-col justify-center border-r border-gray-200">
-                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Roof Material</span>
-                        <DisplayValue value={activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material} className="text-[11px]" />
-                      </div>
-                      <div className="flex-1 p-2.5 flex flex-col justify-center">
-                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Condition</span>
-                        <DisplayValue value={lead.roof_condition} className="text-[11px]" />
-                      </div>
-                    </div>
+                    {(() => {
+                      const currentRoofMaterial = activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material;
+                      const isAsbestos = typeof currentRoofMaterial === 'string' && currentRoofMaterial.toLowerCase().includes('asbestos');
+                      
+                      return (
+                        <div className="bg-gray-50 rounded-lg flex overflow-hidden">
+                          <div className={`flex-1 p-2.5 flex flex-col justify-center border-r border-gray-200 ${isAsbestos ? 'bg-red-100' : ''}`}>
+                            <span className={`text-[9px] uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 ${isAsbestos ? 'text-red-600' : 'text-gray-400'}`}><Home className="w-3 h-3" /> Roof Material</span>
+                            <DisplayValue value={currentRoofMaterial} className={`text-[11px] ${isAsbestos ? 'text-red-900 font-bold' : ''}`} />
+                            {isAsbestos && <span className="text-[8.5px] text-red-700 mt-1 leading-tight font-semibold italic">Please note this roof type.</span>}
+                          </div>
+                          <div className="flex-1 p-2.5 flex flex-col justify-center">
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Condition</span>
+                            <DisplayValue value={lead.roof_condition} className="text-[11px]" />
+                          </div>
+                        </div>
+                      );
+                    })()}
 
                     <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
                       <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Zap className="w-3 h-3" /> Elec Supply</span>

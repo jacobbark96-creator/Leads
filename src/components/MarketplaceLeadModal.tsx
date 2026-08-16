@@ -192,19 +192,21 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
               {/* TOP ROW: Price & Stats */}
               <div className="flex gap-4">
                 {/* Price Box */}
-                <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col items-center justify-center min-w-[120px]">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2">Exclusive Price</span>
-                  <span className="text-3xl font-bold text-green-600">
+                <div className="bg-white rounded-xl p-4 border-2 border-emerald-500 shadow-sm flex flex-col items-center justify-center min-w-[120px] relative overflow-hidden group">
+                  <div className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                  <div className="absolute -inset-full animate-[spin_4s_linear_infinite] opacity-20 bg-[conic-gradient(from_90deg_at_50%_50%,#10b981_0%,transparent_50%,#10b981_100%)] blur-xl"></div>
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 relative z-10">Exclusive Price</span>
+                  <span className="text-4xl font-black text-emerald-600 relative z-10 drop-shadow-sm">
                     {lead.exclusive_price ? `£${lead.exclusive_price}` : (lead.price ? `£${lead.price}` : '£135')}
                   </span>
                 </div>
 
                 {/* Quick Stats Box */}
                 <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex items-center divide-x divide-gray-100">
-                  <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Est. Monthly Spend</span>
-                    <span className="text-sm font-bold text-emerald-600">
-                      {lead.monthly_spend ? `£${lead.monthly_spend}/mo` : <MissingValue />}
+                  <div className="flex-1 px-2 text-center flex flex-col items-center justify-center">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 leading-tight">Est. Monthly Spend</span>
+                    <span className="text-lg font-black text-emerald-600">
+                      {lead.monthly_spend ? `£${lead.monthly_spend.toLocaleString()}/mo` : <MissingValue />}
                     </span>
                   </div>
                   <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
@@ -215,26 +217,26 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                   </div>
                   <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Bills Received</span>
-                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${hasBills ? 'border-emerald-500 text-emerald-600' : 'border-gray-200 text-gray-300'}`}>
+                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${hasBills ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-200 text-gray-300'}`}>
                        {hasBills ? <Check className="w-4 h-4" strokeWidth={3} /> : <FileText className="w-4 h-4 opacity-50" />}
                     </div>
                   </div>
                   <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
                     <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Decision Maker</span>
-                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${lead.sole_decision_maker ? 'border-emerald-500 text-emerald-600' : 'border-gray-200 text-gray-300'}`}>
+                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${lead.sole_decision_maker ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-200 text-gray-300'}`}>
                        {lead.sole_decision_maker ? <Check className="w-4 h-4" strokeWidth={3} /> : <User className="w-4 h-4 opacity-50" />}
                     </div>
                   </div>
-                  <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
+                  <div className="flex-1 px-2 text-center flex flex-col items-center justify-center">
                     <div className="relative group flex items-center justify-center mb-2">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. System Size</span>
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider leading-tight">Est. System Size</span>
                       <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
                       <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
                         This is an automated calculation based on the monthly spend and roof size. It may be incorrect should the shape and design of the roof be intricate.
                         <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                       </div>
                     </div>
-                    <span className="text-sm font-bold text-gray-900">
+                    <span className="text-lg font-black text-gray-900">
                       {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
                         ? `${calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)?.toFixed(1)} kWp`
                         : <MissingValue />}
@@ -577,8 +579,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         </h3>
                         
                         <div className="relative group">
-                          <div className={`px-2 py-1 rounded border text-[9px] font-bold ${colorClass} cursor-help flex items-center gap-1`}>
-                            {score}% Match <Info className="w-2.5 h-2.5 opacity-70" />
+                          <div className={`px-2.5 py-1.5 rounded-md border text-[10px] font-black ${colorClass} cursor-help flex items-center gap-1.5 shadow-sm transform transition-transform hover:scale-105`}>
+                            {score}% Match <Info className="w-3 h-3 opacity-70" />
                           </div>
                           <div className="absolute top-full right-0 mt-2 w-56 p-3 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal shadow-xl normal-case">
                             <div className="font-bold mb-2 text-gray-200 border-b border-gray-700 pb-1">Score Breakdown (Max 80 pts)</div>

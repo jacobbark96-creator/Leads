@@ -2187,114 +2187,93 @@ function LeadDetailsV2Content() {
                   </div>
               </div>
               <div className="flex flex-col gap-2.5">
-                <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Industry</span>
-                  {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).industry || ''} onChange={e => setEditForm({...editForm, industry: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
-                  ) : (
-                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.industry || (lead as any).industry || 'N/A'}</span>
-                  )}
-                </div>
-                <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Company Type</span>
-                  {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).company_type || ''} onChange={e => setEditForm({...editForm, company_type: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
-                  ) : (
-                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.description?.replace('Status: ', '') || (lead as any).company_type || 'N/A'}</span>
-                  )}
-                </div>
-                <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Location</span>
-                  {editingCard === 'snapshot' ? (
-                    isLoaded ? (
-                      <Autocomplete
-                        onLoad={onLoadAutocomplete}
-                        onPlaceChanged={onPlaceChanged}
-                        options={{
-                          types: [],
-                          componentRestrictions: { country: "gb" },
-                          fields: ['formatted_address', 'geometry', 'name']
-                        }}
-                      >
-                        <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
-                      </Autocomplete>
-                    ) : (
-                      <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
-                    )
-                  ) : (
-                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.location || 'N/A'}</span>
-                  )}
-                </div>
-                <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Company No.</span>
-                  {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).company_number || ''} onChange={e => setEditForm({...editForm, company_number: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
-                  ) : (
-                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.company_number || (lead as any).company_number || 'N/A'}</span>
-                  )}
-                </div>
-                <div className="flex justify-between items-center py-0.5">
-                  <span className="text-gray-500 text-xs">Est. Revenue</span>
-                  {editingCard === 'snapshot' ? (
-                    <input type="text" value={(editForm as any).revenue || ''} onChange={e => setEditForm({...editForm, revenue: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
-                  ) : (
-                    <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.estimated_revenue || (lead as any).revenue || 'N/A'}</span>
-                  )}
-                </div>
-                <div className="flex justify-between items-center py-0.5">
-                    <span className="text-gray-500 text-xs">Employees</span>
-                    {editingCard === 'snapshot' ? (
-                      <input type="text" value={(editForm as any).employees || ''} onChange={e => setEditForm({...editForm, employees: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
-                    ) : (
-                      <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.employee_count || (lead as any).employees || 'N/A'}</span>
-                    )}
-                  </div>
-                  {/* Additional data pulled from Companies House API */}
-                  {lead.csv_data?.ch_enrichment && editingCard !== 'snapshot' && (
-                    <>
-                      <div className="border-t border-gray-100 my-1"></div>
-                      <div className="flex justify-between items-center py-0.5">
-                        <span className="text-gray-500 text-xs">Active Company</span>
-                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.active_company}</span>
+                {lead.csv_data?.ch_enrichment && editingCard !== 'snapshot' ? (
+                  <>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Active Company</span>
+                      <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.active_company}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Years Trading</span>
+                      <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.years_trading}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Positive Net Assets</span>
+                      <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.positive_net_assets}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Latest Accounts</span>
+                      <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.latest_accounts_filed}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Insolvency</span>
+                      <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.insolvency_indicators}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Charges</span>
+                      <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.charges}</span>
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Directors</span>
+                      <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.number_of_directors}</span>
+                    </div>
+                    <div className="mt-2 p-2 bg-gray-50 rounded-lg border border-gray-100 flex flex-col items-center justify-center text-center">
+                      <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Openlead Finance Score</span>
+                      <div className={`text-sm font-black ${
+                        lead.csv_data.ch_enrichment.finance_grade === 'A' ? 'text-emerald-600' :
+                        lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'text-blue-600' :
+                        lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'text-amber-600' :
+                        'text-red-600'
+                      }`}>
+                        Grade {lead.csv_data.ch_enrichment.finance_grade}
                       </div>
-                      <div className="flex justify-between items-center py-0.5">
-                        <span className="text-gray-500 text-xs">Years Trading</span>
-                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.years_trading}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-0.5">
-                        <span className="text-gray-500 text-xs">Positive Net Assets</span>
-                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.positive_net_assets}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-0.5">
-                        <span className="text-gray-500 text-xs">Latest Accounts</span>
-                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.latest_accounts_filed}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-0.5">
-                        <span className="text-gray-500 text-xs">Insolvency</span>
-                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.insolvency_indicators}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-0.5">
-                        <span className="text-gray-500 text-xs">Charges</span>
-                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.charges}</span>
-                      </div>
-                      <div className="flex justify-between items-center py-0.5">
-                        <span className="text-gray-500 text-xs">Directors</span>
-                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{lead.csv_data.ch_enrichment.number_of_directors}</span>
-                      </div>
-                      <div className="mt-2 p-2 bg-gray-50 rounded-lg border border-gray-100 flex flex-col items-center justify-center text-center">
-                        <span className="text-[10px] text-gray-500 uppercase tracking-wider font-semibold mb-1">Openlead Finance Score</span>
-                        <div className={`text-sm font-black ${
-                          lead.csv_data.ch_enrichment.finance_grade === 'A' ? 'text-emerald-600' :
-                          lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'text-blue-600' :
-                          lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'text-amber-600' :
-                          'text-red-600'
-                        }`}>
-                          Grade {lead.csv_data.ch_enrichment.finance_grade}
-                        </div>
-                        <span className="text-[10px] text-gray-600 mt-0.5">{lead.csv_data.ch_enrichment.finance_score_label}</span>
-                      </div>
-                    </>
-                  )}
+                      <span className="text-[10px] text-gray-600 mt-0.5">{lead.csv_data.ch_enrichment.finance_score_label}</span>
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Industry</span>
+                      {editingCard === 'snapshot' ? (
+                        <input type="text" value={(editForm as any).industry || ''} onChange={e => setEditForm({...editForm, industry: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                      ) : (
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.industry || (lead as any).industry || 'N/A'}</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Company Type</span>
+                      {editingCard === 'snapshot' ? (
+                        <input type="text" value={(editForm as any).company_type || ''} onChange={e => setEditForm({...editForm, company_type: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                      ) : (
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.description?.replace('Status: ', '') || (lead as any).company_type || 'N/A'}</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Company No.</span>
+                      {editingCard === 'snapshot' ? (
+                        <input type="text" value={(editForm as any).company_number || ''} onChange={e => setEditForm({...editForm, company_number: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                      ) : (
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.company_number || (lead as any).company_number || 'N/A'}</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Est. Revenue</span>
+                      {editingCard === 'snapshot' ? (
+                        <input type="text" value={(editForm as any).revenue || ''} onChange={e => setEditForm({...editForm, revenue: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                      ) : (
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.estimated_revenue || (lead as any).revenue || 'N/A'}</span>
+                      )}
+                    </div>
+                    <div className="flex justify-between items-center py-0.5">
+                      <span className="text-gray-500 text-xs">Employees</span>
+                      {editingCard === 'snapshot' ? (
+                        <input type="text" value={(editForm as any).employees || ''} onChange={e => setEditForm({...editForm, employees: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
+                      ) : (
+                        <span className="text-gray-900 text-xs font-medium text-right ml-2">{companyEnrichment?.employee_count || (lead as any).employees || 'N/A'}</span>
+                      )}
+                    </div>
+                  </>
+                )}
                 </div>
               </div>
 

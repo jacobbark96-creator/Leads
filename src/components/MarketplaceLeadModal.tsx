@@ -347,15 +347,15 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 </div>
 
                 {/* Right Side Stack: Lead Insights + Roof Suitability */}
-                <div className="flex-[1] flex flex-col gap-4">
+                <div className="flex-[1] flex flex-col gap-4 min-h-0">
                   
                   {/* Lead Insights */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex flex-col">
-                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex flex-col min-h-0">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2 shrink-0">
                       <Activity className="w-4 h-4 text-blue-500" /> Lead Insights
                     </h3>
                     
-                    <div className="grid grid-cols-2 gap-3 mb-4">
+                    <div className="grid grid-cols-2 gap-3 mb-4 shrink-0">
                       <div className="bg-purple-50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
                         <Building className="w-4 h-4 text-purple-400 mb-1" />
                         <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Property Type</span>
@@ -368,11 +368,13 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-3 flex-1 border border-gray-100">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 block">Notes</span>
-                      <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
-                        {lead.marketplace_notes || lead.qualification_notes || <MissingValue />}
-                      </p>
+                    <div className="bg-gray-50 rounded-lg p-3 flex-1 border border-gray-100 flex flex-col min-h-0">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 block shrink-0">Notes</span>
+                      <div className="overflow-y-auto min-h-0 flex-1 pr-1 custom-scrollbar">
+                        <p className="text-[10px] text-gray-600 leading-relaxed whitespace-pre-wrap">
+                          {lead.marketplace_notes || lead.qualification_notes || <MissingValue />}
+                        </p>
+                      </div>
                     </div>
                   </div>
 

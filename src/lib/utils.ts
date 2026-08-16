@@ -340,3 +340,53 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
 export function calculateMatchScore(lead: any, installerPrefs: any): number {
   return calculateMatchScoreDetails(lead, installerPrefs).score;
 }
+
+export function calculateIndicativeSystemValue(kwp: number | null | undefined): { central: number, rangeMin: number, rangeMax: number, rate: number, isCommercial: boolean } | null {
+  if (!kwp || isNaN(kwp) || kwp <= 0) return null;
+  
+  let rate = 900; // existing fallback for < 10 kWp
+  let isCommercial = false;
+  
+  if (kwp >= 500) {
+    rate = 750;
+    isCommercial = true;
+  } else if (kwp >= 250) {
+    rate = 800;
+    isCommercial = true;
+  } else if (kwp >= 100) {
+    rate = 875;
+    isCommercial = true;
+  } else if (kwp >= 50) {
+    rate = 950;
+    isCommercial = true;
+  } else if (kwp >= 10) {
+    rate = 1050;
+    isCommercial = true;
+  }
+  
+  const central = kwp * rate;
+  
+  // Calculate range +/- 10%
+  const rawMin = central * 0.9;
+  const rawMax = central * 1.1;
+  
+  const roundToSensible = (val: number) => {
+    if (val >= 100000) return Math.round(val / 1000) * 1000;
+    if (val >= 10000) return Math.round(val / 1000) * 1000;
+    return Math.round(val / 100) * 100;
+  };
+
+  return {
+    central,
+    rangeMin: roundToSensible(rawMin),
+    rangeMax: roundToSensible(rawMax),
+    rate,
+    isCommercial
+  };
+}
+
+export function formatSensibleCurrency(val: number): string {
+  if (val >= 1000000) return `£${(val / 1000000).toFixed(1).replace(/\.0$/, '')}m`;
+  if (val >= 10000) return `£${Math.round(val / 1000)}k`;
+  return `£${val.toLocaleString('en-GB')}`;
+}

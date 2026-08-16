@@ -10,7 +10,7 @@ import { Lead, StaffUser, LeadNote } from '@/types';
 import toast from 'react-hot-toast';
 import { useDialer } from '@/contexts/DialerContext';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
-import { calculateMatchScore, calculateEstimatedSystemSize } from '@/lib/utils';
+import { calculateMatchScore, calculateEstimatedSystemSize, calculateIndicativeSystemValue, formatSensibleCurrency } from '@/lib/utils';
 
 const libraries: "places"[] = ['places'];
 
@@ -2636,77 +2636,106 @@ function LeadDetailsV2Content() {
                     {editingCard === 'opportunity' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
                   </button>
                 </div>
-                <div className="flex flex-col gap-3">
-                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Est. System Size</span>
-                    {editingCard === 'opportunity' ? (
-                      <input type="text" value={(editForm as any).est_system_size || ''} onChange={e => setEditForm({...editForm, est_system_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">
-                        {buildingEnrichment?.max_array_panels_count 
-                          ? `${(buildingEnrichment.max_array_panels_count * 0.4).toFixed(1)} kWp` 
-                          : (lead as any).est_system_size || 'N/A'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Est. Generation</span>
-                    {editingCard === 'opportunity' ? (
-                      <input type="text" value={(editForm as any).est_ann_generation || ''} onChange={e => setEditForm({...editForm, est_ann_generation: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">
-                        {buildingEnrichment?.max_array_panels_count 
-                          ? `${((buildingEnrichment.max_array_panels_count * 0.4) * 850).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh/yr`
-                          : lead.est_ann_consumption && (lead.roof_size || (lead as any).roof_size_sqm)
-                            ? `${(Math.min(calculateEstimatedSystemSize(lead, lead.monthly_spend || 0) * 850, lead.est_ann_consumption)).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh/yr`
-                            : (lead as any).est_ann_generation || 'N/A'}
-                      </span>
-                    )}
-                  </div>
-                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Indicative Project Size</span>
-                    {editingCard === 'opportunity' ? (
-                      <input type="text" value={(editForm as any).est_savings || ''} onChange={e => setEditForm({...editForm, est_savings: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                    ) : (
-                      <span className="text-green-600 text-sm font-bold">
-                        {buildingEnrichment?.max_array_panels_count 
-                          ? `£${((buildingEnrichment.max_array_panels_count * 0.4) * 900).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
-                          : lead.est_ann_consumption && (lead.roof_size || (lead as any).roof_size_sqm)
-                            ? `£${(calculateEstimatedSystemSize(lead, lead.monthly_spend || 0) * 900).toLocaleString('en-GB', { maximumFractionDigits: 0 })}`
-                            : (lead as any).est_savings ? `£${(lead as any).est_savings}` : 'N/A'}
-                      </span>
-                    )}
-                  </div>
-                  {profile?.role === 'super_admin' && (
-                    <>
+                
+                {(() => {
+                  const systemSizeKwp = buildingEnrichment?.max_array_panels_count
+                    ? (buildingEnrichment.max_array_panels_count * 0.4)
+                    : (lead.est_ann_consumption && (lead.roof_size || (lead as any).roof_size_sqm))
+                      ? calculateEstimatedSystemSize(lead, lead.monthly_spend || 0)
+                      : (lead as any).est_system_size ? parseFloat((lead as any).est_system_size) : null;
+                      
+                  const indicativeValue = calculateIndicativeSystemValue(systemSizeKwp);
+                  
+                  return (
+                    <div className="flex flex-col gap-3">
                       <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                        <span className="text-gray-500 text-xs">Exclusive Price</span>
+                        <span className="text-gray-500 text-xs">Est. System Size</span>
                         {editingCard === 'opportunity' ? (
-                          <input type="number" value={editForm.exclusive_price || ''} onChange={e => setEditForm({...editForm, exclusive_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 135" />
+                          <input type="text" value={(editForm as any).est_system_size || ''} onChange={e => setEditForm({...editForm, est_system_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
                         ) : (
-                          <span className="text-gray-900 text-sm font-medium">{lead.exclusive_price ? `£${lead.exclusive_price}` : 'N/A'}</span>
+                          <span className="text-gray-900 text-sm font-medium">
+                            {systemSizeKwp ? `${systemSizeKwp.toFixed(1)} kWp` : 'N/A'}
+                          </span>
                         )}
                       </div>
                       <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                        <span className="text-gray-500 text-xs">Share Price</span>
+                        <span className="text-gray-500 text-xs">Est. Generation</span>
                         {editingCard === 'opportunity' ? (
-                          <input type="number" value={editForm.share_price || ''} onChange={e => setEditForm({...editForm, share_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 45" />
+                          <input type="text" value={(editForm as any).est_ann_generation || ''} onChange={e => setEditForm({...editForm, est_ann_generation: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
                         ) : (
-                          <span className="text-gray-900 text-sm font-medium">{lead.share_price ? `£${lead.share_price}` : 'N/A'}</span>
+                          <span className="text-gray-900 text-sm font-medium">
+                            {systemSizeKwp
+                              ? `${(Math.min(systemSizeKwp * 850, lead.est_ann_consumption || Infinity)).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh/yr`
+                              : (lead as any).est_ann_generation || 'N/A'}
+                          </span>
                         )}
                       </div>
-                    </>
-                  )}
-                  <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                    <span className="text-gray-500 text-xs">Payback Period</span>
-                    {editingCard === 'opportunity' ? (
-                      <input type="text" value={(editForm as any).est_payback || ''} onChange={e => setEditForm({...editForm, est_payback: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(lead as any).est_payback || 'N/A'}</span>
-                    )}
-                  </div>
-                </div>
-                </div>
+                      
+                      <div className="flex flex-col py-2 border-b border-gray-50">
+                        <div className="flex justify-between items-center mb-1">
+                          <span className="text-gray-500 text-xs">Indicative System Value</span>
+                          {editingCard === 'opportunity' ? (
+                            <input type="text" value={(editForm as any).est_savings || ''} onChange={e => setEditForm({...editForm, est_savings: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                          ) : (
+                            <span className="text-green-600 text-sm font-bold">
+                              {indicativeValue 
+                                ? `£${indicativeValue.central.toLocaleString('en-GB', { maximumFractionDigits: 0 })}` 
+                                : (lead as any).est_savings ? `£${(lead as any).est_savings}` : 'N/A'}
+                            </span>
+                          )}
+                        </div>
+                        
+                        {indicativeValue && (
+                          <>
+                            <div className="flex justify-between items-center mt-1">
+                              <span className="text-gray-400 text-[10px]">Estimated Cost</span>
+                              <span className="text-gray-500 text-[10px] font-medium">£{indicativeValue.rate}/kWp</span>
+                            </div>
+                            <div className="flex justify-between items-center mt-0.5">
+                              <span className="text-gray-400 text-[10px]">Estimated range</span>
+                              <span className="text-gray-500 text-[10px] font-medium">
+                                {formatSensibleCurrency(indicativeValue.rangeMin)}–{formatSensibleCurrency(indicativeValue.rangeMax)}
+                              </span>
+                            </div>
+                            <div className="mt-2 text-[9px] text-gray-400 leading-tight italic">
+                              Indicative estimate based on typical UK commercial solar installation costs. Final pricing is subject to site survey, roof condition, DNO requirements, system design and installer specification.
+                            </div>
+                          </>
+                        )}
+                      </div>
+                      
+                      {profile?.role === 'super_admin' && (
+                        <>
+                          <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                            <span className="text-gray-500 text-xs">Exclusive Price</span>
+                            {editingCard === 'opportunity' ? (
+                              <input type="number" value={editForm.exclusive_price || ''} onChange={e => setEditForm({...editForm, exclusive_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 135" />
+                            ) : (
+                              <span className="text-gray-900 text-sm font-medium">{lead.exclusive_price ? `£${lead.exclusive_price}` : 'N/A'}</span>
+                            )}
+                          </div>
+                          <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                            <span className="text-gray-500 text-xs">Share Price</span>
+                            {editingCard === 'opportunity' ? (
+                              <input type="number" value={editForm.share_price || ''} onChange={e => setEditForm({...editForm, share_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 45" />
+                            ) : (
+                              <span className="text-gray-900 text-sm font-medium">{lead.share_price ? `£${lead.share_price}` : 'N/A'}</span>
+                            )}
+                          </div>
+                        </>
+                      )}
+                      <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                        <span className="text-gray-500 text-xs">Payback Period</span>
+                        {editingCard === 'opportunity' ? (
+                          <input type="text" value={(editForm as any).est_payback || ''} onChange={e => setEditForm({...editForm, est_payback: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                        ) : (
+                          <span className="text-gray-900 text-sm font-medium">{(lead as any).est_payback || 'N/A'}</span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })()}
+              </div>
                 <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Key Information</h3>

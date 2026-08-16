@@ -723,7 +723,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
 
               {/* IMAGE */}
               <div 
-                className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 flex-1 min-h-[220px] relative group cursor-pointer"
+                className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 h-64 shrink-0 relative group cursor-pointer"
                 onClick={() => setLightboxUrl(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url)}
               >
                 {(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url) ? (

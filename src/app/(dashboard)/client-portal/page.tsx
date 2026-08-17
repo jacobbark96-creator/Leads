@@ -512,7 +512,7 @@ export default function ClientDashboard() {
   );
 
   return (
-    <div className="flex flex-col h-auto lg:h-[calc(100vh-160px)] gap-4 lg:gap-6 pt-2 lg:pt-4">
+    <div className="flex flex-col h-auto lg:h-[calc(100vh-160px)] gap-4 lg:gap-6 pt-2 lg:pt-4" style={{ zoom: 0.9 } as any}>
       {/* TOP ROW - Responsive layout */}
       <div className="flex-none flex flex-col lg:flex-row gap-4 lg:gap-5">
         <div className="w-full lg:w-[40%] transition-all duration-300">

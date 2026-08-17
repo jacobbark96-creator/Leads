@@ -36,33 +36,62 @@ export async function POST(req: Request) {
     const agentId = process.env.ELEVENLABS_AGENT_ID || 'agent_1801m07bb3mzfjztt30pwv04c73b';
     const apiKey = process.env.ELEVENLABS_API_KEY || '';
 
-    let wsUrl = `wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${agentId}`;
-    
-    // If we have an API key, try to get a signed URL in case the agent is private
+    // Get Twilio parameters
+    let fromNumber = '';
+    let toNumber = '';
+    try {
+      const formData = await req.formData();
+      fromNumber = formData.get('From') as string || '';
+      toNumber = formData.get('To') as string || '';
+    } catch (e) {
+      console.warn("No form data in Twilio request", e);
+    }
+
     if (apiKey) {
       try {
-        const signedRes = await fetch(`https://api.elevenlabs.io/v1/convai/conversation/get_signed_url?agent_id=${agentId}`, {
-          headers: { 'xi-api-key': apiKey }
+        // Register the Twilio call with ElevenLabs to get the correct TwiML
+        const registerRes = await fetch('https://api.elevenlabs.io/v1/convai/twilio/register-call', {
+          method: 'POST',
+          headers: {
+            'xi-api-key': apiKey,
+            'Content-Type': 'application/json',
+            'Accept': 'text/html'
+          },
+          body: JSON.stringify({
+            agent_id: agentId,
+            from_number: fromNumber || '+1234567890',
+            to_number: toNumber || '+1234567890',
+            direction: 'outbound',
+            conversation_initiation_client_data: {
+              dynamic_variables: {
+                leadId: leadId,
+                address: leadAddress
+              }
+            }
+          })
         });
-        if (signedRes.ok) {
-          const signedData = await signedRes.json();
-          if (signedData.signed_url) {
-            wsUrl = signedData.signed_url;
-          }
+
+        if (registerRes.ok) {
+          const twiml = await registerRes.text();
+          return new NextResponse(twiml, {
+            headers: { 'Content-Type': 'text/xml' }
+          });
+        } else {
+          const errText = await registerRes.text();
+          console.warn('ElevenLabs register-call failed, falling back to basic TwiML', errText);
         }
       } catch (err) {
-        console.warn('Could not fetch signed URL for ElevenLabs, falling back to public URL', err);
+        console.warn('Could not register call with ElevenLabs, falling back to basic TwiML', err);
       }
     }
 
-    // Return TwiML to connect Twilio to ElevenLabs WebSocket
-    // We pass the leadId and address as parameters so ElevenLabs can use them as dynamic variables
+    // Fallback basic TwiML without Parameter tags (since they cause disconnects)
+    let wsUrl = `wss://api.elevenlabs.io/v1/convai/conversation?agent_id=${agentId}`;
+    
     const twiml = `<?xml version="1.0" encoding="UTF-8"?>
 <Response>
   <Connect>
     <Stream url="${wsUrl.replace(/&/g, '&amp;')}">
-      <Parameter name="leadId" value="${leadId}" />
-      <Parameter name="address" value="${leadAddress}" />
     </Stream>
   </Connect>
 </Response>`;

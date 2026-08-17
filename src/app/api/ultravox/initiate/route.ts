@@ -33,7 +33,7 @@ export async function POST(req: Request) {
     const host = req.headers.get('host');
     const baseUrl = `${protocol}://${host}`;
 
-    const url = `${baseUrl}/api/ultravox/twiml?leadId=${leadId}&agentType=${agentType}`;
+    const url = `${baseUrl}/api/elevenlabs/twiml?leadId=${leadId}&agentType=${agentType}`;
 
     const params = new URLSearchParams();
     params.append('Url', url);

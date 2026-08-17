@@ -162,9 +162,17 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
         {/* Content */}
         <div className="flex-1 p-4 space-y-3 overflow-y-auto custom-scrollbar">
           
-          {/* Top Row: Contact Details */}
-          <div className="flex flex-col lg:flex-row gap-3">
-            {/* Contact Card */}
+          {/* Building Tabs */}
+
+          {/* Main Grid Layout */}
+          <div className="grid grid-cols-12 gap-4">
+            
+            {/* LEFT COLUMN (8 cols) */}
+            <div className="col-span-12 md:col-span-8 flex flex-col gap-4">
+              
+              {/* TOP ROW: Price & Stats */}
+              <div className="flex gap-4">
+                {/* Contact Card */}
             <div className="bg-white rounded-xl p-3 border border-blue-200 shadow-sm flex-[1.4] flex flex-col justify-center relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 opacity-50 z-0 pointer-events-none"></div>
               <h3 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-2.5 flex items-center gap-1.5 relative z-10">
@@ -246,298 +254,364 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
               )}
             </div>
 
-            {/* Stats Card */}
-            <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex-[1.6] flex items-center justify-between divide-x divide-gray-100">
-              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
-                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Est. Monthly Spend</h3>
-                <div className="h-9 flex items-center justify-center text-base font-bold text-green-600">
-                  {lead.monthly_spend ? `£${lead.monthly_spend}/mo` : <MissingValue />}
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
-                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Timeframe</h3>
-                <div className="h-9 flex items-center justify-center text-base font-bold text-gray-900">
-                  <DisplayValue value={lead.timeframe} />
-                </div>
-              </div>
-              {/*
-              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
-                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Est. System Size</h3>
-                <div className="h-9 flex items-center justify-center text-base font-bold text-gray-900">
-                  <DisplayValue value={lead.est_system_size} />
-                </div>
-              </div>
-              */}
-              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
-                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Bills Received</h3>
-                <div className="h-9 flex items-center justify-center">
-                  <div className={`relative w-9 h-9 flex items-center justify-center rounded-full border-[2px] ${hasBills ? 'border-green-500 text-green-600' : 'border-gray-200 text-gray-300'}`}>
-                    {hasBills && <Check className="w-4 h-4" strokeWidth={3} />}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
-                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Sole Decision Maker</h3>
-                <div className="h-9 flex items-center justify-center">
-                  <div className={`relative w-9 h-9 flex items-center justify-center rounded-full border-[2px] ${lead.sole_decision_maker ? 'border-green-500 text-green-600' : 'border-gray-200 text-gray-300'}`}>
-                    {lead.sole_decision_maker && <Check className="w-4 h-4" strokeWidth={3} />}
-                  </div>
-                </div>
-              </div>
-              <div className="flex flex-col items-center justify-between text-center flex-1 px-1 h-full min-h-[64px]">
-                <h3 className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight flex items-center justify-center h-6">Quality Score</h3>
-                <div className="h-9 flex items-center justify-center">
-                  <div className="relative w-9 h-9 flex items-center justify-center rounded-full border-[2px] border-green-500 text-green-600 font-bold text-base">
-                    {(lead as any).lead_score || <MissingValue />}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="flex flex-col gap-3">
-            {/* Building Tabs */}
-            {buildings.length > 0 && (
-              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide shrink-0 mt-2">
-                <button
-                  onClick={() => setActiveBuildingIndex(0)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                    activeBuildingIndex === 0 
-                      ? 'bg-blue-600 text-white shadow-md' 
-                      : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  Primary Location
-                </button>
-                {buildings.map((b: any, idx: number) => (
-                  <button
-                    key={b.id}
-                    onClick={() => setActiveBuildingIndex(idx + 1)}
-                    className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all whitespace-nowrap ${
-                      activeBuildingIndex === idx + 1 
-                        ? 'bg-blue-600 text-white shadow-md' 
-                        : 'bg-white border border-gray-200 text-gray-600 hover:bg-gray-50'
-                    }`}
-                  >
-                    Site {idx + 2}
-                  </button>
-                ))}
-              </div>
-            )}
-
-            {/* ROW 1: Top section with images, property details, insights */}
-            <div className="grid grid-cols-1 lg:grid-cols-[1.5fr_1fr_1fr] gap-3 items-stretch">
-              {/* Top Col 1 */}
-              <div className="flex flex-col gap-3">
-                {/* Property & Installation */}
-                <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm h-full">
-                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Home className="w-3.5 h-3.5 text-gray-400" /> Property & Installation
-                  </h3>
-                  <div className="grid grid-cols-2 gap-x-4 gap-y-2">
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3" /> Location</span>
-                      <DisplayValue value={extractTown(displayLocation)} />
+                {/* Quick Stats Box */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex items-center divide-x divide-gray-100">
+                    <div className="flex-1 px-2 text-center flex flex-col items-center justify-center">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 leading-tight">Est. Monthly Spend</span>
+                      <span className="text-lg font-black text-emerald-600">
+                        {lead.monthly_spend ? `£${lead.monthly_spend.toLocaleString()}/mo` : <MissingValue />}
+                      </span>
                     </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
-                      <DisplayValue value={displayRoofSize} />
+                    <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Timeframe</span>
+                      <span className="text-sm font-bold text-gray-900">
+                        <DisplayValue value={lead.timeframe} className="text-center" />
+                      </span>
                     </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><User className="w-3 h-3" /> Ownership</span>
-                      <DisplayValue value={lead.property_ownership} />
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Roof Material</span>
-                      <DisplayValue value={displayRoofMaterial} />
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Zap className="w-3 h-3" /> Elec Supply</span>
-                      <DisplayValue value={lead.electrical_supply} />
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Sun className="w-3 h-3" /> Solar Location</span>
-                      <DisplayValue value={lead.solar_location} />
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Home className="w-3 h-3" /> Ground Mount</span>
-                      <DisplayValue value={lead.ground_mount !== null ? (lead.ground_mount ? 'Yes' : 'No') : null} />
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Roof Condition</span>
-                      <DisplayValue value={displayRoofCondition} />
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Day Unit Rate</span>
-                      <DisplayValue value={lead.unit_rate} suffix="p" />
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Night Unit Rate</span>
-                      <DisplayValue value={lead.night_unit_rate} suffix="p" />
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Sun className="w-3 h-3" /> Skylights</span>
-                      <DisplayValue value={lead.cover_skylights !== null ? (lead.cover_skylights ? 'Yes' : 'No') : null} />
-                    </div>
-                    <div className="flex justify-between items-center border-b border-gray-50 pb-1 col-span-2">
-                      <span className="text-[11px] text-gray-500 flex items-center gap-1"><Battery className="w-3 h-3" /> Ann. Consump.</span>
-                      <DisplayValue value={displayAnnConsump} />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Top Col 2 */}
-              <div className="flex flex-col gap-3">
-                {/* Lead Insights */}
-                <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm h-full">
-                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                    <Activity className="w-3.5 h-3.5 text-indigo-500" /> Lead Insights
-                  </h3>
-                  <div className="grid grid-cols-2 gap-2 mb-2">
-                    <div className="bg-purple-50/50 p-2 rounded-lg border border-purple-50 flex flex-col items-center text-center">
-                      <Building className="w-3.5 h-3.5 text-purple-500 mb-1" />
-                      <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Property Type</span>
-                      <DisplayValue value={displayBuildingType || 'Commercial'} />
-                    </div>
-                    <div className="bg-indigo-50/50 p-2 rounded-lg border border-indigo-50 flex flex-col items-center text-center">
-                      <Globe className="w-3.5 h-3.5 text-indigo-500 mb-1" />
-                      <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-0.5">Lead Source</span>
-                      <DisplayValue value={(lead as any).lead_source} />
-                    </div>
-                  </div>
-                  <div className="bg-gray-50 p-3 rounded-lg border border-gray-100 flex flex-col flex-1 min-h-0">
-                    <span className="text-[8px] text-gray-500 uppercase tracking-wider font-bold mb-1 shrink-0">Notes</span>
-                    <div className="overflow-y-auto flex-1 min-h-0 custom-scrollbar pr-1">
-                      <p className={`text-gray-700 whitespace-pre-wrap leading-relaxed ${
-                        displayMarketplaceNotes?.length > 400 ? 'text-[8px]' :
-                        displayMarketplaceNotes?.length > 200 ? 'text-[8.5px]' : 'text-[9.5px]'
-                      }`}>{displayMarketplaceNotes || <MissingValue />}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {/* Top Col 3 */}
-              <div className="flex flex-col gap-3">
-                {/* Property Images */}
-                <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm h-full flex flex-col">
-                  {displayPhotos && displayPhotos.length > 0 ? (
-                    displayPhotos.length === 1 ? (
-                      <div 
-                        className="rounded-lg overflow-hidden cursor-pointer flex-1"
-                        onClick={() => setLightboxUrl(displayPhotos![0])}
-                      >
-                        <img src={displayPhotos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                      </div>
-                    ) : displayPhotos.length === 2 ? (
-                      <div className="grid grid-cols-2 gap-2 flex-1">
-                        <div 
-                          className="rounded-lg overflow-hidden cursor-pointer"
-                          onClick={() => setLightboxUrl(displayPhotos![0])}
-                        >
-                          <img src={displayPhotos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                        </div>
-                        <div 
-                          className="rounded-lg overflow-hidden cursor-pointer"
-                          onClick={() => setLightboxUrl(displayPhotos![1])}
-                        >
-                          <img src={displayPhotos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                    <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
+                      <div className="relative group flex items-center justify-center mb-2">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Annual Generation</span>
+                        <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
+                          Based on system size.
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                         </div>
                       </div>
-                    ) : (
-                      <div className="grid grid-cols-3 gap-2 flex-1">
-                        <div 
-                          className="col-span-2 rounded-lg overflow-hidden cursor-pointer"
-                          onClick={() => setLightboxUrl(displayPhotos![0])}
-                        >
-                          <img src={displayPhotos[0]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                        </div>
-                        <div className="grid grid-rows-2 gap-2 h-full">
-                          <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(displayPhotos![1])}>
-                            <img src={displayPhotos[1]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
-                          </div>
-                          <div className="rounded-lg overflow-hidden cursor-pointer" onClick={() => setLightboxUrl(displayPhotos![2])}>
-                            <img src={displayPhotos[2]} alt="Property" className="w-full h-full object-cover hover:scale-105 transition-transform" />
+                      <span className="text-sm font-bold text-gray-900">
+                        {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
+                          ? `${(calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)! * 850).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh`
+                          : <MissingValue />}
+                      </span>
+                    </div>
+                    <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
+                        <div className="relative group flex items-center justify-center mb-2">
+                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Consumption Offset</span>
+                          <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
+                            Estimated percentage of current energy usage this system could offset.
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                           </div>
                         </div>
+                        <span className="text-sm font-bold text-gray-900">
+                          {(() => {
+                            const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+                            if (sysSize && lead.monthly_spend) {
+                              const rate = lead.unit_rate ? parseFloat(lead.unit_rate) : 0.25;
+                              const estGen = sysSize * 850;
+                              const annualConsumption = (lead.monthly_spend * 12) / rate;
+                              return `${Math.min(100, Math.round((estGen / annualConsumption) * 100))}%`;
+                            }
+                            return <MissingValue />;
+                          })()}
+                        </span>
                       </div>
-                    )
-                  ) : (
-                    <div className="flex-1 rounded-lg bg-gray-50 border-2 border-dashed border-gray-200 flex items-center justify-center min-h-[160px]">
-                      <MissingValue />
+                  <div className="flex-1 px-2 text-center flex flex-col items-center justify-center">
+                    <div className="relative group flex items-center justify-center mb-2">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider leading-tight">Est. System Size</span>
+                      <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
+                        This is an automated calculation based on the monthly spend and roof size. It may be incorrect should the shape and design of the roof be intricate.
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                      </div>
                     </div>
-                  )}
+                    <span className="text-lg font-black text-gray-900">
+                      {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
+                        ? `${calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)?.toFixed(1)} kWp`
+                        : <MissingValue />}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
 
-            {/* ROW 2: Bottom section with Financial, Roof Insights, System Summary */}
-            <div className="grid grid-cols-1 lg:grid-cols-[0.8fr_1.3fr_1.4fr] gap-3 items-stretch">
-              {/* Financial & Payment */}
-              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col justify-center">
-                <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                  <FileText className="w-3.5 h-3.5 text-gray-400" /> Financial & Payment
-                </h3>
-                <div className="grid grid-cols-1 gap-2">
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Calendar className="w-3 h-3" /> Payment Option</span>
-                    <DisplayValue value={lead.payment_options} />
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-[11px] text-gray-500 flex items-center gap-1"><Activity className="w-3 h-3" /> Funding Interest</span>
-                    <MissingValue />
-                  </div>
-                </div>
+              {/* MIDDLE & BOTTOM: Property & Insights Stack */}
+              <div className="flex gap-4 items-stretch">
                 
-                {hasBills && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
-                    <h3 className="text-[11px] font-bold text-green-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
-                      <CheckCircle className="w-3.5 h-3.5" /> Electricity Bills
+                {/* Property & Installation (Left, Taller) */}
+                <div className="bg-white rounded-xl p-4 border border-gray-200 flex-[1.5] flex flex-col">
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <Home className="w-4 h-4 text-gray-400" /> Property & Installation
+                  </h3>
+                  <div className="grid grid-cols-2 gap-2 flex-1">
+                      <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Location</span>
+                        <div className="flex flex-col">
+                          <DisplayValue value={extractTown(activeBuildingIndex === 0 ? lead.location : activeBuilding?.address)} className="text-[11px]" />
+                          {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude) && (
+                            <span className="text-[9px] text-gray-400 font-medium italic mt-0.5 leading-tight">
+                              {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude)}
+                            </span>
+                          )}
+                        </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-2.5 flex justify-between divide-x divide-gray-200">
+                          <div className="flex flex-col justify-center pr-2 w-1/2">
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>
+                            <DisplayValue value={activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status} className="text-[11px]" />
+                            {(activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status)?.toLowerCase() === 'leased' && (
+                              <div className="mt-1.5 pt-1.5 border-t border-gray-200 flex flex-col gap-0.5">
+                                <span className="text-[9px] text-gray-500 font-medium">Lease: {lead.lease_duration || 'Unknown'}</span>
+                                <span className="text-[9px] text-gray-500 font-medium">Landlord OK: {lead.landlord_permission || 'Unknown'}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col justify-center pl-2 w-1/2">
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
+                            <DisplayValue 
+                              value={activeBuildingIndex === 0 ? lead.roof_size?.toString().replace(/\s*sqm\s*/i, '').trim() : activeBuilding?.roof_size_sqm} 
+                              suffix=" SqM" 
+                              className="text-[11px]" 
+                            />
+                          </div>
+                        </div>
+
+                        <div className="bg-gray-50 rounded-lg p-2.5 flex justify-between divide-x divide-gray-200">
+                          <div className="flex flex-col justify-center items-center pr-2 w-1/2">
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 text-center">Decision Maker</span>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${lead.sole_decision_maker ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-200 text-gray-300'}`}>
+                              {lead.sole_decision_maker ? <Check className="w-3 h-3" strokeWidth={3} /> : <User className="w-3 h-3 opacity-50" />}
+                            </div>
+                          </div>
+                          <div className="flex flex-col justify-center items-center pl-2 w-1/2">
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 text-center">Bills Received</span>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${hasBills ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-200 text-gray-300'}`}>
+                              {hasBills ? <Check className="w-3 h-3" strokeWidth={3} /> : <FileText className="w-3 h-3 opacity-50" />}
+                            </div>
+                          </div>
+                        </div>
+
+                      {(() => {
+                      const currentRoofMaterial = activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material;
+                      const isAsbestos = typeof currentRoofMaterial === 'string' && currentRoofMaterial.toLowerCase().includes('asbestos');
+                      
+                      return (
+                        <div className="bg-gray-50 rounded-lg flex overflow-hidden">
+                          <div className={`flex-1 p-2.5 flex flex-col justify-center border-r border-gray-200 ${isAsbestos ? 'bg-red-100' : ''}`}>
+                            <span className={`text-[9px] uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 ${isAsbestos ? 'text-red-600' : 'text-gray-400'}`}><Home className="w-3 h-3" /> Roof Material</span>
+                            <DisplayValue value={currentRoofMaterial} className={`text-[11px] ${isAsbestos ? 'text-red-900 font-bold' : ''}`} />
+                            {isAsbestos && <span className="text-[8.5px] text-red-700 mt-1 leading-tight font-semibold italic">Please note this roof type.</span>}
+                          </div>
+                          <div className="flex-1 p-2.5 flex flex-col justify-center">
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Condition</span>
+                            <DisplayValue value={lead.roof_condition} className="text-[11px]" />
+                          </div>
+                        </div>
+                      );
+                    })()}
+
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Zap className="w-3 h-3" /> Elec Supply</span>
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.electrical_supply : activeBuilding?.grid_connection} className="text-[11px]" />
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Solar Location</span>
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.solar_location : activeBuilding?.orientation} className="text-[11px]" />
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg flex overflow-hidden">
+                      <div className="flex-1 p-2.5 flex flex-col justify-center border-r border-gray-200">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Day Rate</span>
+                        <DisplayValue value={lead.unit_rate ? `£${lead.unit_rate}` : null} className="text-[11px]" />
+                      </div>
+                      <div className="flex-1 p-2.5 flex flex-col justify-center">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Moon className="w-3 h-3" /> Night Rate</span>
+                        <DisplayValue value={lead.night_unit_rate ? `£${lead.night_unit_rate}` : null} className="text-[11px]" />
+                      </div>
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Skylights</span>
+                      <DisplayValue value={lead.cover_skylights !== undefined ? (lead.cover_skylights ? 'Yes' : 'No') : null} className="text-[11px]" />
+                    </div>
+
+                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Finance Option</span>
+                        <DisplayValue value={lead.payment_options} className="text-[11px]" />
+                      </div>
+
+                      <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Activity className="w-3 h-3" /> Annual Consumption</span>
+                        <DisplayValue value={lead.est_ann_consumption ? `${lead.est_ann_consumption.toLocaleString()} kWh` : null} className="text-[11px]" />
+                      </div>
+
+                  </div>
+                </div>
+
+                {/* Right Side Stack: Lead Insights + Roof Suitability */}
+                <div className="flex-[1] flex flex-col gap-4 min-h-0">
+                  
+                  {/* Lead Insights */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex flex-col min-h-0">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2 shrink-0">
+                      <Activity className="w-4 h-4 text-blue-500" /> Lead Insights
                     </h3>
-                    <div className="flex flex-wrap gap-2">
-                      {billUrls.map((url, idx) => (
-                        <a
-                          key={url}
-                          href={url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="inline-flex items-center px-2 py-1 bg-green-50 border border-green-200 text-green-700 text-[10px] font-bold rounded hover:bg-green-100 transition-colors shadow-sm"
-                        >
-                          <Download className="w-3 h-3 mr-1" /> Bill {idx + 1}
-                        </a>
-                      ))}
+                    
+                    <div className="grid grid-cols-2 gap-3 shrink-0">
+                        <SavingsCarousel lead={lead} />
+                        <div className="bg-blue-50 rounded-lg p-3 flex flex-col items-center justify-center text-center relative group">
+                        <Globe className="w-4 h-4 text-blue-400 mb-1" />
+                        <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-1 flex items-center gap-1">
+                          Estimated Range <Info className="w-3 h-3 text-blue-300" />
+                        </span>
+                        {(() => {
+                          const systemSizeKwp = activeBuilding?.max_array_panels_count
+                            ? (activeBuilding.max_array_panels_count * 0.4)
+                            : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate)
+                              || ((lead as any).est_system_size ? parseFloat((lead as any).est_system_size) : null);
+                              
+                          const indicativeValue = calculateIndicativeSystemValue(systemSizeKwp);
+
+                          return (
+                            <>
+                              <DisplayValue 
+                                value={indicativeValue ? `£${Math.round(indicativeValue.rangeMin / 1000)}k - £${Math.round(indicativeValue.rangeMax / 1000)}k` : null} 
+                                className="text-xs text-blue-900" 
+                              />
+                              
+                              {/* Tooltip */}
+                              {indicativeValue && (
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2.5 bg-gray-900 text-white text-[10px] rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 pointer-events-none shadow-xl text-left">
+                                  <div className="font-bold text-blue-300 mb-1">Estimated Cost</div>
+                                  <div className="text-sm font-bold mb-2">£{indicativeValue.rate}/kWp</div>
+                                  <div className="text-gray-300 leading-tight">
+                                    Indicative estimate based on typical UK commercial solar installation costs. Final pricing is subject to site survey, roof condition, DNO requirements, system design and installer specification.
+                                  </div>
+                                  <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                                </div>
+                              )}
+                            </>
+                          );
+                        })()}
+                      </div>
                     </div>
                   </div>
-                )}
-              </div>
 
-              {/* Roof & Sun Insights */}
-              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col justify-center">
-                <div className="flex justify-between items-center divide-x divide-gray-100 h-full py-1">
-                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
-                    <CheckCircle className="w-4 h-4 text-green-500 mb-1" />
-                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Roof Suitability</span>
-                    <DisplayValue value={activeBuilding ? activeBuilding.suitability_score : (lead as any).roof_suitability} className="text-[10px] text-center" />
+                  {/* Roof Suitability */}
+                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <CheckCircle className="w-4 h-4 text-emerald-500" /> Roof Suitability
+                    </h3>
+                    <div className="grid grid-cols-4 gap-2">
+                      <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
+                        <CheckCircle className="w-3 h-3 text-emerald-500 mb-1" />
+                        <span className="text-[7px] text-gray-400 uppercase tracking-wider font-bold mb-1 line-clamp-1">Suitability</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).roof_suitability : (activeBuilding?.suitability_score ? `${activeBuilding.suitability_score}/100` : null)} className="text-[9px]" />
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
+                        <Sun className="w-3 h-3 text-amber-500 mb-1" />
+                        <span className="text-[7px] text-gray-400 uppercase tracking-wider font-bold mb-1 line-clamp-1">Exposure</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).solar_exposure : (activeBuilding?.solar_potential_score ? `${activeBuilding.solar_potential_score}/100` : null)} className="text-[9px]" />
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
+                        <Activity className="w-3 h-3 text-emerald-500 mb-1" />
+                        <span className="text-[7px] text-gray-400 uppercase tracking-wider font-bold mb-1 line-clamp-1">Shading</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? (lead as any).shading : (activeBuilding?.shading_score !== null ? `${activeBuilding.shading_score}/10` : null)} className="text-[9px]" />
+                      </div>
+                      <div className="flex flex-col items-center justify-center p-2 bg-gray-50 rounded-lg text-center">
+                        <Globe className="w-3 h-3 text-blue-500 mb-1" />
+                        <span className="text-[7px] text-gray-400 uppercase tracking-wider font-bold mb-1 line-clamp-1">Orientation</span>
+                        <DisplayValue value={activeBuildingIndex === 0 ? ((lead as any).orientation || lead.solar_location) : activeBuilding?.orientation} className="text-[9px]" />
+                      </div>
+                    </div>
+                    </div>
+
+                    
+
+                    {/* Openlead Business View */}
+                    <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col flex-1 mt-4">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                      <Building className="w-4 h-4 text-purple-500" /> Openlead Business View
+                    </h3>
+                    
+                    <div className="flex flex-col items-center justify-center flex-1 text-center">
+                      {lead.csv_data?.ch_enrichment ? (
+                        <>
+                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-2xl mb-3 shadow-sm ${
+                            lead.csv_data.ch_enrichment.finance_grade === 'A' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' :
+                            lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'bg-yellow-100 text-yellow-600 border border-yellow-200' :
+                            lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'bg-[#8B4513] text-white border border-[#5c2e0c]' :
+                            lead.csv_data.ch_enrichment.finance_grade === 'P' ? 'bg-purple-100 text-purple-600 border border-purple-200' :
+                            'bg-red-100 text-red-600 border border-red-200'
+                          }`}>
+                            {lead.csv_data.ch_enrichment.finance_grade}
+                          </div>
+                          
+                          <div className="text-xs font-bold text-gray-900 mb-1">
+                            {lead.csv_data.ch_enrichment.finance_score_label}
+                          </div>
+                          
+                          {lead.csv_data.ch_enrichment.finance_grade === 'P' ? (
+                            <p className="text-[10px] text-gray-500 mt-2 max-w-[200px]">
+                              This is a sole trader and their finance is subject to personal credit checks.
+                            </p>
+                          ) : (
+                            <>
+                              {!showBusinessDetails ? (
+                                <button 
+                                  onClick={() => setShowBusinessDetails(true)}
+                                  className="mt-3 text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-4 py-1.5 rounded-full transition-colors"
+                                >
+                                  Click for details
+                                </button>
+                              ) : (
+                                <div className="mt-4 w-full text-left bg-gray-50 rounded-lg p-3 border border-gray-100 relative animate-in slide-in-from-top-2">
+                                  <button 
+                                    onClick={() => setShowBusinessDetails(false)}
+                                    className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
+                                  >
+                                    <X className="w-3 h-3" />
+                                  </button>
+                                  <div className="grid grid-cols-2 gap-y-2 gap-x-4 mt-1">
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Active</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.active_company}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Years Trading</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.years_trading}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Net Assets</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.positive_net_assets}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Accounts</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.latest_accounts_filed}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Insolvency</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.insolvency_indicators}</span>
+                                    </div>
+                                    <div>
+                                      <span className="text-[8px] font-bold text-gray-400 uppercase tracking-wider block">Charges</span>
+                                      <span className="text-[10px] text-gray-900 font-medium">{lead.csv_data.ch_enrichment.charges}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <div className="flex flex-col items-center justify-center py-6">
+                          <Building className="w-8 h-8 text-gray-200 mb-2" />
+                          <p className="text-[10px] text-gray-400 text-center max-w-[180px]">
+                            No business intelligence data available for this lead yet.
+                          </p>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
-                    <Sun className="w-4 h-4 text-amber-500 mb-1" />
-                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Solar Exposure</span>
-                    <DisplayValue value={(lead as any).solar_exposure} className="text-[10px] text-center" />
-                  </div>
-                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
-                    <Activity className="w-4 h-4 text-green-500 mb-1" />
-                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Shading</span>
-                    <DisplayValue value={activeBuilding ? activeBuilding.shading_score : (lead as any).shading} className="text-[10px] text-center" />
-                  </div>
-                  <div className="flex-1 flex flex-col items-center justify-center text-center px-1">
-                    <Globe className="w-4 h-4 text-blue-500 mb-1" />
-                    <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-0.5">Orientation</span>
-                    <DisplayValue value={activeBuilding ? activeBuilding.orientation : ((lead as any).orientation || lead.solar_location)} className="text-[10px] text-center" />
-                  </div>
+                  
                 </div>
               </div>
 
+            </div>
+
+            {/* RIGHT COLUMN (4 cols) */}
+            <div className="col-span-12 md:col-span-4 flex flex-col gap-4">
+              
               {/* Attached Documents */}
               <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col max-h-[140px]">
                 <div className="flex items-center justify-between mb-2">
@@ -585,9 +659,79 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                 </div>
               </div>
 
+              {hasBills && (
+                  <div className="mt-3 pt-3 border-t border-gray-100">
+                    <h3 className="text-[11px] font-bold text-green-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
+                      <CheckCircle className="w-3.5 h-3.5" /> Electricity Bills
+                    </h3>
+                    <div className="flex flex-wrap gap-2">
+                      {billUrls.map((url, idx) => (
+                        <a
+                          key={url}
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center px-2 py-1 bg-green-50 border border-green-200 text-green-700 text-[10px] font-bold rounded hover:bg-green-100 transition-colors shadow-sm"
+                        >
+                          <Download className="w-3 h-3 mr-1" /> Bill {idx + 1}
+                        </a>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+              {/* IMAGE */}
+                <div 
+                  className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 h-64 shrink-0 relative group cursor-pointer"
+                  onClick={() => setLightboxUrl(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url)}
+                >
+                  {lead.property_type && (
+                    <div className="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+                      <span className="text-[10px] font-bold text-gray-700 capitalize tracking-wide flex items-center gap-1.5">
+                        <Building className="w-3 h-3 text-gray-500" />
+                        {lead.property_type}
+                      </span>
+                    </div>
+                  )}
+                  {(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url) ? (
+                  <>
+                    <img 
+                      src={activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url} 
+                      alt="Property" 
+                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      onError={(e) => {
+                        (e.target as HTMLImageElement).style.display = 'none';
+                        (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                    <div className="absolute inset-0 bg-black/5 flex flex-col items-center justify-center hidden">
+                      <Home className="w-8 h-8 text-gray-300 mb-2" />
+                      <span className="text-xs font-medium text-gray-400">Image not available</span>
+                    </div>
+                    <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                  </>
+                ) : (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <Home className="w-8 h-8 text-gray-300 mb-2" />
+                    <span className="text-xs font-medium text-gray-400">No image provided</span>
+                  </div>
+                )}
+              </div>
+
+              {/* NOTES */}
+              <div className="bg-gray-50 rounded-lg p-3 h-40 shrink-0 border border-gray-100 flex flex-col min-h-0">
+                <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 block shrink-0">Notes</span>
+                <div className="overflow-y-auto min-h-0 flex-1 pr-1 custom-scrollbar">
+                  <p className="text-[10px] font-bold text-gray-800 leading-relaxed whitespace-pre-wrap">
+                    {lead.marketplace_notes || lead.qualification_notes || <MissingValue />}
+                  </p>
+                </div>
+              </div>
+              
             </div>
           </div>
-        </div>
+
+          </div>
 
         {/* Footer */}
         <div className="px-6 py-4 bg-white border-t border-gray-200 flex items-center justify-between">

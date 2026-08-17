@@ -28,6 +28,39 @@ const DisplayValue = ({ value, suffix = '', className = "" }: { value: any, suff
   return <span className={`text-gray-900 font-semibold ${className}`} title={`${strValue}${suffix}`}>{strValue}{suffix}</span>;
 };
 
+const SavingsCarousel = ({ lead }: { lead: any }) => {
+  const [showPayback, setShowPayback] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShowPayback(prev => !prev);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+  const estGen = estSize ? estSize * 850 : 0;
+  const rate = lead.unit_rate ? parseFloat(lead.unit_rate) : 0.25;
+  const annualSavings = estGen * rate;
+  const systemValue = calculateIndicativeSystemValue(estSize)?.central || 0;
+  const payback = (annualSavings > 0 && systemValue > 0) ? (systemValue / annualSavings) : 0;
+
+  return (
+    <div className="bg-purple-50 rounded-lg relative overflow-hidden flex flex-col items-center justify-center text-center h-[76px]">
+      <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 transform ${showPayback ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'} p-3`}>
+        <Zap className="w-4 h-4 text-purple-400 mb-1" />
+        <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Est. Annual Savings</span>
+        <DisplayValue value={annualSavings ? `£${annualSavings.toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : null} className="text-xs text-purple-900" />
+      </div>
+      <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 transform ${showPayback ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'} p-3`}>
+        <Clock className="w-4 h-4 text-purple-400 mb-1" />
+        <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Est. Payback</span>
+        <DisplayValue value={payback ? `${payback.toFixed(1)} Years` : null} className="text-xs text-purple-900" />
+      </div>
+    </div>
+  );
+};
+
 export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOpen, onClose, lead, onPurchase }) => {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [hasBills, setHasBills] = useState<boolean>(false);
@@ -415,12 +448,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     </h3>
                     
                     <div className="grid grid-cols-2 gap-3 shrink-0">
-                      <div className="bg-purple-50 rounded-lg p-3 flex flex-col items-center justify-center text-center">
-                        <Building className="w-4 h-4 text-purple-400 mb-1" />
-                        <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Property Type</span>
-                        <DisplayValue value={lead.property_type || 'warehouse/factory'} className="text-xs text-purple-900" />
-                      </div>
-                      <div className="bg-blue-50 rounded-lg p-3 flex flex-col items-center justify-center text-center relative group">
+                        <SavingsCarousel lead={lead} />
+                        <div className="bg-blue-50 rounded-lg p-3 flex flex-col items-center justify-center text-center relative group">
                         <Globe className="w-4 h-4 text-blue-400 mb-1" />
                         <span className="text-[9px] font-bold text-blue-400 uppercase tracking-wider mb-1 flex items-center gap-1">
                           Estimated Range <Info className="w-3 h-3 text-blue-300" />
@@ -841,11 +870,19 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 })()}
 
               {/* IMAGE */}
-              <div 
-                className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 h-64 shrink-0 relative group cursor-pointer"
-                onClick={() => setLightboxUrl(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url)}
-              >
-                {(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url) ? (
+                <div 
+                  className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 h-64 shrink-0 relative group cursor-pointer"
+                  onClick={() => setLightboxUrl(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url)}
+                >
+                  {lead.property_type && (
+                    <div className="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
+                      <span className="text-[10px] font-bold text-gray-700 capitalize tracking-wide flex items-center gap-1.5">
+                        <Building className="w-3 h-3 text-gray-500" />
+                        {lead.property_type}
+                      </span>
+                    </div>
+                  )}
+                  {(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url) ? (
                   <>
                     <img 
                       src={activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url} 

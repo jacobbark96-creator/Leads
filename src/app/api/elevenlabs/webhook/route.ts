@@ -175,10 +175,16 @@ export async function POST(req: Request) {
                               lowerSummary.includes('do not call') || 
                               lowerSummary.includes('unqualified') ||
                               lowerSummary.includes('hung up') ||
-                              lowerSummary.includes('voicemail') ||
                               lowerSummary.includes('not looking');
 
-        const isQualified = !isUnqualified && (
+        const isCallback = !isUnqualified && (
+                           lowerSummary.includes('callback') ||
+                           lowerSummary.includes('call back') ||
+                           lowerSummary.includes('busy') ||
+                           lowerSummary.includes('driving') ||
+                           lowerSummary.includes('call me later'));
+
+        const isQualified = !isUnqualified && !isCallback && (
                             lowerSummary.includes('is interested') || 
                             lowerSummary.includes('wants more information') || 
                             lowerSummary.includes('send information') ||
@@ -187,6 +193,8 @@ export async function POST(req: Request) {
 
         if (isUnqualified) {
           statusToUpdate = 'Unqualified';
+        } else if (isCallback) {
+          statusToUpdate = 'Callback';
         } else if (isQualified) {
           statusToUpdate = 'Qualified';
         }

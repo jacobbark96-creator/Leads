@@ -91,8 +91,42 @@ export async function POST(req: Request) {
     // If we couldn't fetch it, we might still have some data in the webhook payload itself
     const dataToUse = convData || payload;
 
-    const leadId = dataToUse?.metadata?.custom_data?.leadId || payload.metadata?.custom_data?.leadId || null;
+    let leadId = dataToUse?.metadata?.custom_data?.leadId || payload.metadata?.custom_data?.leadId || null;
     const promptVersion = dataToUse?.metadata?.custom_data?.prompt_version || 'v1.0.0';
+    
+    // Fallback: Check if it's in dynamic_variables
+    if (!leadId) {
+        leadId = dataToUse?.metadata?.dynamic_variables?.leadId || payload.metadata?.dynamic_variables?.leadId || null;
+    }
+
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
+      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+    );
+
+    // Fallback: Check call_logs by Twilio call_sid
+    const callSid = dataToUse?.metadata?.twilio?.call_sid || payload.metadata?.twilio?.call_sid || null;
+    if (!leadId && callSid) {
+        const { data: callLog } = await supabaseAdmin
+            .from('call_logs')
+            .select('lead_id')
+            .eq('call_sid', callSid)
+            .order('created_at', { ascending: false })
+            .limit(1)
+            .maybeSingle();
+        if (callLog?.lead_id) {
+            leadId = callLog.lead_id;
+        }
+    }
+
+    // 1. Find the AI Dialer user
+    const { data: aiUser } = await supabaseAdmin
+      .from('users')
+      .select('id')
+      .ilike('email', 'ai@openlead.co.uk')
+      .single();
+
+    const userId = aiUser?.id || null;
     
     // ElevenLabs Data Extraction feature can provide a summary and disposition
     // We expect the user to configure 'summary' in Data Extraction
@@ -113,23 +147,9 @@ export async function POST(req: Request) {
     }
 
     if (!leadId) {
-      console.warn('ElevenLabs Webhook received but no leadId found in custom_data');
+      console.warn('ElevenLabs Webhook received but no leadId found via custom_data or call_sid');
       return NextResponse.json({ error: 'Missing leadId' }, { status: 400 });
     }
-
-    const supabaseAdmin = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || ''
-    );
-
-    // 1. Find the AI Dialer user
-    const { data: aiUser } = await supabaseAdmin
-      .from('users')
-      .select('id')
-      .ilike('email', 'ai@openlead.co.uk')
-      .single();
-
-    const userId = aiUser?.id || null;
 
     // 2. Add a note to the lead's timeline
     const { error: noteError } = await supabaseAdmin.from('lead_notes').insert({

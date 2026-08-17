@@ -229,31 +229,49 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 </div>
 
                 {/* Quick Stats Box */}
-                <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex items-center divide-x divide-gray-100">
-                  <div className="flex-1 px-2 text-center flex flex-col items-center justify-center">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 leading-tight">Est. Monthly Spend</span>
-                    <span className="text-lg font-black text-emerald-600">
-                      {lead.monthly_spend ? `£${lead.monthly_spend.toLocaleString()}/mo` : <MissingValue />}
-                    </span>
-                  </div>
-                  <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Timeframe</span>
-                    <span className="text-sm font-bold text-gray-900">
-                      <DisplayValue value={lead.timeframe} className="text-center" />
-                    </span>
-                  </div>
-                  <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Bills Received</span>
-                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${hasBills ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-200 text-gray-300'}`}>
-                       {hasBills ? <Check className="w-4 h-4" strokeWidth={3} /> : <FileText className="w-4 h-4 opacity-50" />}
+                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex items-center divide-x divide-gray-100">
+                    <div className="flex-1 px-2 text-center flex flex-col items-center justify-center">
+                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 leading-tight">Est. Monthly Spend</span>
+                      <span className="text-lg font-black text-emerald-600">
+                        {lead.monthly_spend ? `£${lead.monthly_spend.toLocaleString()}/mo` : <MissingValue />}
+                      </span>
                     </div>
-                  </div>
-                  <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Decision Maker</span>
-                    <div className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${lead.sole_decision_maker ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-200 text-gray-300'}`}>
-                       {lead.sole_decision_maker ? <Check className="w-4 h-4" strokeWidth={3} /> : <User className="w-4 h-4 opacity-50" />}
+                    <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
+                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Timeframe</span>
+                      <span className="text-sm font-bold text-gray-900">
+                        <DisplayValue value={lead.timeframe} className="text-center" />
+                      </span>
                     </div>
-                  </div>
+                    <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
+                      <div className="relative group flex items-center justify-center mb-2">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Annual Generation</span>
+                        <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
+                          Based on system size.
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">
+                        {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
+                          ? `${(calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)! * 850).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh`
+                          : <MissingValue />}
+                      </span>
+                    </div>
+                    <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
+                      <div className="relative group flex items-center justify-center mb-2">
+                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Consumption Offset</span>
+                        <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
+                          Estimated percentage of current energy usage this system could offset.
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
+                      <span className="text-sm font-bold text-gray-900">
+                        {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) && lead.monthly_spend && lead.unit_rate
+                          ? `${Math.min(100, Math.round(((calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)! * 850) / ((lead.monthly_spend * 12) / parseFloat(lead.unit_rate))) * 100))}%`
+                          : <MissingValue />}
+                      </span>
+                    </div>
                   <div className="flex-1 px-2 text-center flex flex-col items-center justify-center">
                     <div className="relative group flex items-center justify-center mb-2">
                       <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider leading-tight">Est. System Size</span>
@@ -281,39 +299,55 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <Home className="w-4 h-4 text-gray-400" /> Property & Installation
                   </h3>
                   <div className="grid grid-cols-2 gap-2 flex-1">
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Location</span>
-                      <div className="flex flex-col">
-                        <DisplayValue value={extractTown(activeBuildingIndex === 0 ? lead.location : activeBuilding?.address)} className="text-[11px]" />
-                        {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude) && (
-                          <span className="text-[9px] text-gray-400 font-medium italic mt-0.5 leading-tight">
-                            {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
-                      <DisplayValue 
-                        value={activeBuildingIndex === 0 ? lead.roof_size?.toString().replace(/\s*sqm\s*/i, '').trim() : activeBuilding?.roof_size_sqm} 
-                        suffix=" SqM" 
-                        className="text-[11px]" 
-                      />
-                    </div>
-
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status} className="text-[11px]" />
-                      {(activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status)?.toLowerCase() === 'leased' && (
-                        <div className="mt-1.5 pt-1.5 border-t border-gray-200 flex flex-col gap-0.5">
-                          <span className="text-[9px] text-gray-500 font-medium">Lease: {lead.lease_duration || 'Unknown'}</span>
-                          <span className="text-[9px] text-gray-500 font-medium">Landlord OK: {lead.landlord_permission || 'Unknown'}</span>
+                      <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
+                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Location</span>
+                        <div className="flex flex-col">
+                          <DisplayValue value={extractTown(activeBuildingIndex === 0 ? lead.location : activeBuilding?.address)} className="text-[11px]" />
+                          {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude) && (
+                            <span className="text-[9px] text-gray-400 font-medium italic mt-0.5 leading-tight">
+                              {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude)}
+                            </span>
+                          )}
                         </div>
-                      )}
-                    </div>
+                      </div>
+                      
+                      <div className="bg-gray-50 rounded-lg p-2.5 flex justify-between divide-x divide-gray-200">
+                          <div className="flex flex-col justify-center pr-2 w-1/2">
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>
+                            <DisplayValue value={activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status} className="text-[11px]" />
+                            {(activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status)?.toLowerCase() === 'leased' && (
+                              <div className="mt-1.5 pt-1.5 border-t border-gray-200 flex flex-col gap-0.5">
+                                <span className="text-[9px] text-gray-500 font-medium">Lease: {lead.lease_duration || 'Unknown'}</span>
+                                <span className="text-[9px] text-gray-500 font-medium">Landlord OK: {lead.landlord_permission || 'Unknown'}</span>
+                              </div>
+                            )}
+                          </div>
+                          <div className="flex flex-col justify-center pl-2 w-1/2">
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
+                            <DisplayValue 
+                              value={activeBuildingIndex === 0 ? lead.roof_size?.toString().replace(/\s*sqm\s*/i, '').trim() : activeBuilding?.roof_size_sqm} 
+                              suffix=" SqM" 
+                              className="text-[11px]" 
+                            />
+                          </div>
+                        </div>
 
-                    {(() => {
+                        <div className="bg-gray-50 rounded-lg p-2.5 flex justify-between divide-x divide-gray-200">
+                          <div className="flex flex-col justify-center items-center pr-2 w-1/2">
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 text-center">Decision Maker</span>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${lead.sole_decision_maker ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-200 text-gray-300'}`}>
+                              {lead.sole_decision_maker ? <Check className="w-3 h-3" strokeWidth={3} /> : <User className="w-3 h-3 opacity-50" />}
+                            </div>
+                          </div>
+                          <div className="flex flex-col justify-center items-center pl-2 w-1/2">
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 text-center">Bills Received</span>
+                            <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${hasBills ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-200 text-gray-300'}`}>
+                              {hasBills ? <Check className="w-3 h-3" strokeWidth={3} /> : <FileText className="w-3 h-3 opacity-50" />}
+                            </div>
+                          </div>
+                        </div>
+
+                      {(() => {
                       const currentRoofMaterial = activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material;
                       const isAsbestos = typeof currentRoofMaterial === 'string' && currentRoofMaterial.toLowerCase().includes('asbestos');
                       

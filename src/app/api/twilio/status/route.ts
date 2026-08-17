@@ -105,6 +105,9 @@ export async function POST(req: Request) {
       }
       if (callStatus === 'canceled') statusText = 'Canceled';
 
+      // We only insert a note here if it's NOT Voicemail handled by AMD, 
+      // but if it's 'completed' and short, AMD might have already inserted a note. 
+      // We'll let this insert anyway, it will just say "Answered (X seconds)".
       const noteContent = `📞 Call by ${userName}: ${statusText} (${duration} seconds)`;
       const tableName = entityType === 'contractor' ? 'contractor_notes' : 'lead_notes';
       const idField = entityType === 'contractor' ? 'contractor_id' : 'lead_id';
@@ -116,6 +119,26 @@ export async function POST(req: Request) {
         author_name: 'System',
         call_sid: callSid
       }]);
+
+      // Disposition in lead_pack_memberships if it was a failed connection (No Answer, Busy, Failed)
+      // If it was Answered, the ElevenLabs webhook will handle the disposition later based on AI feedback
+      if (entityType === 'lead' && ['No Answer', 'Busy', 'Failed', 'Canceled'].includes(statusText)) {
+        const { data: membership } = await supabase
+          .from('lead_pack_memberships')
+          .select('id')
+          .eq('lead_id', entityId)
+          .is('disposition', null)
+          .limit(1)
+          .maybeSingle();
+
+        if (membership?.id) {
+          await supabase.rpc('complete_lead_in_pack', {
+            p_membership_id: membership.id,
+            p_disposition: statusText,
+            p_notes: '' 
+          });
+        }
+      }
     }
 
     return new NextResponse(`<?xml version="1.0" encoding="UTF-8"?><Response></Response>`, { 

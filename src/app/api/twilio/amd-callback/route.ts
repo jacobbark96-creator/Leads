@@ -1,10 +1,14 @@
 import { NextResponse } from 'next/server';
+import { createClient } from '@supabase/supabase-js';
 
 export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
+    const url = new URL(req.url);
+    const entityId = url.searchParams.get('entityId');
+
     const text = await req.text();
     const params = new URLSearchParams(text);
     const answeredBy = params.get('AnsweredBy');
@@ -31,6 +35,35 @@ export async function POST(req: Request) {
           },
           body: updateParams.toString()
         });
+      }
+
+      // Disposition the lead as Voicemail in lead_pack_memberships if possible
+      if (entityId) {
+        const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
+        
+        // Also add a note so it shows in the timeline
+        await supabase.from('lead_notes').insert([{
+          lead_id: entityId,
+          content: `📞 Call by System: Voicemail detected (AMD)`,
+          author_name: 'System',
+          call_sid: callSid
+        }]);
+
+        const { data: membership } = await supabase
+          .from('lead_pack_memberships')
+          .select('id')
+          .eq('lead_id', entityId)
+          .is('disposition', null)
+          .limit(1)
+          .maybeSingle();
+
+        if (membership?.id) {
+          await supabase.rpc('complete_lead_in_pack', {
+            p_membership_id: membership.id,
+            p_disposition: 'Voicemail',
+            p_notes: '' 
+          });
+        }
       }
     }
 

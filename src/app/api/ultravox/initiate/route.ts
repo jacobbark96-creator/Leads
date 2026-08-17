@@ -79,7 +79,7 @@ export async function POST(req: Request) {
     params.append('Record', 'true'); // Force Twilio to record the call
     params.append('MachineDetection', 'Enable'); // Detect voicemail vs human
     params.append('AsyncAmd', 'true'); // Connect call immediately while analyzing in background
-    params.append('AsyncAmdStatusCallback', `${baseUrl}/api/twilio/amd-callback`); // Where to send voicemail detection result
+    params.append('AsyncAmdStatusCallback', `${baseUrl}/api/twilio/amd-callback?entityId=${leadId}`); // Where to send voicemail detection result
     params.append('Timeout', '30'); // Stop ringing if no answer after 30 seconds
 
     // Add StatusCallbacks to log the call and recording in the CRM timeline

@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import crypto from 'crypto';
 
-export const runtime = 'nodejs'; // Use Node.js runtime for crypto operations
+export const runtime = 'edge';
 export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
@@ -27,11 +26,27 @@ export async function POST(req: Request) {
           // Prevent replay attacks (30 min tolerance)
           const currentTime = Math.floor(Date.now() / 1000);
           if (currentTime - parseInt(timestamp) <= 30 * 60) {
-            // Verify HMAC
+            // Verify HMAC using Web Crypto API (Edge compatible)
             const payloadToSign = `${timestamp}.${rawBody}`;
-            const hmac = crypto.createHmac('sha256', secret);
-            hmac.update(payloadToSign);
-            const expectedSignature = hmac.digest('hex');
+            
+            const encoder = new TextEncoder();
+            const key = await crypto.subtle.importKey(
+              'raw',
+              encoder.encode(secret),
+              { name: 'HMAC', hash: 'SHA-256' },
+              false,
+              ['sign']
+            );
+            
+            const signatureBuffer = await crypto.subtle.sign(
+              'HMAC',
+              key,
+              encoder.encode(payloadToSign)
+            );
+            
+            // Convert ArrayBuffer to Hex
+            const hashArray = Array.from(new Uint8Array(signatureBuffer));
+            const expectedSignature = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
             
             if (signature !== expectedSignature) {
               console.warn('ElevenLabs webhook signature mismatch');

@@ -44,7 +44,8 @@ import {
   Database,
   Eye,
   CheckCircle,
-  Flame
+  Flame,
+  User
 } from 'lucide-react';
 
 import { AdminNotifications } from '@/components/AdminNotifications';
@@ -1219,6 +1220,42 @@ function LeadDetailsV2Content() {
     }
   };
 
+  const markAsSoleTrader = async () => {
+    if (!lead) return;
+    try {
+      const updatedCsvData = { ...(lead.csv_data || {}) };
+      updatedCsvData.ch_enrichment = {
+        is_sole_trader: true,
+        company_number: "N/A",
+        active_company: "Sole Trader",
+        years_trading: "N/A",
+        positive_net_assets: "N/A",
+        latest_accounts_filed: "N/A",
+        insolvency_indicators: "N/A",
+        charges: "N/A",
+        number_of_directors: "1",
+        finance_grade: "N/A",
+        finance_score_label: "Sole Trader (No CH Data)"
+      };
+
+      setLead({
+        ...lead,
+        csv_data: updatedCsvData
+      });
+
+      const { error } = await supabase
+        .from('leads')
+        .update({ csv_data: updatedCsvData })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+      toast.success('Marked as Sole Trader');
+    } catch (error) {
+      console.error('Error marking as sole trader:', error);
+      toast.error('Failed to mark as sole trader');
+    }
+  };
+
   const openMarketConfirmModal = async () => {
     setIsMarketConfirmOpen(true);
     if (!lead) return;
@@ -2212,25 +2249,32 @@ function LeadDetailsV2Content() {
                   <div className="flex items-center gap-2">
                       {(lead.status === 'qualified' || lead.status === 'marketplace') && (
                         <div className="flex items-center gap-1">
-                        <button 
-                          onClick={enrichCompanyData}
-                          disabled={isEnrichingCompany}
-                          className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 p-1 rounded transition-colors disabled:opacity-50"
-                          title="Pull data from Companies House"
-                        >
-                          {isEnrichingCompany ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
-                        </button>
-                        {lead.csv_data?.ch_enrichment && (
-                          <button
-                            onClick={clearEnrichmentData}
-                            className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded transition-colors"
-                            title="Clear Companies House data"
+                          <button 
+                            onClick={enrichCompanyData}
+                            disabled={isEnrichingCompany}
+                            className="text-emerald-500 hover:text-emerald-600 hover:bg-emerald-50 p-1 rounded transition-colors disabled:opacity-50"
+                            title="Pull data from Companies House"
                           >
-                            <X className="w-3.5 h-3.5" />
+                            {isEnrichingCompany ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
                           </button>
-                        )}
-                      </div>
-                    )}
+                          <button
+                            onClick={markAsSoleTrader}
+                            className="text-yellow-500 hover:text-yellow-600 hover:bg-yellow-50 p-1 rounded transition-colors"
+                            title="Mark as Sole Trader"
+                          >
+                            <User className="w-3.5 h-3.5" />
+                          </button>
+                          {lead.csv_data?.ch_enrichment && (
+                            <button
+                              onClick={clearEnrichmentData}
+                              className="text-red-400 hover:text-red-600 hover:bg-red-50 p-1 rounded transition-colors"
+                              title="Clear Companies House data"
+                            >
+                              <X className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+                      )}
                     <button onClick={() => handleEditClick('snapshot')} className="text-gray-400 hover:text-blue-600 transition-colors">
                       {editingCard === 'snapshot' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
                     </button>

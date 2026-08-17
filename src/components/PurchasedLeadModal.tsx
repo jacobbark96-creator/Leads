@@ -204,157 +204,86 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
             {/* LEFT COLUMN (8 cols) */}
             <div className="col-span-12 md:col-span-8 flex flex-col gap-4">
               
-              {/* TOP ROW: Price & Stats */}
-              <div className="flex gap-4">
-                {/* Contact Card */}
-            <div className="bg-white rounded-xl p-3 border border-blue-200 shadow-sm flex-[1.4] flex flex-col justify-center relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 opacity-50 z-0 pointer-events-none"></div>
-              <h3 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-2.5 flex items-center gap-1.5 relative z-10">
-                <User className="w-3.5 h-3.5" /> Contact Details
-              </h3>
-              
-              <div className={`grid grid-cols-2 gap-y-3 gap-x-4 relative z-10 ${lead.has_concierge && lead.concierge_status === 'pending' ? 'blur-sm select-none pointer-events-none' : ''}`}>
-                <div className="flex flex-col">
-                  <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><User className="w-3 h-3 text-gray-400"/> Name</span>
-                  <span className="text-xs font-bold text-gray-900 truncate">{lead.name || <MissingValue />}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Briefcase className="w-3 h-3 text-gray-400"/> Company / Job</span>
-                  <span className="text-xs font-bold text-gray-900 truncate">{lead.company || lead.job_title ? [lead.company, lead.job_title].filter(Boolean).join(' - ') : <MissingValue />}</span>
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Phone className="w-3 h-3 text-gray-400"/> Phone</span>
-                  {lead.phone ? <a href={`tel:${lead.phone}`} className="text-xs font-bold text-blue-600 hover:underline truncate">{lead.phone}</a> : <MissingValue />}
-                </div>
-                <div className="flex flex-col">
-                  <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Mail className="w-3 h-3 text-gray-400"/> Email</span>
-                  {lead.email ? <a href={`mailto:${lead.email}`} className="text-xs font-bold text-blue-600 hover:underline truncate">{lead.email}</a> : <MissingValue />}
-                </div>
-                <div className="flex flex-col col-span-2">
-                  <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-gray-400"/> Full Address</span>
-                  <span className="text-xs font-bold text-gray-900 truncate">{lead.location || 'No address provided'}</span>
-                </div>
-              </div>
-
-              {lead.has_concierge && lead.concierge_status === 'pending' && (
-                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-[2px]">
-                  {(!lead.concierge_dates || lead.concierge_dates.length === 0) ? (
-                    <div className="bg-white p-4 rounded-xl shadow-2xl border border-amber-200 text-center w-64 max-w-[90%]">
-                      <Clock className="w-6 h-6 text-amber-500 mx-auto mb-2" />
-                      <h4 className="text-sm font-bold text-gray-900 mb-1">Awaiting Booking</h4>
-                      <p className="text-[10px] text-gray-500 mb-3">Please provide 3 preferred dates/times for the site assessment.</p>
-                      
-                      <div className="space-y-2 mb-3">
-                        {[0, 1, 2].map((idx) => (
-                          <input
-                            key={idx}
-                            type="text"
-                            placeholder={`Option ${idx + 1} (e.g. Wed 2pm)`}
-                            value={conciergeDates[idx]}
-                            onChange={(e) => {
-                              const newDates = [...conciergeDates];
-                              newDates[idx] = e.target.value;
-                              setConciergeDates(newDates);
-                            }}
-                            className="w-full text-xs p-2 border border-gray-200 rounded focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
-                          />
-                        ))}
-                      </div>
-                      
-                      <button
-                        onClick={handleSubmitConciergeDates}
-                        disabled={submittingDates}
-                        className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors"
-                      >
-                        {submittingDates ? 'Submitting...' : 'Submit Dates'}
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="bg-white px-5 py-4 rounded-xl shadow-xl border border-amber-200 text-center">
-                      <Clock className="w-8 h-8 text-amber-500 mx-auto mb-2" />
-                      <p className="text-sm font-bold text-gray-900">Awaiting Booking</p>
-                      <p className="text-[10px] text-gray-500 mt-1">We are contacting the client to confirm your appointment.</p>
-                      <div className="mt-3 text-left bg-gray-50 p-2 rounded border border-gray-100">
-                        <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Your Preferences:</p>
-                        <ul className="text-[10px] text-gray-700 list-disc list-inside pl-2">
-                          {lead.concierge_dates.map((d, i) => (
-                            <li key={i}>{d}</li>
-                          ))}
-                        </ul>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-
-                {/* Quick Stats Box */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex items-center divide-x divide-gray-100">
-                    <div className="flex-1 px-2 text-center flex flex-col items-center justify-center">
-                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 leading-tight">Est. Monthly Spend</span>
-                      <span className="text-lg font-black text-emerald-600">
-                        {lead.monthly_spend ? `£${lead.monthly_spend.toLocaleString()}/mo` : <MissingValue />}
-                      </span>
-                    </div>
-                    <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                      <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Timeframe</span>
-                      <span className="text-sm font-bold text-gray-900">
-                        <DisplayValue value={lead.timeframe} className="text-center" />
-                      </span>
-                    </div>
-                    <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                      <div className="relative group flex items-center justify-center mb-2">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Annual Generation</span>
-                        <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
-                          Based on system size.
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                        </div>
-                      </div>
-                      <span className="text-sm font-bold text-gray-900">
-                        {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
-                          ? `${(calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)! * 850).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh`
-                          : <MissingValue />}
-                      </span>
-                    </div>
-                    <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                        <div className="relative group flex items-center justify-center mb-2">
-                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Consumption Offset</span>
-                          <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
-                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
-                            Estimated percentage of current energy usage this system could offset.
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                          </div>
-                        </div>
-                        <span className="text-sm font-bold text-gray-900">
-                          {(() => {
-                            const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
-                            if (sysSize && lead.monthly_spend) {
-                              const rate = lead.unit_rate ? Number(lead.unit_rate) : 0.25;
-                              const estGen = sysSize * 850;
-                              const annualConsumption = (lead.monthly_spend * 12) / rate;
-                              return `${Math.min(100, Math.round((estGen / annualConsumption) * 100))}%`;
-                            }
-                            return <MissingValue />;
-                          })()}
-                        </span>
-                      </div>
-                  <div className="flex-1 px-2 text-center flex flex-col items-center justify-center">
-                    <div className="relative group flex items-center justify-center mb-2">
-                      <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider leading-tight">Est. System Size</span>
-                      <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
-                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
-                        This is an automated calculation based on the monthly spend and roof size. It may be incorrect should the shape and design of the roof be intricate.
-                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                      </div>
-                    </div>
-                    <span className="text-lg font-black text-gray-900">
-                      {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
-                        ? `${calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)?.toFixed(1)} kWp`
-                        : <MissingValue />}
-                    </span>
+              {/* TOP ROW: Contact Card */}
+              <div className="bg-white rounded-xl p-4 border border-blue-200 shadow-sm w-full flex flex-col justify-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 opacity-50 z-0 pointer-events-none"></div>
+                <h3 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-3 flex items-center gap-1.5 relative z-10">
+                  <User className="w-3.5 h-3.5" /> Contact Details
+                </h3>
+                
+                <div className={`grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-4 relative z-10 ${lead.has_concierge && lead.concierge_status === 'pending' ? 'blur-sm select-none pointer-events-none' : ''}`}>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><User className="w-3 h-3 text-gray-400"/> Name</span>
+                    <span className="text-sm font-bold text-gray-900 truncate">{lead.name || <MissingValue />}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Briefcase className="w-3 h-3 text-gray-400"/> Company / Job</span>
+                    <span className="text-sm font-bold text-gray-900 truncate">{lead.company || lead.job_title ? [lead.company, lead.job_title].filter(Boolean).join(' - ') : <MissingValue />}</span>
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Phone className="w-3 h-3 text-gray-400"/> Phone</span>
+                    {lead.phone ? <a href={`tel:${lead.phone}`} className="text-sm font-bold text-blue-600 hover:underline truncate">{lead.phone}</a> : <MissingValue />}
+                  </div>
+                  <div className="flex flex-col">
+                    <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Mail className="w-3 h-3 text-gray-400"/> Email</span>
+                    {lead.email ? <a href={`mailto:${lead.email}`} className="text-sm font-bold text-blue-600 hover:underline truncate">{lead.email}</a> : <MissingValue />}
+                  </div>
+                  <div className="flex flex-col col-span-2 md:col-span-4">
+                    <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-gray-400"/> Full Address</span>
+                    <span className="text-sm font-bold text-gray-900 truncate">{lead.location || 'No address provided'}</span>
                   </div>
                 </div>
+
+                {lead.has_concierge && lead.concierge_status === 'pending' && (
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-[2px]">
+                    {(!lead.concierge_dates || lead.concierge_dates.length === 0) ? (
+                      <div className="bg-white p-4 rounded-xl shadow-2xl border border-amber-200 text-center w-64 max-w-[90%]">
+                        <Clock className="w-6 h-6 text-amber-500 mx-auto mb-2" />
+                        <h4 className="text-sm font-bold text-gray-900 mb-1">Awaiting Booking</h4>
+                        <p className="text-[10px] text-gray-500 mb-3">Please provide 3 preferred dates/times for the site assessment.</p>
+                        
+                        <div className="space-y-2 mb-3">
+                          {[0, 1, 2].map((idx) => (
+                            <input
+                              key={idx}
+                              type="text"
+                              placeholder={`Option ${idx + 1} (e.g. Wed 2pm)`}
+                              value={conciergeDates[idx]}
+                              onChange={(e) => {
+                                const newDates = [...conciergeDates];
+                                newDates[idx] = e.target.value;
+                                setConciergeDates(newDates);
+                              }}
+                              className="w-full text-xs p-2 border border-gray-200 rounded focus:border-amber-500 focus:ring-1 focus:ring-amber-500"
+                            />
+                          ))}
+                        </div>
+                        
+                        <button
+                          onClick={handleSubmitConciergeDates}
+                          disabled={submittingDates}
+                          className="w-full py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs font-bold rounded-lg transition-colors"
+                        >
+                          {submittingDates ? 'Submitting...' : 'Submit Dates'}
+                        </button>
+                      </div>
+                    ) : (
+                      <div className="bg-white px-5 py-4 rounded-xl shadow-xl border border-amber-200 text-center">
+                        <Clock className="w-8 h-8 text-amber-500 mx-auto mb-2" />
+                        <p className="text-sm font-bold text-gray-900">Awaiting Booking</p>
+                        <p className="text-[10px] text-gray-500 mt-1">We are contacting the client to confirm your appointment.</p>
+                        <div className="mt-3 text-left bg-gray-50 p-2 rounded border border-gray-100">
+                          <p className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Your Preferences:</p>
+                          <ul className="text-[10px] text-gray-700 list-disc list-inside pl-2">
+                            {lead.concierge_dates.map((d, i) => (
+                              <li key={i}>{d}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                )}
               </div>
 
               {/* MIDDLE & BOTTOM: Property & Insights Stack */}
@@ -646,55 +575,76 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
             {/* RIGHT COLUMN (4 cols) */}
             <div className="col-span-12 md:col-span-4 flex flex-col gap-4">
               
-              {/* Attached Documents */}
-              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col max-h-[140px]">
-                <div className="flex items-center justify-between mb-2">
-                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
-                    <Paperclip className="w-3.5 h-3.5 text-blue-500" /> Attached Documents
-                  </h3>
-                  {documents.length > 0 && (
-                    <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
-                      {documents.length}
-                    </span>
-                  )}
+              {/* Quick Stats Box */}
+              <div className="bg-white rounded-xl p-4 border border-gray-200 grid grid-cols-2 gap-y-4 gap-x-2">
+                <div className="flex flex-col items-center justify-center text-center">
+                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 leading-tight">Est. Monthly Spend</span>
+                  <span className="text-lg font-black text-emerald-600">
+                    {lead.monthly_spend ? `£${lead.monthly_spend.toLocaleString()}/mo` : <MissingValue />}
+                  </span>
                 </div>
-                <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-1">
-                  {documents.length > 0 ? (
-                    <div className="flex flex-col gap-2">
-                      {documents.map((doc) => (
-                        <a
-                          key={doc.id}
-                          href={doc.file_url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          className="flex items-center p-2 bg-gray-50 border border-gray-100 rounded-lg hover:bg-blue-50 hover:border-blue-100 transition-colors group"
-                        >
-                          <div className="w-8 h-8 rounded bg-white flex items-center justify-center border border-gray-200 mr-3 shrink-0 group-hover:border-blue-200">
-                            <FileText className="w-4 h-4 text-gray-400 group-hover:text-blue-500" />
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className="text-xs font-semibold text-gray-900 truncate group-hover:text-blue-700">
-                              {doc.file_name || 'Document'}
-                            </p>
-                            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mt-0.5">
-                              {doc.file_size ? `${(doc.file_size / 1024).toFixed(1)} KB` : 'Unknown Size'} • {doc.file_type || 'File'}
-                            </p>
-                          </div>
-                          <Download className="w-4 h-4 text-gray-400 group-hover:text-blue-600 shrink-0 ml-2" />
-                        </a>
-                      ))}
+                <div className="flex flex-col items-center justify-center text-center">
+                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Timeframe</span>
+                  <span className="text-sm font-bold text-gray-900">
+                    <DisplayValue value={lead.timeframe} className="text-center" />
+                  </span>
+                </div>
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="relative group flex items-center justify-center mb-2">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Annual Generation</span>
+                    <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
+                      Based on system size.
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                     </div>
-                  ) : (
-                    <div className="h-full flex flex-col items-center justify-center text-center py-4 text-gray-400">
-                      <FileText className="w-6 h-6 mb-2 opacity-50" />
-                      <span className="text-[10px] uppercase font-bold tracking-wider">No Documents Attached</span>
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">
+                    {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
+                      ? `${(calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)! * 850).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh`
+                      : <MissingValue />}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center justify-center text-center">
+                  <div className="relative group flex items-center justify-center mb-2">
+                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Consumption Offset</span>
+                    <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
+                      Estimated percentage of current energy usage this system could offset.
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
                     </div>
-                  )}
+                  </div>
+                  <span className="text-sm font-bold text-gray-900">
+                    {(() => {
+                      const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+                      if (sysSize && lead.monthly_spend) {
+                        const rate = lead.unit_rate ? Number(lead.unit_rate) : 0.25;
+                        const estGen = sysSize * 850;
+                        const annualConsumption = (lead.monthly_spend * 12) / rate;
+                        return `${Math.min(100, Math.round((estGen / annualConsumption) * 100))}%`;
+                      }
+                      return <MissingValue />;
+                    })()}
+                  </span>
+                </div>
+                <div className="flex flex-col items-center justify-center text-center col-span-2 mt-2 pt-4 border-t border-gray-100">
+                  <div className="relative group flex items-center justify-center mb-2">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider leading-tight">Est. System Size</span>
+                    <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
+                      This is an automated calculation based on the monthly spend and roof size. It may be incorrect should the shape and design of the roof be intricate.
+                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                    </div>
+                  </div>
+                  <span className="text-xl font-black text-gray-900">
+                    {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
+                      ? `${calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)?.toFixed(1)} kWp`
+                      : <MissingValue />}
+                  </span>
                 </div>
               </div>
 
               {hasBills && (
-                  <div className="mt-3 pt-3 border-t border-gray-100">
+                  <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col">
                     <h3 className="text-[11px] font-bold text-green-700 uppercase tracking-wider mb-2 flex items-center gap-1.5">
                       <CheckCircle className="w-3.5 h-3.5" /> Electricity Bills
                     </h3>
@@ -759,6 +709,53 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                   <p className="text-[10px] font-bold text-gray-800 leading-relaxed whitespace-pre-wrap">
                     {lead.marketplace_notes || lead.qualification_notes || <MissingValue />}
                   </p>
+                </div>
+              </div>
+
+              {/* Attached Documents */}
+              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col max-h-[140px]">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
+                    <Paperclip className="w-3.5 h-3.5 text-blue-500" /> Attached Documents
+                  </h3>
+                  {documents.length > 0 && (
+                    <span className="bg-blue-50 text-blue-600 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                      {documents.length}
+                    </span>
+                  )}
+                </div>
+                <div className="flex-1 overflow-y-auto min-h-0 custom-scrollbar pr-1">
+                  {documents.length > 0 ? (
+                    <div className="flex flex-col gap-2">
+                      {documents.map((doc) => (
+                        <a
+                          key={doc.id}
+                          href={doc.file_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="flex items-center p-2 bg-gray-50 border border-gray-100 rounded-lg hover:bg-blue-50 hover:border-blue-100 transition-colors group"
+                        >
+                          <div className="w-8 h-8 rounded bg-white flex items-center justify-center border border-gray-200 mr-3 shrink-0 group-hover:border-blue-200">
+                            <FileText className="w-4 h-4 text-gray-400 group-hover:text-blue-500" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <p className="text-xs font-semibold text-gray-900 truncate group-hover:text-blue-700">
+                              {doc.file_name || 'Document'}
+                            </p>
+                            <p className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mt-0.5">
+                              {doc.file_size ? `${(doc.file_size / 1024).toFixed(1)} KB` : 'Unknown Size'} • {doc.file_type || 'File'}
+                            </p>
+                          </div>
+                          <Download className="w-4 h-4 text-gray-400 group-hover:text-blue-600 shrink-0 ml-2" />
+                        </a>
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="h-full flex flex-col items-center justify-center text-center py-4 text-gray-400">
+                      <FileText className="w-6 h-6 mb-2 opacity-50" />
+                      <span className="text-[10px] uppercase font-bold tracking-wider">No Documents Attached</span>
+                    </div>
+                  )}
                 </div>
               </div>
               

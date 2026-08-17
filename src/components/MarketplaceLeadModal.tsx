@@ -136,7 +136,32 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
             </div>
           </div>
           <div className="flex items-center gap-3">
-            {profile?.role === 'super_admin' && (
+              {existingRequest ? (
+                <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-500 text-sm font-bold rounded-lg border border-gray-200">
+                  <Clock className="w-4 h-4" />
+                  {existingRequest.status === 'permission_pending' ? 'Request Pending' : 
+                   existingRequest.status === 'rejected' ? 'Request Rejected' : 'Already Requested'}
+                </div>
+              ) : orgRequest ? (
+                <div className="flex flex-col gap-2 px-4 py-2 bg-amber-50 rounded-lg border border-amber-100 max-w-[280px]">
+                  <div className="flex items-start gap-2 text-amber-700 text-[11px] leading-tight font-bold">
+                    <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+                    <span>Already requested by organisation.</span>
+                  </div>
+                </div>
+              ) : (
+                <button
+                  onClick={onPurchase}
+                  disabled={isLoadingRequest}
+                  className={`px-4 py-2 shadow-sm text-sm font-bold rounded-lg text-white flex items-center gap-2 transition-colors ${
+                    profile?.parent_id ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'
+                  } ${isLoadingRequest ? 'opacity-50 cursor-not-allowed' : ''}`}
+                >
+                  <ShoppingCart className="w-4 h-4" />
+                  {profile?.parent_id ? 'Request Purchase' : 'Proceed to Order Summary'}
+                </button>
+              )}
+              {profile?.role === 'super_admin' && (
               <button 
                 onClick={() => setShowMagicLink(true)}
                 title="Generate Magic Checkout Link"
@@ -426,10 +451,18 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         <DisplayValue value={activeBuildingIndex === 0 ? ((lead as any).orientation || lead.solar_location) : activeBuilding?.orientation} className="text-[9px]" />
                       </div>
                     </div>
-                  </div>
+                    </div>
 
-                  {/* Openlead Business View */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col flex-1">
+                    {/* Security Badge */}
+                    <div className="flex items-center gap-2 mt-2 px-1">
+                      <ShieldCheck className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      <p className="text-[9px] text-gray-500 leading-tight">
+                        <span className="font-bold text-gray-700">Secure & GDPR Compliant.</span> Contact info revealed upon purchase.
+                      </p>
+                    </div>
+
+                    {/* Openlead Business View */}
+                    <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col flex-1 mt-4">
                     <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
                       <Building className="w-4 h-4 text-purple-500" /> Openlead Business View
                     </h3>
@@ -816,52 +849,6 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
             </div>
           </div>
 
-          </div>
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 bg-white border-t border-gray-200 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center">
-              <ShieldCheck className="w-4 h-4 text-blue-600" />
-            </div>
-            <div>
-              <p className="text-sm font-bold text-gray-900">Secure & GDPR Compliant</p>
-              <p className="text-xs text-gray-500">Contact information will be revealed instantly upon purchase.</p>
-            </div>
-          </div>
-          <div className="flex gap-3">
-            <button
-              onClick={onClose}
-              className="px-6 py-2.5 border border-gray-300 shadow-sm text-sm font-bold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-            >
-              Cancel
-            </button>
-            {existingRequest ? (
-              <div className="flex items-center gap-2 px-6 py-2.5 bg-gray-100 text-gray-500 text-sm font-bold rounded-xl border border-gray-200">
-                <Clock className="w-4 h-4" />
-                {existingRequest.status === 'permission_pending' ? 'Request Pending Approval' : 
-                 existingRequest.status === 'rejected' ? 'Request Rejected' : 'Already Requested'}
-              </div>
-            ) : orgRequest ? (
-              <div className="flex flex-col gap-2 p-3 bg-amber-50 rounded-xl border border-amber-100 max-w-[320px]">
-                <div className="flex items-start gap-2 text-amber-700 text-[11px] leading-tight font-bold">
-                  <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
-                  <span>This lead has already been requested by someone in your organisation.</span>
-                </div>
-              </div>
-            ) : (
-              <button
-                onClick={onPurchase}
-                disabled={isLoadingRequest}
-                className={`px-6 py-2.5 shadow-sm text-sm font-bold rounded-xl text-white flex items-center gap-2 transition-colors ${
-                  profile?.parent_id ? 'bg-indigo-600 hover:bg-indigo-700' : 'bg-blue-600 hover:bg-blue-700'
-                } ${isLoadingRequest ? 'opacity-50 cursor-not-allowed' : ''}`}
-              >
-                <ShoppingCart className="w-4 h-4" />
-                {profile?.parent_id ? 'Request Purchase' : 'Proceed to Order Summary'}
-              </button>
-            )}
           </div>
         </div>
 

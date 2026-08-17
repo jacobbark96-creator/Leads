@@ -40,7 +40,7 @@ const SavingsCarousel = ({ lead }: { lead: any }) => {
 
   const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
   const estGen = estSize ? estSize * 850 : 0;
-  const rate = lead.unit_rate ? parseFloat(lead.unit_rate) : 0.25;
+  const rate = lead.unit_rate ? Number(lead.unit_rate) : 0.25;
   const annualSavings = estGen * rate;
   const systemValue = calculateIndicativeSystemValue(estSize)?.central || 0;
   const payback = (annualSavings > 0 && systemValue > 0) ? (systemValue / annualSavings) : 0;
@@ -303,7 +303,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                           {(() => {
                             const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
                             if (sysSize && lead.monthly_spend) {
-                              const rate = lead.unit_rate ? parseFloat(lead.unit_rate) : 0.25;
+                              const rate = lead.unit_rate ? Number(lead.unit_rate) : 0.25;
                               const estGen = sysSize * 850;
                               const annualConsumption = (lead.monthly_spend * 12) / rate;
                               return `${Math.min(100, Math.round((estGen / annualConsumption) * 100))}%`;

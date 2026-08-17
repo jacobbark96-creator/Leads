@@ -4,9 +4,9 @@ import { supabase } from '../lib/supabase';
 import { 
   X, MapPin, User, Calendar, Home, CheckCircle, Zap, ShieldCheck, 
   ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, 
-  Battery, TrendingUp, ChevronRight, Check, Building, Phone, Mail, Download, Briefcase, Paperclip
+  Battery, TrendingUp, ChevronRight, Check, Building, Phone, Mail, Download, Briefcase, Paperclip, Info, Moon
 } from 'lucide-react';
-import { extractTown } from '../lib/utils';
+import { extractTown, getVagueLocation, calculateEstimatedSystemSize, calculateIndicativeSystemValue } from '../lib/utils';
 import toast from 'react-hot-toast';
 
 interface PurchasedLeadModalProps {
@@ -15,6 +15,39 @@ interface PurchasedLeadModalProps {
   lead: Lead;
   onUpdateStatus?: (purchaseId: string, newStatus: string, saleAmount?: number) => Promise<void>;
 }
+
+const SavingsCarousel = ({ lead }: { lead: any }) => {
+  const [showPayback, setShowPayback] = useState(false);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setShowPayback(prev => !prev);
+    }, 3500);
+    return () => clearInterval(interval);
+  }, []);
+
+  const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+  const estGen = estSize ? estSize * 850 : 0;
+  const rate = lead.unit_rate ? Number(lead.unit_rate) : 0.25;
+  const annualSavings = estGen * rate;
+  const systemValue = calculateIndicativeSystemValue(estSize)?.central || 0;
+  const payback = (annualSavings > 0 && systemValue > 0) ? (systemValue / annualSavings) : 0;
+
+  return (
+    <div className="bg-purple-50 rounded-lg relative overflow-hidden flex flex-col items-center justify-center text-center h-[76px]">
+      <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 transform ${showPayback ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'} p-3`}>
+        <Zap className="w-4 h-4 text-purple-400 mb-1" />
+        <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Est. Annual Savings</span>
+        <DisplayValue value={annualSavings ? `£${annualSavings.toLocaleString('en-GB', { maximumFractionDigits: 0 })}` : null} className="text-xs text-purple-900" />
+      </div>
+      <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 transform ${showPayback ? 'translate-y-0 opacity-100' : 'translate-y-full opacity-0'} p-3`}>
+        <Clock className="w-4 h-4 text-purple-400 mb-1" />
+        <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Est. Payback</span>
+        <DisplayValue value={payback ? `${payback.toFixed(1)} Years` : null} className="text-xs text-purple-900" />
+      </div>
+    </div>
+  );
+};
 
 const MissingValue = () => null;
 
@@ -44,6 +77,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
   const [saleAmount, setSaleAmount] = useState('');
   const [conciergeDates, setConciergeDates] = useState(['', '', '']);
   const [submittingDates, setSubmittingDates] = useState(false);
+  const [showBusinessDetails, setShowBusinessDetails] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !lead?.id) return;
@@ -296,7 +330,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                           {(() => {
                             const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
                             if (sysSize && lead.monthly_spend) {
-                              const rate = lead.unit_rate ? parseFloat(lead.unit_rate) : 0.25;
+                              const rate = lead.unit_rate ? Number(lead.unit_rate) : 0.25;
                               const estGen = sysSize * 850;
                               const annualConsumption = (lead.monthly_spend * 12) / rate;
                               return `${Math.min(100, Math.round((estGen / annualConsumption) * 100))}%`;

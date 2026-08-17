@@ -291,20 +291,27 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       </span>
                     </div>
                     <div className="flex-1 px-1 text-center flex flex-col items-center justify-center">
-                      <div className="relative group flex items-center justify-center mb-2">
-                        <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Consumption Offset</span>
-                        <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
-                          Estimated percentage of current energy usage this system could offset.
-                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                        <div className="relative group flex items-center justify-center mb-2">
+                          <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Consumption Offset</span>
+                          <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
+                          <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
+                            Estimated percentage of current energy usage this system could offset.
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                          </div>
                         </div>
+                        <span className="text-sm font-bold text-gray-900">
+                          {(() => {
+                            const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+                            if (sysSize && lead.monthly_spend) {
+                              const rate = lead.unit_rate ? parseFloat(lead.unit_rate) : 0.25;
+                              const estGen = sysSize * 850;
+                              const annualConsumption = (lead.monthly_spend * 12) / rate;
+                              return `${Math.min(100, Math.round((estGen / annualConsumption) * 100))}%`;
+                            }
+                            return <MissingValue />;
+                          })()}
+                        </span>
                       </div>
-                      <span className="text-sm font-bold text-gray-900">
-                        {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) && lead.monthly_spend && lead.unit_rate
-                          ? `${Math.min(100, Math.round(((calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)! * 850) / ((lead.monthly_spend * 12) / parseFloat(lead.unit_rate))) * 100))}%`
-                          : <MissingValue />}
-                      </span>
-                    </div>
                   <div className="flex-1 px-2 text-center flex flex-col items-center justify-center">
                     <div className="relative group flex items-center justify-center mb-2">
                       <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider leading-tight">Est. System Size</span>

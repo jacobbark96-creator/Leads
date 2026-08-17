@@ -36,13 +36,21 @@ export async function POST(req: Request) {
     const agentId = process.env.ELEVENLABS_AGENT_ID || 'agent_1801m07bb3mzfjztt30pwv04c73b';
     const apiKey = process.env.ELEVENLABS_API_KEY || '';
 
-    // Get Twilio parameters
+    // Get Twilio parameters safely
     let fromNumber = '';
     let toNumber = '';
     try {
-      const formData = await req.formData();
-      fromNumber = formData.get('From') as string || '';
-      toNumber = formData.get('To') as string || '';
+      const contentType = req.headers.get('content-type') || '';
+      if (contentType.includes('application/x-www-form-urlencoded')) {
+        const text = await req.text();
+        const params = new URLSearchParams(text);
+        fromNumber = params.get('From') || '';
+        toNumber = params.get('To') || '';
+      } else {
+        const formData = await req.formData();
+        fromNumber = formData.get('From') as string || '';
+        toNumber = formData.get('To') as string || '';
+      }
     } catch (e) {
       console.warn("No form data in Twilio request", e);
     }
@@ -59,13 +67,16 @@ export async function POST(req: Request) {
           },
           body: JSON.stringify({
             agent_id: agentId,
-            from_number: fromNumber || '+1234567890',
-            to_number: toNumber || '+1234567890',
+            from_number: fromNumber || '+11111111111',
+            to_number: toNumber || '+22222222222',
             direction: 'outbound',
             conversation_initiation_client_data: {
               dynamic_variables: {
                 leadId: leadId,
                 address: leadAddress
+              },
+              custom_data: {
+                leadId: leadId
               }
             }
           })

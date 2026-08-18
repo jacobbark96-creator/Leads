@@ -74,9 +74,6 @@ export async function POST(req: Request) {
               dynamic_variables: {
                 leadId: leadId,
                 address: leadAddress
-              },
-              custom_data: {
-                leadId: leadId
               }
             }
           })

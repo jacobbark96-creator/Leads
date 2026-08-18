@@ -148,7 +148,8 @@ export async function POST(req: Request) {
 
     if (!leadId) {
       console.warn('ElevenLabs Webhook received but no leadId found via custom_data or call_sid');
-      return NextResponse.json({ error: 'Missing leadId' }, { status: 400 });
+      // Return 200 instead of 400 so ElevenLabs doesn't disable the webhook
+      return NextResponse.json({ success: true, warning: 'Missing leadId' }, { status: 200 });
     }
 
     // 2. Add a note to the lead's timeline

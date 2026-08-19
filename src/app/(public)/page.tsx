@@ -96,8 +96,18 @@ export default function Home() {
                   <div className="flex text-amber-400 mb-1">
                     {[...Array(5)].map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
                   </div>
-                  <span className="text-slate-300 text-sm font-medium">Trusted by 500+ Contractors</span>
+                  <span className="text-slate-300 text-sm font-medium">Trusted by 100+ Contractors</span>
                 </div>
+              </div>
+
+              <div className="mt-8">
+                <a href="#" className="inline-block hover:scale-105 transition-transform duration-300">
+                  <img 
+                    src="/get-it-on-google-play-badge-1.png" 
+                    alt="Get it on Google Play" 
+                    className="h-12 object-contain" 
+                  />
+                </a>
               </div>
             </div>
 

@@ -14,6 +14,13 @@ export const Footer = () => {
             <p className="text-slate-600 max-w-sm mb-6 leading-relaxed">
               High-intent, pre-qualified leads delivered directly to your CRM. Grow your contracting business with predictable revenue.
             </p>
+            <a href="#" className="inline-block hover:scale-105 transition-transform duration-300">
+              <img 
+                src="/get-it-on-google-play-badge-1.png" 
+                alt="Get it on Google Play" 
+                className="h-10 object-contain" 
+              />
+            </a>
           </div>
           
           {/* Platform Links */}

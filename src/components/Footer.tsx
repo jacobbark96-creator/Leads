@@ -1,4 +1,5 @@
 import React from 'react';
+import { Linkedin, Instagram, Facebook } from 'lucide-react';
 
 export const Footer = () => {
   return (
@@ -14,13 +15,26 @@ export const Footer = () => {
             <p className="text-slate-600 max-w-sm mb-6 leading-relaxed">
               High-intent, pre-qualified leads delivered directly to your CRM. Grow your contracting business with predictable revenue.
             </p>
-            <a href="#" className="inline-block hover:scale-105 transition-transform duration-300">
-              <img 
-                src="/get-it-on-google-play-badge-1.png" 
-                alt="Get it on Google Play" 
-                className="h-10 object-contain" 
-              />
-            </a>
+            <div className="flex flex-col gap-6">
+              <a href="#" className="inline-block hover:scale-105 transition-transform duration-300 w-fit">
+                <img 
+                  src="/get-it-on-google-play-badge-1.png" 
+                  alt="Get it on Google Play" 
+                  className="h-10 object-contain" 
+                />
+              </a>
+              <div className="flex items-center gap-4">
+                <a href="https://linkedin.com/openleaduk" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm hover:shadow">
+                  <Linkedin className="w-4 h-4" />
+                </a>
+                <a href="https://instagram.com/openleaduk" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-pink-600 hover:border-pink-200 transition-all shadow-sm hover:shadow">
+                  <Instagram className="w-4 h-4" />
+                </a>
+                <a href="https://facebook.com/openleaduk" target="_blank" rel="noopener noreferrer" className="w-10 h-10 rounded-full bg-white border border-slate-200 flex items-center justify-center text-slate-600 hover:bg-slate-50 hover:text-blue-600 hover:border-blue-200 transition-all shadow-sm hover:shadow">
+                  <Facebook className="w-4 h-4" />
+                </a>
+              </div>
+            </div>
           </div>
           
           {/* Platform Links */}

@@ -79,6 +79,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
   const [conciergeDates, setConciergeDates] = useState(['', '', '']);
   const [submittingDates, setSubmittingDates] = useState(false);
   const [showBusinessDetails, setShowBusinessDetails] = useState(false);
+  const [showAdditionalContacts, setShowAdditionalContacts] = useState(false);
 
   useEffect(() => {
     if (!isOpen || !lead?.id) return;
@@ -158,6 +159,22 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
   const displayMarketplaceNotes = activeBuilding && !activeBuilding.use_primary_notes ? activeBuilding.marketplace_notes : (lead as any).marketplace_notes;
   const displayPhotos = activeBuilding && activeBuilding.satellite_image_url ? [activeBuilding.satellite_image_url] : lead.photos;
 
+  let parsedContacts: any[] = [];
+  if (lead?.other_contacts) {
+    if (typeof lead.other_contacts === 'string') {
+      try {
+        parsedContacts = JSON.parse(lead.other_contacts);
+        if (!Array.isArray(parsedContacts)) {
+          parsedContacts = [{ name: lead.other_contacts, phone: lead.other_contact_numbers }];
+        }
+      } catch (e) {
+        parsedContacts = [{ name: lead.other_contacts, phone: lead.other_contact_numbers }];
+      }
+    } else if (Array.isArray(lead.other_contacts)) {
+      parsedContacts = lead.other_contacts;
+    }
+  }
+
   return (
     <>
       <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
@@ -234,6 +251,44 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                     <span className="text-sm font-bold text-gray-900 truncate">{lead.location || 'No address provided'}</span>
                   </div>
                 </div>
+
+                {parsedContacts.length > 0 && (
+                  <div className="mt-4 flex justify-end relative z-10">
+                    <button 
+                      onClick={() => setShowAdditionalContacts(!showAdditionalContacts)}
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
+                    >
+                      <User className="w-3 h-3" />
+                      {showAdditionalContacts ? 'Hide Additional' : 'Additional Contacts'}
+                    </button>
+                  </div>
+                )}
+
+                {showAdditionalContacts && parsedContacts.length > 0 && (
+                  <div className="mt-4 pt-4 border-t border-gray-100 relative z-10 animate-in slide-in-from-top-2">
+                    <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Additional Contacts</h4>
+                    <div className="space-y-3">
+                      {parsedContacts.map((contact, idx) => (
+                        <div key={idx} className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                          <div className="flex flex-col">
+                            <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><User className="w-3 h-3 text-gray-400"/> Name</span>
+                            <span className="text-sm font-bold text-gray-900 truncate">{contact.name || <MissingValue />}</span>
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Phone className="w-3 h-3 text-gray-400"/> Phone</span>
+                            {contact.phone ? <a href={`tel:${contact.phone}`} className="text-sm font-bold text-blue-600 hover:underline truncate">{contact.phone}</a> : <MissingValue />}
+                          </div>
+                          {contact.email && (
+                            <div className="flex flex-col col-span-2 md:col-span-2">
+                              <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Mail className="w-3 h-3 text-gray-400"/> Email</span>
+                              <a href={`mailto:${contact.email}`} className="text-sm font-bold text-blue-600 hover:underline truncate">{contact.email}</a>
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
 
                 {lead.has_concierge && lead.concierge_status === 'pending' && (
                   <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-[2px]">

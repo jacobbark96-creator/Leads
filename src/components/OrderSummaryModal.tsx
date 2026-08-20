@@ -35,7 +35,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
   }
 
   const baseLeadPrice = lead.csv_data?.promotion?.price ? lead.csv_data.promotion.price : (lead.exclusive_price || 135);
-  const basePrice = baseLeadPrice + (addConcierge ? 15 : 0);
+  const basePrice = baseLeadPrice + (addConcierge ? 0 : 0);
   const discountedPrice = Math.max(0, basePrice - (appliedDiscount?.amount || 0));
   const creditToUse = Math.min(creditBalance, discountedPrice);
   const totalToPay = useTradeAccount ? 0 : Math.max(0, discountedPrice - creditToUse);
@@ -227,7 +227,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                           <Sparkles className="w-5 h-5" />
                         </div>
                         <div>
-                          <p className="text-sm font-bold text-gray-900 leading-tight">Concierge Booking (+£15)</p>
+                          <p className="text-sm font-bold text-gray-900 leading-tight">Concierge Booking (<span className="line-through text-gray-400 mr-1">£15</span><span className="text-green-600">Free!</span>)</p>
                           <p className="text-[10px] text-gray-500 font-medium leading-tight mt-1">
                             We will contact the lead and book the site assessment for you at your preferred dates.
                           </p>

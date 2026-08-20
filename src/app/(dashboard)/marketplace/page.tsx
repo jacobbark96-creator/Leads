@@ -5,13 +5,68 @@ import { Lead } from '../../../types';
 import { useAuthStore } from '../../../store/authStore';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import toast from 'react-hot-toast';
-import { Search, MapPin, Building, Calendar, FileText, CheckCircle, Zap } from 'lucide-react';
+import { Search, MapPin, Building, Calendar, FileText, CheckCircle, Zap, Clock } from 'lucide-react';
 import { MarketplaceLeadModal } from '../../../components/MarketplaceLeadModal';
 import { OrderSummaryModal } from '../../../components/OrderSummaryModal';
 import { extractTown, getVagueLocation, calculateMatchScore, calculateEstimatedSystemSize } from '../../../lib/utils';
 import { trackLeadEvent } from '../../../utils/tracking';
 import { trackClientActivity } from '@/lib/activityTracker';
 import { RecentlySoldCarousel } from '../../../components/RecentlySoldCarousel';
+
+const PromotionBanner = ({ promotion }: { promotion: any }) => {
+  const [timeLeft, setTimeLeft] = useState<string>('');
+
+  useEffect(() => {
+    if (promotion?.type !== 'promotion' || !promotion?.end_date) return;
+    
+    const calculateTimeLeft = () => {
+      const difference = new Date(promotion.end_date).getTime() - new Date().getTime();
+      if (difference <= 0) return 'Expired';
+      
+      const hours = Math.floor((difference % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const minutes = Math.floor((difference % (1000 * 60 * 60)) / (1000 * 60));
+      const seconds = Math.floor((difference % (1000 * 60)) / 1000);
+      
+      return `${hours}h ${minutes}m ${seconds}s`;
+    };
+
+    setTimeLeft(calculateTimeLeft());
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [promotion]);
+
+  if (!promotion) return null;
+
+  if (promotion.type === 'reduce') {
+    return (
+      <div className="mt-4 pt-4 border-t border-gray-50">
+        <div className="bg-red-50 border border-red-100 rounded-lg p-2.5 flex items-center justify-center gap-2">
+          <Zap className="w-4 h-4 text-red-500" />
+          <span className="text-xs font-bold text-red-700 uppercase tracking-wide">Price Reduced</span>
+        </div>
+      </div>
+    );
+  }
+
+  if (promotion.type === 'promotion') {
+    return (
+      <div className="mt-4 pt-4 border-t border-gray-50">
+        <div className="bg-amber-50 border border-amber-100 rounded-lg p-2.5 flex flex-col items-center justify-center">
+          <div className="flex items-center gap-1.5 mb-1">
+            <Clock className="w-3.5 h-3.5 text-amber-500" />
+            <span className="text-[10px] font-bold text-amber-700 uppercase tracking-wide">Flash Sale Ends In</span>
+          </div>
+          <span className="text-sm font-black text-amber-600 tabular-nums">{timeLeft}</span>
+        </div>
+      </div>
+    );
+  }
+
+  return null;
+};
 
 export default function MarketplacePage() {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -555,7 +610,14 @@ export default function MarketplacePage() {
                   </div>
                   <div className="text-right shrink-0">
                     <span className="block text-[10px] uppercase tracking-wider font-semibold text-gray-500">Price</span>
-                    <span className="text-base font-bold text-green-600 leading-none">£{lead.exclusive_price || lead.price || '135.00'}</span>
+                    {lead.csv_data?.promotion && lead.csv_data.promotion.price ? (
+                      <div className="flex flex-col items-end">
+                        <span className="text-xs font-medium text-gray-400 line-through">£{lead.exclusive_price || lead.price || '135.00'}</span>
+                        <span className="text-base font-black text-green-600 leading-none">£{lead.csv_data.promotion.price}</span>
+                      </div>
+                    ) : (
+                      <span className="text-base font-bold text-green-600 leading-none">£{lead.exclusive_price || lead.price || '135.00'}</span>
+                    )}
                   </div>
                 </div>
 
@@ -591,19 +653,22 @@ export default function MarketplacePage() {
                   </div>
                   */}
                   
-                  {/* Purchase indicator simplified to only show availability */}
-                  <div className="mt-4 pt-4 border-t border-gray-50">
-                    <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Availability</span>
-                      <span className="text-[10px] font-black text-green-600 uppercase">Exclusive</span>
+                  {lead.csv_data?.promotion ? (
+                    <PromotionBanner promotion={lead.csv_data.promotion} />
+                  ) : (
+                    <div className="mt-4 pt-4 border-t border-gray-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Availability</span>
+                        <span className="text-[10px] font-black text-green-600 uppercase">Exclusive</span>
+                      </div>
+                      <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
+                        <div className="h-1.5 rounded-full bg-green-500 w-full"></div>
+                      </div>
+                      <div className="text-[10px] text-gray-400 mt-1 text-center font-medium">
+                        Available for Exclusive Purchase
+                      </div>
                     </div>
-                    <div className="w-full bg-gray-100 rounded-full h-1.5 overflow-hidden">
-                      <div className="h-1.5 rounded-full bg-green-500 w-full"></div>
-                    </div>
-                    <div className="text-[10px] text-gray-400 mt-1 text-center font-medium">
-                      Available for Exclusive Purchase
-                    </div>
-                  </div>
+                  )}
                 </div>
 
                 <button

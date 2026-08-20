@@ -34,7 +34,8 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
     setPurchaseType('share');
   }
 
-  const basePrice = (lead.exclusive_price || 135) + (addConcierge ? 15 : 0);
+  const baseLeadPrice = lead.csv_data?.promotion?.price ? lead.csv_data.promotion.price : (lead.exclusive_price || 135);
+  const basePrice = baseLeadPrice + (addConcierge ? 15 : 0);
   const discountedPrice = Math.max(0, basePrice - (appliedDiscount?.amount || 0));
   const creditToUse = Math.min(creditBalance, discountedPrice);
   const totalToPay = useTradeAccount ? 0 : Math.max(0, discountedPrice - creditToUse);
@@ -201,7 +202,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                         <Zap className="w-4 h-4 text-blue-600" />
                         <span className="font-bold text-sm text-gray-900">Exclusive Purchase</span>
                       </div>
-                      <span className="font-bold text-sm text-gray-900">£{(lead.exclusive_price || 135).toFixed(2)}</span>
+                      <span className="font-bold text-sm text-gray-900">£{baseLeadPrice.toFixed(2)}</span>
                     </div>
                     <p className="mt-1 text-[10px] text-gray-500">
                       Removes lead from the market completely and grants exclusive access.

@@ -257,9 +257,16 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                   <div className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                   <div className="absolute -inset-full animate-[spin_4s_linear_infinite] opacity-20 bg-[conic-gradient(from_90deg_at_50%_50%,#10b981_0%,transparent_50%,#10b981_100%)] blur-xl"></div>
                   <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 relative z-10">Exclusive Price</span>
-                  <span className="text-4xl font-black text-emerald-600 relative z-10 drop-shadow-sm">
-                    {lead.exclusive_price ? `£${lead.exclusive_price}` : (lead.price ? `£${lead.price}` : '£135')}
-                  </span>
+                  {lead.csv_data?.promotion && lead.csv_data.promotion.price ? (
+                    <div className="flex flex-col items-center relative z-10">
+                      <span className="text-xs font-medium text-gray-400 line-through">£{lead.exclusive_price || lead.price || '135.00'}</span>
+                      <span className="text-4xl font-black text-emerald-600 drop-shadow-sm">£{lead.csv_data.promotion.price}</span>
+                    </div>
+                  ) : (
+                    <span className="text-4xl font-black text-emerald-600 relative z-10 drop-shadow-sm">
+                      {lead.exclusive_price ? `£${lead.exclusive_price}` : (lead.price ? `£${lead.price}` : '£135')}
+                    </span>
+                  )}
                 </div>
 
                 {/* Quick Stats Box */}

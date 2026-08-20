@@ -45,8 +45,31 @@ import {
   Eye,
   CheckCircle,
   Flame,
-  User
+  User,
+  UserCheck,
+  Search,
+  Filter,
+  Zap,
+  Banknote,
+  Tag,
+  Edit3,
+  Shield,
+  CreditCard,
+  ChevronDown,
+  Check,
+  Briefcase,
+  Send,
+  Copy,
+  AlertCircle,
+  Sun,
+  Cloud,
+  Battery,
+  Building,
+  Clock,
+  MoreVertical,
+  PlusCircle
 } from 'lucide-react';
+import { PricePromotionModal } from '@/components/PricePromotionModal';
 
 import { AdminNotifications } from '@/components/AdminNotifications';
 import { SmsNotifications } from '@/components/SmsNotifications';
@@ -476,6 +499,7 @@ function LeadDetailsV2Content() {
   const [loadingSlots, setLoadingSlots] = useState(false);
   const [selectedSlot, setSelectedSlot] = useState<Date | null>(null);
   const [isWriteupOpen, setIsWriteupOpen] = useState(false);
+  const [isPricePromotionModalOpen, setIsPricePromotionModalOpen] = useState(false);
   const [isSmsChatOpen, setIsSmsChatOpen] = useState(false);
   const [matchedContractors, setMatchedContractors] = useState<any[]>([]);
   const [isFetchingMatches, setIsFetchingMatches] = useState(false);
@@ -2119,12 +2143,14 @@ function LeadDetailsV2Content() {
                     >
                       In-House
                     </button>
-                    <button 
-                      onClick={openMarketConfirmModal}
-                      className="flex-1 md:flex-none bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
-                    >
-                      Market Lead
-                    </button>
+                    {!divisions.find(d => d.id === lead.division_id)?.name?.toLowerCase().includes('residential') && (
+                      <button 
+                        onClick={openMarketConfirmModal}
+                        className="flex-1 md:flex-none bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap"
+                      >
+                        Market Lead
+                      </button>
+                    )}
                   </div>
                 )}
                 {!lead.company && (
@@ -2754,7 +2780,18 @@ function LeadDetailsV2Content() {
                             {editingCard === 'opportunity' ? (
                               <input type="number" value={editForm.exclusive_price || ''} onChange={e => setEditForm({...editForm, exclusive_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 135" />
                             ) : (
-                              <span className="text-gray-900 text-sm font-medium">{lead.exclusive_price ? `£${lead.exclusive_price}` : 'N/A'}</span>
+                              <span className="text-gray-900 text-sm font-medium flex items-center gap-2">
+                                {lead.exclusive_price ? `£${lead.exclusive_price}` : 'N/A'}
+                                {lead.exclusive_price && (
+                                  <button 
+                                    onClick={() => setIsPricePromotionModalOpen(true)}
+                                    className="text-gray-400 hover:text-blue-600 transition-colors"
+                                    title="Promotions & Discounts"
+                                  >
+                                    <Tag className="w-3.5 h-3.5" />
+                                  </button>
+                                )}
+                              </span>
                             )}
                           </div>
                         </>
@@ -3786,6 +3823,17 @@ function LeadDetailsV2Content() {
           onClose={() => setIsEmailModalOpen(false)}
           lead={lead}
           defaultType={emailModalType}
+        />
+      )}
+
+      {isPricePromotionModalOpen && lead && (
+        <PricePromotionModal
+          isOpen={isPricePromotionModalOpen}
+          onClose={() => setIsPricePromotionModalOpen(false)}
+          lead={lead}
+          onSave={(updatedCsvData: any) => {
+            setLead({ ...lead, csv_data: updatedCsvData } as any);
+          }}
         />
       )}
       

@@ -80,7 +80,7 @@ export const Footer = () => {
           
           {/* Copyright & Legal */}
           <div className="flex flex-col md:flex-row items-center md:items-center gap-4 md:gap-6 text-sm text-slate-500 w-full justify-between">
-            <p>© {new Date().getFullYear()} Openlead. All rights reserved.</p>
+            <p>© {new Date().getFullYear()} Openlead Ltd. Registered in England and Wales. Company No. 17414621</p>
             <div className="flex space-x-6 flex-wrap justify-center">
               <a href="/privacy" className="hover:text-slate-900 transition-colors">Privacy Policy</a>
               <a href="/terms" className="hover:text-slate-900 transition-colors">Terms of Service</a>

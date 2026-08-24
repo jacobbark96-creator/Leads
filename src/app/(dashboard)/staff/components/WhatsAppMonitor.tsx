@@ -434,9 +434,9 @@ export const WhatsAppMonitor = () => {
       if (!searchQuery) return true;
       const search = searchQuery.toLowerCase();
       return (
-        chat.name.toLowerCase().includes(search) ||
-        chat.number.toLowerCase().includes(search) ||
-        chat.msg.toLowerCase().includes(search)
+        chat.name?.toLowerCase().includes(search) ||
+        chat.number?.toLowerCase().includes(search) ||
+        chat.msg?.toLowerCase().includes(search)
       );
     })
     .sort((a, b) => b.time.getTime() - a.time.getTime());

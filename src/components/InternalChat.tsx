@@ -847,12 +847,12 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   };
 
   const filteredUsers = users.filter(u => 
-    u.name.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    u.role.toLowerCase().includes(searchQuery.toLowerCase())
+    u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
+    u.role?.toLowerCase().includes(searchQuery.toLowerCase())
   );
   
   const filteredGroups = groups.filter(g => 
-    g.name.toLowerCase().includes(searchQuery.toLowerCase())
+    g.name?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const containerClasses = isModal 

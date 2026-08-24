@@ -126,8 +126,8 @@ export const PressCentreTab = () => {
   };
 
   const filteredPosts = posts.filter(p => 
-    p.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    p.slug.toLowerCase().includes(searchQuery.toLowerCase())
+    p.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    p.slug?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

@@ -110,7 +110,7 @@ export default function MarketplacePage() {
       .filter(Boolean);
 
     const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-    const byName = new Map(categoryOptions.map((c) => [c.name.toLowerCase(), c.id]));
+    const byName = new Map(categoryOptions.map((c) => [c.name?.toLowerCase() || '', c.id]));
 
     const ids: string[] = [];
     for (const token of tokens) {

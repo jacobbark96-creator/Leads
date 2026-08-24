@@ -95,8 +95,8 @@ export default function RecruitmentPage() {
   };
 
   const filteredJobs = jobs.filter(job => 
-    job.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    job.location.toLowerCase().includes(searchTerm.toLowerCase())
+    job.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    job.location?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (

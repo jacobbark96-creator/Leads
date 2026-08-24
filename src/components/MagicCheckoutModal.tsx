@@ -106,9 +106,9 @@ export const MagicCheckoutModal: React.FC<MagicCheckoutModalProps> = ({ isOpen, 
   };
 
   const filtered = contractors.filter(c => 
-    c.company_name.toLowerCase().includes(search.toLowerCase()) ||
-    c.name.toLowerCase().includes(search.toLowerCase()) ||
-    c.email.toLowerCase().includes(search.toLowerCase())
+    c.company_name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.name?.toLowerCase().includes(search.toLowerCase()) ||
+    c.email?.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleGenerate = async () => {

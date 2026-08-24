@@ -93,8 +93,8 @@ export const BroadcastsTab = () => {
   };
 
   const filteredBroadcasts = broadcasts.filter(b => 
-    b.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    b.content.toLowerCase().includes(searchQuery.toLowerCase())
+    b.title?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    b.content?.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   return (

@@ -113,9 +113,9 @@ export function SmsNotifications() {
       if (uniqueNumbers.length > 0) {
         // Chunk numbers to avoid massive OR queries that cause 500 errors
         const chunks = [];
-        const chunkSize = 5; // Reduced from 10
-        for (let i = 0; i < uniqueNumbers.length; i += chunkSize) {
-          chunks.push(uniqueNumbers.slice(i, i + chunkSize));
+        // Reduce chunk size to 2 to prevent Supabase 500 timeout errors on complex ILIKE queries
+        for (let i = 0; i < uniqueNumbers.length; i += 2) {
+          chunks.push(uniqueNumbers.slice(i, i + 2));
         }
 
         const nameMap: Record<string, string> = {};

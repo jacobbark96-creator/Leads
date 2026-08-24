@@ -3806,6 +3806,7 @@ function LeadDetailsV2Content() {
           onClose={() => setIsWriteupOpen(false)}
           lead={lead}
           onPurchase={() => setIsWriteupOpen(false)}
+          isResidential={divisions?.find(d => d.id === lead.division_id)?.name?.toLowerCase()?.includes('residential')}
         />
       )}
       

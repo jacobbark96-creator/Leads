@@ -278,7 +278,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
                     supabase.from('users').select('name').ilike('twilio_number', fuzzyNum).limit(1)
                   ]);
 
-                  const isValidName = (name?: string | null) => name && !name.toLowerCase().includes('unknown');
+                  const isValidName = (name?: string | null) => name && typeof name === 'string' && !name.toLowerCase().includes('unknown');
 
                   if (leads?.[0] && (isValidName(leads[0].name) || isValidName(leads[0].company))) resolvedName = isValidName(leads[0].name) ? leads[0].name : leads[0].company;
                   else if (leadsSec?.[0] && (isValidName(leadsSec[0].name) || isValidName(leadsSec[0].company))) resolvedName = isValidName(leadsSec[0].name) ? leadsSec[0].name : leadsSec[0].company;

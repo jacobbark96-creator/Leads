@@ -53,7 +53,7 @@ export function SmsNotifications() {
             
             if (cleanNum.length >= 7) {
               const fuzzyNum = `%${cleanNum}%`;
-              const isValidName = (name?: string | null) => name && !name.toLowerCase().includes('unknown');
+              const isValidName = (name?: string | null) => name && typeof name === 'string' && !name.toLowerCase().includes('unknown');
               
               const { data: leads } = await supabase.from('leads').select('name, company').or(`phone.ilike.${fuzzyNum},secondary_phone.ilike.${fuzzyNum}`).limit(1);
               if (leads && leads.length > 0 && (isValidName(leads[0].name) || isValidName(leads[0].company))) resolvedName = isValidName(leads[0].name) ? leads[0].name : leads[0].company;
@@ -151,7 +151,7 @@ export function SmsNotifications() {
                 phones.forEach(dbPhone => {
                   if (!dbPhone) return;
                   const cleanDb = dbPhone.replace(/[^\d]/g, '').slice(-10);
-                  const isValidName = (name?: string | null) => name && !name.toLowerCase().includes('unknown');
+                  const isValidName = (name?: string | null) => name && typeof name === 'string' && !name.toLowerCase().includes('unknown');
                   
                   let fallbackName = dbPhone;
                   if (isContractor) {

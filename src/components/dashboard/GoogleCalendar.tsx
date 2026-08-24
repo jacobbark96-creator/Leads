@@ -103,7 +103,7 @@ export const GoogleCalendar = () => {
   const cutOffDay = subDays(payDay, 14);
 
   const getEventStyles = (event: CalendarEvent) => {
-    const summary = event.summary.toLowerCase();
+    const summary = (event.summary || '').toLowerCase();
     const startTime = event.start.dateTime ? parseISO(event.start.dateTime) : null;
     
     // 1. Lead Tasks (Green)

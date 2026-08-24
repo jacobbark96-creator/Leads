@@ -213,12 +213,12 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
   // 3. Roof Type (10 points)
   // Matches preferred = 10, does not match = 5 (0 if asbestos and not preferred)
   let roofScore = 7;
-  const leadRoof = (lead.roof_type || lead.roof_material || '').toLowerCase();
+  const leadRoof = (lead.roof_type || lead.roof_material || '')?.toLowerCase?.() || '';
   const isAsbestosRoof = leadRoof.includes('asbestos');
 
   if (installerPrefs.preferred_roof_types && installerPrefs.preferred_roof_types.length > 0) {
     const isMatch = installerPrefs.preferred_roof_types.some((rt: string) => 
-      leadRoof.includes(rt.toLowerCase())
+      leadRoof.includes(rt?.toLowerCase?.() || '')
     );
     if (isMatch) {
       roofScore = 10;
@@ -252,7 +252,7 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
 
   // 5. Timeframe (10 points)
   let timeframeScore = 5;
-  const tf = (lead.timeframe || '').toLowerCase();
+  const tf = (lead.timeframe || '')?.toLowerCase?.() || '';
   if (tf.includes('asap') || tf.includes('emergency') || tf.includes('immediately')) {
     timeframeScore = 10;
   } else if (tf.includes('1-3') || tf.includes('1 - 3') || tf.includes('within 3')) {
@@ -266,7 +266,7 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
 
   // 6. Decision Maker (10 points)
   let decisionScore = 5;
-  const dm = (lead.sole_decision_maker !== undefined ? lead.sole_decision_maker : lead.decision_maker || '').toString().toLowerCase();
+  const dm = (lead.sole_decision_maker !== undefined ? lead.sole_decision_maker : lead.decision_maker || '').toString()?.toLowerCase?.() || '';
   if (dm === 'yes' || dm === 'true') {
     decisionScore = 10;
   } else if (dm === 'no' || dm === 'false') {
@@ -278,7 +278,7 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
 
   // 7. Ownership (10 points)
   let ownershipScore = 5;
-  const owner = (lead.property_ownership || '').toLowerCase();
+  const owner = (lead.property_ownership || '')?.toLowerCase?.() || '';
   if (owner.includes('own')) {
     ownershipScore = 10;
   } else {

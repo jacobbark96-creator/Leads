@@ -5,7 +5,7 @@ import Papa from 'papaparse';
  * regardless of the exact spelling or capitalization used by the user.
  */
 export function fuzzyMapColumn(header: string): string | null {
-  const normalized = header.toLowerCase().replace(/[^a-z0-9]/g, '');
+  const normalized = header?.toLowerCase?.()?.replace(/[^a-z0-9]/g, '') || '';
 
   if (normalized.includes('company') || normalized.includes('business') || normalized.includes('client') || normalized.includes('organization') || normalized.includes('trading')) {
     return 'company_name';

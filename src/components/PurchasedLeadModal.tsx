@@ -367,7 +367,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                           <div className="flex flex-col justify-center pr-2 w-1/2">
                             <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>
                             <DisplayValue value={activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status} className="text-[11px]" />
-                            {(activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status)?.toLowerCase() === 'leased' && (
+                            {(activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status)?.toLowerCase?.() === 'leased' && (
                               <div className="mt-1.5 pt-1.5 border-t border-gray-200 flex flex-col gap-0.5">
                                 <span className="text-[9px] text-gray-500 font-medium">Lease: {lead.lease_duration || 'Unknown'}</span>
                                 <span className="text-[9px] text-gray-500 font-medium">Landlord OK: {lead.landlord_permission || 'Unknown'}</span>
@@ -401,7 +401,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
 
                       {(() => {
                       const currentRoofMaterial = activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material;
-                      const isAsbestos = typeof currentRoofMaterial === 'string' && currentRoofMaterial.toLowerCase().includes('asbestos');
+                      const isAsbestos = typeof currentRoofMaterial === 'string' && currentRoofMaterial?.toLowerCase?.().includes('asbestos');
                       
                       return (
                         <div className="bg-gray-50 rounded-lg flex overflow-hidden">

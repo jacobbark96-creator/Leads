@@ -364,7 +364,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                           <div className="flex flex-col justify-center pr-2 w-1/2">
                             <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>
                             <DisplayValue value={activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status} className="text-[11px]" />
-                            {(activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status)?.toLowerCase() === 'leased' && (
+                            {(activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status)?.toLowerCase?.() === 'leased' && (
                               <div className="mt-1.5 pt-1.5 border-t border-gray-200 flex flex-col gap-0.5">
                                 <span className="text-[9px] text-gray-500 font-medium">Lease: {lead.lease_duration || 'Unknown'}</span>
                                 <span className="text-[9px] text-gray-500 font-medium">Landlord OK: {lead.landlord_permission || 'Unknown'}</span>
@@ -398,7 +398,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
 
                       {(() => {
                       const currentRoofMaterial = activeBuildingIndex === 0 ? lead.roof_material : activeBuilding?.roof_material;
-                      const isAsbestos = typeof currentRoofMaterial === 'string' && currentRoofMaterial.toLowerCase().includes('asbestos');
+                      const isAsbestos = typeof currentRoofMaterial === 'string' && currentRoofMaterial?.toLowerCase?.().includes('asbestos');
                       
                       return (
                         <div className="bg-gray-50 rounded-lg flex overflow-hidden">
@@ -667,9 +667,9 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                 const minSize = clientPrefs?.min_system_size_kw ? Number(clientPrefs.min_system_size_kw) : 0;
                 const isSizeMatch = minSize === 0 || (sysSize !== null && sysSize >= minSize);
 
-                const leadRoof = (lead.roof_material || '').toLowerCase();
+                const leadRoof = (lead.roof_material || '')?.toLowerCase?.() || '';
                 const isAsbestos = leadRoof.includes('asbestos');
-                const prefsHasAsbestos = clientPrefs?.preferred_roof_types?.some((rt: string) => rt.toLowerCase().includes('asbestos'));
+                const prefsHasAsbestos = clientPrefs?.preferred_roof_types?.some((rt: string) => rt?.toLowerCase?.().includes('asbestos'));
                 const noRoofPrefs = !clientPrefs?.preferred_roof_types || clientPrefs.preferred_roof_types.length === 0;
 
                 let isRoofMatch = true;

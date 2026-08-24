@@ -188,8 +188,17 @@ function LeadProcessingContent() {
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
       if (debouncedSearchQuery.trim()) {
-        const search = `%${debouncedSearchQuery.trim()}%`;
-        query = query.or(`name.ilike.${search},company.ilike.${search},location.ilike.${search},phone.ilike.${search},secondary_phone.ilike.${search}`);
+        // Strip out non-alphanumeric characters for a safer query string (helps prevent Supabase URL parsing errors for numbers with spaces/pluses)
+        const searchRaw = debouncedSearchQuery.trim().replace(/[^a-zA-Z0-9\s]/g, '');
+        const search = `%${searchRaw}%`;
+        
+        // Use a simpler query if the search looks like a phone number to prevent massive 'or' trees if the user typed many numbers
+        if (/^[\d\s\+]+$/.test(debouncedSearchQuery.trim())) {
+           const phoneSearch = `%${debouncedSearchQuery.trim().replace(/\D/g, '')}%`;
+           query = query.or(`phone.ilike.${phoneSearch},secondary_phone.ilike.${phoneSearch},name.ilike.${search},company.ilike.${search}`);
+        } else {
+           query = query.or(`name.ilike.${search},company.ilike.${search},location.ilike.${search},phone.ilike.${search},secondary_phone.ilike.${search}`);
+        }
       }
 
       if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {

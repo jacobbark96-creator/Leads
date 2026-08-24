@@ -185,7 +185,10 @@ export default function PipelinePage() {
     const q = searchQuery.toLowerCase();
     visibleLeads = visibleLeads.filter(l => 
       l.name?.toLowerCase().includes(q) || 
-      l.company?.toLowerCase().includes(q)
+      l.company?.toLowerCase().includes(q) ||
+      l.phone?.includes(q) ||
+      l.secondary_phone?.includes(q) ||
+      l.location?.toLowerCase().includes(q)
     );
   }
 

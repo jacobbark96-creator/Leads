@@ -2143,7 +2143,7 @@ function LeadDetailsV2Content() {
                     >
                       In-House
                     </button>
-                    {!divisions.find(d => d.id === lead.division_id)?.name?.toLowerCase().includes('residential') && (
+                    {(!divisions || !divisions.find(d => d.id === lead.division_id)?.name?.toLowerCase()?.includes('residential')) && (
                       <button 
                         onClick={openMarketConfirmModal}
                         className="flex-1 md:flex-none bg-blue-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-blue-700 transition-colors whitespace-nowrap"

@@ -2161,7 +2161,7 @@ function LeadDetailsV2Content() {
                     Refer
                   </button>
                 )}
-                {(lead.is_marketed || lead.status === 'marketplace' || lead.status === 'awaiting_sales') && (
+                {(lead.is_marketed || lead.status === 'marketplace' || lead.status === 'awaiting_sales' || (lead.status === 'qualified' && divisions?.find(d => d.id === lead.division_id)?.name?.toLowerCase()?.includes('residential'))) && (
                   <button 
                     onClick={() => setIsWriteupOpen(true)}
                     className="flex-1 md:flex-none bg-gray-800 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-gray-900 transition-colors whitespace-nowrap"

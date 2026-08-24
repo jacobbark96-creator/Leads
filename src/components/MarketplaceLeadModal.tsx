@@ -5,7 +5,7 @@ import { supabase } from '../lib/supabase';
 import { 
   X, MapPin, User, Calendar, Home, CheckCircle, Zap, ShieldCheck, 
   ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, Moon,
-  Battery, TrendingUp, ChevronRight, Check, Building, AlertCircle, Info
+  Battery, TrendingUp, ChevronRight, Check, Building, AlertCircle, Info, Phone, Mail
 } from 'lucide-react';
 import { extractTown, getVagueLocation, calculateMatchScore, calculateMatchScoreDetails, calculateEstimatedSystemSize, calculateIndicativeSystemValue } from '../lib/utils';
 import { trackLeadEvent } from '../utils/tracking';
@@ -16,6 +16,7 @@ interface MarketplaceLeadModalProps {
   onClose: () => void;
   lead: Lead;
   onPurchase: () => void;
+  isResidential?: boolean;
 }
 
 const MissingValue = () => <span className="text-gray-300 font-normal italic">-</span>;
@@ -62,7 +63,7 @@ const SavingsCarousel = ({ lead }: { lead: any }) => {
   );
 };
 
-export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOpen, onClose, lead, onPurchase }) => {
+export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOpen, onClose, lead, onPurchase, isResidential = false }) => {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [hasBills, setHasBills] = useState<boolean>(false);
   const [showMagicLink, setShowMagicLink] = useState(false);
@@ -540,13 +541,52 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       </p>
                     </div>
 
-                    {/* Openlead Business View */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col flex-1 mt-4">
-                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
-                      <Building className="w-4 h-4 text-purple-500" /> Openlead Business View
-                    </h3>
-                    
-                    <div className="flex flex-col items-center justify-center flex-1 text-center">
+                    {/* Business/Residential View */}
+                    {isResidential ? (
+                      <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col flex-1 mt-4">
+                        <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                          <User className="w-4 h-4 text-purple-500" /> Contact Details
+                        </h3>
+                        <div className="flex flex-col gap-3">
+                          <div className="flex items-start gap-3">
+                            <User className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Name</div>
+                              <div className="text-sm font-medium text-gray-900">{lead.name || <MissingValue />}</div>
+                            </div>
+                          </div>
+                          <div className="flex items-start gap-3">
+                            <Phone className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Phone</div>
+                              <div className="text-sm font-medium text-gray-900">{lead.phone || <MissingValue />}</div>
+                            </div>
+                          </div>
+                          {lead.email && (
+                            <div className="flex items-start gap-3">
+                              <Mail className="w-4 h-4 text-gray-400 mt-0.5" />
+                              <div>
+                                <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Email</div>
+                                <div className="text-sm font-medium text-gray-900">{lead.email}</div>
+                              </div>
+                            </div>
+                          )}
+                          <div className="flex items-start gap-3">
+                            <MapPin className="w-4 h-4 text-gray-400 mt-0.5" />
+                            <div>
+                              <div className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Address</div>
+                              <div className="text-sm font-medium text-gray-900">{(lead as any).address || lead.location || <MissingValue />}</div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col flex-1 mt-4">
+                      <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                        <Building className="w-4 h-4 text-purple-500" /> Openlead Business View
+                      </h3>
+                      
+                      <div className="flex flex-col items-center justify-center flex-1 text-center">
                       {lead.csv_data?.ch_enrichment ? (
                         <>
                           <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-2xl mb-3 shadow-sm ${
@@ -625,6 +665,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       )}
                     </div>
                   </div>
+                )}
                   
                 </div>
               </div>

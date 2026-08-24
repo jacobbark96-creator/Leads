@@ -2416,7 +2416,7 @@ function LeadDetailsV2Content() {
               </div>
               <div className="flex flex-col gap-3">
                 {files && files.length > 0 ? files.map(file => {
-                  const isPdf = file.file_type === 'pdf' || file.file_name.toLowerCase().includes('.pdf');
+                  const isPdf = file.file_type === 'pdf' || file.file_name?.toLowerCase().includes('.pdf');
                   return (
                     <div key={file.id} className="flex items-center justify-between p-2 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors group">
                       <div className="flex items-center gap-2">

@@ -594,8 +594,8 @@ function LeadDetailsV2Content() {
     const initPack = async () => {
       if (packId && profile?.id) {
         // Fetch pack info
-        const { data: pack } = await supabase.from('lead_packs').select('*').eq('id', packId).single();
-        if (pack && mounted) setPackInfo(pack);
+      const { data: pack } = await supabase.from('lead_packs').select('*').eq('id', packId).maybeSingle();
+      if (pack && mounted) setPackInfo(pack);
 
         // If no lead id is provided, reserve the next lead
         if (!id) {
@@ -611,7 +611,7 @@ function LeadDetailsV2Content() {
           }
         } else {
           // Check membership
-          const { data: member } = await supabase.from('lead_pack_memberships').select('*').eq('lead_pack_id', packId).eq('lead_id', id).single();
+          const { data: member } = await supabase.from('lead_pack_memberships').select('*').eq('lead_pack_id', packId).eq('lead_id', id).maybeSingle();
           if (member && mounted) setPackMembership(member);
         }
       }
@@ -800,9 +800,10 @@ function LeadDetailsV2Content() {
           )
         `)
         .eq('id', id)
-        .single();
+        .maybeSingle();
         
       if (leadError) throw leadError;
+      if (!leadData) throw new Error('Lead not found or you do not have permission to view it.');
       setLead(leadData);
 
       // Extract other contacts if stored in JSON or similar (depends on DB structure)
@@ -1121,7 +1122,7 @@ function LeadDetailsV2Content() {
           )
         `)
         .eq('id', lead.id)
-        .single();
+        .maybeSingle();
         
       setLead(freshLead || { ...lead, ...updatePayload });
       setEditingCard(null);

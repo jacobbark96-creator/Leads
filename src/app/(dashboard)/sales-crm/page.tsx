@@ -132,7 +132,7 @@ function LeadProcessingContent() {
       // Run precise count queries to bypass the 1000 row limit and respect active filters
       const currentTargetUser = (['super_admin', 'admin'].includes(profile?.role || '') && assignedUserFilter !== 'all') 
         ? (assignedUserFilter === 'me' ? profile?.id : assignedUserFilter)
-        : profile?.id;
+        : (assignedToMe ? profile?.id : null);
 
       const [
         { count: dncCount },
@@ -144,7 +144,7 @@ function LeadProcessingContent() {
         getBaseQuery().eq('status', 'dnc'),
         getBaseQuery().eq('status', 'fresh'),
         getBaseQuery().neq('status', 'dnc').not('last_dialed_at', 'is', null),
-        getBaseQuery().eq('assigned_to', currentTargetUser || 'none'),
+        currentTargetUser ? getBaseQuery().eq('assigned_to', currentTargetUser) : Promise.resolve({ count: 0 }),
         getBaseQuery().neq('status', 'dnc') // Total excludes DNC
       ]);
 

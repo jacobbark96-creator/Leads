@@ -12,6 +12,7 @@ import { GlassCard } from '@/components/dashboard/GlassCard';
 import { TasksPanel } from './components/TasksPanel';
 import { NewsPanel } from './components/NewsPanel';
 import { WhatsAppMonitor } from './components/WhatsAppMonitor';
+import { WhatsAppPlaceholder } from './components/WhatsAppPlaceholder';
 import { TeamMessages } from './components/TeamMessages';
 import { LiveFeed } from './components/LiveFeed';
 import { GmailPanel } from './components/GmailPanel';
@@ -19,6 +20,8 @@ import { RepPerformanceCard } from './components/RepPerformanceCard';
 import { GMPerformanceCard } from './components/GMPerformanceCard';
 import { RepMonitoringCard } from './components/RepMonitoringCard';
 import { TargetBox } from './components/TargetBox';
+import { RepTargetsBox } from './components/RepTargetsBox';
+import { MarketplaceLeadsList } from './components/MarketplaceLeadsList';
 
 export default function StaffPortal() {
   const { profile } = useAuthStore();
@@ -307,7 +310,7 @@ export default function StaffPortal() {
             {/* Column 1: Tasks & Feed/Performance */}
             <div className="flex flex-col gap-4 h-[500px] xl:h-full min-h-0">
               <div className="h-1/2 overflow-hidden">
-                <TasksPanel />
+                {profile.role === 'growth_manager' ? <MarketplaceLeadsList /> : <TasksPanel />}
               </div>
               <div className="h-1/2 overflow-hidden">
                 {isAdmin ? (
@@ -326,7 +329,18 @@ export default function StaffPortal() {
                 <NewsPanel />
               </div>
               <div className="h-1/2 overflow-hidden">
-                {isAdmin ? <GmailPanel /> : <RepMonitoringCard />}
+                {isAdmin ? (
+                  <GmailPanel />
+                ) : (
+                  <div className="flex flex-col gap-4 h-full">
+                    <div className="h-1/3 min-h-[100px]">
+                      <RepTargetsBox />
+                    </div>
+                    <div className="h-2/3 min-h-0">
+                      <WhatsAppPlaceholder />
+                    </div>
+                  </div>
+                )}
               </div>
             </div>
 

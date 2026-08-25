@@ -4,6 +4,7 @@ import { Store, ArrowUpDown, MapPin, PoundSterling, Clock } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { Lead } from '@/types';
 import { useRouter } from 'next/navigation';
+import { extractTown, getVagueLocation } from '@/lib/utils';
 
 export const MarketplaceLeadsList = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -105,16 +106,23 @@ export const MarketplaceLeadsList = () => {
               className="bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg p-3 cursor-pointer transition-all duration-200 group"
             >
               <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-1.5 text-white font-bold">
-                  <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                  {lead.location || lead.postcode || 'Unknown'}
+                <div className="flex flex-col gap-0.5">
+                  <div className="flex items-center gap-1.5 text-white font-bold">
+                    <MapPin className="w-3.5 h-3.5 text-blue-400" />
+                    <span className="truncate">{extractTown(lead.location || lead.postcode)}</span>
+                  </div>
+                  {getVagueLocation(lead.latitude, lead.longitude) && (
+                    <div className="text-[10px] text-gray-400 ml-5">
+                      {getVagueLocation(lead.latitude, lead.longitude)}
+                    </div>
+                  )}
                 </div>
-                <div className="flex items-center gap-1 text-emerald-400 font-bold">
+                <div className="flex items-center gap-1 text-emerald-400 font-bold shrink-0">
                   <PoundSterling className="w-3.5 h-3.5" />
                   {lead.exclusive_price || lead.price || '135'}
                 </div>
               </div>
-              <div className="flex items-center justify-between text-xs text-gray-400">
+              <div className="flex items-center justify-between text-xs text-gray-400 mt-2">
                 <span className="truncate pr-2">{lead.company || lead.name || 'Unknown'}</span>
                 <div className="flex items-center gap-1 shrink-0">
                   <Clock className="w-3 h-3" />

@@ -125,24 +125,15 @@ export function SmsNotifications() {
             const cleanChunk = chunk.map(n => (n as string).replace(/[^\d]/g, '').slice(-10)).filter(n => n.length >= 7);
             if (cleanChunk.length === 0) continue;
 
-            const orQuery = cleanChunk.map(num => `phone.ilike.%${num}%`).join(',');
-            const orQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
-            
-            const contractorOrQuery = cleanChunk.map(num => `phone.ilike.%${num}%`).join(',');
-            const contractorOrQuerySecondary = cleanChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
-            const contractorOrQueryOther = cleanChunk.map(num => `other_contact_numbers.ilike.%${num}%`).join(',');
+            // Limit chunk size for Supabase ILIKE queries to prevent 500 errors from URL length limits
+            // A chunk size of 1-2 numbers is much safer for these massive OR statements
+            const SAFE_CHUNK_SIZE = 1;
+            const subChunks = [];
+            for (let i = 0; i < cleanChunk.length; i += SAFE_CHUNK_SIZE) {
+               subChunks.push(cleanChunk.slice(i, i + SAFE_CHUNK_SIZE));
+            }
 
-            // Run fewer parallel queries and combine conditions
-            const [leadsData, contractorsData] = await Promise.all([
-              supabase.from('leads')
-                .select('phone, secondary_phone, name, company')
-                .or(`${orQuery},${orQuerySecondary}`),
-              supabase.from('contractors')
-                .select('phone, secondary_phone, other_contact_numbers, company_name, contact_name')
-                .or(`${contractorOrQuery},${contractorOrQuerySecondary},${contractorOrQueryOther}`)
-            ]);
-
-            const processResults = (list: any[] | null, isContractor: boolean) => {
+            const processResults = (list: any[] | null, isContractor: boolean, subChunk: string[]) => {
               list?.forEach(item => {
                 const phones = isContractor 
                   ? [item.phone, item.secondary_phone, item.other_contact_numbers]
@@ -164,7 +155,7 @@ export function SmsNotifications() {
                     }
                   }
 
-                  chunk.forEach(num => {
+                  subChunk.forEach(num => {
                     const cleanNum = (num as string).replace(/[^\d]/g, '').slice(-10);
                     if (cleanDb === cleanNum && cleanNum.length >= 7) {
                       nameMap[num as string] = fallbackName;
@@ -174,8 +165,26 @@ export function SmsNotifications() {
               });
             };
 
-            processResults(leadsData.data, false);
-            processResults(contractorsData.data, true);
+            for (const subChunk of subChunks) {
+              const subOrQuery = subChunk.map(num => `phone.ilike.%${num}%`).join(',');
+              const subOrQuerySecondary = subChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
+              
+              const subContractorOrQuery = subChunk.map(num => `phone.ilike.%${num}%`).join(',');
+              const subContractorOrQuerySecondary = subChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
+              const subContractorOrQueryOther = subChunk.map(num => `other_contact_numbers.ilike.%${num}%`).join(',');
+
+              const [leadsData, contractorsData] = await Promise.all([
+                supabase.from('leads')
+                  .select('phone, secondary_phone, name, company')
+                  .or(`${subOrQuery},${subOrQuerySecondary}`),
+                supabase.from('contractors')
+                  .select('phone, secondary_phone, other_contact_numbers, company_name, contact_name')
+                  .or(`${subContractorOrQuery},${subContractorOrQuerySecondary},${subContractorOrQueryOther}`)
+              ]);
+
+              processResults(leadsData.data, false, subChunk);
+              processResults(contractorsData.data, true, subChunk);
+            }
             
             // Sequential delay to let DB breathe
             if (chunks.length > 1) {

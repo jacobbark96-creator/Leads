@@ -308,20 +308,20 @@ export default function StaffPortal() {
           {/* Main Content Grid: 4 Columns */}
           <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 xl:h-[640px]">
             {/* Column 1: Tasks & Feed/Performance */}
-            <div className="flex flex-col gap-4 h-[500px] xl:h-full min-h-0">
-              <div className="h-1/2 overflow-hidden">
-                {profile.role === 'growth_manager' ? <MarketplaceLeadsList /> : <TasksPanel />}
+            {profile.role === 'growth_manager' ? (
+              <div className="h-[500px] xl:h-full overflow-hidden">
+                <MarketplaceLeadsList />
               </div>
-              <div className="h-1/2 overflow-hidden">
-                {isAdmin ? (
-                  <LiveFeed />
-                ) : profile.role === 'growth_manager' ? (
-                  <GMPerformanceCard />
-                ) : (
-                  <RepPerformanceCard />
-                )}
+            ) : (
+              <div className="flex flex-col gap-4 h-[500px] xl:h-full min-h-0">
+                <div className="h-1/2 overflow-hidden">
+                  <TasksPanel />
+                </div>
+                <div className="h-1/2 overflow-hidden">
+                  {isAdmin ? <LiveFeed /> : <RepPerformanceCard />}
+                </div>
               </div>
-            </div>
+            )}
 
             {/* Column 2: News & Conditional Component */}
             <div className="flex flex-col gap-4 h-[500px] xl:h-full min-h-0">
@@ -333,10 +333,10 @@ export default function StaffPortal() {
                   <GmailPanel />
                 ) : (
                   <div className="flex flex-col gap-4 h-full">
-                    <div className="h-1/3 min-h-[100px]">
+                    <div className="h-1/2 min-h-[100px]">
                       <RepTargetsBox />
                     </div>
-                    <div className="h-2/3 min-h-0">
+                    <div className="h-1/2 min-h-0">
                       <WhatsAppPlaceholder />
                     </div>
                   </div>

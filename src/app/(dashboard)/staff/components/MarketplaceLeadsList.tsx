@@ -51,8 +51,8 @@ export const MarketplaceLeadsList = () => {
       valA = a.exclusive_price || a.price || 0;
       valB = b.exclusive_price || b.price || 0;
     } else if (sortField === 'postcode') {
-      valA = a.postcode || '';
-      valB = b.postcode || '';
+      valA = a.location || a.postcode || '';
+      valB = b.location || b.postcode || '';
     } else {
       valA = new Date(a.created_at || 0).getTime();
       valB = new Date(b.created_at || 0).getTime();
@@ -107,7 +107,7 @@ export const MarketplaceLeadsList = () => {
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-1.5 text-white font-bold">
                   <MapPin className="w-3.5 h-3.5 text-blue-400" />
-                  {lead.postcode || 'Unknown'}
+                  {lead.location || lead.postcode || 'Unknown'}
                 </div>
                 <div className="flex items-center gap-1 text-emerald-400 font-bold">
                   <PoundSterling className="w-3.5 h-3.5" />

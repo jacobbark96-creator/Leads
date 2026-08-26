@@ -101,23 +101,17 @@ export const TopNav = ({ profile }: { profile: any }) => {
   // If the user is a super_admin, override with the new Command Centre navigation
   const commandCentreLinks = [
     { href: '/staff', label: 'Dashboard', icon: Home },
-    { href: '/staff', label: 'Leads', icon: Database }, // Existing staff leads? or maybe /staff? Actually /sales-crm is for leads, but let's just point to /sales-crm
-    { href: '/staff/acquisition', label: 'Acquisition', icon: BarChart2 },
-    { href: '/staff/sdr-performance', label: 'SDR Performance', icon: User },
-    { href: '/staff/sources', label: 'Sources', icon: Database },
-    { href: '/staff/forecast', label: 'Forecast', icon: BarChart2 },
-    { href: '/staff/quality', label: 'Quality', icon: BookOpen },
     { 
-      label: 'More', 
-      icon: Menu,
+      label: 'CRM', 
+      icon: Database,
       subLinks: [
-        { href: '/admin-crm/lead-packs', label: 'Marketplace' },
-        { href: '/admin-crm/installers', label: 'Installers' },
-        { href: '/admin-crm/whatsapp', label: 'WhatsApp' },
-        { href: '/admin-crm/tracker', label: 'Reports' },
-        { href: '/admin-crm', label: 'Settings' },
+        { href: '/admin-crm', label: 'Admin CRM' },
+        { href: '/sales-crm', label: 'Sales CRM' },
+        { href: '/contractor-crm', label: 'Contractor CRM' },
       ]
-    }
+    },
+    { href: '/staff/sources', label: 'Sources', icon: Database },
+    { href: '/contractor-crm/map', label: 'Map', icon: Map },
   ];
 
   const filteredLinks = profile?.role === 'super_admin' 

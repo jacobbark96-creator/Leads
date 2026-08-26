@@ -15,19 +15,8 @@ import { DivisionsTab } from './components/DivisionsTab';
 import { FinanceTab } from './components/FinanceTab';
 import { ConciergeTab } from './components/ConciergeTab';
 import { TargetsTab } from './components/TargetsTab';
-import { CommandCentreDashboard } from './components/CommandCentreDashboard';
 
 export default function UserManagement() {
-  const { profile } = useAuthStore();
-  
-  if (profile?.role === 'super_admin') {
-    return <CommandCentreDashboard />;
-  }
-
-  return <AdminDashboardContent />;
-}
-
-function AdminDashboardContent() {
   const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'stats' | 'background' | 'press' | 'feedback' | 'divisions' | 'finance' | 'concierge' | 'targets'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
@@ -726,4 +715,4 @@ function AdminDashboardContent() {
       {activeTab === 'divisions' && profile?.role === 'super_admin' && <DivisionsTab />}
     </div>
   );
-}
+};

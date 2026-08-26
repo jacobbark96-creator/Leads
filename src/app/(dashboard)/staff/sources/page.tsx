@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { Plus, Edit, Trash2, Power, Search, Filter } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { StaffSubPageWrapper } from '../components/StaffSubPageWrapper';
 
 export default function LeadSourcesPage() {
   const [sources, setSources] = useState<any[]>([]);
@@ -99,7 +100,8 @@ export default function LeadSourcesPage() {
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <StaffSubPageWrapper>
+      <div className="space-y-6">
       <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div>
           <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Lead Sources</h1>
@@ -265,6 +267,6 @@ export default function LeadSourcesPage() {
           </div>
         </div>
       )}
-    </div>
+    </StaffSubPageWrapper>
   );
 }

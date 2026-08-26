@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Target, TrendingUp, DollarSign, ArrowRight, ArrowUpRight } from 'lucide-react';
+import { StaffSubPageWrapper } from '../components/StaffSubPageWrapper';
 
 export default function AcquisitionPage() {
   const channelPerformance = [
@@ -12,7 +13,8 @@ export default function AcquisitionPage() {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <StaffSubPageWrapper>
+      <div className="space-y-6">
       <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div>
           <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Lead Acquisition</h1>
@@ -55,6 +57,6 @@ export default function AcquisitionPage() {
           </table>
         </div>
       </div>
-    </div>
+    </StaffSubPageWrapper>
   );
 }

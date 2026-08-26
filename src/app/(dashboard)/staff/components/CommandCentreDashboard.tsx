@@ -290,7 +290,7 @@ export function CommandCentreDashboard() {
             </div>
             <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between">
               <span className="text-xs font-bold text-green-600 bg-green-50 px-2 py-1 rounded">Projected to exceed target</span>
-              <Link href="/admin-crm/forecast" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+              <Link href="/staff/forecast" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
                 View detailed forecast <ChevronRight className="w-4 h-4 ml-1" />
               </Link>
             </div>
@@ -300,7 +300,7 @@ export function CommandCentreDashboard() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-base font-black text-gray-900 uppercase">Channel Performance</h3>
-              <Link href="/admin-crm/sources" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+              <Link href="/staff/sources" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
                 Manage Sources <ChevronRight className="w-4 h-4 ml-1" />
               </Link>
             </div>
@@ -342,7 +342,7 @@ export function CommandCentreDashboard() {
           <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
             <div className="p-6 border-b border-gray-200 flex justify-between items-center">
               <h3 className="text-base font-black text-gray-900 uppercase">SDR Production</h3>
-              <Link href="/admin-crm/sdr-performance" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
+              <Link href="/staff/sdr-performance" className="text-xs font-bold text-blue-600 hover:text-blue-800 flex items-center">
                 View All Reps <ChevronRight className="w-4 h-4 ml-1" />
               </Link>
             </div>

@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Shield, CheckCircle, XCircle, AlertTriangle, TrendingUp, DollarSign } from 'lucide-react';
+import { StaffSubPageWrapper } from '../components/StaffSubPageWrapper';
 
 export default function QualityPage() {
   const qualityMetrics = [
@@ -14,7 +15,8 @@ export default function QualityPage() {
   ];
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <StaffSubPageWrapper>
+      <div className="space-y-6">
       <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div>
           <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Lead Quality</h1>
@@ -46,6 +48,6 @@ export default function QualityPage() {
           Alerts will be generated if rejection rates exceed 5% or if installer acceptance drops below 75%.
         </p>
       </div>
-    </div>
+    </StaffSubPageWrapper>
   );
 }

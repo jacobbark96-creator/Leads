@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { TrendingUp, AlertCircle, BarChart2, Calendar, Target, ShieldCheck } from 'lucide-react';
+import { StaffSubPageWrapper } from '../components/StaffSubPageWrapper';
 
 export default function ForecastPage() {
   const currentDailyAvg = 43;
@@ -11,7 +12,8 @@ export default function ForecastPage() {
   const projectedVariance = currentMonthlyProjection - monthlyTarget;
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <StaffSubPageWrapper>
+      <div className="space-y-6">
       <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div>
           <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">Production Forecast</h1>
@@ -93,6 +95,6 @@ export default function ForecastPage() {
         <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-2">Detailed Forecast Model</h3>
         <p className="text-sm text-gray-500 max-w-md">The predictive modeling engine will automatically generate 30, 60, and 90-day forecasts once sufficient historical production data is collected.</p>
       </div>
-    </div>
+    </StaffSubPageWrapper>
   );
 }

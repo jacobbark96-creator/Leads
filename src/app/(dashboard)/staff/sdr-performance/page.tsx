@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Users, Phone, Target, Award, Search, Filter } from 'lucide-react';
+import { StaffSubPageWrapper } from '../components/StaffSubPageWrapper';
 
 export default function SdrPerformancePage() {
   const [searchTerm, setSearchTerm] = useState('');
@@ -17,7 +18,8 @@ export default function SdrPerformancePage() {
   const filteredData = sdrData.filter(sdr => sdr.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   return (
-    <div className="p-6 max-w-7xl mx-auto space-y-6">
+    <StaffSubPageWrapper>
+      <div className="space-y-6">
       <div className="flex justify-between items-center bg-white p-6 rounded-xl shadow-sm border border-gray-200">
         <div>
           <h1 className="text-2xl font-black text-gray-900 uppercase tracking-tight">SDR Performance</h1>
@@ -93,6 +95,6 @@ export default function SdrPerformancePage() {
           </div>
         ))}
       </div>
-    </div>
+    </StaffSubPageWrapper>
   );
 }

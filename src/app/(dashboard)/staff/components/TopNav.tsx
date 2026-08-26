@@ -74,6 +74,7 @@ export const TopNav = ({ profile }: { profile: any }) => {
 
   const navLinks = [
     { href: '/staff', label: 'Home', icon: Home },
+    { href: '/staff/leads', label: 'Leads', icon: Database, roles: ['super_admin'] },
     { 
       label: 'CRM', 
       icon: Database,
@@ -86,6 +87,7 @@ export const TopNav = ({ profile }: { profile: any }) => {
         { href: '/admin-crm', label: 'Admin CRM', roles: ['admin', 'super_admin'] },
       ]
     },
+    { href: '/staff/sources', label: 'Sources', icon: Database, roles: ['super_admin'] },
     { href: '/contractor-crm/map', label: 'Map', icon: Map },
     { href: '/intranet', label: 'Intranet', icon: BookOpen },
     { 
@@ -98,25 +100,7 @@ export const TopNav = ({ profile }: { profile: any }) => {
     },
   ];
 
-  // If the user is a super_admin, override with the new Command Centre navigation
-  const commandCentreLinks = [
-    { href: '/staff', label: 'Dashboard', icon: Home },
-    { 
-      label: 'CRM', 
-      icon: Database,
-      subLinks: [
-        { href: '/admin-crm', label: 'Admin CRM' },
-        { href: '/sales-crm', label: 'Sales CRM' },
-        { href: '/contractor-crm', label: 'Contractor CRM' },
-      ]
-    },
-    { href: '/staff/sources', label: 'Sources', icon: Database },
-    { href: '/contractor-crm/map', label: 'Map', icon: Map },
-  ];
-
-  const filteredLinks = profile?.role === 'super_admin' 
-    ? commandCentreLinks 
-    : navLinks
+  const filteredLinks = navLinks
         .filter(link => !link.roles || link.roles.includes(profile?.role))
         .map(link => {
           if (link.subLinks) {

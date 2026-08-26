@@ -455,6 +455,7 @@ function LeadDetailsV2Content() {
   
   const [isEnhancingNotes, setIsEnhancingNotes] = useState(false);
   const [isEnrichingCompany, setIsEnrichingCompany] = useState(false);
+  const [isCalculatingRoof, setIsCalculatingRoof] = useState(false);
   
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [isRoofTypeDropdownOpen, setIsRoofTypeDropdownOpen] = useState(false);
@@ -1874,6 +1875,34 @@ function LeadDetailsV2Content() {
     }
   };
 
+  const autoCalculateRoofSize = async () => {
+    const addressToUse = (editForm as any).location || (editForm as any).address;
+    if (!addressToUse) {
+      toast.error('Please enter an address first');
+      return;
+    }
+    setIsCalculatingRoof(true);
+    const toastId = toast.loading('Calculating roof size...');
+    try {
+      const res = await fetch('/api/solar-roof-size', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ address: addressToUse })
+      });
+      const data = await res.json();
+      if (res.ok && data.roof_size) {
+        setEditForm(prev => ({ ...prev, roof_size: data.roof_size.toString() } as any));
+        toast.success('Roof size calculated successfully', { id: toastId });
+      } else {
+        toast.error(data.error || 'Failed to calculate roof size', { id: toastId });
+      }
+    } catch (error) {
+      toast.error('An error occurred while calculating roof size', { id: toastId });
+    } finally {
+      setIsCalculatingRoof(false);
+    }
+  };
+
   const handleAddBuilding = async () => {
     if (!lead || !newBuildingAddress.trim()) return;
 
@@ -3132,7 +3161,18 @@ function LeadDetailsV2Content() {
                     )}
                   </div>
                   <div className="flex flex-col">
-                    <span className="text-gray-500 text-[11px] uppercase tracking-wider">Usable Roof Area</span>
+                    <div className="flex justify-between items-center">
+                      <span className="text-gray-500 text-[11px] uppercase tracking-wider">Usable Roof Area</span>
+                      {editingCard === 'building' && (
+                        <button 
+                          onClick={autoCalculateRoofSize} 
+                          disabled={isCalculatingRoof}
+                          className="text-blue-600 hover:text-blue-800 text-[9px] font-bold flex items-center gap-1 disabled:opacity-50"
+                        >
+                          <Zap className="w-2.5 h-2.5" /> Auto
+                        </button>
+                      )}
+                    </div>
                     {editingCard === 'building' ? (
                       <input type="text" value={(editForm as any).roof_size || ''} onChange={e => setEditForm({...editForm, roof_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
                     ) : (

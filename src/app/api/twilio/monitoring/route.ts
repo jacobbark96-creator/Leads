@@ -145,10 +145,10 @@ export async function GET(request: Request) {
       .filter(n => n.length >= 7);
 
     if (last10Digits.length > 0) {
-      const chunks = [];
-      // Chunk by 20 to keep URL length reasonable but reduce concurrent requests
-      for (let i = 0; i < last10Digits.length; i += 20) {
-        chunks.push(last10Digits.slice(i, i + 20));
+      const chunks: string[][] = [];
+      // Reduce chunk size from 20 to 1 to prevent 500 error from Supabase URL limit/timeout
+      for (let i = 0; i < last10Digits.length; i += 1) {
+        chunks.push(last10Digits.slice(i, i + 1));
       }
       
       const chunkPromises = chunks.flatMap(chunk => {

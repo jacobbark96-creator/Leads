@@ -41,7 +41,7 @@ export default function PipelinePage() {
     fetchDivisionName();
   }, [profile, activeDivisionId]);
 
-  const isOpenEnergyResidential = activeDivisionName.toLowerCase() === 'open energy residential';
+  const isOpenEnergyResidential = activeDivisionName?.toLowerCase() === 'open energy residential';
 
   useEffect(() => {
     if (profile) {

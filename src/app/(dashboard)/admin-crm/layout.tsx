@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     return '/staff';
   };
 
-  const sidebarItems = [
+  const standardSidebarItems = [
     { name: 'Home', path: '/staff', icon: Home, exact: true },
     { name: 'User Management', path: '/admin-crm', icon: Users, exact: true, id: 'admin-crm/users' },
     { name: 'Categories', path: '/admin-crm/categories', icon: Tags, id: 'admin-crm/categories' },
@@ -35,15 +35,34 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Partners', path: '/admin-crm/partners', icon: Briefcase, id: 'admin-crm/partners' },
     { name: 'Openlead Max', path: '/admin-crm/openlead-max', icon: Sparkles, id: 'admin-crm/openlead-max' },
     { name: 'Recruitment', path: '/admin-crm/recruitment', icon: Briefcase, id: 'admin-crm/recruitment' },
-  ].filter(tab => {
-    // Role-based filtering for specific tabs
-    if (tab.roles && !tab.roles.includes(profile?.role)) return false;
-    
-    // Permission-based filtering for reps and growth managers
-    if (['rep', 'growth_manager'].includes(profile?.role || '') && tab.id && !profile?.permissions?.includes(tab.id)) return false;
-    
-    return true;
-  });
+  ];
+
+  const superAdminSidebarItems = [
+    { name: 'Dashboard', path: '/admin-crm', icon: LayoutDashboard, exact: true },
+    { name: 'Leads', path: '/staff', icon: Database },
+    { name: 'Lead Acquisition', path: '/admin-crm/acquisition', icon: TrendingUp },
+    { name: 'SDR Performance', path: '/admin-crm/sdr-performance', icon: Users },
+    { name: 'Lead Sources', path: '/admin-crm/sources', icon: Database },
+    { name: 'Forecast', path: '/admin-crm/forecast', icon: Activity },
+    { name: 'Lead Quality', path: '/admin-crm/quality', icon: Sparkles },
+    { name: 'Marketplace', path: '/admin-crm/lead-packs', icon: Store },
+    { name: 'Installers', path: '/admin-crm/installers', icon: Briefcase },
+    { name: 'WhatsApp', path: '/admin-crm/whatsapp', icon: MessageSquare },
+    { name: 'Reports', path: '/admin-crm/tracker', icon: BarChart2 },
+    { name: 'Settings', path: '/admin-crm/settings', icon: Settings },
+  ];
+
+  const sidebarItems = profile?.role === 'super_admin' 
+    ? superAdminSidebarItems 
+    : standardSidebarItems.filter(tab => {
+        // Role-based filtering for specific tabs
+        if (tab.roles && !tab.roles.includes(profile?.role)) return false;
+        
+        // Permission-based filtering for reps and growth managers
+        if (['rep', 'growth_manager'].includes(profile?.role || '') && tab.id && !profile?.permissions?.includes(tab.id)) return false;
+        
+        return true;
+      });
 
   return (
     <ProtectedRoute allowedRoles={['admin', 'super_admin', 'rep', 'growth_manager']}>

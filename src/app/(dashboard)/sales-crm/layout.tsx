@@ -52,7 +52,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
     fetchDivisionName();
   }, [profile, activeDivisionId]);
 
-  const isOpenEnergyResidential = activeDivisionName.toLowerCase() === 'open energy residential';
+  const isOpenEnergyResidential = activeDivisionName?.toLowerCase() === 'open energy residential';
 
   useEffect(() => {
     const fetchPacks = async () => {

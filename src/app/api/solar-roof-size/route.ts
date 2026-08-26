@@ -7,7 +7,7 @@ export async function POST(req: Request) {
     const { address } = await req.json();
     if (!address) return NextResponse.json({ error: 'Address required' }, { status: 400 });
 
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY;
+    const apiKey = process.env.SOLAR_API_KEY || process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || process.env.GOOGLE_API_KEY;
     if (!apiKey) return NextResponse.json({ error: 'Google Maps API key not configured.' }, { status: 500 });
 
     const geocodeUrl = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}`;

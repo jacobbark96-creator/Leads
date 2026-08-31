@@ -437,6 +437,16 @@ function LeadDetailsV2Content() {
   const [prevLeadId, setPrevLeadId] = useState<string | null>(null);
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [isAutoDialEnabled, setIsAutoDialEnabled] = useState(false);
+  const [autoDialCountdown, setAutoDialCountdown] = useState<number | null>(null);
+  const userActivityTimeRef = useRef<number>(Date.now());
+  const userDidActivityRef = useRef<boolean>(false);
+  const isPostCallRef = useRef<boolean>(false);
+  const hasDialedRef = useRef(false);
+  
+  // Refs to avoid stale closures in the interval
+  const goToNextLeadRef = useRef<() => void>(() => {});
+  const handlePackDispositionRef = useRef<(d: string) => void>(() => {});
+
   const [tasks, setTasks] = useState<any[]>([]);
   const [otherContacts, setOtherContacts] = useState<any[]>([]);
   const [availableGrants, setAvailableGrants] = useState<any[]>([]);
@@ -580,15 +590,96 @@ function LeadDetailsV2Content() {
   const wasInCallRef = useRef(false);
 
   useEffect(() => {
-    // Auto-dial logic: when call ends and auto-dial is on, go to next lead
-    if (wasInCallRef.current && !activeCall && isAutoDialEnabled && nextLeadId) {
-      toast.success('Auto-dialing next lead in 3 seconds...');
-      setTimeout(() => {
-        goToNextLead();
-      }, 3000);
+    const handleActivity = () => {
+      userActivityTimeRef.current = Date.now();
+      if (isPostCallRef.current) {
+        userDidActivityRef.current = true;
+      }
+    };
+    window.addEventListener('mousedown', handleActivity);
+    window.addEventListener('keydown', handleActivity);
+    return () => {
+      window.removeEventListener('mousedown', handleActivity);
+      window.removeEventListener('keydown', handleActivity);
+    };
+  }, []);
+
+  // Dial on load if autodial is enabled
+  useEffect(() => {
+    if (isAutoDialEnabled && !activeCall && lead?.phone && !hasDialedRef.current) {
+      hasDialedRef.current = true;
+      onCallClick(lead.phone);
     }
+  }, [isAutoDialEnabled, activeCall, lead?.phone, lead?.id]);
+
+  // Reset dial ref when lead changes
+  useEffect(() => {
+    hasDialedRef.current = false;
+    isPostCallRef.current = false;
+    userDidActivityRef.current = false;
+    setAutoDialCountdown(null);
+  }, [lead?.id]);
+
+  useEffect(() => {
+    // When the call ends, start the post-call sequence
+    if (wasInCallRef.current && !activeCall && isAutoDialEnabled) {
+      isPostCallRef.current = true;
+      userDidActivityRef.current = false;
+      userActivityTimeRef.current = Date.now(); // reset timer start
+    }
+    
+    // When a call starts, clear post-call state
+    if (!wasInCallRef.current && activeCall) {
+      isPostCallRef.current = false;
+      userDidActivityRef.current = false;
+      setAutoDialCountdown(null);
+    }
+    
     wasInCallRef.current = !!activeCall;
-  }, [activeCall, isAutoDialEnabled, nextLeadId]);
+  }, [activeCall, isAutoDialEnabled]);
+
+  useEffect(() => {
+    if (!isAutoDialEnabled) {
+      setAutoDialCountdown(null);
+      isPostCallRef.current = false;
+      return;
+    }
+
+    const interval = setInterval(() => {
+      if (isPostCallRef.current && !activeCall) {
+        const timeSinceActivity = Date.now() - userActivityTimeRef.current;
+        const remaining = Math.max(0, 8 - Math.floor(timeSinceActivity / 1000));
+        
+        setAutoDialCountdown(remaining);
+
+        if (timeSinceActivity >= 8000) {
+          // Time is up!
+          isPostCallRef.current = false;
+          setAutoDialCountdown(null);
+          
+          if (!userDidActivityRef.current) {
+            // No activity -> mark as voicemail and move on
+            if (packId) {
+              handlePackDispositionRef.current('Voicemail');
+            } else if (nextLeadId) {
+              goToNextLeadRef.current();
+            }
+          } else {
+            // Activity occurred -> move on (assuming they saved notes or something)
+            if (packId) {
+              handlePackDispositionRef.current('Call Back');
+            } else if (nextLeadId) {
+              goToNextLeadRef.current();
+            }
+          }
+        }
+      } else {
+        setAutoDialCountdown(null);
+      }
+    }, 100);
+
+    return () => clearInterval(interval);
+  }, [isAutoDialEnabled, activeCall, nextLeadId, packId]);
 
   useEffect(() => {
     let mounted = true;
@@ -1956,6 +2047,7 @@ function LeadDetailsV2Content() {
       router.push(`/sales-crm/lead-v2?id=${nextLeadId}&tab=${tab}`);
     }
   };
+  goToNextLeadRef.current = goToNextLead;
 
   const handlePackDisposition = async (disposition: string) => {
     if (!packId || !packMembership || !profile?.id) return;
@@ -1994,6 +2086,7 @@ function LeadDetailsV2Content() {
       setLoading(false);
     }
   };
+  handlePackDispositionRef.current = handlePackDisposition;
 
   const goToPrevLead = () => {
     if (prevLeadId) {
@@ -2109,6 +2202,18 @@ function LeadDetailsV2Content() {
               <span className="text-gray-900 truncate max-w-[150px] md:max-w-none">{lead.company || lead.name}</span>
             </div>
             <div className="flex flex-wrap items-center gap-3 md:gap-4 w-full md:w-auto">
+              {packId && profile?.permissions?.includes('can_autodial') && (
+                <button
+                  onClick={() => setIsAutoDialEnabled(!isAutoDialEnabled)}
+                  className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-colors shadow-sm ${isAutoDialEnabled ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200'}`}
+                >
+                  <Phone className="w-4 h-4" />
+                  {isAutoDialEnabled ? 'Pause Autodial' : 'Start Autodial'}
+                  {isAutoDialEnabled && autoDialCountdown !== null && (
+                    <span className="bg-amber-700 text-white text-[10px] px-1.5 py-0.5 rounded-md ml-1">{autoDialCountdown}s</span>
+                  )}
+                </button>
+              )}
               {packId && (
                 <div className="flex items-center gap-1.5 md:gap-2 bg-white px-2 py-1 rounded-xl border border-gray-200 shadow-sm overflow-x-auto no-scrollbar max-w-full">
                   <span className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1 shrink-0">Log:</span>

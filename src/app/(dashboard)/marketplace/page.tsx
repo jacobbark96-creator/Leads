@@ -515,12 +515,7 @@ export default function MarketplacePage() {
   return (
     <ProtectedRoute allowedRoles={['client', 'admin', 'super_admin']}>
       <div className="space-y-6">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Lead Marketplace</h1>
-            <p className="mt-1 text-sm text-gray-500">Browse and purchase exclusively qualified leads.</p>
-          </div>
-          
+        <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">Sort by:</span>
             <select
@@ -538,7 +533,7 @@ export default function MarketplacePage() {
           </div>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-6 gap-3 sm:gap-6">
+        <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-3 sm:gap-6">
           {soldLeads.length > 0 && (
             <div className="hidden sm:block">
               <RecentlySoldCarousel soldLeads={soldLeads} />

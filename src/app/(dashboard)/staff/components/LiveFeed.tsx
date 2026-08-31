@@ -14,7 +14,7 @@ export const LiveFeed = () => {
         .select(`
           *,
           lead_id,
-          leads:lead_id(name, company)
+          leads:lead_id(name, company, lead_purchases(status))
         `)
         .in('activity_type', ['qualified', 'marketed', 'sold', 'requested'])
         .order('created_at', { ascending: false })
@@ -25,8 +25,22 @@ export const LiveFeed = () => {
           let statusLabel = 'New';
           if (act.activity_type === 'qualified') statusLabel = 'Qualified';
           if (act.activity_type === 'marketed') statusLabel = 'Marketed';
-          if (act.activity_type === 'sold') statusLabel = 'Sold';
           if (act.activity_type === 'requested') statusLabel = 'Requested';
+          
+          if (act.activity_type === 'sold') {
+            statusLabel = 'Sold';
+            // Check if there's a more recent status in lead_purchases
+            if (act.leads?.lead_purchases && act.leads.lead_purchases.length > 0) {
+              // Get the most advanced status if multiple exist, or just the first one
+              const statuses = act.leads.lead_purchases.map((p: any) => p.status);
+              if (statuses.includes('won')) statusLabel = 'Won';
+              else if (statuses.includes('archive')) statusLabel = 'Archive';
+              else if (statuses.includes('proposal')) statusLabel = 'Proposal';
+              else if (statuses.includes('sat')) statusLabel = 'Surveyed';
+              else if (statuses.includes('contacted')) statusLabel = 'Contacted';
+              else if (statuses.includes('new')) statusLabel = 'Sold';
+            }
+          }
 
           let title = '';
           if (act.leads) {
@@ -76,6 +90,11 @@ export const LiveFeed = () => {
       case 'Marketed': return 'text-blue-400 border-blue-400/20 bg-blue-400/10';
       case 'Sold': return 'text-emerald-500 border-emerald-500/20 bg-emerald-500/10';
       case 'Requested': return 'text-purple-400 border-purple-400/20 bg-purple-400/10';
+      case 'Contacted': return 'text-indigo-400 border-indigo-400/20 bg-indigo-400/10';
+      case 'Surveyed': return 'text-yellow-400 border-yellow-400/20 bg-yellow-400/10';
+      case 'Proposal': return 'text-orange-400 border-orange-400/20 bg-orange-400/10';
+      case 'Won': return 'text-green-400 border-green-400/20 bg-green-400/10';
+      case 'Archive': return 'text-slate-400 border-slate-400/20 bg-slate-400/10';
       default: return 'text-gray-400 border-gray-400/20';
     }
   };

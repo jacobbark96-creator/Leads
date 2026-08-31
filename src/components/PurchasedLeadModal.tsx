@@ -35,7 +35,7 @@ const SavingsCarousel = ({ lead }: { lead: any }) => {
   const payback = (annualSavings > 0 && systemValue > 0) ? (systemValue / annualSavings) : 0;
 
   return (
-    <div className="bg-purple-50 rounded-lg relative overflow-hidden flex flex-col items-center justify-center text-center h-[76px]">
+    <div className="bg-purple-50 rounded-lg relative overflow-hidden flex flex-col items-center justify-center text-center h-[56px]">
       <div className={`absolute inset-0 flex flex-col items-center justify-center transition-all duration-700 transform ${showPayback ? '-translate-y-full opacity-0' : 'translate-y-0 opacity-100'} p-3`}>
         <Zap className="w-4 h-4 text-purple-400 mb-1" />
         <span className="text-[9px] font-bold text-purple-400 uppercase tracking-wider mb-1">Est. Annual Savings</span>
@@ -64,9 +64,11 @@ const DisplayValue = ({ value, suffix = '', className = "text-right" }: { value:
   else if (len > 25) sizeClass = 'text-[9.5px] leading-tight break-words';
   else if (len > 15) sizeClass = 'text-[10.5px] leading-tight break-words';
   
-  const finalClassName = className ? className.replace(/text-(xs|sm|base|lg|xl|\[.*?\])/g, '').trim() : '';
+  const hasExplicitSize = className ? className.match(/text-(xs|sm|base|lg|xl|\[.*?\])/) : false;
+  const finalSizeClass = hasExplicitSize ? '' : sizeClass;
+  const finalClassName = className ? className : '';
 
-  return <span className={`text-gray-900 font-semibold ${sizeClass} ${finalClassName}`} title={`${strValue}${suffix}`}>{strValue}{suffix}</span>;
+  return <span className={`text-gray-900 font-semibold ${finalSizeClass} ${finalClassName}`.trim()} title={`${strValue}${suffix}`}>{strValue}{suffix}</span>;
 };
 
 export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, onClose, lead, onUpdateStatus }) => {
@@ -177,20 +179,20 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
 
   return (
     <>
-      <div className="fixed inset-0 z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
+      <div className="fixed inset-0 lg:left-[220px] z-50 overflow-y-auto bg-gray-900/60 backdrop-blur-sm flex items-center justify-center p-2 sm:p-4">
         <div 
-          className="bg-[#F8FAFC] rounded-2xl shadow-2xl w-full max-w-5xl max-h-[96vh] flex flex-col overflow-hidden border border-gray-200"
+          className="bg-[#F8FAFC] rounded-2xl shadow-2xl w-full max-w-4xl max-h-[96vh] flex flex-col overflow-hidden border border-gray-200"
         >
         
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-gray-200">
-          <div className="flex items-center gap-4">
-            <div className="w-10 h-10 rounded-lg bg-green-50 flex items-center justify-center text-green-600 border border-green-100">
+        <div className="flex items-center justify-between px-4 py-2 bg-white border-b border-gray-200">
+          <div className="flex items-center gap-2">
+            <div className="w-8 h-8 rounded-lg bg-green-50 flex items-center justify-center text-green-600 border border-green-100">
               <CheckCircle className="w-5 h-5" />
             </div>
             <div>
               <div className="flex items-center gap-3">
-                <h2 className="text-xl font-bold text-gray-900">Purchased Lead Details</h2>
+                <h2 className="text-lg font-bold text-gray-900">Purchased Lead Details</h2>
               </div>
               <div className="flex items-center gap-3 mt-1">
                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Ref: #{lead.id.split('-')[0]}</p>
@@ -212,76 +214,76 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
         </div>
 
         {/* Content */}
-        <div className="flex-1 p-4 space-y-3 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 p-3 space-y-2 overflow-y-auto custom-scrollbar">
           
           {/* Building Tabs */}
 
           {/* Main Grid Layout */}
-          <div className="grid grid-cols-12 gap-4">
+          <div className="grid grid-cols-12 gap-2">
             
             {/* LEFT COLUMN (8 cols) */}
-            <div className="col-span-12 md:col-span-8 flex flex-col gap-4">
+            <div className="col-span-12 md:col-span-8 flex flex-col gap-2">
               
               {/* TOP ROW: Contact Card */}
-              <div className="bg-white rounded-xl p-4 border border-blue-200 shadow-sm w-full flex flex-col justify-center relative overflow-hidden">
-                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 opacity-50 z-0 pointer-events-none"></div>
-                <h3 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-3 flex items-center gap-1.5 relative z-10">
+              <div className="bg-white rounded-xl p-2.5 border border-blue-200 shadow-sm w-full flex flex-col justify-center relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-full -mr-4 -mt-2 opacity-50 z-0 pointer-events-none"></div>
+                <h3 className="text-[10px] font-bold text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10">
                   <User className="w-3.5 h-3.5" /> Contact Details
                 </h3>
                 
-                <div className={`grid grid-cols-2 md:grid-cols-4 gap-y-4 gap-x-4 relative z-10 ${lead.has_concierge && lead.concierge_status === 'pending' ? 'blur-sm select-none pointer-events-none' : ''}`}>
+                <div className={`grid grid-cols-2 md:grid-cols-4 gap-y-2 gap-x-3 relative z-10 ${lead.has_concierge && lead.concierge_status === 'pending' ? 'blur-sm select-none pointer-events-none' : ''}`}>
                   <div className="flex flex-col">
                     <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><User className="w-3 h-3 text-gray-400"/> Name</span>
-                    <span className="text-sm font-bold text-gray-900 truncate">{lead.name || <MissingValue />}</span>
+                    <span className="text-xs font-bold text-gray-900 truncate">{lead.name || <MissingValue />}</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Briefcase className="w-3 h-3 text-gray-400"/> Company / Job</span>
-                    <span className="text-sm font-bold text-gray-900 truncate">{lead.company || lead.job_title ? [lead.company, lead.job_title].filter(Boolean).join(' - ') : <MissingValue />}</span>
+                    <span className="text-xs font-bold text-gray-900 truncate">{lead.company || lead.job_title ? [lead.company, lead.job_title].filter(Boolean).join(' - ') : <MissingValue />}</span>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Phone className="w-3 h-3 text-gray-400"/> Phone</span>
-                    {lead.phone ? <a href={`tel:${lead.phone}`} className="text-sm font-bold text-blue-600 hover:underline truncate">{lead.phone}</a> : <MissingValue />}
+                    {lead.phone ? <a href={`tel:${lead.phone}`} className="text-xs font-bold text-blue-600 hover:underline truncate">{lead.phone}</a> : <MissingValue />}
                   </div>
                   <div className="flex flex-col">
                     <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Mail className="w-3 h-3 text-gray-400"/> Email</span>
-                    {lead.email ? <a href={`mailto:${lead.email}`} className="text-sm font-bold text-blue-600 hover:underline truncate">{lead.email}</a> : <MissingValue />}
+                    {lead.email ? <a href={`mailto:${lead.email}`} className="text-xs font-bold text-blue-600 hover:underline truncate">{lead.email}</a> : <MissingValue />}
                   </div>
-                  <div className="flex flex-col col-span-2 md:col-span-4">
+                  <div className={`flex flex-col col-span-2 ${parsedContacts.length > 0 ? 'md:col-span-3' : 'md:col-span-4'}`}>
                     <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-gray-400"/> Full Address</span>
-                    <span className="text-sm font-bold text-gray-900 truncate">{lead.location || 'No address provided'}</span>
+                    <span className="text-xs font-bold text-gray-900 truncate">{lead.location || 'No address provided'}</span>
                   </div>
+                  
+                  {parsedContacts.length > 0 && (
+                    <div className="flex flex-col col-span-2 md:col-span-1 justify-end items-end">
+                      <button 
+                        onClick={() => setShowAdditionalContacts(!showAdditionalContacts)}
+                        className="text-[9px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-2 py-1 rounded-full transition-colors flex items-center gap-1 mb-0.5"
+                      >
+                        <User className="w-3 h-3" />
+                        {showAdditionalContacts ? 'Hide Additional' : 'Additional Contacts'}
+                      </button>
+                    </div>
+                  )}
                 </div>
 
-                {parsedContacts.length > 0 && (
-                  <div className="mt-4 flex justify-end relative z-10">
-                    <button 
-                      onClick={() => setShowAdditionalContacts(!showAdditionalContacts)}
-                      className="text-[10px] font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-full transition-colors flex items-center gap-1"
-                    >
-                      <User className="w-3 h-3" />
-                      {showAdditionalContacts ? 'Hide Additional' : 'Additional Contacts'}
-                    </button>
-                  </div>
-                )}
-
                 {showAdditionalContacts && parsedContacts.length > 0 && (
-                  <div className="mt-4 pt-4 border-t border-gray-100 relative z-10 animate-in slide-in-from-top-2">
+                  <div className="mt-2 pt-4 border-t border-gray-100 relative z-10 animate-in slide-in-from-top-2">
                     <h4 className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-3">Additional Contacts</h4>
-                    <div className="space-y-3">
+                    <div className="space-y-2">
                       {parsedContacts.map((contact, idx) => (
-                        <div key={idx} className="grid grid-cols-2 md:grid-cols-4 gap-4 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                        <div key={idx} className="grid grid-cols-2 md:grid-cols-4 gap-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
                           <div className="flex flex-col">
                             <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><User className="w-3 h-3 text-gray-400"/> Name</span>
-                            <span className="text-sm font-bold text-gray-900 truncate">{contact.name || <MissingValue />}</span>
+                            <span className="text-xs font-bold text-gray-900 truncate">{contact.name || <MissingValue />}</span>
                           </div>
                           <div className="flex flex-col">
                             <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Phone className="w-3 h-3 text-gray-400"/> Phone</span>
-                            {contact.phone ? <a href={`tel:${contact.phone}`} className="text-sm font-bold text-blue-600 hover:underline truncate">{contact.phone}</a> : <MissingValue />}
+                            {contact.phone ? <a href={`tel:${contact.phone}`} className="text-xs font-bold text-blue-600 hover:underline truncate">{contact.phone}</a> : <MissingValue />}
                           </div>
                           {contact.email && (
                             <div className="flex flex-col col-span-2 md:col-span-2">
                               <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><Mail className="w-3 h-3 text-gray-400"/> Email</span>
-                              <a href={`mailto:${contact.email}`} className="text-sm font-bold text-blue-600 hover:underline truncate">{contact.email}</a>
+                              <a href={`mailto:${contact.email}`} className="text-xs font-bold text-blue-600 hover:underline truncate">{contact.email}</a>
                             </div>
                           )}
                         </div>
@@ -343,56 +345,56 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
               </div>
 
               {/* MIDDLE & BOTTOM: Property & Insights Stack */}
-              <div className="flex gap-4 items-stretch">
+              <div className="flex gap-2 items-stretch">
                 
                 {/* Property & Installation (Left, Taller) */}
-                <div className="bg-white rounded-xl p-4 border border-gray-200 flex-[1.5] flex flex-col">
-                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                <div className="bg-white rounded-xl p-2 border border-gray-200 flex-[1.15] flex flex-col">
+                  <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-2">
                     <Home className="w-4 h-4 text-gray-400" /> Property & Installation
                   </h3>
                   <div className="grid grid-cols-2 gap-2 flex-1">
-                      <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Location</span>
+                      <div className="bg-gray-50 rounded-lg p-2 flex flex-col justify-center">
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><MapPin className="w-3 h-3" /> Location</span>
                         <div className="flex flex-col">
-                          <DisplayValue value={extractTown(activeBuildingIndex === 0 ? lead.location : activeBuilding?.address)} className="text-[11px]" />
+                          <DisplayValue value={extractTown(activeBuildingIndex === 0 ? lead.location : activeBuilding?.address)} className="text-[10px]" />
                           {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude) && (
-                            <span className="text-[9px] text-gray-400 font-medium italic mt-0.5 leading-tight">
+                            <span className="text-[10px] text-gray-400 font-medium italic mt-0.5 leading-tight">
                               {getVagueLocation(activeBuildingIndex === 0 ? lead.latitude : activeBuilding?.latitude, activeBuildingIndex === 0 ? lead.longitude : activeBuilding?.longitude)}
                             </span>
                           )}
                         </div>
                       </div>
                       
-                      <div className="bg-gray-50 rounded-lg p-2.5 flex justify-between divide-x divide-gray-200">
+                      <div className="bg-gray-50 rounded-lg p-2 flex justify-between divide-x divide-gray-200">
                           <div className="flex flex-col justify-center pr-2 w-1/2">
-                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>
-                            <DisplayValue value={activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status} className="text-[11px]" />
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><User className="w-3 h-3" /> Ownership</span>
+                            <DisplayValue value={activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status} className="text-[10px]" />
                             {(activeBuildingIndex === 0 ? lead.property_ownership : activeBuilding?.ownership_status)?.toLowerCase?.() === 'leased' && (
                               <div className="mt-1.5 pt-1.5 border-t border-gray-200 flex flex-col gap-0.5">
-                                <span className="text-[9px] text-gray-500 font-medium">Lease: {lead.lease_duration || 'Unknown'}</span>
-                                <span className="text-[9px] text-gray-500 font-medium">Landlord OK: {lead.landlord_permission || 'Unknown'}</span>
+                                <span className="text-[10px] text-gray-500 font-medium">Lease: {lead.lease_duration || 'Unknown'}</span>
+                                <span className="text-[10px] text-gray-500 font-medium">Landlord OK: {lead.landlord_permission || 'Unknown'}</span>
                               </div>
                             )}
                           </div>
                           <div className="flex flex-col justify-center pl-2 w-1/2">
-                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
                             <DisplayValue 
                               value={activeBuildingIndex === 0 ? lead.roof_size?.toString().replace(/\s*sqm\s*/i, '').trim() : activeBuilding?.roof_size_sqm} 
                               suffix=" SqM" 
-                              className="text-[11px]" 
+                              className="text-[10px]" 
                             />
                           </div>
                         </div>
 
-                        <div className="bg-gray-50 rounded-lg p-2.5 flex justify-between divide-x divide-gray-200">
+                        <div className="bg-gray-50 rounded-lg p-2 flex justify-between divide-x divide-gray-200">
                           <div className="flex flex-col justify-center items-center pr-2 w-1/2">
-                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 text-center">Decision Maker</span>
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 text-center">Decision Maker</span>
                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${lead.sole_decision_maker ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-200 text-gray-300'}`}>
                               {lead.sole_decision_maker ? <Check className="w-3 h-3" strokeWidth={3} /> : <User className="w-3 h-3 opacity-50" />}
                             </div>
                           </div>
                           <div className="flex flex-col justify-center items-center pl-2 w-1/2">
-                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 text-center">Bills Received</span>
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 text-center">Bills Received</span>
                             <div className={`w-6 h-6 rounded-full border-2 flex items-center justify-center ${hasBills ? 'border-emerald-500 text-emerald-600 bg-emerald-50' : 'border-gray-200 text-gray-300'}`}>
                               {hasBills ? <Check className="w-3 h-3" strokeWidth={3} /> : <FileText className="w-3 h-3 opacity-50" />}
                             </div>
@@ -405,64 +407,64 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                       
                       return (
                         <div className="bg-gray-50 rounded-lg flex overflow-hidden">
-                          <div className={`flex-1 p-2.5 flex flex-col justify-center border-r border-gray-200 ${isAsbestos ? 'bg-red-100' : ''}`}>
-                            <span className={`text-[9px] uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 ${isAsbestos ? 'text-red-600' : 'text-gray-400'}`}><Home className="w-3 h-3" /> Roof Material</span>
-                            <DisplayValue value={currentRoofMaterial} className={`text-[11px] ${isAsbestos ? 'text-red-900 font-bold' : ''}`} />
-                            {isAsbestos && <span className="text-[8.5px] text-red-700 mt-1 leading-tight font-semibold italic">Please note this roof type.</span>}
+                          <div className={`flex-1 p-2 flex flex-col justify-center border-r border-gray-200 ${isAsbestos ? 'bg-red-100' : ''}`}>
+                            <span className={`text-[10px] uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5 ${isAsbestos ? 'text-red-600' : 'text-gray-400'}`}><Home className="w-3 h-3" /> Roof Material</span>
+                            <DisplayValue value={currentRoofMaterial} className={`text-[10px] ${isAsbestos ? 'text-red-900 font-bold' : ''}`} />
+                            {isAsbestos && <span className="text-[10px] text-red-700 mt-1 leading-tight font-semibold italic">Please note this roof type.</span>}
                           </div>
-                          <div className="flex-1 p-2.5 flex flex-col justify-center">
-                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Condition</span>
-                            <DisplayValue value={lead.roof_condition} className="text-[11px]" />
+                          <div className="flex-1 p-2 flex flex-col justify-center">
+                            <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Home className="w-3 h-3" /> Condition</span>
+                            <DisplayValue value={lead.roof_condition} className="text-[10px]" />
                           </div>
                         </div>
                       );
                     })()}
 
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Zap className="w-3 h-3" /> Elec Supply</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? lead.electrical_supply : activeBuilding?.grid_connection} className="text-[11px]" />
+                    <div className="bg-gray-50 rounded-lg p-2 flex flex-col justify-center">
+                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Zap className="w-3 h-3" /> Elec Supply</span>
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.electrical_supply : activeBuilding?.grid_connection} className="text-[10px]" />
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Solar Location</span>
-                      <DisplayValue value={activeBuildingIndex === 0 ? lead.solar_location : activeBuilding?.orientation} className="text-[11px]" />
+                    <div className="bg-gray-50 rounded-lg p-2 flex flex-col justify-center">
+                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Solar Location</span>
+                      <DisplayValue value={activeBuildingIndex === 0 ? lead.solar_location : activeBuilding?.orientation} className="text-[10px]" />
                     </div>
 
                     <div className="bg-gray-50 rounded-lg flex overflow-hidden">
-                      <div className="flex-1 p-2.5 flex flex-col justify-center border-r border-gray-200">
-                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Day Rate</span>
-                        <DisplayValue value={lead.unit_rate ? `£${lead.unit_rate}` : null} className="text-[11px]" />
+                      <div className="flex-1 p-2 flex flex-col justify-center border-r border-gray-200">
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Day Rate</span>
+                        <DisplayValue value={lead.unit_rate ? `£${lead.unit_rate}` : null} className="text-[10px]" />
                       </div>
-                      <div className="flex-1 p-2.5 flex flex-col justify-center">
-                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Moon className="w-3 h-3" /> Night Rate</span>
-                        <DisplayValue value={lead.night_unit_rate ? `£${lead.night_unit_rate}` : null} className="text-[11px]" />
+                      <div className="flex-1 p-2 flex flex-col justify-center">
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Moon className="w-3 h-3" /> Night Rate</span>
+                        <DisplayValue value={lead.night_unit_rate ? `£${lead.night_unit_rate}` : null} className="text-[10px]" />
                       </div>
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                      <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Skylights</span>
-                      <DisplayValue value={lead.cover_skylights !== undefined ? (lead.cover_skylights ? 'Yes' : 'No') : null} className="text-[11px]" />
+                    <div className="bg-gray-50 rounded-lg p-2 flex flex-col justify-center">
+                      <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Sun className="w-3 h-3" /> Skylights</span>
+                      <DisplayValue value={lead.cover_skylights !== undefined ? (lead.cover_skylights ? 'Yes' : 'No') : null} className="text-[10px]" />
                     </div>
 
-                    <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Finance Option</span>
-                        <DisplayValue value={lead.payment_options} className="text-[11px]" />
+                    <div className="bg-gray-50 rounded-lg p-2 flex flex-col justify-center">
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><FileText className="w-3 h-3" /> Finance Option</span>
+                        <DisplayValue value={lead.payment_options} className="text-[10px]" />
                       </div>
 
-                      <div className="bg-gray-50 rounded-lg p-2.5 flex flex-col justify-center">
-                        <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Activity className="w-3 h-3" /> Annual Consumption</span>
-                        <DisplayValue value={lead.est_ann_consumption ? `${lead.est_ann_consumption.toLocaleString()} kWh` : null} className="text-[11px]" />
+                      <div className="bg-gray-50 rounded-lg p-2 flex flex-col justify-center">
+                        <span className="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><Activity className="w-3 h-3" /> Annual Consumption</span>
+                        <DisplayValue value={lead.est_ann_consumption ? `${lead.est_ann_consumption.toLocaleString()} kWh` : null} className="text-[10px]" />
                       </div>
 
                   </div>
                 </div>
 
                 {/* Right Side Stack: Lead Insights + Roof Suitability */}
-                <div className="flex-[1] flex flex-col gap-4 min-h-0">
+                <div className="flex-[1] flex flex-col gap-2 min-h-0">
                   
                   {/* Lead Insights */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex-1 flex flex-col min-h-0">
-                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2 shrink-0">
+                  <div className="bg-white rounded-xl p-2.5 border border-gray-200 flex-1 flex flex-col min-h-0">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-2 shrink-0">
                       <Activity className="w-4 h-4 text-blue-500" /> Lead Insights
                     </h3>
                     
@@ -507,8 +509,8 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                   </div>
 
                   {/* Roof Suitability */}
-                  <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col">
-                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                  <div className="bg-white rounded-xl p-2.5 border border-gray-200 flex flex-col">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-2">
                       <CheckCircle className="w-4 h-4 text-emerald-500" /> Roof Suitability
                     </h3>
                     <div className="grid grid-cols-4 gap-2">
@@ -538,15 +540,15 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                     
 
                     {/* Openlead Business View */}
-                    <div className="bg-white rounded-xl p-4 border border-gray-200 flex flex-col flex-1 mt-4">
-                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                    <div className="bg-white rounded-xl p-2.5 border border-gray-200 flex flex-col flex-1 mt-2">
+                    <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider mb-2 flex items-center gap-2">
                       <Building className="w-4 h-4 text-purple-500" /> Openlead Business View
                     </h3>
                     
                     <div className="flex flex-col items-center justify-center flex-1 text-center">
                       {lead.csv_data?.ch_enrichment ? (
                         <>
-                          <div className={`w-14 h-14 rounded-xl flex items-center justify-center font-black text-2xl mb-3 shadow-sm ${
+                          <div className={`w-10 h-10 rounded-xl text-xl flex items-center justify-center font-black text-2xl mb-3 shadow-sm ${
                             lead.csv_data.ch_enrichment.finance_grade === 'A' ? 'bg-emerald-100 text-emerald-600 border border-emerald-200' :
                             lead.csv_data.ch_enrichment.finance_grade === 'B' ? 'bg-yellow-100 text-yellow-600 border border-yellow-200' :
                             lead.csv_data.ch_enrichment.finance_grade === 'C' ? 'bg-[#8B4513] text-white border border-[#5c2e0c]' :
@@ -574,7 +576,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                                   Click for details
                                 </button>
                               ) : (
-                                <div className="mt-4 w-full text-left bg-gray-50 rounded-lg p-3 border border-gray-100 relative animate-in slide-in-from-top-2">
+                                <div className="mt-2 w-full text-left bg-gray-50 rounded-lg p-3 border border-gray-100 relative animate-in slide-in-from-top-2">
                                   <button 
                                     onClick={() => setShowBusinessDetails(false)}
                                     className="absolute top-2 right-2 text-gray-400 hover:text-gray-600"
@@ -613,7 +615,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                           )}
                         </>
                       ) : (
-                        <div className="flex flex-col items-center justify-center py-6">
+                        <div className="flex flex-col items-center justify-center py-2">
                           <Building className="w-8 h-8 text-gray-200 mb-2" />
                           <p className="text-[10px] text-gray-400 text-center max-w-[180px]">
                             No business intelligence data available for this lead yet.
@@ -629,74 +631,91 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
             </div>
 
             {/* RIGHT COLUMN (4 cols) */}
-            <div className="col-span-12 md:col-span-4 flex flex-col gap-4">
+            <div className="col-span-12 md:col-span-4 flex flex-col gap-2">
               
-              {/* Quick Stats Box */}
-              <div className="bg-white rounded-xl p-4 border border-gray-200 grid grid-cols-2 gap-y-4 gap-x-2">
-                <div className="flex flex-col items-center justify-center text-center">
-                  <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 leading-tight">Est. Monthly Spend</span>
-                  <span className="text-lg font-black text-emerald-600">
-                    {lead.monthly_spend ? `£${lead.monthly_spend.toLocaleString()}/mo` : <MissingValue />}
-                  </span>
-                </div>
-                <div className="flex flex-col items-center justify-center text-center">
-                  <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 leading-tight">Timeframe</span>
-                  <span className="text-sm font-bold text-gray-900">
-                    <DisplayValue value={lead.timeframe} className="text-center" />
-                  </span>
-                </div>
-                <div className="flex flex-col items-center justify-center text-center">
-                  <div className="relative group flex items-center justify-center mb-2">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Annual Generation</span>
-                    <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
-                      Based on system size.
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                    </div>
+              {/* Status Box */}
+              <div className="bg-white rounded-xl p-2.5 border border-blue-200 shadow-sm flex flex-col relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-blue-50 rounded-bl-full -mr-8 -mt-8 opacity-50 z-0 pointer-events-none"></div>
+                <h3 className="text-[11px] font-bold text-blue-800 uppercase tracking-wider mb-3 flex items-center gap-1.5 relative z-10">
+                  <Activity className="w-3.5 h-3.5" /> Pipeline Status
+                </h3>
+                
+                <div className="relative z-10 space-y-3">
+                  <div className="flex justify-between items-center pb-2 border-b border-gray-100">
+                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Current Stage</span>
+                    <span className="bg-blue-50 text-blue-700 border border-blue-200 text-[10px] font-bold px-2 py-0.5 rounded-full capitalize">
+                      {lead.purchase_status || 'New'}
+                    </span>
                   </div>
-                  <span className="text-sm font-bold text-gray-900">
-                    {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
-                      ? `${(calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)! * 850).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh`
-                      : <MissingValue />}
-                  </span>
-                </div>
-                <div className="flex flex-col items-center justify-center text-center">
-                  <div className="relative group flex items-center justify-center mb-2">
-                    <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider leading-tight">Est. Consumption Offset</span>
-                    <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
-                      Estimated percentage of current energy usage this system could offset.
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                    </div>
-                  </div>
-                  <span className="text-sm font-bold text-gray-900">
-                    {(() => {
-                      const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
-                      if (sysSize && lead.monthly_spend) {
-                        let rate = lead.unit_rate ? Number(lead.unit_rate) : 0.24;
-                        if (rate > 1) rate = rate / 100;
-                        const estGen = sysSize * 850;
-                        const annualConsumption = (lead.monthly_spend * 12) / rate;
-                        return `${Math.min(100, Math.round((estGen / annualConsumption) * 100))}%`;
-                      }
-                      return <MissingValue />;
-                    })()}
-                  </span>
-                </div>
-                <div className="flex flex-col items-center justify-center text-center col-span-2 mt-2 pt-4 border-t border-gray-100">
-                  <div className="relative group flex items-center justify-center mb-2">
-                    <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider leading-tight">Est. System Size</span>
-                    <Info className="w-3 h-3 text-gray-400 ml-1 cursor-help" />
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 w-48 p-2 bg-gray-900 text-white text-[10px] rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-[110] pointer-events-none text-left font-normal leading-tight shadow-xl normal-case">
-                      This is an automated calculation based on the monthly spend and roof size. It may be incorrect should the shape and design of the roof be intricate.
-                      <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
-                    </div>
-                  </div>
-                  <span className="text-xl font-black text-gray-900">
-                    {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
-                      ? `${calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)?.toFixed(1)} kWp`
-                      : <MissingValue />}
-                  </span>
+                  
+                  {(() => {
+                    const statusKey = lead.purchase_status;
+                    const meta = (lead as any).metadata?.[statusKey || ''];
+                    
+                    if (!meta) {
+                      return (
+                        <div className="py-4 text-center">
+                          <p className="text-[10px] text-gray-400 font-medium">No additional details recorded for this stage.</p>
+                        </div>
+                      );
+                    }
+
+                    return (
+                      <div className="space-y-2">
+                        {meta.date && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Date</span>
+                            <span className="text-xs font-bold text-gray-900">{meta.date}</span>
+                          </div>
+                        )}
+                        {meta.method && (
+                          <div className="flex justify-between items-center">
+                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider">Method</span>
+                            <span className="text-xs font-bold text-gray-900">{meta.method}</span>
+                          </div>
+                        )}
+                        {meta.description && (
+                          <div className="flex flex-col mt-2 pt-2 border-t border-gray-50">
+                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Description</span>
+                            <p className="text-[10px] text-gray-700 leading-relaxed">{meta.description}</p>
+                          </div>
+                        )}
+                        {meta.notes && (
+                          <div className="flex flex-col mt-2 pt-2 border-t border-gray-50">
+                            <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-1">Notes</span>
+                            <p className="text-[10px] text-gray-700 leading-relaxed">{meta.notes}</p>
+                          </div>
+                        )}
+                        {meta.proposal_url && (
+                          <div className="mt-3 pt-3 border-t border-gray-100">
+                            <a 
+                              href={meta.proposal_url} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="w-full flex items-center justify-center gap-2 py-2 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded-lg text-xs font-bold transition-colors"
+                            >
+                              <FileText className="w-4 h-4" />
+                              View Proposal PDF
+                            </a>
+                          </div>
+                        )}
+                        {/* Always show proposal if it's attached to 'proposal' status but we are in 'won' */}
+                        {statusKey === 'won' && (lead as any).metadata?.proposal?.proposal_url && !meta.proposal_url && (
+                           <div className="mt-3 pt-3 border-t border-gray-100">
+                           <a 
+                             href={(lead as any).metadata.proposal.proposal_url} 
+                             target="_blank" 
+                             rel="noopener noreferrer"
+                             className="w-full flex items-center justify-center gap-2 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg text-xs font-bold transition-colors"
+                           >
+                             <FileText className="w-4 h-4" />
+                             View Winning Proposal
+                           </a>
+                         </div>
+                        )}
+                      </div>
+                    );
+                  })()}
                 </div>
               </div>
 
@@ -723,7 +742,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
 
               {/* IMAGE */}
                 <div 
-                  className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 h-64 shrink-0 relative group cursor-pointer"
+                  className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 h-32 shrink-0 relative group cursor-pointer"
                   onClick={() => setLightboxUrl(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url)}
                 >
                   {lead.property_type && (
@@ -760,7 +779,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
               </div>
 
               {/* NOTES */}
-              <div className="bg-gray-50 rounded-lg p-3 h-40 shrink-0 border border-gray-100 flex flex-col min-h-0">
+              <div className="bg-gray-50 rounded-lg p-2 h-24 shrink-0 border border-gray-100 flex flex-col min-h-0">
                 <span className="text-[9px] font-bold text-gray-400 uppercase tracking-wider mb-2 block shrink-0">Notes</span>
                 <div className="overflow-y-auto min-h-0 flex-1 pr-1 custom-scrollbar">
                   <p className="text-[10px] font-bold text-gray-800 leading-relaxed whitespace-pre-wrap">
@@ -770,7 +789,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
               </div>
 
               {/* Attached Documents */}
-              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col max-h-[140px]">
+              <div className="bg-white rounded-xl p-3 border border-gray-200 shadow-sm flex flex-col max-h-[100px]">
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-xs font-bold text-gray-900 uppercase tracking-wider flex items-center gap-1.5">
                     <Paperclip className="w-3.5 h-3.5 text-blue-500" /> Attached Documents
@@ -821,25 +840,16 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
 
           </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 bg-white border-t border-gray-200 flex items-center justify-between">
-          <div className="flex gap-2">
-            {lead.purchase_status === 'new' && (
-              <button
-                onClick={() => handleStatusUpdate('sat')}
-                disabled={updating}
-                className="px-6 py-2.5 bg-blue-600 text-white text-sm font-bold rounded-xl hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
-              >
-                <FileText className="w-4 h-4" />
-                {updating ? 'Updating...' : 'Mark as quoted'}
-              </button>
-            )}
-            {lead.purchase_status === 'sat' && !showSaleAmountPrompt && (
+        {/* Footer - Only show if there are action buttons */}
+        {lead.purchase_status !== 'new' && (
+          <div className="px-4 py-3 bg-white border-t border-gray-200 flex items-center justify-between">
+            <div className="flex gap-2">
+              {lead.purchase_status === 'sat' && !showSaleAmountPrompt && (
               <>
                 <button
                   onClick={() => setShowSaleAmountPrompt(true)}
                   disabled={updating}
-                  className="px-6 py-2.5 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-emerald-600 text-white text-sm font-bold rounded-xl hover:bg-emerald-700 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   <TrendingUp className="w-4 h-4" />
                   Won
@@ -847,7 +857,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                 <button
                   onClick={() => handleStatusUpdate('archive')}
                   disabled={updating}
-                  className="px-6 py-2.5 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300 transition-colors disabled:opacity-50 flex items-center gap-2"
+                  className="px-4 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300 transition-colors disabled:opacity-50 flex items-center gap-2"
                 >
                   <X className="w-4 h-4" />
                   Archive
@@ -888,7 +898,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                <button
                  onClick={() => handleStatusUpdate('archive')}
                  disabled={updating}
-                 className="px-6 py-2.5 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300 transition-colors disabled:opacity-50 flex items-center gap-2"
+                 className="px-4 py-2 bg-slate-200 text-slate-700 text-sm font-bold rounded-xl hover:bg-slate-300 transition-colors disabled:opacity-50 flex items-center gap-2"
                >
                  <X className="w-4 h-4" />
                  {updating ? 'Updating...' : 'Archive'}
@@ -898,20 +908,15 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                <button
                  onClick={() => handleStatusUpdate('sat')}
                  disabled={updating}
-                 className="px-6 py-2.5 bg-blue-50 text-blue-600 text-sm font-bold rounded-xl hover:bg-blue-100 transition-colors disabled:opacity-50 flex items-center gap-2"
+                 className="px-4 py-2 bg-blue-50 text-blue-600 text-sm font-bold rounded-xl hover:bg-blue-100 transition-colors disabled:opacity-50 flex items-center gap-2"
                >
                  <TrendingUp className="w-4 h-4" />
                  {updating ? 'Updating...' : 'Restore'}
                </button>
             )}
           </div>
-          <button
-            onClick={onClose}
-            className="px-6 py-2.5 border border-gray-300 shadow-sm text-sm font-bold rounded-xl text-gray-700 bg-white hover:bg-gray-50 transition-colors"
-          >
-            Close Details
-          </button>
         </div>
+        )}
 
         </div>
       </div>

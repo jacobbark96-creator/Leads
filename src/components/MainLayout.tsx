@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import Link from 'next/link';
-import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard, Zap, Users, Search } from 'lucide-react';
+import { LogOut, LayoutDashboard, Settings, Database, BookOpen, Briefcase, Home, Menu, X, User, ChevronDown, Map as MapIcon, Star, Sparkles, CreditCard, Zap, Users, Search, ShoppingBag, CheckSquare, Trophy, LineChart, FileText } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuthStore } from '../store/authStore';
 import { Footer } from './Footer';
@@ -22,6 +22,23 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const [isPartnerPlus, setIsPartnerPlus] = useState<boolean>(false);
   const [showFlexModal, setShowFlexModal] = useState(false);
   const [pendingRequestsCount, setPendingRequestsCount] = useState<number>(0);
+  const [openMenus, setOpenMenus] = useState<string[]>(['Dashboard']);
+
+  useEffect(() => {
+    // Auto-expand/collapse based on pathname
+    if (
+      pathname === '/client-portal' || 
+      pathname.startsWith('/client-portal/my-leads') ||
+      pathname.startsWith('/client-portal/surveys') ||
+      pathname.startsWith('/client-portal/won') ||
+      pathname.startsWith('/client-portal/performance') ||
+      pathname.startsWith('/client-portal/invoices')
+    ) {
+      setOpenMenus(['Dashboard']);
+    } else {
+      setOpenMenus([]);
+    }
+  }, [pathname]);
 
   useEffect(() => {
     if (profile?.role === 'client' && profile.allowed_child_accounts) {
@@ -102,30 +119,44 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
     );
   }
 
+  const isClient = profile.role === 'client';
+
   const getNavItems = () => {
     switch (profile.role) {
       case 'client':
         const clientItems = [
-          { name: 'Dashboard', path: '/client-portal', icon: LayoutDashboard },
+          { 
+            name: 'Dashboard', 
+            path: '/client-portal', 
+            icon: LayoutDashboard,
+            children: [
+              { name: 'My Leads', path: '/client-portal/my-leads', icon: Users, subtitle: 'Manage your purchased leads pipeline.' },
+              { name: 'Surveys', path: '/client-portal/surveys', icon: CheckSquare, subtitle: 'Manage your site surveys and appointments.' },
+              { name: 'Won Deals', path: '/client-portal/won', icon: Trophy, subtitle: 'Track your successful conversions and ROI.' },
+              { name: 'Performance', path: '/client-portal/performance', icon: LineChart, subtitle: 'Analytics and pipeline metrics.' },
+              { name: 'Invoices', path: '/client-portal/invoices', icon: FileText, subtitle: 'Manage billing and account credit.' },
+            ]
+          },
+          { name: 'Marketplace', path: '/marketplace', icon: ShoppingBag, subtitle: 'Browse and purchase exclusive solar leads.' },
         ];
         if (profile.allowed_child_accounts) {
-          clientItems.push({ name: 'Team', path: '/client-portal/team', icon: Users });
+          clientItems.push({ name: 'Team', path: '/client-portal/team', icon: Users, subtitle: 'Manage your installers and team members.' });
         }
         clientItems.push(
-          { name: 'Marketplace', path: '/marketplace', icon: Database },
-          { name: 'Offers', path: '/offers', icon: Star },
+          { name: 'Offers', path: '/offers', icon: Star, subtitle: 'Exclusive partner offers and discounts.' },
         );
         // SEO button
-        clientItems.push({ name: 'SEO', path: '/client-portal/seo', icon: Search });
+        clientItems.push({ name: 'SEO Tools', path: '/client-portal/seo', icon: Search, subtitle: 'Dominate organic search and generate your own leads.' });
 
         if (!profile.parent_id) {
-          clientItems.push({ name: 'Max', path: '/openlead-max', icon: Sparkles });
+          clientItems.push({ name: 'Max', path: '/openlead-max', icon: Sparkles, subtitle: 'Enterprise growth and mapping tools.' });
         }
         if (isPartnerPlus) {
           clientItems.push({
             name: 'Partner+', 
             path: '/client-portal/partner-plus', 
             icon: Briefcase,
+            subtitle: 'Manage your exclusive partner pipeline.',
             isPartnerPlusItem: true
           });
         }
@@ -197,6 +228,259 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   };
 
   const navItems = getNavItems();
+
+  if (isClient) {
+    return (
+      <div className="min-h-screen bg-[#F8FAFC] flex">
+        {/* Sidebar */}
+        <aside className="hidden lg:flex w-[220px] flex-col fixed inset-y-0 left-0 bg-white border-r border-gray-100 z-50">
+          <div className="h-16 flex items-center px-5 border-b border-gray-50">
+            <Link href={getHomePath()} className="flex items-center">
+              <img src="/openlead-logo.png" alt="Openlead" className="h-6 object-contain" />
+            </Link>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto py-4 px-3 space-y-0.5 custom-scrollbar">
+            {navItems.filter((item: any) => !item.hidden).map((item: any) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.path || (item.children && item.children.some((child: any) => pathname === child.path || pathname?.startsWith(child.path + '/')));
+              const isOpen = openMenus.includes(item.name);
+              
+              return (
+                <div key={item.name} className="flex flex-col space-y-0.5">
+                  <Link
+                    href={item.children ? item.path : (item.path || '#')}
+                    onClick={(e) => {
+                      if (item.children) {
+                        setOpenMenus(prev => prev.includes(item.name) ? prev.filter(m => m !== item.name) : [...prev, item.name]);
+                      } else {
+                        setOpenMenus([]);
+                      }
+                    }}
+                    className={`${
+                      isActive
+                        ? 'bg-[#E8F2FF] text-[#0066FF] font-bold'
+                        : 'text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium'
+                    } flex items-center justify-between px-3 py-2 rounded-lg text-[13px] transition-all duration-200 relative group`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className={`w-4 h-4 ${isActive ? 'text-[#0066FF]' : 'text-gray-400 group-hover:text-gray-600'}`} />
+                      {item.name === 'Partner+' ? (
+                        <>Partner<span className="text-[9px] -mt-2 ml-[1px]">＋</span></>
+                      ) : item.name}
+                    </div>
+                    
+                    {item.name === 'Team' && pendingRequestsCount > 0 && (
+                      <span className="flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[9px] font-bold text-white shadow-sm">
+                        {pendingRequestsCount}
+                      </span>
+                    )}
+
+                    {item.children && (
+                       <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-300 ${isOpen ? 'rotate-180' : ''}`} />
+                    )}
+                  </Link>
+
+                  <AnimatePresence initial={false}>
+                    {item.children && isOpen && (
+                      <motion.div
+                        initial={{ height: 0, opacity: 0 }}
+                        animate={{ height: 'auto', opacity: 1 }}
+                        exit={{ height: 0, opacity: 0 }}
+                        transition={{ duration: 0.25, ease: [0.25, 0.1, 0.25, 1] }}
+                        className="overflow-hidden"
+                      >
+                        <div className="pl-[2.2rem] pr-2 py-1 space-y-0.5 border-l-2 border-gray-100 ml-4 mt-1 mb-1">
+                          {item.children.map((child: any) => {
+                            const ChildIcon = child.icon;
+                            const isChildActive = pathname === child.path || pathname?.startsWith(child.path + '/');
+                            return (
+                              <Link
+                                key={child.name}
+                                href={child.path}
+                                className={`${
+                                  isChildActive
+                                    ? 'text-[#0066FF] font-bold'
+                                    : 'text-gray-500 hover:text-gray-900 hover:bg-gray-50 font-medium'
+                                } flex items-center gap-2 px-2 py-1.5 rounded-lg text-[12px] transition-all duration-200`}
+                              >
+                                {ChildIcon && <ChildIcon className={`w-3.5 h-3.5 ${isChildActive ? 'text-[#0066FF]' : 'text-gray-400'}`} />}
+                                {child.name}
+                              </Link>
+                            )
+                          })}
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="p-3 border-t border-gray-50 space-y-1.5">
+            <div className="bg-[#F0FDF4] rounded-lg p-3 mb-2 text-center">
+              <div className="w-8 h-8 bg-white rounded-full flex items-center justify-center mx-auto mb-1.5 shadow-sm">
+                <Sparkles className="w-4 h-4 text-[#10B981]" />
+              </div>
+              <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">Upgrade your plan</h4>
+              <p className="text-[9px] text-gray-500 mb-2 leading-tight">Unlock more leads, analytics & support.</p>
+              <button className="w-full bg-[#0F172A] text-white text-[9px] font-bold py-1.5 rounded-md hover:bg-gray-800 transition-colors">
+                View Plans
+              </button>
+            </div>
+            
+            <Link href="/client-portal/help" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium transition-all">
+              <div className="w-4 h-4 flex items-center justify-center rounded-full border border-gray-400 text-gray-400 text-[10px] font-bold">?</div>
+              Help & Support
+            </Link>
+            <Link href="/my-openlead" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium transition-all">
+              <Settings className="w-4 h-4 text-gray-400" />
+              Settings
+            </Link>
+          </div>
+        </aside>
+
+        {/* Mobile Header */}
+        <div className="lg:hidden fixed inset-x-0 top-0 z-50 bg-white border-b border-gray-100 px-4 h-16 flex items-center justify-between">
+          <Link href={getHomePath()} className="flex items-center">
+            <img src="/openlead-logo.png" alt="Openlead" className="h-6 object-contain" />
+          </Link>
+          <button
+            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+            className="p-2 text-gray-500 hover:bg-gray-50 rounded-lg"
+          >
+            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
+          </button>
+        </div>
+
+        {/* Main Content Area */}
+        <div className="flex-1 lg:pl-[220px] flex flex-col min-h-screen relative">
+          {/* Desktop Header */}
+          <header className={`hidden lg:flex items-center justify-between px-8 relative mt-4 mb-2`}>
+            <div className={`flex flex-col`}>
+              {pathname === '/client-portal' ? (
+                <>
+                  <h1 className="text-2xl font-black text-gray-900 tracking-tight flex items-center gap-2">
+                    Welcome back, {clientName?.split(' ')[0] || profile.name?.split(' ')[0] || 'Ioana'} <span className="text-xl">👋</span>
+                  </h1>
+                  <p className="text-xs text-gray-500 font-medium mt-0.5">Here's what's happening with your leads today.</p>
+                </>
+              ) : (() => {
+                let activeItem: any = null;
+                for (const item of navItems) {
+                  if (item.path === pathname || pathname?.startsWith(item.path + '/')) activeItem = item;
+                  if (item.children) {
+                    for (const child of item.children) {
+                      if (child.path === pathname || pathname?.startsWith(child.path + '/')) activeItem = child;
+                    }
+                  }
+                }
+                
+                return activeItem ? (
+                  <div className="flex items-center gap-3 shrink-0">
+                    <div className="w-10 h-10 rounded-xl bg-[#E8F2FF] flex items-center justify-center text-[#0066FF] shadow-sm">
+                      {activeItem.icon && <activeItem.icon className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center">
+                        {activeItem.name}
+                      </h1>
+                      {activeItem.subtitle && (
+                        <p className="text-xs text-gray-500 font-medium">{activeItem.subtitle}</p>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <h1 className="text-xl font-black text-gray-900 tracking-tight flex items-center gap-2">Openlead</h1>
+                );
+              })()}
+            </div>
+            
+            <div className={`flex items-center gap-4 bg-white/50 backdrop-blur-md rounded-2xl p-2 shadow-sm border border-white/20 relative`}>
+              <div className="flex items-center gap-3 bg-white rounded-xl py-1.5 pl-1.5 pr-4 shadow-sm border border-gray-100">
+                <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0066FF] to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
+                  {(clientName || profile.name)?.charAt(0).toUpperCase() || 'U'}
+                </div>
+                <div className="flex flex-col">
+                  <span className="text-xs font-bold text-gray-900 leading-none">
+                    {clientName || profile.name}
+                  </span>
+                  <span className="text-[9px] font-bold text-gray-500 uppercase mt-0.5 leading-none tracking-wider">
+                    {clientCompanyName || 'SOLAR SENSE'}
+                  </span>
+                </div>
+              </div>
+              
+              <ClientNotifications />
+              
+              <Link
+                href="/my-openlead"
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-100 text-gray-500 hover:text-[#0066FF] transition-colors shadow-sm"
+              >
+                <Settings className="w-4 h-4" />
+              </Link>
+              
+              <button
+                onClick={async () => await signOut()}
+                className="w-10 h-10 flex items-center justify-center rounded-xl bg-white border border-gray-100 text-gray-500 hover:text-red-600 transition-colors shadow-sm"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
+            </div>
+          </header>
+
+          <main className="flex-1 w-full mx-auto p-4 sm:p-6 lg:p-8 lg:pt-4 overflow-x-hidden">
+            {children}
+          </main>
+        </div>
+
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              className="lg:hidden fixed inset-x-0 top-16 bottom-0 z-40 bg-white overflow-y-auto"
+            >
+              <div className="p-4 space-y-1">
+                {navItems.filter((item: any) => !item.hidden).map((item: any) => {
+                  const Icon = item.icon;
+                  const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
+                  return (
+                    <Link
+                      key={item.name}
+                      href={item.path || '#'}
+                      onClick={() => setMobileMenuOpen(false)}
+                      className={`${
+                        isActive ? 'bg-[#E8F2FF] text-[#0066FF] font-bold' : 'text-gray-500 font-medium'
+                      } flex items-center gap-3 px-4 py-3 rounded-xl text-base`}
+                    >
+                      <Icon className={`w-5 h-5 ${isActive ? 'text-[#0066FF]' : 'text-gray-400'}`} />
+                      {item.name}
+                    </Link>
+                  );
+                })}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {showFlexModal && profile && (
+          <FlexModal
+            isOpen={showFlexModal}
+            onClose={() => setShowFlexModal(false)}
+            userId={profile.id}
+            approvedAmount={profile.approved_trade_amount || 0}
+            currentSetting={profile.trade_limit_setting || 0}
+            onUpdate={async () => {
+              await refreshProfile();
+            }}
+          />
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col">

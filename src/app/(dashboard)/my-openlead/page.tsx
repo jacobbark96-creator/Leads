@@ -324,16 +324,7 @@ export default function MyOpenlead() {
     <ProtectedRoute allowedRoles={['client']}>
       <div className="fixed inset-x-0 bottom-0 top-28 overflow-hidden bg-slate-50 flex flex-col">
         {/* Compact Header */}
-        <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-sm relative z-10">
-          <div>
-            <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-              <User className="w-4 h-4 text-blue-600" />
-              My <span className="text-blue-600">Openlead</span>
-            </h1>
-            <p className="text-[9px] text-slate-500 font-medium uppercase tracking-widest mt-0.5">
-              Manage your profile, targeting, and preferences.
-            </p>
-          </div>
+        <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-end shadow-sm relative z-10">
           
           {coachName && (
             <div className="hidden md:flex items-center gap-2.5 bg-blue-50 border border-blue-100 px-3 py-1.5 rounded-xl">

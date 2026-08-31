@@ -137,7 +137,7 @@ export default function OpenleadMaxPage() {
 
   return (
     <>
-      <div className="fixed inset-x-0 bottom-0 top-28 overflow-hidden bg-slate-50 flex flex-col lg:flex-row">
+      <div className="w-full flex flex-col lg:flex-row h-[calc(100vh-120px)] bg-slate-50 rounded-2xl overflow-hidden border border-slate-200">
         {/* Left Column - Map (Main Content) */}
         <div className="flex-1 relative border-r border-slate-200">
           <PostcodeMap 
@@ -178,7 +178,7 @@ export default function OpenleadMaxPage() {
           </div>
 
           {/* Profit Share Enquire Overlay (Bottom Left) */}
-          <div className="absolute bottom-40 left-3 z-[1000] w-[280px] p-4 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-700 shadow-2xl relative overflow-hidden group">
+          <div className="hidden absolute bottom-40 left-3 z-[1000] w-[280px] p-4 bg-slate-900/90 backdrop-blur-md rounded-2xl border border-slate-700 shadow-2xl relative overflow-hidden group">
             <div className="absolute top-0 right-0 w-24 h-24 bg-blue-500/10 blur-2xl -mr-12 -mt-12 group-hover:bg-blue-500/20 transition-all" />
             <h4 className="text-xs font-black text-white mb-1 uppercase tracking-wider">Profit Share Program</h4>
             <p className="text-[10px] text-slate-400 mb-3 leading-relaxed">Large scale generation? Handle sales while we handle the rest.</p>
@@ -209,15 +209,6 @@ export default function OpenleadMaxPage() {
 
         {/* Right Column - Controls & Info */}
         <div className="w-full lg:w-[400px] bg-white flex flex-col h-full shadow-2xl relative z-10">
-          {/* Header Section */}
-          <div className="p-5 border-b border-slate-100">
-            <h1 className="text-lg font-black text-slate-900 leading-tight uppercase tracking-tight">
-              Openlead Max <span className="text-blue-600">Personal</span>
-            </h1>
-            <p className="text-slate-500 text-[10px] mt-1 font-medium">
-              Exclusive territory dominance for 14-day windows.
-            </p>
-          </div>
 
           {/* Program Info (Scrollable content area) */}
           <div className="flex-1 overflow-y-auto p-5 space-y-5 custom-scrollbar">

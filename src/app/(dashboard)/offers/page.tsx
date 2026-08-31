@@ -56,26 +56,7 @@ export default function OffersPage() {
   };
 
   return (
-    <div className="fixed inset-x-0 bottom-0 top-28 overflow-hidden bg-slate-50 flex flex-col">
-      {/* Compact Header */}
-      <div className="bg-white border-b border-slate-200 px-6 py-3 flex items-center justify-between shadow-sm relative z-10">
-        <div>
-          <h1 className="text-lg font-black text-slate-900 uppercase tracking-tight flex items-center gap-2">
-            <Star className="w-4 h-4 text-blue-600 fill-blue-600" />
-            Partner <span className="text-blue-600">Offers</span>
-          </h1>
-          <p className="text-[9px] text-slate-500 font-medium uppercase tracking-widest mt-0.5">
-            Exclusive discounts and services for Openlead clients.
-          </p>
-        </div>
-        
-        <div className="hidden md:block max-w-md text-right">
-          <p className="text-[9px] text-slate-400 font-medium leading-tight">
-            We've partnered with industry leaders to negotiate the best rates for your business.
-          </p>
-        </div>
-      </div>
-
+    <div className="w-full flex flex-col h-[calc(100vh-120px)] bg-slate-50 rounded-2xl overflow-hidden border border-slate-200">
       <div className="flex-1 overflow-y-auto p-6 custom-scrollbar">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-24 gap-4">
@@ -91,7 +72,7 @@ export default function OffersPage() {
             <p className="text-xs text-slate-500 font-medium">Check back soon! We're constantly negotiating new deals for our members.</p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {partners.map((partner) => (
               <div 
                 key={partner.id}

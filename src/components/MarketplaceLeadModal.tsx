@@ -151,7 +151,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-gray-900/60 backdrop-blur-sm">
+      <div className="fixed inset-0 lg:left-[220px] z-50 flex items-center justify-center p-4 sm:p-6 overflow-y-auto bg-gray-900/60 backdrop-blur-sm">
         <div className="bg-[#F8FAFC] shadow-2xl flex flex-col w-full max-w-[1100px] rounded-2xl border border-gray-200 overflow-visible relative max-h-[96vh]">
         
         {/* Header */}

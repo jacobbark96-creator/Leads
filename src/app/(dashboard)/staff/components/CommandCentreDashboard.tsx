@@ -21,7 +21,7 @@ function LightLiveFeed() {
         .select(`
           *,
           lead_id,
-          leads:lead_id(name, company)
+          leads:lead_id(name, company, lead_purchases(status))
         `)
         .in('activity_type', ['qualified', 'marketed', 'sold', 'requested'])
         .order('created_at', { ascending: false })
@@ -32,8 +32,20 @@ function LightLiveFeed() {
           let statusLabel = 'New';
           if (act.activity_type === 'qualified') statusLabel = 'Qualified';
           if (act.activity_type === 'marketed') statusLabel = 'Marketed';
-          if (act.activity_type === 'sold') statusLabel = 'Sold';
           if (act.activity_type === 'requested') statusLabel = 'Requested';
+
+          if (act.activity_type === 'sold') {
+            statusLabel = 'Sold';
+            if (act.leads?.lead_purchases && act.leads.lead_purchases.length > 0) {
+              const statuses = act.leads.lead_purchases.map((p: any) => p.status);
+              if (statuses.includes('won')) statusLabel = 'Won';
+              else if (statuses.includes('archive')) statusLabel = 'Archive';
+              else if (statuses.includes('proposal')) statusLabel = 'Proposal';
+              else if (statuses.includes('sat')) statusLabel = 'Surveyed';
+              else if (statuses.includes('contacted')) statusLabel = 'Contacted';
+              else if (statuses.includes('new')) statusLabel = 'Sold';
+            }
+          }
 
           let title = '';
           if (act.leads) {
@@ -80,6 +92,11 @@ function LightLiveFeed() {
       case 'Marketed': return 'text-blue-600 bg-blue-50 border-blue-200';
       case 'Sold': return 'text-emerald-700 bg-emerald-50 border-emerald-200';
       case 'Requested': return 'text-purple-600 bg-purple-50 border-purple-200';
+      case 'Contacted': return 'text-indigo-600 bg-indigo-50 border-indigo-200';
+      case 'Surveyed': return 'text-yellow-600 bg-yellow-50 border-yellow-200';
+      case 'Proposal': return 'text-orange-600 bg-orange-50 border-orange-200';
+      case 'Won': return 'text-green-600 bg-green-50 border-green-200';
+      case 'Archive': return 'text-slate-600 bg-slate-50 border-slate-200';
       default: return 'text-gray-600 bg-gray-50 border-gray-200';
     }
   };

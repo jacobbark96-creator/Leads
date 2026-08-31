@@ -94,74 +94,72 @@ function SEODashboard() {
   ];
 
   return (
-    <div className="max-w-7xl mx-auto space-y-8 pb-20 px-4">
+    <div className="max-w-7xl mx-auto space-y-6 pb-12 px-2 sm:px-4 overflow-x-hidden">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-end justify-between gap-6 pb-6 border-b border-gray-100">
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-3 py-1 bg-gray-100 text-gray-800 rounded-full text-[10px] font-bold uppercase tracking-[0.2em]">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 text-gray-800 rounded-full text-[9px] font-bold uppercase tracking-[0.2em]">
             <Activity className="w-3 h-3" />
             Active Concierge Plan
           </div>
-          <h1 className="text-3xl font-black text-gray-900 tracking-tight">SEO Intelligence</h1>
-          <p className="text-sm text-gray-500 font-medium">Real-time organic search performance and visibility metrics.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="px-5 py-2.5 bg-white border border-gray-200 rounded-xl text-xs font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+        <div className="flex items-center gap-2">
+          <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-[10px] font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
             Download Report
           </button>
-          <button className="px-5 py-2.5 bg-gray-900 text-white rounded-xl text-xs font-bold hover:bg-black transition-all shadow-md shadow-gray-900/20 flex items-center gap-2">
-            <Zap className="w-3.5 h-3.5" />
+          <button className="px-4 py-2 bg-gray-900 text-white rounded-lg text-[10px] font-bold hover:bg-black transition-all shadow-md flex items-center gap-2">
+            <Zap className="w-3 h-3" />
             Optimize
           </button>
         </div>
       </div>
 
       {/* Metrics Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         {perfStats.map((stat, index) => (
           <motion.div
             key={stat.label}
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.05 }}
-            className="bg-white p-6 rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/30 flex flex-col justify-between group hover:border-gray-200 transition-all"
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20 flex flex-col justify-between group hover:border-gray-200 transition-all"
           >
-            <div className="flex items-center justify-between mb-6">
-              <div className="p-3 bg-gray-50 rounded-2xl group-hover:scale-110 transition-transform">
-                <stat.icon className={`w-5 h-5 ${stat.color}`} />
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-gray-50 rounded-xl group-hover:scale-110 transition-transform">
+                <stat.icon className={`w-4 h-4 ${stat.color}`} />
               </div>
-              <span className={`text-[11px] font-bold px-2.5 py-1 rounded-full ${
+              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
                 stat.change.startsWith('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
               }`}>
                 {stat.change}
               </span>
             </div>
             <div>
-              <div className="text-3xl font-black text-gray-900 tracking-tight">{stat.value}</div>
-              <div className="text-[11px] font-bold text-gray-400 uppercase tracking-widest mt-2">{stat.label}</div>
+              <div className="text-2xl font-black text-gray-900 tracking-tight">{stat.value}</div>
+              <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">{stat.label}</div>
             </div>
           </motion.div>
         ))}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
         {/* Keywords Table */}
-        <div className="lg:col-span-2 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30 overflow-hidden flex flex-col">
-          <div className="px-8 py-6 border-b border-gray-50 flex items-center justify-between">
-            <h2 className="text-base font-black text-gray-900 flex items-center gap-3">
-              <BarChart3 className="w-5 h-5 text-gray-400" />
+        <div className="xl:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20 overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+            <h2 className="text-sm font-black text-gray-900 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-gray-400" />
               High-Impact Keywords
             </h2>
-            <button className="text-[10px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">View All</button>
+            <button className="text-[9px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">View All</button>
           </div>
           <div className="overflow-x-auto flex-grow">
             <table className="w-full text-left">
               <thead>
                 <tr className="bg-gray-50/50">
-                  <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Keyword</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Volume</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Position</th>
-                  <th className="px-8 py-4 text-[10px] font-bold text-gray-400 uppercase tracking-[0.2em]">Trend</th>
+                  <th className="px-5 py-3 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Keyword</th>
+                  <th className="px-5 py-3 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Volume</th>
+                  <th className="px-5 py-3 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Position</th>
+                  <th className="px-5 py-3 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Trend</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-50">
@@ -172,20 +170,20 @@ function SEODashboard() {
                   { word: 'hiring local builders', volume: '620', pos: '2', trend: 'stable' },
                 ].map((kw, i) => (
                   <tr key={i} className="hover:bg-gray-50/80 transition-colors group">
-                    <td className="px-8 py-5">
-                      <div className="flex items-center gap-3">
-                        <span className="text-sm font-bold text-gray-900">{kw.word}</span>
-                        <ArrowUpRight className="w-3.5 h-3.5 text-gray-300 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-gray-900">{kw.word}</span>
+                        <ArrowUpRight className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                       </div>
                     </td>
-                    <td className="px-8 py-5 text-sm font-bold text-gray-500">{kw.volume}</td>
-                    <td className="px-8 py-5">
-                      <span className="inline-flex items-center justify-center w-7 h-7 rounded-xl bg-gray-900 text-white text-xs font-black shadow-md">
+                    <td className="px-5 py-3 text-xs font-bold text-gray-500">{kw.volume}</td>
+                    <td className="px-5 py-3">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-gray-900 text-white text-[10px] font-black shadow-sm">
                         {kw.pos}
                       </span>
                     </td>
-                    <td className="px-8 py-5">
-                      <div className="h-1.5 w-16 bg-gray-100 rounded-full overflow-hidden">
+                    <td className="px-5 py-3">
+                      <div className="h-1.5 w-12 bg-gray-100 rounded-full overflow-hidden">
                         <div className={`h-full rounded-full ${kw.trend === 'up' ? 'bg-emerald-500' : kw.trend === 'down' ? 'bg-red-500' : 'bg-gray-400'}`} 
                              style={{ width: kw.trend === 'up' ? '85%' : kw.trend === 'down' ? '30%' : '55%' }} />
                       </div>
@@ -198,38 +196,38 @@ function SEODashboard() {
         </div>
 
         {/* Side Panels */}
-        <div className="space-y-6">
+        <div className="space-y-4">
           {/* Elite Performance Card */}
-          <div className="bg-[#050505] p-8 rounded-[2.5rem] text-white relative overflow-hidden border border-white/10 shadow-2xl shadow-gray-900/20">
-            <div className="absolute -right-12 -top-12 w-48 h-48 bg-blue-600/20 rounded-full blur-[40px]" />
-            <div className="absolute -left-12 -bottom-12 w-48 h-48 bg-cyan-600/10 rounded-full blur-[40px]" />
+          <div className="bg-[#050505] p-5 rounded-2xl text-white relative overflow-hidden border border-white/10 shadow-lg shadow-gray-900/20">
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-600/20 rounded-full blur-[30px]" />
+            <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-cyan-600/10 rounded-full blur-[30px]" />
             <div className="relative z-10">
-              <Crown className="w-6 h-6 mb-5 text-amber-400" />
-              <h3 className="text-xl font-black tracking-tight mb-2">Elite Performance</h3>
-              <p className="text-gray-400 text-sm leading-relaxed mb-8 font-medium">
+              <Crown className="w-5 h-5 mb-3 text-amber-400" />
+              <h3 className="text-sm font-black tracking-tight mb-1">Elite Performance</h3>
+              <p className="text-gray-400 text-[10px] leading-relaxed mb-4 font-medium">
                 Domain authority is <span className="text-white font-bold">DR 34</span>. You are outranking 82% of local competitors this month.
               </p>
-              <button className="w-full py-3.5 bg-white text-gray-900 hover:bg-gray-100 rounded-xl text-sm font-black transition-all shadow-xl">
+              <button className="w-full py-2 bg-white text-gray-900 hover:bg-gray-100 rounded-lg text-[10px] font-black transition-all shadow-md">
                 View Competitors
               </button>
             </div>
           </div>
 
           {/* Queue Card */}
-          <div className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30">
-            <h3 className="text-xs font-black text-gray-400 uppercase tracking-[0.2em] mb-6 flex items-center gap-2">
-              <Activity className="w-4 h-4 text-emerald-500" />
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20">
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+              <Activity className="w-3 h-3 text-emerald-500" />
               Optimization Queue
             </h3>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {[
                 { task: 'Fix 4 meta descriptions', priority: 'High', color: 'red' },
                 { task: 'Optimize image alt tags', priority: 'Medium', color: 'amber' },
                 { task: 'Add 2 internal links', priority: 'Low', color: 'blue' },
               ].map((t, i) => (
-                <div key={i} className="flex items-center justify-between p-4 bg-gray-50 rounded-2xl border border-gray-100 hover:border-gray-200 transition-colors">
-                  <span className="text-xs font-bold text-gray-700">{t.task}</span>
-                  <span className={`text-[9px] font-black px-2.5 py-1 rounded-md uppercase tracking-wider ${
+                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+                  <span className="text-[10px] font-bold text-gray-700">{t.task}</span>
+                  <span className={`text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
                     t.color === 'red' ? 'bg-red-50 text-red-600' : t.color === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
                   }`}>
                     {t.priority}
@@ -365,7 +363,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
   ];
 
   return (
-    <div className="w-full bg-gray-50/50 min-h-screen -mt-4 pt-4">
+    <div className="w-full bg-gray-50/50 min-h-screen -mt-4 pt-4 overflow-x-hidden">
       {/* Floating ROI Calculator Button */}
       <button onClick={onOpenCalculator} className="fixed bottom-8 right-8 z-50 group">
         <div className="absolute -inset-2 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600 rounded-full blur-lg opacity-40 group-hover:opacity-100 transition duration-700 animate-shimmer" style={{ backgroundSize: '200% auto' }} />
@@ -385,10 +383,10 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
         </div>
       </button>
 
-      <div className="max-w-6xl mx-auto space-y-12 pb-24 px-4">
+      <div className="max-w-5xl mx-auto space-y-8 pb-24 px-4">
         
         {/* HERO SECTION (Dark Premium) */}
-        <div className="relative bg-[#050505] rounded-[2.5rem] p-8 md:p-16 overflow-hidden shadow-2xl">
+        <div className="relative bg-[#050505] rounded-[2.5rem] p-8 md:p-12 overflow-hidden shadow-2xl">
           {/* Glowing Background Orbs */}
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
              <div className="absolute top-[-20%] left-[10%] w-[50%] h-[60%] bg-blue-600/20 blur-[100px] rounded-full mix-blend-screen" />
@@ -404,7 +402,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
               <LogoKairo />
             </div>
 
-            <h1 className="text-4xl md:text-6xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1]">
+            <h1 className="text-3xl md:text-5xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1]">
               <span className="inline-block relative">
                 <motion.span 
                   animate={{ backgroundPosition: ["0% center", "200% center"] }}
@@ -452,7 +450,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
         <BrandCarousel />
 
         {/* METRICS & TRUST SECTION */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 relative z-20 px-2 mt-12">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 relative z-20 px-2 mt-8">
           <CounterCard title="Leads / Week" value={weeklyLeads} desc="Active network capture" />
           <CounterCard title="SEO Growth / Mo" value={monthlyLeads} desc="Organic acquisition" />
           <CounterCard title="Impressions" value={impressions} desc="Kairo Search & Ads" />
@@ -462,7 +460,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
             href="https://solarpedia.co.uk" 
             target="_blank" 
             rel="noopener noreferrer"
-            className="md:col-span-3 bg-white rounded-[2.5rem] p-8 md:p-10 border border-gray-100 shadow-2xl shadow-gray-200/50 flex flex-col md:flex-row items-center justify-between gap-10 relative overflow-hidden group hover:border-amber-300 transition-all duration-500 cursor-pointer"
+            className="lg:col-span-3 bg-white rounded-3xl p-5 lg:p-6 border border-gray-100 shadow-xl shadow-gray-200/50 flex flex-col lg:flex-row items-center justify-between gap-6 relative overflow-hidden group hover:border-amber-300 transition-all duration-500 cursor-pointer"
           >
             <div className="absolute inset-0 bg-gradient-to-r from-amber-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
             <div className="absolute right-0 bottom-0 w-64 h-64 bg-amber-200/30 blur-[80px] pointer-events-none group-hover:bg-amber-300/40 transition-colors duration-700" />
@@ -505,7 +503,7 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
           >
             {[...facts, ...facts].map((fact, i) => (
               <div key={i} className="flex items-center gap-6 group">
-                <div className="text-[3.5rem] md:text-[5rem] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-cyan-300 leading-none drop-shadow-sm group-hover:scale-105 transition-transform duration-500">
+                <div className="text-[2.5rem] md:text-[4rem] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-cyan-300 leading-none drop-shadow-sm group-hover:scale-105 transition-transform duration-500">
                   {fact.stat}
                 </div>
                 <div className="max-w-[260px]">
@@ -518,41 +516,41 @@ function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator
         </div>
 
         {/* 15% OFF "BLACK CARD" SECTION */}
-        <div className="bg-[#050505] rounded-[2.5rem] p-1 relative overflow-hidden group shadow-2xl shadow-blue-900/20">
+        <div className="bg-[#050505] rounded-[2rem] p-1 relative overflow-hidden group shadow-2xl shadow-blue-900/20">
           <div className="absolute inset-0 bg-gradient-to-r from-blue-500/40 via-cyan-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
           <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
           
-          <div className="bg-[#0A0A0A] rounded-[2.3rem] p-8 md:p-12 relative z-10 flex flex-col md:flex-row items-center justify-between gap-10 border border-white/5">
-             <div className="max-w-xl text-center md:text-left">
-               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[10px] font-black uppercase tracking-[0.2em] mb-6">
-                 <Crown className="w-3.5 h-3.5" /> Lifetime Privilege
+          <div className="bg-[#0A0A0A] rounded-[1.8rem] p-5 lg:p-8 relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8 border border-white/5">
+             <div className="max-w-lg text-center lg:text-left">
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-black uppercase tracking-[0.2em] mb-4">
+                 <Crown className="w-3 h-3" /> Lifetime Privilege
                </div>
-               <h2 className="text-3xl md:text-5xl font-black text-white tracking-tight mb-4 leading-[1.1]">
+               <h2 className="text-2xl lg:text-4xl font-black text-white tracking-tight mb-3 leading-[1.1]">
                  15% Off Every <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-600">Marketplace Lead.</span>
                </h2>
-               <p className="text-gray-400 text-sm md:text-base leading-relaxed font-medium">
+               <p className="text-gray-400 text-xs lg:text-sm leading-relaxed font-medium">
                  As a concierge SEO client, you unlock an automatic, permanent 15% discount across the entire Openlead marketplace. Scale your organic traffic while acquiring immediate leads at a fraction of the cost.
                </p>
              </div>
              
-             <div className="relative flex-shrink-0 w-full md:w-auto flex justify-center">
-               <div className="absolute inset-0 bg-blue-500/30 blur-[50px] rounded-full" />
-               <div className="w-56 h-72 bg-gradient-to-br from-gray-800 to-black rounded-3xl border border-white/10 shadow-2xl relative overflow-hidden flex flex-col items-center justify-center">
+             <div className="relative flex-shrink-0 w-full lg:w-auto flex justify-center">
+               <div className="absolute inset-0 bg-blue-500/30 blur-[40px] rounded-full" />
+               <div className="w-48 h-64 bg-gradient-to-br from-gray-800 to-black rounded-2xl border border-white/10 shadow-xl relative overflow-hidden flex flex-col items-center justify-center">
                   <motion.div 
                     animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
                     transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
                     className="absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)] bg-[length:200%_100%]" 
                   />
-                  <div className="text-6xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 tracking-tighter mb-1 relative z-10">15%</div>
-                  <div className="text-[9px] font-black text-gray-400 uppercase tracking-[0.4em] relative z-10">Discount Rate</div>
+                  <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 tracking-tighter mb-1 relative z-10">15%</div>
+                  <div className="text-[8px] font-black text-gray-400 uppercase tracking-[0.4em] relative z-10">Discount Rate</div>
                </div>
              </div>
           </div>
         </div>
 
         {/* PRICING SECTION */}
-        <div className="pt-10">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+        <div className="pt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
             <PricingCard 
               title="Starter" 
               desc="Perfect for local market entry."
@@ -671,7 +669,7 @@ const CounterCard = ({ title, value, desc }: { title: string, value: number, des
 const PricingCard = ({ title, desc, features, isPopular, theme }: any) => {
   const isDark = theme === 'dark';
   return (
-    <div className={`p-10 rounded-[3rem] flex flex-col relative overflow-hidden transition-transform duration-300 hover:-translate-y-2 ${
+    <div className={`p-5 lg:p-6 rounded-[2rem] lg:rounded-[3rem] flex flex-col relative overflow-hidden transition-transform duration-300 hover:-translate-y-2 ${
       isDark 
         ? 'bg-[#050505] border border-blue-500/30 shadow-2xl shadow-blue-900/20 text-white z-10' 
         : 'bg-white border border-gray-100 shadow-xl shadow-gray-200/30 text-gray-900'
@@ -680,7 +678,7 @@ const PricingCard = ({ title, desc, features, isPopular, theme }: any) => {
       
       <div className="relative z-10 flex flex-col h-full">
         {isPopular && <div className="inline-block self-start px-3 py-1 mb-6 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Most Popular</div>}
-        <h3 className="text-3xl font-black tracking-tight mb-3">{title}</h3>
+        <h3 className="text-2xl font-black tracking-tight mb-3">{title}</h3>
         <p className={`text-sm font-medium mb-10 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{desc}</p>
         
         <div className="space-y-4 flex-grow">

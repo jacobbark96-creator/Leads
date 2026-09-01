@@ -25,7 +25,11 @@ export async function POST(req: Request) {
     if (!response.ok) {
       const errorText = await response.text();
       console.error('Telnyx token error:', errorText);
-      return NextResponse.json({ error: 'Failed to generate Telnyx token' }, { status: response.status });
+      return NextResponse.json({ 
+        error: 'Failed to generate Telnyx token',
+        details: errorText,
+        status: response.status 
+      }, { status: 400 }); // Cloudflare Pages requires valid status codes
     }
 
     const token = await response.text();

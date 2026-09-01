@@ -543,8 +543,12 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         const call = currentClient.newCall({
           destinationNumber: cleanNum,
+          destination: cleanNum,
+          callerName: profile?.name || 'OpenLead',
           callerNumber: callerNumber,
-          clientState: encodeURIComponent(JSON.stringify({ entityId, userName, entityType }))
+          clientState: encodeURIComponent(JSON.stringify({ entityId, userName, entityType })),
+          audio: true,
+          video: false
         });
 
         // Add Telnyx event listeners on the client (which proxies them)

@@ -33,8 +33,21 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [dtmfDigits, setDtmfDigits] = useState('');
   const [toastMessage, setToastMessage] = useState<{ senderName: string, content: string } | null>(null);
   const [isToolbarExpanded, setIsToolbarExpanded] = useState(false);
+  const [activeProvider, setActiveProvider] = useState<'twilio' | 'telnyx'>('twilio');
 
   useEffect(() => {
+    const fetchActiveProvider = async () => {
+      try {
+        const { data, error } = await supabase.from('system_settings').select('value').eq('key', 'communication_provider').single();
+        if (data?.value) {
+          setActiveProvider(data.value as 'twilio' | 'telnyx');
+        }
+      } catch (e) {
+        console.error('Failed to fetch active provider:', e);
+      }
+    };
+    fetchActiveProvider();
+
     const handleToggleChat = () => setIsInternalChatOpen(prev => !prev);
     window.addEventListener('toggle-internal-chat', handleToggleChat);
     return () => window.removeEventListener('toggle-internal-chat', handleToggleChat);
@@ -143,7 +156,8 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   // Initialize device on first user interaction to avoid AudioContext warnings
   useEffect(() => {
-    if (profile?.id && profile?.twilio_number && ['rep', 'super_admin', 'admin', 'sales'].includes(profile.role)) {
+    const hasProviderNumber = activeProvider === 'telnyx' ? profile?.telnyx_number : profile?.twilio_number;
+    if (profile?.id && hasProviderNumber && ['rep', 'super_admin', 'admin', 'sales'].includes(profile.role)) {
       // Request notification permission for incoming calls
       if ('Notification' in window && Notification.permission === 'default') {
         Notification.requestPermission();
@@ -166,7 +180,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         window.removeEventListener('touchstart', handleInteraction);
       };
     }
-  }, [profile?.id, profile?.twilio_number, profile?.role]);
+  }, [profile?.id, profile?.twilio_number, profile?.telnyx_number, profile?.role, activeProvider]);
 
   useEffect(() => {
     if (!activeCall) {
@@ -404,8 +418,15 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   };
 
   const makeCall = async (number: string, entityId?: string, userName?: string, entityType: string = 'lead') => {
-    if (!profile?.twilio_number) {
-      toast.error('You do not have a Twilio Direct Dial Number assigned. Contact a Super Admin.');
+    const callerNumber = activeProvider === 'telnyx' ? profile?.telnyx_number : profile?.twilio_number;
+    
+    if (!callerNumber) {
+      toast.error(`You do not have a ${activeProvider === 'telnyx' ? 'Telnyx' : 'Twilio'} Direct Dial Number assigned. Contact a Super Admin.`);
+      return;
+    }
+
+    if (activeProvider === 'telnyx') {
+      toast.error('Voice calls via Telnyx are not yet supported in the web dialer. SMS fallback is active.');
       return;
     }
 
@@ -439,7 +460,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const call = await currentDevice.connect({
         params: {
           To: String(cleanNum || ''),
-          CallerId: String(profile.twilio_number || ''),
+          CallerId: String(callerNumber || ''),
           EntityId: String(entityId || ''),
           UserName: String(userName || profile.name || ''),
           EntityType: String(entityType || 'lead')
@@ -880,7 +901,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             </div>
           </div>
           <div className="bg-gray-800 px-6 py-3 text-xs text-gray-400 text-center border-t border-gray-700">
-            Using Caller ID: {profile?.twilio_number}
+            Using Caller ID ({activeProvider}): {activeProvider === 'telnyx' ? profile?.telnyx_number : profile?.twilio_number}
           </div>
         </div>
       )}

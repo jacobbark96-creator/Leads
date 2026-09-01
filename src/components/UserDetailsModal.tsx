@@ -46,6 +46,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     about: user.about || '',
     working_hours: user.working_hours || '',
     twilio_number: user.twilio_number || '',
+    telnyx_number: user.telnyx_number || '',
     division_id: user.division_id || '',
     permissions: user.permissions || [],
     trade_account_enabled: user.trade_account_enabled || false,
@@ -321,6 +322,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           phone: formData.user_phone,
           secondary_email: formData.secondary_email,
           twilio_number: formData.twilio_number,
+          telnyx_number: formData.telnyx_number,
           division_id: formData.division_id || null,
           job_title: formData.job_title,
           about: formData.about,
@@ -937,7 +939,19 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                           className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border font-mono"
                           placeholder="e.g. +447123456789"
                         />
-                        <p className="text-xs text-gray-500 mt-1">Include country code (e.g. +44 for UK). This number will be used as the Caller ID when this user makes calls.</p>
+                        <p className="text-xs text-gray-500 mt-1 text-right italic">Primary Provider Number</p>
+                      </div>
+
+                      <div className="sm:col-span-2">
+                        <label className="block text-sm font-medium text-gray-700 mb-1">Telnyx Backup Number</label>
+                        <input
+                          type="text"
+                          value={formData.telnyx_number}
+                          onChange={e => setFormData({ ...formData, telnyx_number: e.target.value })}
+                          className="w-full rounded-lg border-gray-300 shadow-sm focus:border-green-500 focus:ring-green-500 sm:text-sm px-3 py-2 border font-mono"
+                          placeholder="e.g. +447123456789"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Backup number used when system is switched to Telnyx.</p>
                       </div>
                       
                       <div className="sm:col-span-2">

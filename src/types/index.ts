@@ -8,6 +8,7 @@ export interface UserProfile {
   name: string;
   phone?: string | null;
   twilio_number?: string | null;
+  telnyx_number?: string | null;
   avatar_url?: string | null;
   job_title?: string | null;
   about?: string | null;

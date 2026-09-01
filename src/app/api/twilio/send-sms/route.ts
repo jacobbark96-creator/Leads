@@ -12,19 +12,18 @@ export async function POST(req: Request) {
     }
 
     const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-    const { data: user } = await supabase.from('users').select('twilio_number, name').eq('id', userId).single();
-    if (!user?.twilio_number) {
-      return NextResponse.json({ error: 'User does not have a Twilio number' }, { status: 400 });
-    }
-
-    const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-    const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-    if (!twilioSid || !twilioToken) {
-      return NextResponse.json({ error: 'Twilio credentials missing' }, { status: 500 });
-    }
-
-    let fromNumber = user.twilio_number;
+    const { data: user } = await supabase.from('users').select('twilio_number, telnyx_number, name').eq('id', userId).single();
     
+    // Get active provider
+    const { data: setting } = await supabase.from('system_settings').select('value').eq('key', 'communication_provider').single();
+    const providerType = setting?.value || 'twilio';
+
+    let fromNumber = providerType === 'telnyx' ? user?.telnyx_number : user?.twilio_number;
+    
+    if (!fromNumber) {
+      return NextResponse.json({ error: `User does not have a ${providerType} number` }, { status: 400 });
+    }
+
     const normalizeNumber = (num: string) => {
       let cleaned = num.replace(/[^\d+a-z:]/g, '');
       if (!cleaned.includes('+')) {
@@ -59,45 +58,23 @@ export async function POST(req: Request) {
     const host = req.headers.get('host') || 'openlead.co.uk';
     const forwardedProto = req.headers.get('x-forwarded-proto');
     const protocol = forwardedProto || (host.includes('localhost') ? 'http' : 'https');
-    const statusCallbackUrl = `${protocol}://${host}/api/twilio/sms-status`;
+    const statusCallbackUrl = `${protocol}://${host}/api/${providerType}/sms-status`;
 
-    const params = new URLSearchParams();
-    params.append('To', formattedTo);
-    params.append('From', formattedFrom);
-    params.append('StatusCallback', statusCallbackUrl);
+    const { getCommunicationProvider } = await import('@/lib/communication/factory');
+    const provider = await getCommunicationProvider();
 
-    if (isWhatsApp && template && templateData && template.length > 0) {
-      params.append('ContentSid', template);
-      const contentVariables: Record<string, string> = {};
-      let idx = 1;
-      for (const val of templateData) {
-        if (val !== undefined && val !== null) {
-          contentVariables[`${idx}`] = String(val);
-        }
-        idx++;
-      }
-      if (Object.keys(contentVariables).length > 0) {
-        params.append('ContentVariables', JSON.stringify(contentVariables));
-      }
-    } else {
-      params.append('Body', body);
-    }
-
-    const response = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Messages.json`, {
-      method: 'POST',
-      headers: { 
-        'Authorization': 'Basic ' + btoa(`${twilioSid}:${twilioToken}`), 
-        'Content-Type': 'application/x-www-form-urlencoded' 
-      },
-      body: params
+    const result = await provider.sendSMS({
+      to: formattedTo,
+      from: formattedFrom,
+      body,
+      statusCallback: statusCallbackUrl,
+      template,
+      templateData
     });
 
-    if (!response.ok) {
-      const err = await response.text();
-      throw new Error(err);
+    if (!result.success) {
+      throw new Error(result.error);
     }
-    
-    const data = await response.json();
 
     await supabase.from('sms_messages').insert([{
       user_id: userId, 
@@ -105,11 +82,11 @@ export async function POST(req: Request) {
       direction: 'outbound',
       body: isWhatsApp && template ? `[Template: ${template}] ${body}` : body, 
       is_read: true, 
-      twilio_sid: data.sid, 
-      delivery_status: data.status || 'sent'
+      twilio_sid: result.sid, 
+      delivery_status: result.status || 'sent'
     }]);
 
-    return NextResponse.json({ success: true, sid: data.sid });
+    return NextResponse.json({ success: true, sid: result.sid });
   } catch (error: any) {
     console.error('Send SMS Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });

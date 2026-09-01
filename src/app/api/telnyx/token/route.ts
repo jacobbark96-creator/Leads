@@ -18,7 +18,6 @@ export async function POST(req: Request) {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${process.env.TELNYX_API_KEY}`,
-        'Content-Type': 'application/json',
         'Accept': 'text/plain'
       }
     });

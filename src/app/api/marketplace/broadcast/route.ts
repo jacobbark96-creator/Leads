@@ -94,7 +94,7 @@ async function sendWhatsAppTemplate(
 
 export async function POST(req: NextRequest) {
   try {
-    const { record: lead } = await req.json();
+    const { record: lead, selectedContractorIds } = await req.json();
     
     if (!lead || !lead.id || !lead.is_marketed) {
       return NextResponse.json({ error: 'Invalid lead payload or lead is not marketed' }, { status: 400 });
@@ -109,19 +109,25 @@ export async function POST(req: NextRequest) {
 
     const supabase = getSupabase();
 
-    const { data: matchedContractors, error: matchError } = await supabase
+    const { data: allMatchedContractors, error: matchError } = await supabase
       .rpc('get_matched_contractors_for_lead', { p_lead_id: lead.id });
 
-    if (matchError || !matchedContractors || matchedContractors.length === 0) {
+    if (matchError || !allMatchedContractors || allMatchedContractors.length === 0) {
       console.log(`[Broadcast] No matched contractors found for lead ${lead.id}`);
       return NextResponse.json({ message: 'No matches found', matchedCount: 0 });
     }
 
-    console.log(`[Broadcast] Found ${matchedContractors.length} potential matches.`);
+    // Filter by selected contractors from the frontend
+    const matchedContractors = selectedContractorIds 
+      ? allMatchedContractors.filter((c: any) => selectedContractorIds.includes(c.id))
+      : allMatchedContractors;
 
-    const host = req.headers.get('host') || 'openlead.com';
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    const dynamicAppUrl = `${protocol}://${host}`;
+    if (matchedContractors.length === 0) {
+      console.log(`[Broadcast] No contractors selected for lead ${lead.id}`);
+      return NextResponse.json({ message: 'No contractors selected', matchedCount: 0 });
+    }
+
+    console.log(`[Broadcast] Found ${matchedContractors.length} selected matches.`);
 
     if (!accountSid || !authToken) {
       console.warn('[Broadcast] Twilio credentials missing. Skipping actual SMS dispatch.');
@@ -129,8 +135,17 @@ export async function POST(req: NextRequest) {
     }
 
     let sentCount = 0;
-    let templateCount = 0;
     const errors = [];
+    
+    // Determine the write up image to send
+    const mediaUrl = (lead.photos && lead.photos.length > 0) 
+      ? lead.photos[0] 
+      : (lead.buildings && lead.buildings.length > 0 && lead.buildings[0].satellite_image_url) 
+        ? lead.buildings[0].satellite_image_url 
+        : undefined;
+
+    const town = lead.location || lead.town || lead.city || 'your area';
+    const messageBody = `New lead in ${town} just hit the market`;
 
     for (const contractor of matchedContractors) {
       try {
@@ -146,48 +161,16 @@ export async function POST(req: NextRequest) {
         }
 
         const whatsappTo = `whatsapp:${formattedPhone}`;
-        const name = contractor.company_name || contractor.contact_name || 'there';
-        const location = lead.location || 'your area';
-        const price = lead.exclusive_price || lead.share_price || '185';
-        const leadRef = lead.id.split('-')[0].toUpperCase();
 
-        try {
-          const templateData: Record<string, string> = {
-            '1': name,
-            '2': location,
-            '3': `£${price}`,
-            '4': leadRef
-          };
-
-          await sendWhatsAppTemplate(
-            whatsappTo,
-            twilioPhoneNumber,
-            TWILIO_WHATSAPP_TEMPLATE_SID,
-            templateData
-          );
-          
-          templateCount++;
-          sentCount++;
-          console.log(`[Broadcast] Sent template to ${contractor.company_name || contractor.contact_name} (${formattedPhone})`);
-          
-        } catch (templateErr: any) {
-          if (templateErr.message.includes('not a valid ContentSid')) {
-            console.warn(`[Broadcast] Template SID not configured. Falling back to freeform message for ${contractor.phone}`);
-            
-            const messageBody = `Hi ${name},\n\nWe've found a new lead that matches your preferences in ${location}.\n\nInterested? You can view the details below.`;
-
-            await sendTwilioMessage(
-              whatsappTo,
-              twilioPhoneNumber,
-              messageBody
-            );
-            
-            sentCount++;
-            console.log(`[Broadcast] Sent freeform message to ${contractor.company_name || contractor.contact_name} (${formattedPhone})`);
-          } else {
-            throw templateErr;
-          }
-        }
+        await sendTwilioMessage(
+          whatsappTo,
+          twilioPhoneNumber,
+          messageBody,
+          mediaUrl
+        );
+        
+        sentCount++;
+        console.log(`[Broadcast] Sent custom WhatsApp message with media to ${contractor.company_name || contractor.contact_name} (${formattedPhone})`);
         
       } catch (err: any) {
         console.error(`[Broadcast] Failed to send to ${contractor.phone}:`, err.message);
@@ -197,7 +180,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ 
       success: true, 
-      message: `Broadcast complete. Sent ${sentCount} messages (${templateCount} via template).`,
+      message: `Broadcast complete. Sent ${sentCount} messages.`,
       errors: errors.length > 0 ? errors : undefined
     });
 

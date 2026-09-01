@@ -513,6 +513,7 @@ function LeadDetailsV2Content() {
   const [isPricePromotionModalOpen, setIsPricePromotionModalOpen] = useState(false);
   const [isSmsChatOpen, setIsSmsChatOpen] = useState(false);
   const [matchedContractors, setMatchedContractors] = useState<any[]>([]);
+  const [selectedContractors, setSelectedContractors] = useState<string[]>([]);
   const [isFetchingMatches, setIsFetchingMatches] = useState(false);
   const [installerMatchScores, setInstallerMatchScores] = useState<{installer: any, score: number}[]>([]);
   const [isLoadingLeaderboard, setIsLoadingLeaderboard] = useState(false);
@@ -1382,6 +1383,7 @@ function LeadDetailsV2Content() {
         .rpc('get_matched_contractors_for_lead', { p_lead_id: lead.id });
       if (error) throw error;
       setMatchedContractors(data || []);
+      setSelectedContractors((data || []).map((c: any) => c.id));
     } catch (err) {
       console.error('Failed to fetch matched contractors', err);
     } finally {
@@ -1582,7 +1584,8 @@ function LeadDetailsV2Content() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            record: { ...lead, is_marketed: true, push_to_whatsapp: true }
+            record: { ...lead, is_marketed: true, push_to_whatsapp: true },
+            selectedContractorIds: selectedContractors
           })
         }).then(async res => {
           if (!res.ok) {
@@ -3742,14 +3745,29 @@ function LeadDetailsV2Content() {
             ) : (
               <div className="mb-6 bg-gray-50 rounded-lg p-4 text-left">
                 <p className="text-sm font-bold text-gray-700 mb-2">
-                  {matchedContractors.length} Matching Contractor{matchedContractors.length !== 1 && 's'} Found:
+                  Select installers to notify ({matchedContractors.length} found):
                 </p>
                 {matchedContractors.length > 0 ? (
-                  <ul className="text-xs text-gray-600 max-h-32 overflow-y-auto space-y-1">
+                  <ul className="text-xs text-gray-600 max-h-48 overflow-y-auto space-y-2">
                     {matchedContractors.map(c => (
-                      <li key={c.id} className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full bg-emerald-500"></div>
-                        <span className="truncate">{c.company_name || c.contact_name || 'Unknown Contractor'}</span>
+                      <li key={c.id} className="flex items-center gap-2 bg-white p-2 rounded border border-gray-100 shadow-sm cursor-pointer hover:bg-gray-50"
+                          onClick={() => {
+                            if (selectedContractors.includes(c.id)) {
+                              setSelectedContractors(selectedContractors.filter(id => id !== c.id));
+                            } else {
+                              setSelectedContractors([...selectedContractors, c.id]);
+                            }
+                          }}>
+                        <input 
+                          type="checkbox" 
+                          className="rounded border-gray-300 text-emerald-600 focus:ring-emerald-500 cursor-pointer pointer-events-none"
+                          checked={selectedContractors.includes(c.id)}
+                          readOnly
+                        />
+                        <div className="flex flex-col flex-1">
+                          <span className="font-semibold text-gray-800">{c.company_name || c.contact_name || 'Unknown Contractor'}</span>
+                          <span className="text-[10px] text-gray-400">{c.phone || 'No phone'}</span>
+                        </div>
                       </li>
                     ))}
                   </ul>
@@ -3760,10 +3778,16 @@ function LeadDetailsV2Content() {
             )}
 
             <div className="flex flex-col gap-3">
-              <button onClick={() => handleMarketLead(false)} className="w-full px-4 py-3 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700">
-                Yes, Push it
+              <button 
+                onClick={() => handleMarketLead(true)} 
+                disabled={isFetchingMatches || selectedContractors.length === 0}
+                className="w-full px-4 py-3 bg-emerald-600 text-white rounded-lg text-sm font-bold hover:bg-emerald-700 disabled:opacity-50 flex items-center justify-center gap-2">
+                Send to {selectedContractors.length} Installer{selectedContractors.length !== 1 && 's'}
               </button>
-              <button onClick={() => setIsMarketConfirmOpen(false)} className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">
+              <button onClick={() => handleMarketLead(false)} className="w-full px-4 py-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">
+                Push without Notifying
+              </button>
+              <button onClick={() => setIsMarketConfirmOpen(false)} className="w-full px-4 py-2 mt-2 text-sm font-bold text-gray-400 hover:text-gray-600">
                 Cancel
               </button>
             </div>

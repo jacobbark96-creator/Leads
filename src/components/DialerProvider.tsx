@@ -167,9 +167,27 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       const handleInteraction = () => {
+        // Always clear any existing device first to prevent connection conflicts
+        if (deviceRef.current) {
+          try {
+            if (activeProvider === 'telnyx') {
+              (deviceRef.current as any).disconnect();
+            } else {
+              (deviceRef.current as Device).destroy();
+            }
+          } catch (e) {
+            console.log('Cleanup error (safe to ignore):', e);
+          }
+          deviceRef.current = null;
+          setDevice(null);
+        }
+
         if (activeProvider === 'telnyx') {
+          telnyxInitPromise.current = null;
           initTelnyxDevice().catch(console.error);
         } else {
+          // Explicitly clear initialization promise before re-initializing Twilio
+          initPromise.current = null;
           initDevice().catch(console.error);
         }
         window.removeEventListener('click', handleInteraction);

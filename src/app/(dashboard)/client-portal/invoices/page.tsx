@@ -256,13 +256,12 @@ export default function InvoicesPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50">
-                    <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Invoice #</th>
-                    <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Issue Date</th>
-                    <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Due Date</th>
-                    <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest min-w-[200px]">Description</th>
-                    <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Amount</th>
-                    <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
-                    <th className="px-4 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Action</th>
+                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Invoice #</th>
+                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Issue Date</th>
+                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Due Date</th>
+                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Amount</th>
+                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
+                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -270,35 +269,32 @@ export default function InvoicesPage() {
                     filteredInvoices.map((inv) => (
                       <tr 
                         key={inv.id} 
-                        onClick={() => setSelectedInvoice(inv)}
                         className="hover:bg-slate-50 transition-colors cursor-pointer group"
                       >
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3" onClick={() => setSelectedInvoice(inv)}>
                           <span className="text-xs font-bold text-slate-900">{inv.number || inv.id.slice(0, 12)}</span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3" onClick={() => setSelectedInvoice(inv)}>
                           <span className="text-[10px] font-medium text-slate-500">{inv.date ? format(parseISO(inv.date), 'dd MMM yyyy') : '-'}</span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3" onClick={() => setSelectedInvoice(inv)}>
                           <span className="text-[10px] font-medium text-slate-500">{inv.date ? format(new Date(new Date(inv.date).getTime() + 14*24*60*60*1000), 'dd MMM yyyy') : '-'}</span>
                         </td>
-                        <td className="px-4 py-3">
-                          <span className="text-xs font-medium text-slate-700">{inv.description || 'Invoice'}</span>
-                        </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3" onClick={() => setSelectedInvoice(inv)}>
                           <span className="text-xs font-black text-slate-900">£{inv.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </td>
-                        <td className="px-4 py-3">
+                        <td className="px-3 py-3" onClick={() => setSelectedInvoice(inv)}>
                           <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${getStatusColor(inv.status)}`}>
                             {inv.status}
                           </span>
                         </td>
-                        <td className="px-4 py-3 text-right">
+                        <td className="px-3 py-3 text-right">
                           {inv.status === 'paid' ? (
                             <a 
                               href={inv.url}
                               target="_blank"
                               rel="noopener noreferrer"
+                              download={`Invoice-${inv.number || inv.id.slice(0, 8)}.pdf`}
                               onClick={(e) => e.stopPropagation()}
                               className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             >
@@ -320,7 +316,7 @@ export default function InvoicesPage() {
                     ))
                   ) : (
                     <tr>
-                      <td colSpan={7} className="px-5 py-12 text-center">
+                      <td colSpan={6} className="px-5 py-12 text-center">
                         <div className="flex flex-col items-center justify-center text-slate-500">
                           <FileText className="w-8 h-8 text-slate-200 mb-3" />
                           <p className="text-sm font-bold text-slate-900 mb-1">No invoices found</p>
@@ -532,7 +528,7 @@ export default function InvoicesPage() {
                     <div>
                       <h4 className="text-xs font-bold text-emerald-900 mb-1">Payment Received</h4>
                       <p className="text-[10px] text-emerald-700 font-medium">Paid on {selectedInvoice.date ? format(parseISO(selectedInvoice.date), 'dd MMM yyyy') : '-'}</p>
-                      <p className="text-[10px] text-emerald-700 font-medium">Ref: {selectedInvoice.id}</p>
+                      <p className="text-[10px] text-emerald-700 font-medium">Ref: {selectedInvoice.number || selectedInvoice.id}</p>
                     </div>
                   </div>
                 )}
@@ -544,6 +540,7 @@ export default function InvoicesPage() {
                   href={selectedInvoice.url}
                   target="_blank"
                   rel="noopener noreferrer"
+                  download={`Invoice-${selectedInvoice.number || selectedInvoice.id.slice(0, 8)}.pdf`}
                   className="flex-1 px-4 py-3 bg-white border border-slate-200 text-slate-700 rounded-xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-50 transition-colors shadow-sm flex items-center justify-center gap-2"
                 >
                   <Download className="w-4 h-4" />

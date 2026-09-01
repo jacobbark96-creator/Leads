@@ -256,12 +256,12 @@ export default function InvoicesPage() {
               <table className="w-full text-left border-collapse">
                 <thead>
                   <tr className="bg-slate-50/50">
-                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Invoice #</th>
-                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Issue Date</th>
-                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Due Date</th>
-                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Amount</th>
-                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Status</th>
-                    <th className="px-3 py-2.5 text-[10px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Action</th>
+                    <th className="px-2 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Invoice #</th>
+                    <th className="px-2 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Issue Date</th>
+                    <th className="px-2 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap">Due Date</th>
+                    <th className="px-2 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-center">Amount</th>
+                    <th className="px-2 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-center">Status</th>
+                    <th className="px-2 py-2.5 text-[9px] font-black text-slate-400 uppercase tracking-widest whitespace-nowrap text-right">Action</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-50">
@@ -271,24 +271,24 @@ export default function InvoicesPage() {
                         key={inv.id} 
                         className="hover:bg-slate-50 transition-colors cursor-pointer group"
                       >
-                        <td className="px-3 py-3" onClick={() => setSelectedInvoice(inv)}>
-                          <span className="text-xs font-bold text-slate-900">{inv.number || inv.id.slice(0, 12)}</span>
+                        <td className="px-2 py-3" onClick={() => setSelectedInvoice(inv)}>
+                          <span className="text-[11px] font-bold text-slate-900">{inv.number || inv.id.slice(0, 10)}</span>
                         </td>
-                        <td className="px-3 py-3" onClick={() => setSelectedInvoice(inv)}>
-                          <span className="text-[10px] font-medium text-slate-500">{inv.date ? format(parseISO(inv.date), 'dd MMM yyyy') : '-'}</span>
+                        <td className="px-2 py-3" onClick={() => setSelectedInvoice(inv)}>
+                          <span className="text-[9px] font-medium text-slate-500">{inv.date ? format(parseISO(inv.date), 'dd MMM yyyy') : '-'}</span>
                         </td>
-                        <td className="px-3 py-3" onClick={() => setSelectedInvoice(inv)}>
-                          <span className="text-[10px] font-medium text-slate-500">{inv.date ? format(new Date(new Date(inv.date).getTime() + 14*24*60*60*1000), 'dd MMM yyyy') : '-'}</span>
+                        <td className="px-2 py-3" onClick={() => setSelectedInvoice(inv)}>
+                          <span className="text-[9px] font-medium text-slate-500">{inv.date ? format(new Date(new Date(inv.date).getTime() + 14*24*60*60*1000), 'dd MMM yyyy') : '-'}</span>
                         </td>
-                        <td className="px-3 py-3" onClick={() => setSelectedInvoice(inv)}>
-                          <span className="text-xs font-black text-slate-900">£{inv.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
+                        <td className="px-2 py-3 text-center" onClick={() => setSelectedInvoice(inv)}>
+                          <span className="text-[11px] font-black text-slate-900">£{inv.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                         </td>
-                        <td className="px-3 py-3" onClick={() => setSelectedInvoice(inv)}>
-                          <span className={`inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-black uppercase tracking-widest border ${getStatusColor(inv.status)}`}>
+                        <td className="px-2 py-3 text-center" onClick={() => setSelectedInvoice(inv)}>
+                          <span className={`inline-flex items-center px-1 py-0.5 rounded text-[8px] font-black uppercase tracking-widest border ${getStatusColor(inv.status)}`}>
                             {inv.status}
                           </span>
                         </td>
-                        <td className="px-3 py-3 text-right">
+                        <td className="px-2 py-3 text-right">
                           {inv.status === 'paid' ? (
                             <a 
                               href={inv.url}
@@ -296,9 +296,9 @@ export default function InvoicesPage() {
                               rel="noopener noreferrer"
                               download={`Invoice-${inv.number || inv.id.slice(0, 8)}.pdf`}
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center justify-center p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
+                              className="inline-flex items-center justify-center p-1.5 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
                             >
-                              <Download className="w-4 h-4" />
+                              <Download className="w-3.5 h-3.5" />
                             </a>
                           ) : (
                             <a 
@@ -306,7 +306,7 @@ export default function InvoicesPage() {
                               target="_blank"
                               rel="noopener noreferrer"
                               onClick={(e) => e.stopPropagation()}
-                              className="inline-flex items-center justify-center px-3 py-1.5 bg-slate-900 text-white rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors shadow-sm"
+                              className="inline-flex items-center justify-center px-2 py-1 bg-slate-900 text-white rounded-lg text-[8px] font-black uppercase tracking-widest hover:bg-slate-800 transition-colors shadow-sm"
                             >
                               Pay Now
                             </a>
@@ -465,41 +465,12 @@ export default function InvoicesPage() {
                     </div>
                     
                     <div className="divide-y divide-slate-50">
-                      {/* Fake line items for demo */}
                       <div className="px-4 py-3 flex justify-between items-center hover:bg-slate-50 transition-colors">
                         <div>
-                          <p className="text-xs font-bold text-slate-900">Lead #OL-10284</p>
-                          <p className="text-[10px] text-slate-500">Manchester • 180 kWp</p>
+                          <p className="text-xs font-bold text-slate-900">{selectedInvoice.description || 'Service Provision'}</p>
+                          <p className="text-[10px] text-slate-500">Transaction Ref: {selectedInvoice.number || selectedInvoice.id}</p>
                         </div>
-                        <span className="text-xs font-bold text-slate-900">£285.00</span>
-                      </div>
-                      <div className="px-4 py-3 flex justify-between items-center hover:bg-slate-50 transition-colors">
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Lead #OL-10291</p>
-                          <p className="text-[10px] text-slate-500">Leeds • 95 kWp</p>
-                        </div>
-                        <span className="text-xs font-bold text-slate-900">£185.00</span>
-                      </div>
-                      <div className="px-4 py-3 flex justify-between items-center hover:bg-slate-50 transition-colors">
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Lead #OL-10302</p>
-                          <p className="text-[10px] text-slate-500">Birmingham • 250 kWp</p>
-                        </div>
-                        <span className="text-xs font-bold text-slate-900">£285.00</span>
-                      </div>
-                      <div className="px-4 py-3 flex justify-between items-center hover:bg-slate-50 transition-colors">
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Lead #OL-10315</p>
-                          <p className="text-[10px] text-slate-500">London • 400 kWp</p>
-                        </div>
-                        <span className="text-xs font-bold text-slate-900">£385.00</span>
-                      </div>
-                      <div className="px-4 py-3 flex justify-between items-center hover:bg-slate-50 transition-colors">
-                        <div>
-                          <p className="text-xs font-bold text-slate-900">Platform Access Fee</p>
-                          <p className="text-[10px] text-slate-500">Monthly subscription</p>
-                        </div>
-                        <span className="text-xs font-bold text-slate-900">£280.00</span>
+                        <span className="text-xs font-bold text-slate-900">£{selectedInvoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                       </div>
                     </div>
                   </div>
@@ -509,16 +480,19 @@ export default function InvoicesPage() {
                 <div className="space-y-2 border-t border-slate-100 pt-4 w-1/2 ml-auto">
                   <div className="flex justify-between text-xs text-slate-500">
                     <span>Subtotal</span>
-                    <span>£{(selectedInvoice.amount / 1.2).toFixed(2)}</span>
+                    <span>£{selectedInvoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
                   <div className="flex justify-between text-xs text-slate-500">
-                    <span>VAT (20%)</span>
-                    <span>£{(selectedInvoice.amount - (selectedInvoice.amount / 1.2)).toFixed(2)}</span>
+                    <span>VAT (0%)</span>
+                    <span>£0.00</span>
                   </div>
                   <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-slate-100">
                     <span>Total</span>
                     <span>£{selectedInvoice.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}</span>
                   </div>
+                  <p className="text-[8px] text-slate-400 font-medium text-right mt-2 italic">
+                    * Not VAT registered. No VAT has been charged.
+                  </p>
                 </div>
                 
                 {/* Payment Info if paid */}

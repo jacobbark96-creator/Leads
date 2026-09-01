@@ -332,6 +332,12 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                         <span className="font-medium">-£{appliedDiscount.amount.toFixed(2)}</span>
                       </div>
                     )}
+
+                    <div className="flex justify-between text-[10px] text-gray-500 pt-1">
+                      <span>VAT (0%)*</span>
+                      <span>£0.00</span>
+                    </div>
+                    
                     {creditToUse > 0 && (
                       <div className="flex justify-between text-sm text-blue-600">
                         <span className="flex items-center gap-1">
@@ -375,7 +381,7 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                 </div>
 
                 <div className="p-5">
-                  <div className="flex justify-between items-end mb-5">
+                  <div className="flex justify-between items-end mb-2">
                     <span className="text-sm font-bold text-gray-900 uppercase tracking-wider">
                       {useTradeAccount ? 'To be Invoiced' : 'Total to pay'}
                     </span>
@@ -383,6 +389,9 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                       £{(useTradeAccount ? (discountedPrice - creditToUse) : totalToPay).toFixed(2)}
                     </span>
                   </div>
+                  <p className="text-[8px] text-gray-400 font-medium text-right mb-5 italic">
+                    * Not VAT registered. No VAT has been charged.
+                  </p>
 
                   <button
                     type="button"

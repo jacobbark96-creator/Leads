@@ -118,6 +118,16 @@ export const TopUpModal: React.FC<TopUpModalProps> = ({ isOpen, onClose, clientI
               </button>
             </div>
 
+            <div className="mt-4 px-1">
+              <div className="flex justify-between text-[10px] text-gray-500 mb-1">
+                <span>VAT (0%)*</span>
+                <span>£0.00</span>
+              </div>
+              <p className="text-[8px] text-gray-400 font-medium italic text-right">
+                * Not VAT registered. No VAT has been charged.
+              </p>
+            </div>
+
             <div className="mt-6 pt-6 border-t border-gray-200">
               <label className="block text-sm font-medium text-gray-700 mb-2">Have a discount code?</label>
               <input

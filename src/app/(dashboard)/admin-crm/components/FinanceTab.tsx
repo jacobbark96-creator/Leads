@@ -302,6 +302,25 @@ export function FinanceTab() {
                   </div>
                 )}
               </div>
+
+              {/* Totals Breakdown */}
+              <div className="space-y-2 border-t border-gray-100 pt-6 w-1/2 ml-auto">
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>Subtotal</span>
+                  <span>£{selectedInvoice.total_amount.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>VAT (0%)*</span>
+                  <span>£0.00</span>
+                </div>
+                <div className="flex justify-between text-base font-black text-slate-900 pt-2 border-t border-gray-100">
+                  <span>Total</span>
+                  <span>£{selectedInvoice.total_amount.toFixed(2)}</span>
+                </div>
+                <p className="text-[8px] text-gray-400 font-medium text-right mt-2 italic">
+                  * Not VAT registered. No VAT has been charged.
+                </p>
+              </div>
             </div>
 
             {selectedInvoice.status === 'draft' && (

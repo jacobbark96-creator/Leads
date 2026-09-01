@@ -272,7 +272,9 @@ export default function InvoicesPage() {
                         className="hover:bg-slate-50 transition-colors cursor-pointer group"
                       >
                         <td className="px-2 py-3" onClick={() => setSelectedInvoice(inv)}>
-                          <span className="text-[11px] font-bold text-slate-900">{inv.number || inv.id.slice(0, 10)}</span>
+                          <span className="text-[11px] font-bold text-slate-900">
+                            {inv.is_receipt ? 'Receipt' : 'Invoice'} #{inv.number || inv.id.slice(0, 10)}
+                          </span>
                         </td>
                         <td className="px-2 py-3" onClick={() => setSelectedInvoice(inv)}>
                           <span className="text-[9px] font-medium text-slate-500">{inv.date ? format(parseISO(inv.date), 'dd MMM yyyy') : '-'}</span>
@@ -418,7 +420,9 @@ export default function InvoicesPage() {
               {/* Drawer Header */}
               <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
                 <div className="flex items-center gap-3">
-                  <h2 className="text-lg font-black text-slate-900 tracking-tight">{selectedInvoice.number || selectedInvoice.id.slice(0, 12)}</h2>
+                  <h2 className="text-lg font-black text-slate-900 tracking-tight">
+                    {selectedInvoice.is_receipt ? 'Receipt' : 'Invoice'} #{selectedInvoice.number || selectedInvoice.id.slice(0, 12)}
+                  </h2>
                   <span className={`inline-flex items-center px-2 py-1 rounded-md text-[9px] font-black uppercase tracking-widest border ${getStatusColor(selectedInvoice.status)}`}>
                     {selectedInvoice.status}
                   </span>
@@ -437,13 +441,17 @@ export default function InvoicesPage() {
                 {/* Dates */}
                 <div className="flex gap-8">
                   <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Issue Date</p>
+                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                      {selectedInvoice.is_receipt ? 'Payment Date' : 'Issue Date'}
+                    </p>
                     <p className="text-sm font-bold text-slate-900">{selectedInvoice.date ? format(parseISO(selectedInvoice.date), 'dd MMM yyyy') : '-'}</p>
                   </div>
-                  <div>
-                    <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Due Date</p>
-                    <p className="text-sm font-bold text-slate-900">{selectedInvoice.date ? format(new Date(new Date(selectedInvoice.date).getTime() + 14*24*60*60*1000), 'dd MMM yyyy') : '-'}</p>
-                  </div>
+                  {!selectedInvoice.is_receipt && (
+                    <div>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mb-1">Due Date</p>
+                      <p className="text-sm font-bold text-slate-900">{selectedInvoice.date ? format(new Date(new Date(selectedInvoice.date).getTime() + 14*24*60*60*1000), 'dd MMM yyyy') : '-'}</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Billed To */}

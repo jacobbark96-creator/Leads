@@ -162,7 +162,8 @@ export async function GET(req: Request) {
           status: 'paid',
           url: inv.invoice_pdf,
           description: inv.description,
-          number: inv.number
+          number: inv.number,
+          is_receipt: true
         };
       }
       return {
@@ -172,7 +173,8 @@ export async function GET(req: Request) {
         status: inv.status,
         url: inv.hosted_invoice_url || inv.invoice_pdf,
         description: inv.description || (inv.lines?.data?.[0]?.description) || 'Invoice',
-        number: inv.number
+        number: inv.number,
+        is_receipt: false
       };
     }).sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 

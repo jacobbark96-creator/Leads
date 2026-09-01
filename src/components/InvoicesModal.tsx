@@ -150,6 +150,12 @@ export function InvoicesModal({ isOpen, onClose }: InvoicesModalProps) {
                   </div>
                 </div>
               ))}
+              
+              <div className="pt-4 mt-4 border-t border-gray-100">
+                <p className="text-[10px] text-gray-400 font-medium italic text-center">
+                  * All payments are 0% VAT. OpenLead is not VAT registered. No VAT has been charged.
+                </p>
+              </div>
             </div>
           )}
         </div>

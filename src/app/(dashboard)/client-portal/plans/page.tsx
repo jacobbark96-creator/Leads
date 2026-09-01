@@ -145,7 +145,12 @@ export default function PlansPage() {
               </div>
               <div>
                 <h3 className="text-base font-black text-gray-900 leading-none tracking-tight">{plan.name}</h3>
-                <p className="text-[9px] text-gray-400 font-bold mt-0.5 tracking-widest uppercase">{plan.vat}</p>
+                <div className="flex items-center gap-2 mt-0.5">
+                  <p className="text-[9px] text-gray-400 font-bold tracking-widest uppercase">{plan.vat}</p>
+                  <span className="text-[8px] text-gray-400 font-medium italic">
+                    * Not VAT registered.
+                  </span>
+                </div>
               </div>
             </div>
 

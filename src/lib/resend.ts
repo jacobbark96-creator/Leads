@@ -306,10 +306,45 @@ export const sendReceiptEmail = async (email: string, leadId: string, amount: nu
       to: [email],
       subject: `Your Receipt from Openlead - Lead #${leadId.split('-')[0]}`,
       html: `
-        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px;">
-          <h2>Thank you for your purchase!</h2>
-          <p>You have successfully purchased a lead for £${amount.toFixed(2)}.</p>
-          <p>You can view the full unredacted details of this lead in your Client Dashboard immediately.</p>
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb;">Thank you for your purchase!</h2>
+          <p style="color: #4b5563; line-height: 1.6;">You have successfully purchased a lead from the Openlead marketplace.</p>
+          
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #1e293b; font-size: 16px;">Payment Breakdown</h3>
+            <table style="width: 100%; font-size: 14px; color: #4b5563;">
+              <tr>
+                <td style="padding: 5px 0;">Subtotal</td>
+                <td style="padding: 5px 0; text-align: right;">£${amount.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0;">VAT (0%)*</td>
+                <td style="padding: 5px 0; text-align: right;">£0.00</td>
+              </tr>
+              <tr style="font-weight: bold; color: #1e293b; font-size: 16px;">
+                <td style="padding: 10px 0; border-top: 1px solid #e2e8f0;">Total Paid</td>
+                <td style="padding: 10px 0; border-top: 1px solid #e2e8f0; text-align: right;">£${amount.toFixed(2)}</td>
+              </tr>
+            </table>
+            <p style="font-size: 10px; color: #94a3b8; margin-top: 15px; font-style: italic;">
+              * Not VAT registered. No VAT has been charged.
+            </p>
+          </div>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            You can view the full unredacted details of this lead in your Client Dashboard immediately.
+          </p>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/client-portal" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Go to Dashboard
+            </a>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #eaeaea; margin: 30px 0;" />
+          <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+            © ${new Date().getFullYear()} Openlead. All rights reserved.
+          </p>
         </div>
       `,
     });

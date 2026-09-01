@@ -137,14 +137,19 @@ export async function POST(req: NextRequest) {
     let sentCount = 0;
     const errors = [];
     
-    // Determine the write up image to send
-    const mediaUrl = (lead.photos && lead.photos.length > 0) 
-      ? lead.photos[0] 
-      : (lead.buildings && lead.buildings.length > 0 && lead.buildings[0].satellite_image_url) 
-        ? lead.buildings[0].satellite_image_url 
-        : undefined;
-
+    // Generate the dynamic write-up image URL
     const town = lead.location || lead.town || lead.city || 'your area';
+    const type = lead.lead_type || 'Residential';
+    const system = lead.system_size || 'Solar PV';
+    const price = lead.exclusive_price || lead.share_price || '185';
+    const notes = encodeURIComponent(lead.notes || lead.requirements || 'No specific details provided.');
+    
+    const host = req.headers.get('host') || 'openlead.co.uk';
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    
+    // Create the OG image URL
+    const mediaUrl = `${protocol}://${host}/api/og/lead-writeup?town=${encodeURIComponent(town)}&type=${encodeURIComponent(type)}&system=${encodeURIComponent(system)}&price=${encodeURIComponent(price)}&notes=${notes}`;
+
     const messageBody = `New lead in ${town} just hit the market`;
 
     for (const contractor of matchedContractors) {

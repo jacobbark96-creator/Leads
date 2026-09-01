@@ -201,7 +201,17 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       return deviceRef.current;
     }
     // Priority 3: Check if an initialization is already in progress
-    if (initPromise.current) return initPromise.current;
+    if (initPromise.current) {
+      try {
+        const existingDevice = await initPromise.current;
+        if (existingDevice && existingDevice.state !== 'destroyed') {
+          return existingDevice;
+        }
+      } catch (e) {
+        console.error('Previous init promise failed, will retry', e);
+      }
+      initPromise.current = null;
+    }
 
     initPromise.current = (async () => {
       try {
@@ -234,11 +244,13 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           console.error('Twilio Error:', twilioError);
           
           // Suppress noisy token and connection errors from popping up toasts
-          const ignoredCodes = [20104, 20101, 31009, 31005];
+          const ignoredCodes = [20104, 20101, 31009, 31005, 53000];
           if (ignoredCodes.includes(twilioError.code)) {
-            // If token expired, clear device to force re-init next time
-            if (twilioError.code === 20104 || twilioError.code === 20101) {
+            // If token expired or connection failed, clear device to force re-init next time
+            if (twilioError.code === 20104 || twilioError.code === 20101 || twilioError.code === 53000) {
+              console.log('Clearing stale Twilio device due to error code:', twilioError.code);
               setDevice(null);
+              deviceRef.current = null;
             }
             return;
           }

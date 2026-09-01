@@ -14,7 +14,8 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const { profile } = useAuthStore();
   const pathname = usePathname();
   const [device, setDevice] = useState<Device | null>(null);
-  const [activeCall, setActiveCall] = useState<Call | null>(null);
+  const [telnyxDevice, setTelnyxDevice] = useState<any>(null);
+  const [activeCall, setActiveCall] = useState<any>(null);
   const [callStatus, setCallStatus] = useState<string>('');
   const [isMuted, setIsMuted] = useState(false);
   const [currentNumber, setCurrentNumber] = useState('');
@@ -75,7 +76,9 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
   const [manualNumber, setManualNumber] = useState('');
   const [currentEntityId, setCurrentEntityId] = useState<string | null>(null);
   const initPromise = useRef<Promise<Device | null> | null>(null);
+  const telnyxInitPromise = useRef<Promise<any> | null>(null);
   const deviceRef = useRef<Device | null>(null);
+  const telnyxDeviceRef = useRef<any>(null);
   const audioContextRef = useRef<AudioContext | null>(null);
 
   const playInternalChatSound = () => {
@@ -417,16 +420,79 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
     return result;
   };
 
+  const initTelnyxDevice = async (): Promise<any> => {
+    if (telnyxDevice) return telnyxDevice;
+    if (telnyxDeviceRef.current) {
+      setTelnyxDevice(telnyxDeviceRef.current);
+      return telnyxDeviceRef.current;
+    }
+    if (telnyxInitPromise.current) return telnyxInitPromise.current;
+
+    telnyxInitPromise.current = (async () => {
+      try {
+        setCallStatus('Initializing Telnyx...');
+        const res = await fetch('/api/telnyx/token', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ identity: profile?.id || 'unknown' })
+        });
+        
+        if (!res.ok) {
+          toast.error('Telnyx configuration error');
+          setCallStatus('');
+          return null;
+        }
+        
+        const { token } = await res.json();
+        if (!token) return null;
+
+        // Dynamically import to avoid SSR issues
+        const { TelnyxRTC } = await import('@telnyx/webrtc');
+        
+        const client = new TelnyxRTC({
+          login_token: token
+        });
+
+        client.on('telnyx.ready', () => {
+          console.log('Telnyx WebRTC Ready');
+        });
+
+        client.on('telnyx.error', (error: any) => {
+          console.error('Telnyx WebRTC Error:', error);
+          if (error?.message) {
+            toast.error(`Telnyx Error: ${error.message}`);
+          }
+        });
+
+        client.on('telnyx.notification', (notification: any) => {
+          console.log('Telnyx notification:', notification);
+        });
+
+        client.remoteElement = 'telnyx-remote-audio';
+        client.connect();
+
+        setTelnyxDevice(client);
+        telnyxDeviceRef.current = client;
+        setCallStatus('');
+        return client;
+      } catch (error: any) {
+        console.error('Failed to setup Telnyx device:', error);
+        toast.error('Failed to connect to Telnyx dialer');
+        setCallStatus('');
+        return null;
+      }
+    })();
+
+    const result = await telnyxInitPromise.current;
+    telnyxInitPromise.current = null;
+    return result;
+  };
+
   const makeCall = async (number: string, entityId?: string, userName?: string, entityType: string = 'lead') => {
     const callerNumber = activeProvider === 'telnyx' ? profile?.telnyx_number : profile?.twilio_number;
     
     if (!callerNumber) {
       toast.error(`You do not have a ${activeProvider === 'telnyx' ? 'Telnyx' : 'Twilio'} Direct Dial Number assigned. Contact a Super Admin.`);
-      return;
-    }
-
-    if (activeProvider === 'telnyx') {
-      toast.error('Voice calls via Telnyx are not yet supported in the web dialer. SMS fallback is active.');
       return;
     }
 
@@ -444,6 +510,75 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       setCurrentNumber(cleanNum);
       setCurrentEntityId(entityId || null);
       
+      if (activeProvider === 'telnyx') {
+        const currentClient = await initTelnyxDevice();
+        if (!currentClient) return;
+
+        setCallStatus('Connecting...');
+
+        if (entityId && entityType === 'lead') {
+          await supabase
+            .from('leads')
+            .update({ being_dialed_by: profile.id, last_dialed_at: new Date().toISOString() })
+            .eq('id', entityId);
+        }
+
+        const call = currentClient.newCall({
+          destinationNumber: cleanNum,
+          callerNumber: callerNumber,
+          clientState: encodeURIComponent(JSON.stringify({ entityId, userName, entityType }))
+        });
+
+        // Add Telnyx event listeners on the client (which proxies them)
+        // or on the call object if supported
+        // Note: TelnyxRTC events are global on the client object
+        
+        const onNotification = (notification: any) => {
+          if (!notification.call || notification.call.id !== call.id) return;
+          
+          switch (notification.type) {
+            case 'callUpdate':
+              if (notification.call.state === 'active') {
+                setCallStatus('Connected');
+                setActiveCall(call);
+                if (callDurationRef.current) clearInterval(callDurationRef.current);
+                callDurationRef.current = setInterval(() => setDuration(d => d + 1), 1000);
+              } else if (notification.call.state === 'destroy') {
+                setCallStatus('Disconnected');
+                cleanupCall(entityId, entityType, userName);
+                currentClient.off('telnyx.notification', onNotification);
+              }
+              break;
+            default:
+              break;
+          }
+        };
+
+        const cleanupCall = (eId: string | undefined, eType: string, uName: string | undefined) => {
+          if (eId && eType === 'lead') {
+            supabase.from('leads').update({ being_dialed_by: null }).eq('id', eId).then(({ error }) => {
+              if (error) console.error('Error clearing dial status:', error);
+            });
+          }
+          if (eId && duration === 0) {
+            fetch(`/api/twilio/status?entityId=${encodeURIComponent(eId)}&userName=${encodeURIComponent(uName || profile.name || '')}&entityType=${encodeURIComponent(eType)}`, {
+              method: 'POST',
+              body: new URLSearchParams({ CallStatus: 'no-answer', CallDuration: '0' })
+            }).catch(console.error);
+          }
+          setTimeout(() => {
+            setActiveCall(null);
+            setCallStatus('');
+            setCurrentEntityId(null);
+          }, 2000);
+        };
+
+        currentClient.on('telnyx.notification', onNotification);
+        setActiveCall(call);
+        return;
+      }
+
+      // TWILIO LOGIC
       const currentDevice = await initDevice();
       if (!currentDevice) return;
 
@@ -558,27 +693,49 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const answer = () => {
     if (activeCall) {
-      activeCall.accept();
+      if (activeProvider === 'telnyx') {
+        activeCall.answer();
+      } else {
+        activeCall.accept();
+      }
     }
   };
 
   const reject = () => {
     if (activeCall) {
-      activeCall.reject();
+      if (activeProvider === 'telnyx') {
+        activeCall.hangup();
+      } else {
+        activeCall.reject();
+      }
     }
   };
 
   const hangup = () => {
     if (activeCall) {
-      activeCall.disconnect();
+      if (activeProvider === 'telnyx') {
+        activeCall.hangup();
+      } else {
+        activeCall.disconnect();
+      }
     }
   };
 
   const toggleMute = () => {
     if (activeCall) {
-      const muted = activeCall.isMuted();
-      activeCall.mute(!muted);
-      setIsMuted(!muted);
+      if (activeProvider === 'telnyx') {
+        const audioMuted = activeCall.audioMuted;
+        if (audioMuted) {
+          activeCall.unmuteAudio();
+        } else {
+          activeCall.muteAudio();
+        }
+        setIsMuted(!audioMuted);
+      } else {
+        const muted = activeCall.isMuted();
+        activeCall.mute(!muted);
+        setIsMuted(!muted);
+      }
     }
   };
 
@@ -610,7 +767,11 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   const sendDigit = (digit: string) => {
     if (activeCall && callStatus === 'Connected') {
-      activeCall.sendDigits(digit);
+      if (activeProvider === 'telnyx') {
+        activeCall.dtmf(digit);
+      } else {
+        activeCall.sendDigits(digit);
+      }
       setDtmfDigits(prev => prev + digit);
       setTimeout(() => setDtmfDigits(prev => prev.slice(0, -1)), 2000);
     }
@@ -641,6 +802,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
   return (
     <DialerContext.Provider value={{ makeCall, activeCall, currentEntityId }}>
+      <audio id="telnyx-remote-audio" autoPlay playsInline className="hidden" />
       {children}
 
       {shouldRenderGlobalInternalChat && (

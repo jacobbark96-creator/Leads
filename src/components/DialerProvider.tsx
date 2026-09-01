@@ -454,7 +454,9 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         });
         
         if (!res.ok) {
-          toast.error('Telnyx configuration error');
+          const errData = await res.json().catch(() => ({}));
+          console.error('Telnyx token generation failed:', res.status, errData);
+          toast.error(`Telnyx configuration error: ${errData.error || res.status}`);
           setCallStatus('');
           return null;
         }

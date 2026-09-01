@@ -44,6 +44,10 @@ export const GoogleCalendar = () => {
 
       if (!res.ok) {
         // Handle specific "API not enabled" error from Google
+        if (data.error === 'NOT_CONNECTED') {
+          setApiDisabled(true);
+          return;
+        }
         if (data.error?.includes('Google Calendar API has not been used') || data.error?.includes('disabled')) {
           setApiDisabled(true);
           return;

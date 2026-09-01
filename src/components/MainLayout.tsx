@@ -9,6 +9,7 @@ import { Footer } from './Footer';
 import { AdminNotifications } from './AdminNotifications';
 import { ClientNotifications } from './ClientNotifications';
 import { SmsNotifications } from './SmsNotifications';
+import { AskMaxChat } from './AskMaxChat';
 import { supabase } from '../lib/supabase';
 import { FlexModal } from './FlexModal';
 
@@ -325,9 +326,12 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
               </div>
               <h4 className="text-[11px] font-bold text-gray-900 mb-0.5">Upgrade your plan</h4>
               <p className="text-[9px] text-gray-500 mb-2 leading-tight">Unlock more leads, analytics & support.</p>
-              <button className="w-full bg-[#0F172A] text-white text-[9px] font-bold py-1.5 rounded-md hover:bg-gray-800 transition-colors">
+              <Link 
+                href="/client-portal/plans"
+                className="w-full bg-[#0F172A] text-white text-[9px] font-bold py-1.5 rounded-md hover:bg-gray-800 transition-colors flex items-center justify-center"
+              >
                 View Plans
-              </button>
+              </Link>
             </div>
             
             <Link href="/client-portal/help" className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] text-gray-500 hover:bg-gray-50 hover:text-gray-900 font-medium transition-all">
@@ -465,6 +469,8 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
             </motion.div>
           )}
         </AnimatePresence>
+
+        <AskMaxChat />
 
         {showFlexModal && profile && (
           <FlexModal
@@ -770,6 +776,8 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           }}
         />
       )}
+      <Footer />
+      <AskMaxChat />
     </div>
   );
 };

@@ -547,7 +547,7 @@ export default function ClientDashboard() {
     proposalNeeded: leads.filter(l => l.purchase_status === 'sat').length,
     stale: leads.filter(l => {
       if (['won', 'archive', 'rejected'].includes(l.purchase_status)) return false;
-      const lastUpdate = (l as any).metadata?.updated_at || l.purchased_at;
+      const lastUpdate = (l as any).metadata?.updated_at || (l as any).purchased_at;
       if (!lastUpdate) return false;
       const days = (new Date().getTime() - new Date(lastUpdate).getTime()) / (1000 * 3600 * 24);
       return days >= 7;
@@ -924,12 +924,6 @@ export default function ClientDashboard() {
           </Link>
         </div>
       </div>
-
-      {/* Floating Ask Max Button */}
-      <Link href="/openlead-max" className="fixed bottom-6 right-6 bg-[#0F172A] text-white px-4 py-2 rounded-full text-xs font-bold flex items-center gap-1.5 shadow-xl hover:scale-105 transition-transform z-50">
-        <Sparkles className="w-3.5 h-3.5 text-[#39CCCC]" />
-        Ask Max
-      </Link>
 
       {/* Modals remain the same */}
       <CalendarModal isOpen={isCalendarOpen} onClose={() => setIsCalendarOpen(false)} leads={leads} />

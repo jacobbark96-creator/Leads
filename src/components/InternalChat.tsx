@@ -72,11 +72,142 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
-  const [typingUsers, setTypingUsers] = useState<Record<string, boolean>>({});
+  const [typingUsers, setTypingUsers] = useState<Record<string, { isTyping: boolean; name?: string }>>({});
   const [notificationPermission, setNotificationPermission] = useState<string>('default');
   const [groupsLoaded, setGroupsLoaded] = useState(false);
   const groupReadAtRef = useRef<Record<string, string | null>>({});
   const groupReadStorageKey = profile?.id ? `internal-chat-group-read:${profile.id}` : null;
+
+  const fetchData = async () => {
+    if (!profile) return;
+    setGroupsLoaded(false);
+    
+    const [usersRes, clientsRes] = await Promise.all([
+      supabase
+        .from('users')
+        .select('id, name, role, email, last_active_at')
+        .in('role', ['admin', 'super_admin', 'rep', 'sales', 'growth_manager'])
+        .neq('id', profile.id),
+      supabase
+        .from('clients')
+        .select('user_id, company_name')
+    ]);
+
+    const clientCompanyMap = (clientsRes.data || []).reduce<Record<string, string>>((acc, c) => {
+      if (c.user_id && c.company_name) acc[c.user_id] = c.company_name;
+      return acc;
+    }, {});
+
+    if (usersRes.data) {
+      const enrichedUsers = usersRes.data.map(u => ({
+        ...u,
+        name: clientCompanyMap[u.id] ? `${u.name} - ${clientCompanyMap[u.id]}` : u.name
+      }));
+      setUsers(enrichedUsers);
+      sessionStorage.setItem('team_users', JSON.stringify(enrichedUsers));
+    }
+
+    let memberships: { group_id: string; last_read_at?: string | null }[] = [];
+    const { data: membershipRows, error: membershipError } = await supabase
+      .from('internal_group_members')
+      .select('group_id, last_read_at')
+      .eq('user_id', profile.id);
+
+    if (membershipError) {
+      // Fallback for missing column or other query error
+      const { data: fallbackMembershipRows } = await supabase
+        .from('internal_group_members')
+        .select('group_id')
+        .eq('user_id', profile.id);
+      memberships = fallbackMembershipRows || [];
+    } else if (membershipRows) {
+      memberships = membershipRows;
+    }
+
+    const groupIds = memberships?.map((membership) => membership.group_id).filter(Boolean) || [];
+    const storedReadTimes = getStoredGroupReadTimes();
+    groupReadAtRef.current = memberships.reduce<Record<string, string | null>>((acc, membership) => {
+      acc[membership.group_id] = membership.last_read_at || storedReadTimes[membership.group_id] || null;
+      return acc;
+    }, {});
+
+    // One-time client fallback for existing users before the DB migration is applied:
+    // treat current history as read so only new group messages increment the badge.
+    if (groupIds.length > 0) {
+      const hasAnyReadState = groupIds.some((groupId) => Boolean(groupReadAtRef.current[groupId]));
+      if (!hasAnyReadState) {
+        const baseline = new Date().toISOString();
+        const baselineMap = { ...storedReadTimes };
+        groupIds.forEach((groupId) => {
+          baselineMap[groupId] = baseline;
+          groupReadAtRef.current[groupId] = baseline;
+        });
+        persistStoredGroupReadTimes(baselineMap);
+      }
+    }
+
+    let groupsData: { id: string; name: string }[] = [];
+
+    if (groupIds.length > 0) {
+      const { data } = await supabase
+        .from('internal_group_chats')
+        .select('id, name')
+        .in('id', groupIds);
+      groupsData = data || [];
+    }
+    
+    const gData = groupsData.map(g => ({ ...g, isGroup: true as const }));
+    setGroups(gData);
+    groupsRef.current = gData;
+    setGroupsLoaded(true);
+  };
+
+  const handleNewIncomingMessage = (newMsg: Message) => {
+    // Get the most up-to-date activeChatUser from session storage to avoid stale closures
+    const savedChatUserStr = sessionStorage.getItem('activeChatUser');
+    let currentActiveUser = null;
+    if (savedChatUserStr) {
+      try { currentActiveUser = JSON.parse(savedChatUserStr); } catch (e) {}
+    }
+
+    const isCurrentlyChatting = (currentActiveUser?.isGroup && currentActiveUser.id === newMsg.group_id) || 
+                                (!currentActiveUser?.isGroup && currentActiveUser?.id === newMsg.sender_id);
+
+    if (isCurrentlyChatting && isOpen) {
+      // If we are actively chatting with them/group, mark as read
+      setMessages(prev => [...prev, newMsg]);
+      if (newMsg.group_id) {
+        void markGroupAsRead(newMsg.group_id).then(() => {
+          // fetchUnread is defined in another hook, but we can call it if we move it or use a simpler refresh
+          // For now, the markGroupAsRead logic handles its own unread count updates
+        });
+      } else {
+        supabase.from('internal_messages').update({ is_read: true }).eq('id', newMsg.id).then();
+      }
+    } else {
+      // Dispatch event for floating tooltip and desktop notification
+      const senderUserStr = sessionStorage.getItem('team_users');
+      let senderName = 'Team Member';
+      if (senderUserStr) {
+         try {
+           const parsedUsers = JSON.parse(senderUserStr);
+           const senderUser = parsedUsers.find((u: any) => u.id === newMsg.sender_id);
+           if (senderUser) senderName = senderUser.name;
+         } catch(e) {}
+      }
+      
+      if ('Notification' in window && Notification.permission === 'granted') {
+        void showDesktopNotification(senderName, newMsg.content);
+      }
+
+      window.dispatchEvent(new CustomEvent('new-internal-message-toast', {
+        detail: {
+          senderName,
+          content: newMsg.content
+        }
+      }));
+    }
+  };
 
   useEffect(() => {
     if ('Notification' in window) {
@@ -156,6 +287,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const channelRef = useRef<RealtimeChannel | null>(null);
   const presenceChannelRef = useRef<RealtimeChannel | null>(null);
+  const groupTypingChannelRef = useRef<RealtimeChannel | null>(null);
   const typingTimeoutRef = useRef<Record<string, NodeJS.Timeout>>({});
 
   const updateGlobalUnreadBadge = (counts: Record<string, number>) => {
@@ -219,75 +351,23 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
 
   // 1. Fetch eligible users (staff) and groups
   useEffect(() => {
-    const fetchData = async () => {
-      if (!profile) return;
-      setGroupsLoaded(false);
-      
-      const { data: usersData } = await supabase
-        .from('users')
-        .select('id, name, role, email, last_active_at')
-        .in('role', ['admin', 'super_admin', 'rep', 'sales', 'growth_manager'])
-        .neq('id', profile.id);
-      if (usersData) {
-        setUsers(usersData);
-        sessionStorage.setItem('team_users', JSON.stringify(usersData));
-      }
-
-      let memberships: { group_id: string; last_read_at?: string | null }[] = [];
-      const { data: membershipRows, error: membershipError } = await supabase
-        .from('internal_group_members')
-        .select('group_id, last_read_at')
-        .eq('user_id', profile.id);
-
-      if (membershipError) {
-        // Fallback for missing column or other query error
-        const { data: fallbackMembershipRows } = await supabase
-          .from('internal_group_members')
-          .select('group_id')
-          .eq('user_id', profile.id);
-        memberships = fallbackMembershipRows || [];
-      } else if (membershipRows) {
-        memberships = membershipRows;
-      }
-
-      const groupIds = memberships?.map((membership) => membership.group_id).filter(Boolean) || [];
-      const storedReadTimes = getStoredGroupReadTimes();
-      groupReadAtRef.current = memberships.reduce<Record<string, string | null>>((acc, membership) => {
-        acc[membership.group_id] = membership.last_read_at || storedReadTimes[membership.group_id] || null;
-        return acc;
-      }, {});
-
-      // One-time client fallback for existing users before the DB migration is applied:
-      // treat current history as read so only new group messages increment the badge.
-      if (groupIds.length > 0) {
-        const hasAnyReadState = groupIds.some((groupId) => Boolean(groupReadAtRef.current[groupId]));
-        if (!hasAnyReadState) {
-          const baseline = new Date().toISOString();
-          const baselineMap = { ...storedReadTimes };
-          groupIds.forEach((groupId) => {
-            baselineMap[groupId] = baseline;
-            groupReadAtRef.current[groupId] = baseline;
-          });
-          persistStoredGroupReadTimes(baselineMap);
-        }
-      }
-
-      let groupsData: { id: string; name: string }[] = [];
-
-      if (groupIds.length > 0) {
-        const { data } = await supabase
-          .from('internal_group_chats')
-          .select('id, name')
-          .in('id', groupIds);
-        groupsData = data || [];
-      }
-      
-      const gData = groupsData.map(g => ({ ...g, isGroup: true as const }));
-      setGroups(gData);
-      groupsRef.current = gData;
-      setGroupsLoaded(true);
-    };
     fetchData();
+
+    // Subscribe to new group memberships (e.g. when added to a Max Support group)
+    const membershipSub = supabase.channel('group-membership-updates')
+      .on('postgres_changes', {
+        event: 'INSERT',
+        schema: 'public',
+        table: 'internal_group_members',
+        filter: `user_id=eq.${profile.id}`
+      }, () => {
+        fetchData();
+      })
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(membershipSub);
+    };
   }, [profile]);
 
   // 2. Setup Presence
@@ -349,7 +429,10 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
             // For direct messages, key it by the sender_id
             const typingKey = isForGroup ? payload.receiver_id : payload.sender_id;
             
-            setTypingUsers(prev => ({ ...prev, [typingKey]: payload.isTyping }));
+            setTypingUsers(prev => ({ 
+              ...prev, 
+              [typingKey]: { isTyping: payload.isTyping, name: payload.sender_name } 
+            }));
             
             if (typingTimeoutRef.current[typingKey]) {
               clearTimeout(typingTimeoutRef.current[typingKey]);
@@ -357,7 +440,7 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
             
             if (payload.isTyping) {
               typingTimeoutRef.current[typingKey] = setTimeout(() => {
-                setTypingUsers(prev => ({ ...prev, [typingKey]: false }));
+                setTypingUsers(prev => ({ ...prev, [typingKey]: { isTyping: false } }));
               }, 3000);
             }
           }
@@ -543,49 +626,21 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
         const isForMe = newMsg.receiver_id === profile.id;
         const isForMyGroup = newMsg.group_id && groupsRef.current.some(g => g.id === newMsg.group_id);
         
+        // If we receive a group message but don't have the group yet (e.g. new Max Support group)
+        if (!isForMe && !isForMyGroup && newMsg.group_id && profile.role === 'super_admin') {
+          fetchData().then(() => {
+            // After fetching, check again
+            const refreshedIsForMyGroup = groupsRef.current.some(g => g.id === newMsg.group_id);
+            if (refreshedIsForMyGroup) {
+              handleNewIncomingMessage(newMsg);
+            }
+          });
+          return;
+        }
+
         if (!isForMe && !isForMyGroup) return;
 
-        // Get the most up-to-date activeChatUser from session storage to avoid stale closures
-        const savedChatUserStr = sessionStorage.getItem('activeChatUser');
-        let currentActiveUser = null;
-        if (savedChatUserStr) {
-          try { currentActiveUser = JSON.parse(savedChatUserStr); } catch (e) {}
-        }
-
-        const isCurrentlyChatting = (currentActiveUser?.isGroup && currentActiveUser.id === newMsg.group_id) || 
-                                    (!currentActiveUser?.isGroup && currentActiveUser?.id === newMsg.sender_id);
-
-        if (isCurrentlyChatting && isOpen) {
-          // If we are actively chatting with them/group, mark as read
-          setMessages(prev => [...prev, newMsg]);
-          if (newMsg.group_id) {
-            void markGroupAsRead(newMsg.group_id).then(() => fetchUnread());
-          } else {
-            supabase.from('internal_messages').update({ is_read: true }).eq('id', newMsg.id).then(() => fetchUnread());
-          }
-        } else {
-          // Dispatch event for floating tooltip and desktop notification
-          const senderUserStr = sessionStorage.getItem('team_users');
-          let senderName = 'Team Member';
-          if (senderUserStr) {
-             try {
-               const parsedUsers = JSON.parse(senderUserStr);
-               const senderUser = parsedUsers.find((u: any) => u.id === newMsg.sender_id);
-               if (senderUser) senderName = senderUser.name;
-             } catch(e) {}
-          }
-          
-          if ('Notification' in window && Notification.permission === 'granted') {
-            void showDesktopNotification(senderName, newMsg.content);
-          }
-
-          window.dispatchEvent(new CustomEvent('new-internal-message-toast', {
-            detail: {
-              senderName,
-              content: newMsg.content
-            }
-          }));
-        }
+        handleNewIncomingMessage(newMsg);
       })
       .on('postgres_changes', {
         event: 'UPDATE',
@@ -663,6 +718,51 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
     fetchMessages();
   }, [activeChatUser, profile]);
 
+  // 5. Manage Group-Specific Typing Subscription (for Ask Max)
+  useEffect(() => {
+    if (!activeChatUser?.isGroup || !profile) {
+      if (groupTypingChannelRef.current) {
+        supabase.removeChannel(groupTypingChannelRef.current);
+        groupTypingChannelRef.current = null;
+      }
+      return;
+    }
+
+    const channelName = `max-typing-${activeChatUser.id}`;
+    
+    // Remove existing if any
+    if (groupTypingChannelRef.current) {
+      supabase.removeChannel(groupTypingChannelRef.current);
+    }
+
+    const channel = supabase.channel(channelName)
+      .on('broadcast', { event: 'typing' }, ({ payload }) => {
+        if (payload.sender_id === profile.id) return;
+        
+        setTypingUsers(prev => ({ 
+          ...prev, 
+          [activeChatUser.id]: { isTyping: payload.isTyping, name: payload.sender_name } 
+        }));
+        
+        if (typingTimeoutRef.current[activeChatUser.id]) {
+          clearTimeout(typingTimeoutRef.current[activeChatUser.id]);
+        }
+        
+        if (payload.isTyping) {
+          typingTimeoutRef.current[activeChatUser.id] = setTimeout(() => {
+            setTypingUsers(prev => ({ ...prev, [activeChatUser.id]: { isTyping: false } }));
+          }, 3000);
+        }
+      })
+      .subscribe();
+
+    groupTypingChannelRef.current = channel;
+
+    return () => {
+      if (channel) supabase.removeChannel(channel);
+    };
+  }, [activeChatUser?.id, profile]);
+
   // Scroll to bottom
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -680,7 +780,12 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
       presenceChannelRef.current.send({
         type: 'broadcast',
         event: 'typing',
-        payload: { sender_id: profile.id, receiver_id: activeChatUser.id, isTyping: false }
+        payload: { 
+          sender_id: profile.id, 
+          sender_name: profile.name,
+          receiver_id: activeChatUser.id, 
+          isTyping: false 
+        }
       });
     }
 
@@ -722,52 +827,54 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
     
     if (!profile || !activeChatUser || !presenceChannelRef.current) return;
     
-    // Immediate broadcast for "started typing"
-    if (value.length > 0) {
-      presenceChannelRef.current.send({
+    const typingPayload = { 
+      sender_id: profile.id, 
+      sender_name: profile.name,
+      receiver_id: activeChatUser.id, 
+      isTyping: true 
+    };
+
+    // Broadcast to global online-users channel
+    presenceChannelRef.current.send({
+      type: 'broadcast',
+      event: 'typing',
+      payload: typingPayload
+    });
+
+    // If it's a support group, also broadcast to the group-specific channel for the client
+    if (groupTypingChannelRef.current && activeChatUser.isGroup && activeChatUser.name?.startsWith('Max Support')) {
+      groupTypingChannelRef.current.send({
         type: 'broadcast',
         event: 'typing',
-        payload: { 
-          sender_id: profile.id, 
-          receiver_id: activeChatUser.id, 
-          isTyping: true 
-        }
-      });
-
-      // Clear existing "stopped typing" timeout
-      if (typingBroadcastTimeoutRef.current) {
-        clearTimeout(typingBroadcastTimeoutRef.current);
-      }
-
-      // Set a timeout to automatically broadcast "stopped typing" after 2 seconds of inactivity
-      typingBroadcastTimeoutRef.current = setTimeout(() => {
-        if (presenceChannelRef.current) {
-          presenceChannelRef.current.send({
-            type: 'broadcast',
-            event: 'typing',
-            payload: { 
-              sender_id: profile.id, 
-              receiver_id: activeChatUser.id, 
-              isTyping: false 
-            }
-          });
-        }
-      }, 2000);
-    } else {
-      // If field is cleared, broadcast "stopped typing" immediately
-      if (typingBroadcastTimeoutRef.current) {
-        clearTimeout(typingBroadcastTimeoutRef.current);
-      }
-      presenceChannelRef.current.send({
-        type: 'broadcast',
-        event: 'typing',
-        payload: { 
-          sender_id: profile.id, 
-          receiver_id: activeChatUser.id, 
-          isTyping: false 
-        }
+        payload: { ...typingPayload, role: profile.role }
       });
     }
+
+    // Clear existing "stopped typing" timeout
+    if (typingBroadcastTimeoutRef.current) {
+      clearTimeout(typingBroadcastTimeoutRef.current);
+    }
+
+    // Set a timeout to automatically broadcast "stopped typing" after 2 seconds of inactivity
+    typingBroadcastTimeoutRef.current = setTimeout(() => {
+      const stopPayload = { ...typingPayload, isTyping: false };
+      
+      if (presenceChannelRef.current) {
+        presenceChannelRef.current.send({
+          type: 'broadcast',
+          event: 'typing',
+          payload: stopPayload
+        });
+      }
+
+      if (groupTypingChannelRef.current && activeChatUser.isGroup && activeChatUser.name?.startsWith('Max Support')) {
+        groupTypingChannelRef.current.send({
+          type: 'broadcast',
+          event: 'typing',
+          payload: { ...stopPayload, role: profile.role }
+        });
+      }
+    }, 2000);
   };
 
   const getUserStatus = (userId: string) => {
@@ -782,7 +889,15 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
 
   const getUserStatusLabel = (userId: string) => {
     const presence = presences[userId];
-    if (typingUsers[userId]) return <span className="text-blue-400 font-bold animate-pulse">Typing...</span>;
+    const typingInfo = typingUsers[userId];
+    
+    if (typingInfo?.isTyping) {
+      return (
+        <span className="text-blue-400 font-bold animate-pulse">
+          {typingInfo.name ? `${typingInfo.name} is Typing...` : 'Typing...'}
+        </span>
+      );
+    }
     
     const status = getUserStatus(userId);
     if (status === 'online') return 'Online';
@@ -963,7 +1078,11 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
                     <Users className="w-5 h-5 sm:w-4 h-4" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <h3 className="text-gray-200 text-sm sm:text-xs font-semibold truncate">{group.name}</h3>
+                    <h3 className="text-gray-200 text-sm sm:text-xs font-semibold truncate">
+                      {group.name?.startsWith('Max Support - ') 
+                        ? group.name.replace('Max Support - ', '') 
+                        : group.name}
+                    </h3>
                     <p className="text-gray-500 text-xs sm:text-[11px] truncate">Group Chat</p>
                   </div>
                 </div>
@@ -1051,7 +1170,11 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
                   )}
                 </div>
                 <div>
-                  <h3 className="text-white text-sm sm:text-base font-bold leading-tight">{activeChatUser.name}</h3>
+                  <h3 className="text-white text-sm sm:text-base font-bold leading-tight">
+                    {activeChatUser.isGroup && activeChatUser.name?.startsWith('Max Support - ') 
+                      ? activeChatUser.name.replace('Max Support - ', '') 
+                      : activeChatUser.name}
+                  </h3>
                   <p className="text-gray-400 text-[10px] sm:text-[11px] flex items-center gap-1">
                     {activeChatUser.isGroup 
                       ? 'Group Chat' 
@@ -1113,15 +1236,22 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
                 );
               })}
               
-              {typingUsers[activeChatUser.id] && (
+              {typingUsers[activeChatUser.id]?.isTyping && (
                 <div className="flex items-start gap-2">
                   <div className="w-8 h-8 sm:w-6 h-6 rounded-full bg-gray-800 flex items-center justify-center text-gray-500 text-[10px] uppercase">
-                    {activeChatUser.name.substring(0, 2)}
+                    {typingUsers[activeChatUser.id].name?.substring(0, 2) || activeChatUser.name.substring(0, 2)}
                   </div>
-                  <div className="bg-gray-800 border border-white/5 rounded-2xl rounded-bl-sm px-4 py-2 sm:px-3 sm:py-2 flex items-center gap-1">
-                    <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce"></span>
-                    <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                    <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                  <div className="bg-gray-800 border border-white/5 rounded-2xl rounded-bl-sm px-4 py-2 sm:px-3 sm:py-2 flex flex-col gap-1 shadow-sm">
+                    <div className="flex items-center gap-1">
+                      <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce"></span>
+                      <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                      <span className="w-1 h-1 bg-gray-500 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                    </div>
+                    {typingUsers[activeChatUser.id].name && (
+                      <span className="text-[8px] font-black text-blue-400 uppercase tracking-widest">
+                        {typingUsers[activeChatUser.id].name} is Typing
+                      </span>
+                    )}
                   </div>
                 </div>
               )}

@@ -34,7 +34,16 @@ export const WhatsAppMonitor = () => {
     if (!profile) return;
     
     try {
-      const [smsRes, internalRes] = await Promise.all([
+      // Get group memberships first
+      const { data: memberships } = await supabase
+        .from('internal_group_members')
+        .select('group_id')
+        .eq('user_id', profile.id);
+      
+      const groupIds = memberships?.map(m => m.group_id) || [];
+      const groupFilter = groupIds.length > 0 ? `,group_id.in.(${groupIds.join(',')})` : '';
+
+      const [smsRes, internalRes, clientsRes] = await Promise.all([
         supabase
           .from('sms_messages')
           .select('*')
@@ -42,9 +51,12 @@ export const WhatsAppMonitor = () => {
           .order('created_at', { ascending: false }),
         supabase
           .from('internal_messages')
-          .select('*, sender:sender_id(name), receiver:receiver_id(name)')
-          .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}`)
-          .order('created_at', { ascending: false })
+          .select('*, sender:sender_id(name), receiver:receiver_id(name), group:group_id(name)')
+          .or(`sender_id.eq.${profile.id},receiver_id.eq.${profile.id}${groupFilter}`)
+          .order('created_at', { ascending: false }),
+        supabase
+          .from('clients')
+          .select('user_id, company_name')
       ]);
 
       if (smsRes.error) {
@@ -54,22 +66,40 @@ export const WhatsAppMonitor = () => {
         console.error('Error fetching internal messages:', internalRes.error);
       }
       
+      const clientCompanyMap = (clientsRes.data || []).reduce<Record<string, string>>((acc, c) => {
+        if (c.user_id && c.company_name) acc[c.user_id] = c.company_name;
+        return acc;
+      }, {});
+      
       const smsMsgs = (smsRes.data || []).map(m => ({ ...m, _type: 'sms' }));
       
       const internalMsgs = (internalRes.data || []).map(m => {
         const isOutbound = m.sender_id === profile.id;
-        const contactId = isOutbound ? m.receiver_id : m.sender_id;
-        const contactName = isOutbound ? m.receiver?.name : m.sender?.name;
+        const isGroup = !!m.group_id;
+        
+        // For groups, the contact identifier is the group_id
+        // For DMs, it's the other user's id
+        const contactId = isGroup ? m.group_id : (isOutbound ? m.receiver_id : m.sender_id);
+        let contactName = isGroup ? m.group?.name : (isOutbound ? m.receiver?.name : m.sender?.name);
+        
+        // Add company name to DMs if available
+        if (!isGroup && contactId && clientCompanyMap[contactId]) {
+          contactName = `${contactName} - ${clientCompanyMap[contactId]}`;
+        }
+
+        const contactKey = isGroup ? `group_${contactId}` : `internal_${contactId}`;
+
         return {
           id: m.id,
           user_id: profile.id,
-          contact_number: `internal_${contactId}`,
+          contact_number: contactKey,
           direction: isOutbound ? 'outbound' : 'inbound',
           body: m.content,
           is_read: m.is_read,
           created_at: m.created_at,
           _type: 'internal',
           _contactName: contactName,
+          _isGroup: isGroup,
           _originalMsg: m
         };
       });
@@ -88,13 +118,20 @@ export const WhatsAppMonitor = () => {
       });
       setUnreadByContact(unreadMap);
 
-      // Pre-populate internal names
+      // Pre-populate internal and group names
       const newNamesFound: Record<string, { name: string, id: string, type: 'lead' | 'contractor' | 'installer' }> = {};
       internalMsgs.forEach(m => {
         if (!contactNamesRef.current[m.contact_number]) {
+          let name = m._contactName || 'App User';
+          
+          // Clean up "Max Support - " from group names for the admin view
+          if (m._isGroup && name.startsWith('Max Support - ')) {
+            name = name.replace('Max Support - ', '');
+          }
+
           newNamesFound[m.contact_number] = {
-            name: m._contactName || 'App User',
-            id: m.contact_number.replace('internal_', ''),
+            name,
+            id: m.contact_number.replace('internal_', '').replace('group_', ''),
             type: 'installer'
           };
         }
@@ -253,26 +290,31 @@ export const WhatsAppMonitor = () => {
       .on('postgres_changes', { 
         event: 'INSERT', 
         schema: 'public', 
-        table: 'internal_messages',
-        filter: `receiver_id=eq.${profile.id}`
-      }, () => {
-        fetchMessages();
-      })
-      .on('postgres_changes', { 
-        event: 'INSERT', 
-        schema: 'public', 
-        table: 'internal_messages',
-        filter: `sender_id=eq.${profile.id}`
-      }, () => {
-        fetchMessages();
+        table: 'internal_messages'
+      }, (payload) => {
+        const newMsg = payload.new;
+        // Only refresh if it's for us or a group we are in
+        if (
+          newMsg.sender_id === profile.id || 
+          newMsg.receiver_id === profile.id || 
+          newMsg.group_id
+        ) {
+          fetchMessages();
+        }
       })
       .on('postgres_changes', { 
         event: 'UPDATE', 
         schema: 'public', 
-        table: 'internal_messages',
-        filter: `receiver_id=eq.${profile.id}`
-      }, () => {
-        fetchMessages();
+        table: 'internal_messages'
+      }, (payload) => {
+        const updatedMsg = payload.new;
+        if (
+          updatedMsg.sender_id === profile.id || 
+          updatedMsg.receiver_id === profile.id || 
+          updatedMsg.group_id
+        ) {
+          fetchMessages();
+        }
       })
       .subscribe((status) => {
         setIsConnected(status === 'SUBSCRIBED');
@@ -332,7 +374,10 @@ export const WhatsAppMonitor = () => {
     
     const tempId = `temp-${Date.now()}`;
     const isInternal = activeContact.startsWith('internal_');
-    const actualContactId = isInternal ? activeContact.replace('internal_', '') : activeContact;
+    const isGroup = activeContact.startsWith('group_');
+    const actualContactId = isInternal 
+      ? activeContact.replace('internal_', '') 
+      : (isGroup ? activeContact.replace('group_', '') : activeContact);
 
     const optimisticMsg = {
       id: tempId,
@@ -343,17 +388,18 @@ export const WhatsAppMonitor = () => {
       is_read: true,
       delivery_status: 'sent',
       created_at: new Date().toISOString(),
-      _type: isInternal ? 'internal' : 'sms'
+      _type: (isInternal || isGroup) ? 'internal' : 'sms'
     };
     
     setMessages(prev => [optimisticMsg, ...prev]);
     setNewMessage('');
 
     try {
-      if (isInternal) {
+      if (isInternal || isGroup) {
         const { error } = await supabase.from('internal_messages').insert({
           sender_id: profile.id,
-          receiver_id: actualContactId,
+          receiver_id: isInternal ? actualContactId : null,
+          group_id: isGroup ? actualContactId : null,
           content: messageText,
           is_read: false
         });
@@ -397,7 +443,7 @@ export const WhatsAppMonitor = () => {
   };
 
   const isInternalMessage = (number: string) => {
-    return number.startsWith('internal_');
+    return number.startsWith('internal_') || number.startsWith('group_');
   };
 
   const getStatusIcon = (msg: any) => {
@@ -467,12 +513,14 @@ export const WhatsAppMonitor = () => {
                 <ArrowLeft className="w-5 h-5" />
               </button>
               <div className="relative shrink-0">
-                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br ${isWhatsAppMessage(activeContact) ? 'from-[#00a884] to-[#00d4aa]' : isInternalMessage(activeContact) ? 'from-purple-500 to-purple-600' : 'from-blue-500 to-blue-600'} flex items-center justify-center text-white font-medium text-sm sm:text-base`}>
-                  {(contactNames[activeContact]?.name || activeContact.replace('internal_', '')).substring(0, 2).toUpperCase()}
+                <div className={`w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-gradient-to-br ${isWhatsAppMessage(activeContact) ? 'from-[#00a884] to-[#00d4aa]' : activeContact.startsWith('group_') ? 'from-indigo-500 to-indigo-600' : isInternalMessage(activeContact) ? 'from-purple-500 to-purple-600' : 'from-blue-500 to-blue-600'} flex items-center justify-center text-white font-medium text-sm sm:text-base`}>
+                  {(contactNames[activeContact]?.name || activeContact.replace('internal_', '').replace('group_', '')).substring(0, 2).toUpperCase()}
                 </div>
                 <div className="absolute -bottom-1 -right-1 bg-[#1f2c33] rounded-full p-0.5 border border-[#0b141a]">
                   {isWhatsAppMessage(activeContact) ? (
                     <MessageCircle className="w-2.5 h-2.5 sm:w-3 h-3 text-[#00a884]" fill="#00a884" />
+                  ) : activeContact.startsWith('group_') ? (
+                    <MessageSquare className="w-2.5 h-2.5 sm:w-3 h-3 text-indigo-400" fill="currentColor" />
                   ) : isInternalMessage(activeContact) ? (
                     <User className="w-2.5 h-2.5 sm:w-3 h-3 text-purple-400" fill="currentColor" />
                   ) : (
@@ -483,9 +531,9 @@ export const WhatsAppMonitor = () => {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-1 sm:gap-2">
                   <h3 className="text-sm sm:text-base font-semibold text-white truncate">
-                    {contactNames[activeContact]?.name || activeContact.replace('internal_', '')}
+                    {contactNames[activeContact]?.name || activeContact.replace('internal_', '').replace('group_', '')}
                   </h3>
-                  {contactNames[activeContact]?.id && (
+                  {contactNames[activeContact]?.id && !activeContact.startsWith('group_') && (
                     <a 
                       href={contactNames[activeContact]?.type === 'contractor' ? `/contractors?id=${contactNames[activeContact]?.id}` : `/sales-crm/lead-v2?id=${contactNames[activeContact]?.id}`}
                       className="p-1 hover:bg-white/10 rounded text-blue-400 hover:text-blue-300 transition-colors"
@@ -496,7 +544,7 @@ export const WhatsAppMonitor = () => {
                   )}
                 </div>
                 <p className="text-[10px] sm:text-xs text-[#8696a0]">
-                  {isWhatsAppMessage(activeContact) ? (isConnected ? 'WhatsApp' : 'connecting...') : isInternalMessage(activeContact) ? 'Installer App' : 'SMS Message'}
+                  {isWhatsAppMessage(activeContact) ? (isConnected ? 'WhatsApp' : 'connecting...') : activeContact.startsWith('group_') ? 'Support Group' : isInternalMessage(activeContact) ? 'Installer App' : 'SMS Message'}
                 </p>
               </div>
               <div className="flex items-center gap-0 sm:gap-1">
@@ -639,12 +687,14 @@ export const WhatsAppMonitor = () => {
                       className="flex items-center gap-3 px-4 py-3 hover:bg-white/5 cursor-pointer transition-colors border-b border-white/5"
                     >
                       <div className="relative shrink-0">
-                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br ${isWhatsAppMessage(chat.number) ? 'from-[#00a884] to-[#00d4aa]' : isInternalMessage(chat.number) ? 'from-purple-500 to-purple-600' : 'from-blue-500 to-blue-600'} flex items-center justify-center text-white font-medium text-base sm:text-lg`}>
-                          {(chat.name || chat.number).substring(0, 2).toUpperCase()}
+                        <div className={`w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-gradient-to-br ${isWhatsAppMessage(chat.number) ? 'from-[#00a884] to-[#00d4aa]' : chat.number.startsWith('group_') ? 'from-indigo-500 to-indigo-600' : isInternalMessage(chat.number) ? 'from-purple-500 to-purple-600' : 'from-blue-500 to-blue-600'} flex items-center justify-center text-white font-medium text-base sm:text-lg`}>
+                          {(chat.name || chat.number.replace('internal_', '').replace('group_', '')).substring(0, 2).toUpperCase()}
                         </div>
                         <div className="absolute -bottom-1 -right-1 bg-[#111b21] rounded-full p-0.5 sm:p-1 border border-[#0b141a]">
                           {isWhatsAppMessage(chat.number) ? (
                             <MessageCircle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-[#00a884]" fill="#00a884" />
+                          ) : chat.number.startsWith('group_') ? (
+                            <MessageSquare className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-indigo-400" fill="currentColor" />
                           ) : isInternalMessage(chat.number) ? (
                             <User className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-purple-400" fill="currentColor" />
                           ) : (

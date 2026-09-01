@@ -40,20 +40,29 @@ export async function POST(req: Request) {
     const appUrl = origin || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 
     if (checkoutType === 'subscription') {
-      const { userId, email } = body;
+      const { userId, email, planType, quantity = 1 } = body;
       if (!userId || !email) return NextResponse.json({ error: 'Missing userId or email' }, { status: 400 });
+
+      // Determine price ID based on plan type from environment variables
+      const singlePriceId = process.env.STRIPE_SINGLE_PLAN_PRICE_ID || 'price_1UAmGwRmFiYSPZADaZ0sjjPg';
+      const multiPriceId = process.env.STRIPE_MULTI_PLAN_PRICE_ID || 'price_1UAmHPRmFiYSPZAD9jRC13hL';
+
+      const priceId = planType === 'multi' ? multiPriceId : singlePriceId;
 
       const formData = new URLSearchParams();
       formData.append('payment_method_types[0]', 'card');
       formData.append('mode', 'subscription');
       formData.append('customer_email', email);
       formData.append('client_reference_id', userId);
-      formData.append('line_items[0][price]', 'price_1TOp4CRmFiYSPZADDcc65yRS');
-      formData.append('line_items[0][quantity]', '1');
-      formData.append('subscription_data[trial_period_days]', '30');
+      
+      formData.append('line_items[0][price]', priceId);
+      formData.append('line_items[0][quantity]', quantity.toString());
+
+      formData.append('subscription_data[trial_period_days]', '7');
       formData.append('subscription_data[metadata][userId]', userId);
+      formData.append('subscription_data[metadata][planType]', planType);
       formData.append('success_url', `${appUrl}/my-openlead?session_id={CHECKOUT_SESSION_ID}`);
-      formData.append('cancel_url', `${appUrl}/subscription`);
+      formData.append('cancel_url', `${appUrl}/client-portal/plans`);
 
       const stripeRes = await fetch('https://api.stripe.com/v1/checkout/sessions', {
         method: 'POST',

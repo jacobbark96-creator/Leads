@@ -37,10 +37,14 @@ export const WhatsAppMonitor = () => {
       // Get group memberships first
       const { data: memberships } = await supabase
         .from('internal_group_members')
-        .select('group_id')
+        .select('group_id, last_read_at')
         .eq('user_id', profile.id);
       
       const groupIds = memberships?.map(m => m.group_id) || [];
+      const groupReadTimes: Record<string, string> = {};
+      memberships?.forEach(m => {
+        if (m.last_read_at) groupReadTimes[m.group_id] = m.last_read_at;
+      });
       const groupFilter = groupIds.length > 0 ? `,group_id.in.(${groupIds.join(',')})` : '';
 
       const [smsRes, internalRes, clientsRes] = await Promise.all([
@@ -89,13 +93,23 @@ export const WhatsAppMonitor = () => {
 
         const contactKey = isGroup ? `group_${contactId}` : `internal_${contactId}`;
 
+        let isRead = m.is_read;
+        if (isGroup && m.group_id) {
+          const lastRead = groupReadTimes[m.group_id];
+          if (lastRead && new Date(lastRead) >= new Date(m.created_at)) {
+            isRead = true;
+          } else {
+            isRead = false;
+          }
+        }
+
         return {
           id: m.id,
           user_id: profile.id,
           contact_number: contactKey,
           direction: isOutbound ? 'outbound' : 'inbound',
           body: m.content,
-          is_read: m.is_read,
+          is_read: isRead,
           created_at: m.created_at,
           _type: 'internal',
           _contactName: contactName,
@@ -341,7 +355,8 @@ export const WhatsAppMonitor = () => {
       
       if (unreadMsgs.length > 0) {
         const smsIds = unreadMsgs.filter(m => m._type === 'sms').map(m => m.id);
-        const internalIds = unreadMsgs.filter(m => m._type === 'internal').map(m => m.id);
+        const internalIds = unreadMsgs.filter(m => m._type === 'internal' && !m._isGroup).map(m => m.id);
+        const groupIds = Array.from(new Set(unreadMsgs.filter(m => m._type === 'internal' && m._isGroup).map(m => m._originalMsg.group_id)));
         
         const updates = [];
         if (smsIds.length > 0) {
@@ -350,10 +365,21 @@ export const WhatsAppMonitor = () => {
         if (internalIds.length > 0) {
           updates.push(supabase.from('internal_messages').update({ is_read: true }).in('id', internalIds));
         }
+        if (groupIds.length > 0) {
+          const now = new Date().toISOString();
+          groupIds.forEach(gid => {
+            updates.push(supabase.from('internal_group_members').update({ last_read_at: now }).eq('group_id', gid).eq('user_id', profile.id));
+          });
+        }
 
-        Promise.all(updates).then(() => {
+        Promise.all(updates).then((results) => {
+          results.forEach(res => {
+            if (res.error) console.error('Error marking as read:', res.error);
+          });
           setMessages(prev => prev.map(m => 
-            (smsIds.includes(m.id) || internalIds.includes(m.id)) ? { ...m, is_read: true } : m
+            (smsIds.includes(m.id) || internalIds.includes(m.id) || (m._isGroup && groupIds.includes(m._originalMsg?.group_id))) 
+              ? { ...m, is_read: true } 
+              : m
           ));
           setUnreadByContact(prev => {
             const newMap = { ...prev };

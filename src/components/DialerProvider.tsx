@@ -167,7 +167,11 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       }
 
       const handleInteraction = () => {
-        initDevice().catch(console.error);
+        if (activeProvider === 'telnyx') {
+          initTelnyxDevice().catch(console.error);
+        } else {
+          initDevice().catch(console.error);
+        }
         window.removeEventListener('click', handleInteraction);
         window.removeEventListener('keydown', handleInteraction);
         window.removeEventListener('touchstart', handleInteraction);

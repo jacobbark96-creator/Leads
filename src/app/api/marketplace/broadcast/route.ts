@@ -16,7 +16,8 @@ const getSupabase = () => {
 
 const accountSid = process.env.TWILIO_ACCOUNT_SID;
 const authToken = process.env.TWILIO_AUTH_TOKEN;
-const twilioPhoneNumber = 'whatsapp:+15559601534';
+const twilioEnvNumber = process.env.TWILIO_PHONE_NUMBER || '';
+const twilioPhoneNumber = twilioEnvNumber.startsWith('whatsapp:') ? twilioEnvNumber : `whatsapp:${twilioEnvNumber}`;
 
 const TWILIO_WHATSAPP_TEMPLATE_SID = process.env.TWILIO_WHATSAPP_TEMPLATE_SID || 'HXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX';
 

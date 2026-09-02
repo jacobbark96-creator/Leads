@@ -37,7 +37,8 @@ export const InternalChat: React.FC<{
   onClose?: () => void; 
   isModal?: boolean;
   initialActiveChat?: any;
-}> = ({ isOpen = true, onClose, isModal = true, initialActiveChat }) => {
+  hideSidebar?: boolean;
+}> = ({ isOpen = true, onClose, isModal = true, initialActiveChat, hideSidebar = false }) => {
   const { profile } = useAuthStore();
   const dialerContext = useContext(DialerContext);
   const activeCall = dialerContext?.activeCall;
@@ -988,7 +989,7 @@ export const InternalChat: React.FC<{
   return (
     <div className={containerClasses}>
       {/* Left Sidebar - Users List */}
-      <div className={`${activeChatUser && !isModal ? 'hidden md:flex' : (activeChatUser ? 'hidden sm:flex' : 'flex')} w-full sm:w-1/3 border-r border-gray-700/50 flex flex-col bg-gray-900/30 min-h-0`}>
+      <div className={`${hideSidebar ? 'hidden' : (activeChatUser && !isModal ? 'hidden md:flex' : (activeChatUser ? 'hidden sm:flex' : 'flex'))} w-full sm:w-1/3 border-r border-gray-700/50 flex flex-col bg-gray-900/30 min-h-0`}>
         <div className="p-3 border-b border-gray-700/50 flex items-center justify-between bg-white/[0.02] shrink-0">
           <h2 className="text-white text-base font-bold flex items-center gap-2">
             <MessageSquare className="w-4 h-4 text-blue-400" /> Team Messages
@@ -1154,7 +1155,7 @@ export const InternalChat: React.FC<{
       </div>
 
       {/* Right Side - Active Chat */}
-      <div className={`${activeChatUser ? 'flex' : 'hidden sm:flex'} w-full sm:w-2/3 flex flex-col bg-white/[0.01] min-h-0`}>
+      <div className={`${activeChatUser ? 'flex' : 'hidden sm:flex'} w-full ${hideSidebar ? '' : 'sm:w-2/3'} flex flex-col bg-white/[0.01] min-h-0`}>
         {activeChatUser ? (
           <>
             {/* Chat Header */}

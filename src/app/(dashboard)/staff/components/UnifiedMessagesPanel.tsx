@@ -205,6 +205,7 @@ export const UnifiedMessagesPanel = () => {
               <InternalChat 
                 isOpen={true} 
                 isModal={false} 
+                hideSidebar={true}
                 initialActiveChat={selectedChat.id === 'new' ? null : selectedChat}
               />
             </div>

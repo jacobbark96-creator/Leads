@@ -53,7 +53,7 @@ export async function GET(request: Request) {
       fetch(balanceUrl, { headers: { 'Authorization': authHeader } })
     ]);
 
-    if (!callsResponse.ok) return NextResponse.json({ error: 'Failed to fetch calls' }, { status: 500 });
+    if (!callsResponse.ok) return NextResponse.json({ error: 'Failed to fetch calls', status: callsResponse.status, text: await callsResponse.text() }, { status: 500 });
     
     const callsData = await callsResponse.json();
     const calls = callsData.calls || [];

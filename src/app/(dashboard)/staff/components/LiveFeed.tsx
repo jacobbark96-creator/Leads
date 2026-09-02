@@ -15,7 +15,7 @@ export const LiveFeed = () => {
         .select(`
           *,
           lead_id,
-          leads:lead_id(name, company, city, postcode, status, lead_purchases(status))
+          leads:lead_id(name, company, location, status, lead_purchases(status))
         `)
         .order('created_at', { ascending: false })
         .limit(20);
@@ -43,7 +43,7 @@ export const LiveFeed = () => {
             title = act.description || 'System Activity';
           }
 
-          const location = act.leads?.city || act.leads?.postcode || 'Global';
+          const location = act.leads?.location || 'Global';
 
           let formattedTime = formatDistanceToNow(new Date(act.created_at), { addSuffix: true });
           formattedTime = formattedTime.replace(/^about /i, '');
@@ -60,7 +60,7 @@ export const LiveFeed = () => {
         // 2. Fallback: Fetch latest updated leads if activities table is empty
         const { data: latestLeads } = await supabase
           .from('leads')
-          .select('id, name, company, city, postcode, status, updated_at')
+          .select('id, name, company, location, status, updated_at')
           .order('updated_at', { ascending: false })
           .limit(10);
         
@@ -69,7 +69,7 @@ export const LiveFeed = () => {
             lead_id: l.id,
             time: formatDistanceToNow(new Date(l.updated_at), { addSuffix: true }).replace('about ', ''),
             title: l.company || l.name || 'Unknown Lead',
-            location: l.city || l.postcode || 'Global',
+            location: l.location || 'Global',
             status: (l.status || 'NEW').toUpperCase()
           })));
         }

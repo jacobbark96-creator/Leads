@@ -89,72 +89,30 @@ function LeadProcessingContent() {
 
   const fetchKpis = async () => {
     try {
-      // Helper to apply current active filters to all KPI counts
-      const applyFilters = (q: any) => {
-        let filtered = q;
-
-        if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
-          filtered = filtered.eq('division_id', activeDivisionId);
-        }
-
-        if (['super_admin', 'admin'].includes(profile?.role || '')) {
-          if (assignedUserFilter === 'me') {
-            filtered = filtered.eq('assigned_to', profile?.id);
-          } else if (assignedUserFilter !== 'all') {
-            filtered = filtered.eq('assigned_to', assignedUserFilter);
-          }
-        } else if (assignedToMe && profile) {
-          filtered = filtered.eq('assigned_to', profile.id);
-        }
-
-        if (propertyTypeFilter === 'commercial') {
-          filtered = filtered.neq('company', '').not('company', 'is', null);
-        } else if (propertyTypeFilter === 'residential') {
-          filtered = filtered.or('company.eq.,company.is.null');
-        }
-
-        if (mobileFilter === 'mobile') {
-          filtered = filtered.or('phone.like.%07%,phone.like.%447%,secondary_phone.like.%07%,secondary_phone.like.%447%');
-        }
-
-        if (dataQualityFilter === 'no_company_no_phone') {
-          filtered = filtered
-            .or('company.eq.,company.is.null,company.ilike.%Unknown Company%')
-            .or('phone.eq.,phone.is.null,phone.eq.No Phone')
-            .or('secondary_phone.eq.,secondary_phone.is.null,secondary_phone.eq.No Phone');
-        }
-
-        return filtered;
-      };
-
-      const getBaseQuery = () => applyFilters(supabase.from('leads').select('id', { count: 'exact', head: true }).neq('status', 'qualified').eq('is_in_pack', true));
-
-      // Run precise count queries to bypass the 1000 row limit and respect active filters
+      // Run precise count queries via API to bypass the 1000 row limit, respect active filters, and avoid RLS timeouts
       const currentTargetUser = (['super_admin', 'admin'].includes(profile?.role || '') && assignedUserFilter !== 'all') 
         ? (assignedUserFilter === 'me' ? profile?.id : assignedUserFilter)
         : (assignedToMe ? profile?.id : null);
 
-      const [
-        { count: dncCount },
-        { count: freshCount },
-        { count: contactedCount },
-        { count: myleadsCount },
-        { count: totalCount }
-      ] = await Promise.all([
-        getBaseQuery().eq('status', 'dnc'),
-        getBaseQuery().eq('status', 'fresh'),
-        getBaseQuery().neq('status', 'dnc').not('last_dialed_at', 'is', null),
-        currentTargetUser ? getBaseQuery().eq('assigned_to', currentTargetUser) : Promise.resolve({ count: 0 }),
-        getBaseQuery().neq('status', 'dnc') // Total excludes DNC
-      ]);
+      const params = new URLSearchParams();
+      if (activeDivisionId !== 'all') params.append('divisionId', activeDivisionId);
+      if (assignedUserFilter !== 'all') params.append('assignedTo', assignedUserFilter === 'me' ? profile?.id || '' : assignedUserFilter);
+      if (propertyTypeFilter !== 'all') params.append('propertyType', propertyTypeFilter);
+      if (mobileFilter === 'mobile') params.append('mobileOnly', 'true');
+      if (dataQualityFilter === 'no_company_no_phone') params.append('noCompanyNoPhone', 'true');
+      if (currentTargetUser) params.append('currentTargetUser', currentTargetUser);
 
-      setKpiCounts({
-        total: totalCount || 0,
-        fresh: freshCount || 0,
-        contacted: contactedCount || 0,
-        myleads: myleadsCount || 0,
-        dnc: dncCount || 0
-      });
+      const response = await fetch(`/api/leads/counts?${params.toString()}`);
+      if (response.ok) {
+        const counts = await response.json();
+        setKpiCounts({
+          total: counts.total || 0,
+          fresh: counts.fresh || 0,
+          contacted: counts.contacted || 0,
+          myleads: counts.myleads || 0,
+          dnc: counts.dnc || 0
+        });
+      }
     } catch (err) {
       console.error("Failed to fetch KPIs", err);
     }

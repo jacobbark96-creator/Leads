@@ -154,13 +154,11 @@ export async function GET(request: Request) {
       const chunkPromises = chunks.flatMap(chunk => {
         // Create fuzzy patterns like %7%9%3%2%1%2%3%4%5%6% to match phone numbers with spaces or dashes
         const leadOrQuery = chunk.map(num => {
-          const fuzzyNum = num.split('').join('%');
-          return `phone.ilike.%${fuzzyNum}%,secondary_phone.ilike.%${fuzzyNum}%`;
+          return `phone.ilike.%${num}%,secondary_phone.ilike.%${num}%`;
         }).join(',');
         
         const contractorOrQuery = chunk.map(num => {
-          const fuzzyNum = num.split('').join('%');
-          return `phone.ilike.%${fuzzyNum}%,secondary_phone.ilike.%${fuzzyNum}%,other_contact_numbers.ilike.%${fuzzyNum}%`;
+          return `phone.ilike.%${num}%,secondary_phone.ilike.%${num}%,other_contact_numbers.ilike.%${num}%`;
         }).join(',');
 
         return [

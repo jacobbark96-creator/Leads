@@ -9,36 +9,30 @@ export const LiveFeed = () => {
 
   useEffect(() => {
     const fetchActivities = async () => {
+      // 1. Try to fetch from activities table
       const { data, error } = await supabase
         .from('activities')
         .select(`
           *,
           lead_id,
-          leads:lead_id(name, company, lead_purchases(status))
+          leads:lead_id(name, company, city, postcode, status, lead_purchases(status))
         `)
-        .in('activity_type', ['qualified', 'marketed', 'sold', 'requested'])
         .order('created_at', { ascending: false })
-        .limit(15);
+        .limit(20);
 
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         setEvents(data.map(act => {
-          let statusLabel = 'New';
-          if (act.activity_type === 'qualified') statusLabel = 'Qualified';
-          if (act.activity_type === 'marketed') statusLabel = 'Marketed';
-          if (act.activity_type === 'requested') statusLabel = 'Requested';
+          let statusLabel = act.activity_type?.toUpperCase() || 'ACTIVITY';
           
-          if (act.activity_type === 'sold') {
-            statusLabel = 'Sold';
-            // Check if there's a more recent status in lead_purchases
+          if (act.activity_type === 'sold' || act.activity_type === 'won') {
+            statusLabel = 'WON';
             if (act.leads?.lead_purchases && act.leads.lead_purchases.length > 0) {
-              // Get the most advanced status if multiple exist, or just the first one
               const statuses = act.leads.lead_purchases.map((p: any) => p.status);
-              if (statuses.includes('won')) statusLabel = 'Won';
-              else if (statuses.includes('archive')) statusLabel = 'Archive';
-              else if (statuses.includes('proposal')) statusLabel = 'Proposal';
-              else if (statuses.includes('sat')) statusLabel = 'Surveyed';
-              else if (statuses.includes('contacted')) statusLabel = 'Contacted';
-              else if (statuses.includes('new')) statusLabel = 'Sold';
+              if (statuses.includes('won')) statusLabel = 'WON';
+              else if (statuses.includes('archive')) statusLabel = 'ARCHIVED';
+              else if (statuses.includes('proposal')) statusLabel = 'PROPOSAL';
+              else if (statuses.includes('sat')) statusLabel = 'SURVEYED';
+              else if (statuses.includes('contacted')) statusLabel = 'CONTACTED';
             }
           }
 
@@ -46,11 +40,11 @@ export const LiveFeed = () => {
           if (act.leads) {
             title = act.leads.company || act.leads.name || 'Unknown Lead';
           } else {
-            // Fallback parsing just in case
-            title = act.description.split(' - ')[0] || act.description;
+            title = act.description || 'System Activity';
           }
 
-          // Format time: remove "about " from "about 1 hour ago"
+          const location = act.leads?.city || act.leads?.postcode || 'Global';
+
           let formattedTime = formatDistanceToNow(new Date(act.created_at), { addSuffix: true });
           formattedTime = formattedTime.replace(/^about /i, '');
 
@@ -58,9 +52,27 @@ export const LiveFeed = () => {
             lead_id: act.lead_id,
             time: formattedTime,
             title: title,
+            location: location,
             status: statusLabel
           };
         }));
+      } else {
+        // 2. Fallback: Fetch latest updated leads if activities table is empty
+        const { data: latestLeads } = await supabase
+          .from('leads')
+          .select('id, name, company, city, postcode, status, updated_at')
+          .order('updated_at', { ascending: false })
+          .limit(10);
+        
+        if (latestLeads) {
+          setEvents(latestLeads.map(l => ({
+            lead_id: l.id,
+            time: formatDistanceToNow(new Date(l.updated_at), { addSuffix: true }).replace('about ', ''),
+            title: l.company || l.name || 'Unknown Lead',
+            location: l.city || l.postcode || 'Global',
+            status: (l.status || 'NEW').toUpperCase()
+          })));
+        }
       }
     };
 
@@ -86,52 +98,66 @@ export const LiveFeed = () => {
 
   const getStatusStyle = (status: string) => {
     switch (status) {
-      case 'Qualified': return 'text-amber-400 border-amber-400/20';
-      case 'Marketed': return 'text-blue-400 border-blue-400/20 bg-blue-400/10';
-      case 'Sold': return 'text-emerald-500 border-emerald-500/20 bg-emerald-500/10';
-      case 'Requested': return 'text-purple-400 border-purple-400/20 bg-purple-400/10';
-      case 'Contacted': return 'text-indigo-400 border-indigo-400/20 bg-indigo-400/10';
-      case 'Surveyed': return 'text-yellow-400 border-yellow-400/20 bg-yellow-400/10';
-      case 'Proposal': return 'text-orange-400 border-orange-400/20 bg-orange-400/10';
-      case 'Won': return 'text-green-400 border-green-400/20 bg-green-400/10';
-      case 'Archive': return 'text-slate-400 border-slate-400/20 bg-slate-400/10';
-      default: return 'text-gray-400 border-gray-400/20';
+      case 'QUALIFIED': return 'text-amber-400 bg-amber-400/10 border-amber-400/20';
+      case 'MARKETED': return 'text-blue-400 bg-blue-400/10 border-blue-400/20';
+      case 'SOLD': return 'text-emerald-400 bg-emerald-400/10 border-emerald-400/20';
+      case 'REQUESTED': return 'text-purple-400 bg-purple-400/10 border-purple-400/20';
+      case 'CALL': return 'text-sky-400 bg-sky-400/10 border-sky-400/20';
+      case 'EMAIL': return 'text-pink-400 bg-pink-400/10 border-pink-400/20';
+      case 'WHATSAPP': return 'text-green-400 bg-green-400/10 border-green-400/20';
+      case 'CONTACTED': return 'text-indigo-400 bg-indigo-400/10 border-indigo-400/20';
+      case 'SURVEYED': return 'text-yellow-400 bg-yellow-400/10 border-yellow-400/20';
+      case 'PROPOSAL': return 'text-orange-400 bg-orange-400/10 border-orange-400/20';
+      case 'WON': return 'text-green-400 bg-green-400/10 border-green-400/20';
+      case 'ARCHIVED': return 'text-slate-400 bg-slate-400/10 border-slate-400/20';
+      default: return 'text-gray-400 bg-gray-400/10 border-gray-400/20';
     }
   };
 
   return (
-    <GlassCard delay={0.6} className="p-4 flex flex-col h-full">
-      <div className="flex items-center gap-2 mb-4">
-        <Activity className="w-4 h-4 text-blue-400" />
-        <h2 className="text-base font-semibold text-white">Live Lead Feed</h2>
+    <GlassCard delay={0.6} className="p-3 flex flex-col h-full overflow-hidden">
+      <div className="flex items-center justify-between mb-2 shrink-0">
+        <div>
+          <div className="flex items-center gap-1.5 mb-0.5">
+            <div className="relative flex items-center justify-center">
+              <span className="absolute inline-flex h-1.5 w-1.5 rounded-full bg-emerald-500 opacity-75 animate-ping"></span>
+              <span className="relative inline-flex rounded-full h-1 w-1 bg-emerald-500"></span>
+            </div>
+            <h2 className="text-[10px] font-semibold text-white tracking-wide">LIVE</h2>
+          </div>
+          <p className="text-[8px] text-gray-500 font-medium">Recent leads entering</p>
+        </div>
       </div>
       
       {events.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center text-center">
-          <div className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center mb-3">
-            <Activity className="w-5 h-5 text-gray-500" />
+          <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center mb-2">
+            <Activity className="w-4 h-4 text-gray-500" />
           </div>
-          <p className="text-sm text-gray-400 font-medium">No live events</p>
-          <p className="text-[11px] text-gray-500 mt-1">Connect Feed API</p>
+          <p className="text-[11px] text-gray-400 font-medium">No events</p>
         </div>
       ) : (
-        <div className="flex-1 space-y-3 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-1">
           {events.map((e, i) => (
-            <div key={i} className="flex items-center gap-2 sm:gap-3 group">
-              <span className="text-[10px] sm:text-xs font-medium text-gray-500 w-12 sm:w-16 shrink-0">{e.time}</span>
-              <div className="flex-1 text-center text-[11px] sm:text-xs font-bold truncate">
+            <div key={i} className="flex items-center justify-between p-1.5 rounded-lg bg-white/[0.01] hover:bg-white/[0.03] border border-white/[0.01] transition-all group">
+              <div className="flex flex-col min-w-0 flex-1 mr-2">
                 {e.lead_id ? (
                   <a 
                     href={`/sales-crm/lead-v2?id=${e.lead_id}&tab=pipeline`} 
-                    className="text-gray-200 hover:text-blue-400 transition-colors cursor-pointer"
+                    className="text-[11px] font-medium text-gray-300 group-hover:text-blue-400 transition-colors truncate"
                   >
                     {e.title}
                   </a>
                 ) : (
-                  <span className="text-gray-200">{e.title}</span>
+                  <span className="text-[11px] font-medium text-gray-300 truncate">{e.title}</span>
                 )}
+                <div className="flex items-center gap-1 mt-0.5">
+                  <span className="text-[9px] text-gray-500 truncate">{e.location}</span>
+                  <span className="text-[8px] text-gray-600">•</span>
+                  <span className="text-[9px] text-gray-500 whitespace-nowrap">{e.time}</span>
+                </div>
               </div>
-              <span className={`text-[9px] sm:text-[10px] font-bold px-1.5 sm:px-2 py-0.5 rounded-full border shrink-0 ${getStatusStyle(e.status)}`}>
+              <span className={`text-[7px] font-bold px-1 py-0.5 rounded-md border shrink-0 uppercase tracking-wider ${getStatusStyle(e.status)}`}>
                 {e.status}
               </span>
             </div>
@@ -139,9 +165,10 @@ export const LiveFeed = () => {
         </div>
       )}
 
-      <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between cursor-pointer group">
-        <span className="text-xs font-medium text-blue-400 group-hover:text-blue-300 transition-colors">View full live feed</span>
-        <ChevronRight className="w-3 h-3 text-blue-400 group-hover:text-blue-300 transition-colors" />
+      <div className="mt-1.5 pt-1.5 border-t border-white/5 flex items-center justify-between cursor-pointer group shrink-0">
+        <a href="/sales-crm/all-leads" className="text-[9px] font-medium text-gray-500 group-hover:text-white transition-colors w-full">
+          View all →
+        </a>
       </div>
     </GlassCard>
   );

@@ -3,10 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { useAuthStore } from '../../../store/authStore';
 import { supabase } from '../../../lib/supabase';
 import { motion } from 'framer-motion';
-import { Users, UserPlus, Trophy, PoundSterling, FileWarning } from 'lucide-react';
+import { Users, UserPlus, Trophy, PoundSterling, FileWarning, Phone, Target, TrendingUp, Award, DollarSign } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
-import { TopNav } from './components/TopNav';
+import { StaffSidebar } from './components/StaffSidebar';
+import { StaffHeader } from './components/StaffHeader';
+import { UnifiedMessagesPanel } from './components/UnifiedMessagesPanel';
+import { CallMonitoringPanel } from './components/CallMonitoringPanel';
+import { LeadSourcesPanel } from './components/LeadSourcesPanel';
 import { KpiCard } from './components/KpiCard';
 import { GlassCard } from '@/components/dashboard/GlassCard';
 import { TasksPanel } from './components/TasksPanel';
@@ -32,7 +36,8 @@ export default function StaffPortal() {
     newClients: 0,
     sales: 0,
     revenue: 0,
-    missingBills: 0
+    missingBills: 0,
+    callsMade: 0
   });
   
   const [currentTime, setCurrentTime] = useState('');
@@ -119,18 +124,26 @@ export default function StaffPortal() {
           qualifiedCount = count || 0;
         }
 
-        // 2. New Clients (Role = client, created today)
+        // 2. Calls Made (from Twilio monitoring API)
+        const callRes = await fetch('/api/twilio/monitoring?dateRange=today');
+        let callsCount = 0;
+        if (callRes.ok) {
+          const callData = await callRes.json();
+          callsCount = callData.representatives?.reduce((acc: number, r: any) => acc + (r.totalCalls || 0), 0) || 0;
+        }
+
+        // 3. New Clients (Role = client, created today)
         const { count: clientsCount } = await supabase
           .from('users')
           .select('*', { count: 'exact', head: true })
           .eq('role', 'client')
           .gte('created_at', todayIso);
 
-        // 3. Sales & Revenue
+        // 4. Sales & Revenue
         const { data: purchases } = await supabase
           .from('lead_purchases')
           .select('price_paid, purchased_at')
-          .in('status', ['new', 'sat', 'won'])
+          .in('status', ['new', 'sat', 'won', 'sold'])
           .gte('purchased_at', todayIso);
           
         let totalRevenue = 0;
@@ -139,15 +152,8 @@ export default function StaffPortal() {
         if (purchases) {
           totalRevenue = purchases.reduce((sum, p) => sum + (Number(p.price_paid) || 0), 0);
         }
-        
-        // transactions table doesn't exist, rely only on lead_purchases for revenue
-        const transactions: any[] = [];
-          
-        if (transactions) {
-           totalRevenue += transactions.reduce((sum, t) => sum + (Number(t.amount) || 0), 0);
-        }
 
-        // 4. Missing Bills (Qualified leads with no bills)
+        // 5. Missing Bills (Qualified leads with no bills)
         const { count: missingBillsCount } = await supabase
           .from('leads')
           .select('*', { count: 'exact', head: true })
@@ -159,7 +165,8 @@ export default function StaffPortal() {
           newClients: clientsCount || 0,
           sales: totalSales,
           revenue: totalRevenue,
-          missingBills: missingBillsCount || 0
+          missingBills: missingBillsCount || 0,
+          callsMade: callsCount
         });
       } catch (err) {
         console.error("Error fetching KPIs:", err);
@@ -195,174 +202,169 @@ export default function StaffPortal() {
 
   if (!profile) return null;
 
-  const isAdmin = ['admin', 'super_admin'].includes(profile.role);
-  const canMonitor = profile.permissions?.includes('can_monitor_calls');
+  const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+  const [kpiData, setKpiData] = useState<any[]>([]);
+
+  useEffect(() => {
+    if (!isAdmin) return;
+
+    const fetchKpiData = async () => {
+      const startOfDay = new Date();
+      startOfDay.setHours(0, 0, 0, 0);
+
+      const [leadsRes, callsRes, clientsRes, revenueRes] = await Promise.all([
+        supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', startOfDay.toISOString()),
+        supabase.from('activities').select('*', { count: 'exact', head: true }).eq('activity_type', 'call_made').gte('created_at', startOfDay.toISOString()),
+        supabase.from('clients').select('*', { count: 'exact', head: true }).gte('created_at', startOfDay.toISOString()),
+        supabase.from('client_transactions').select('amount').eq('type', 'lead_purchase').gte('created_at', startOfDay.toISOString())
+      ]);
+
+      const leadsToday = leadsRes.count || 0;
+      const callsToday = callsRes.count || 0;
+      const clientsToday = clientsRes.count || 0;
+      const revenueToday = (revenueRes.data || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
+
+      // Fetch yesterday's data for comparison
+      const startOfYesterday = new Date(startOfDay);
+      startOfYesterday.setDate(startOfYesterday.getDate() - 1);
+      const endOfYesterday = new Date(startOfDay);
+      endOfYesterday.setMilliseconds(-1);
+
+      const [prevLeadsRes, prevCallsRes] = await Promise.all([
+        supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', startOfYesterday.toISOString()).lte('created_at', endOfYesterday.toISOString()),
+        supabase.from('activities').select('*', { count: 'exact', head: true }).eq('activity_type', 'call_made').gte('created_at', startOfYesterday.toISOString()).lte('created_at', endOfYesterday.toISOString())
+      ]);
+
+      const leadsDiff = leadsToday - (prevLeadsRes.count || 0);
+      const callsDiff = callsToday - (prevCallsRes.count || 0);
+
+      setKpiData([
+        { title: 'New Leads', value: leadsToday.toString(), trend: `${leadsDiff >= 0 ? '+' : ''}${leadsDiff} today`, isPositive: leadsDiff >= 0, icon: Target, iconColor: 'text-blue-400' },
+        { title: 'Calls Made', value: callsToday.toString(), trend: `${callsDiff >= 0 ? '+' : ''}${callsDiff} today`, isPositive: callsDiff >= 0, icon: TrendingUp, iconColor: 'text-emerald-400' },
+        { title: 'New Clients', value: clientsToday.toString(), trend: 'No change', isPositive: true, icon: Users, iconColor: 'text-purple-400' },
+        { title: 'Sales', value: '0', trend: 'No change', isPositive: true, icon: Award, iconColor: 'text-amber-400' },
+        { title: 'Revenue', value: `£${revenueToday.toFixed(2)}`, trend: 'Today', isPositive: true, icon: DollarSign, iconColor: 'text-emerald-400' }
+      ]);
+    };
+
+    fetchKpiData();
+
+    // Realtime subscriptions
+    const channels = [
+      supabase.channel('kpi-leads').on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, fetchKpiData).subscribe(),
+      supabase.channel('kpi-activities').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities', filter: "activity_type=eq.call_made" }, fetchKpiData).subscribe(),
+      supabase.channel('kpi-clients').on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, fetchKpiData).subscribe(),
+      supabase.channel('kpi-transactions').on('postgres_changes', { event: '*', schema: 'public', table: 'client_transactions' }, fetchKpiData).subscribe()
+    ];
+
+    return () => {
+      channels.forEach(channel => supabase.removeChannel(channel));
+    };
+  }, [isAdmin]);
 
   return (
-    <div className="min-h-screen bg-black overflow-x-hidden font-sans selection:bg-blue-500/30">
+    <div className="flex h-screen w-full bg-[#05050a] overflow-hidden relative">
       {/* Dynamic Background */}
       <div className="fixed inset-0 z-0">
         <div 
-          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat scale-105"
           style={{ 
             backgroundImage: `url("${backgroundUrl}")`
           }}
         />
-        {/* Very subtle gradient overlay just to ensure text readability */}
-        <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/20" />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#0a0f1c]/60 to-[#0a0f1c]/20 backdrop-blur-[1px]" />
       </div>
 
-      {/* Global Structure */}
-      <TopNav profile={profile} />
+      <StaffSidebar profile={profile} />
 
-      {/* Main Dashboard Grid */}
-      <main 
-        className="relative z-10 px-4 pt-[100px] xl:pt-[135px] pb-4 min-h-screen overflow-hidden"
-        style={{ zoom: typeof window !== 'undefined' && window.innerWidth < 768 ? 1 : 0.67 }}
-      >
-        <div className="w-full max-w-[1600px] mx-auto">
-          
-          {/* Header & KPIs Row */}
-          <div className="grid grid-cols-1 xl:grid-cols-4 gap-4 mb-4">
-            {/* Welcome Header */}
-            <motion.div 
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.5 }}
-              className={`flex flex-col justify-center pl-0 xl:pl-6 ${!isAdmin ? 'xl:col-span-3 mb-2' : 'xl:col-span-1 mb-4 xl:mb-0'}`}
-            >
-              <h1 className="text-2xl md:text-3xl 2xl:text-4xl font-extrabold text-white tracking-tight mb-1">
-                Good morning, {profile.name.split(' ')[0]} <span className="inline-block animate-wave origin-bottom-right">👋</span>
-              </h1>
-              <p className="text-sm text-gray-400 font-medium">Here's what's happening at Openlead today.</p>
-            </motion.div>
+      <div className="flex-1 flex flex-col relative z-10 overflow-hidden">
+        <StaffHeader profile={profile} />
 
-            {/* Target Box for non-admins (Admins have their own KPI row which includes it now, or we can put it there) */}
-            {!isAdmin && (
-              <div className="xl:col-span-1 h-24 xl:h-auto">
-                <TargetBox />
-              </div>
-            )}
+        <main className="flex-1 px-6 pb-4 max-w-[1600px] w-full mx-auto flex flex-col min-h-0 overflow-hidden">
+          {/* Top KPI Cards (Only for Admins/Super Admins) */}
+          {isAdmin && (
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-2 shrink-0 h-[50px]">
+              <KpiCard 
+                title="New Leads" 
+                value={stats.newLeads.toString()} 
+                trend="+3 today" 
+                isPositive={true} 
+                icon={Users} 
+                iconColor="text-blue-400" 
+                delay={0.1} 
+              />
+              <KpiCard 
+                title="Calls Made" 
+                value={stats.callsMade.toString()} 
+                trend="Today" 
+                isPositive={true} 
+                icon={Phone} 
+                iconColor="text-emerald-400" 
+                delay={0.15}
+              />
+              <KpiCard 
+                title="New Clients" 
+                value={stats.newClients.toString()} 
+                trend="No change" 
+                isPositive={true} 
+                icon={UserPlus} 
+                iconColor="text-purple-400" 
+                delay={0.2} 
+              />
+              <KpiCard 
+                title="Sales" 
+                value={stats.sales.toString()} 
+                trend="No change" 
+                isPositive={true} 
+                icon={Trophy} 
+                iconColor="text-amber-400" 
+                delay={0.25} 
+              />
+              <KpiCard 
+                title="Revenue" 
+                value={`£${stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
+                trend="No change" 
+                isPositive={true} 
+                icon={PoundSterling} 
+                iconColor="text-purple-400" 
+                delay={0.3} 
+              />
+            </div>
+          )}
 
-            {/* Top KPI Cards (Only for Admins/Super Admins) */}
-            {isAdmin && (
-              <div className="xl:col-span-3 grid grid-cols-2 sm:grid-cols-4 md:grid-cols-7 gap-3 xl:gap-4">
-                <div className="col-span-1 h-full">
-                  <TargetBox />
-                </div>
-                <GlassCard delay={0.1} className="flex flex-col items-center justify-center h-full p-3 xl:p-4">
-                  <h3 className="text-xl xl:text-3xl font-bold text-emerald-400 tracking-widest mb-1" style={{ fontVariantNumeric: 'tabular-nums' }}>
-                    {currentTime || '-'}
-                  </h3>
-                  <p className="text-xs xl:text-sm font-medium text-gray-300 text-center">{currentDate || '-'}</p>
-                </GlassCard>
-                <KpiCard 
-                  title="New Leads" 
-                  value={stats.newLeads.toString()} 
-                  trend="Today" 
-                  isPositive={true} 
-                  icon={Users} 
-                  iconColor="text-blue-400" 
-                  delay={0.2} 
-                />
-                <KpiCard 
-                  title="Missing Bills" 
-                  value={stats.missingBills.toString()} 
-                  trend="Today" 
-                  isPositive={false} 
-                  icon={FileWarning} 
-                  iconColor="text-red-400" 
-                  delay={0.25}
-                  onClick={() => router.push('/sales-crm/qualified?filter=missing_bills')}
-                />
-                <KpiCard 
-                  title="New Clients" 
-                  value={stats.newClients.toString()} 
-                  trend="Today" 
-                  isPositive={true} 
-                  icon={UserPlus} 
-                  iconColor="text-blue-400" 
-                  delay={0.3} 
-                />
-                <KpiCard 
-                  title="Sales" 
-                  value={stats.sales.toString()} 
-                  trend="Today" 
-                  isPositive={true} 
-                  icon={Trophy} 
-                  iconColor="text-amber-400" 
-                  delay={0.35} 
-                />
-                <KpiCard 
-                  title="Revenue" 
-                  value={`£${stats.revenue.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`} 
-                  trend="Today" 
-                  isPositive={true} 
-                  icon={PoundSterling} 
-                  iconColor="text-blue-400" 
-                  delay={0.4} 
-                />
+          {/* Main Dashboard Grid */}
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 flex-1 min-h-0 overflow-hidden mb-1">
+            
+            {/* LEFT COLUMN: Tasks & Live Feed */}
+            <div className="lg:col-span-4 flex flex-col gap-2 min-h-0">
+              <div className="flex-[0.35] min-h-0 overflow-hidden">
+                <TasksPanel />
               </div>
-            )}
-          </div>
-
-          {/* Main Content Grid: 4 Columns */}
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 xl:h-[640px]">
-            {/* Column 1: Tasks & Feed/Performance */}
-            {profile.role === 'growth_manager' ? (
-              <div className="h-[500px] xl:h-full overflow-hidden">
-                <MarketplaceLeadsList />
-              </div>
-            ) : (
-              <div className="flex flex-col gap-4 h-[500px] xl:h-full min-h-0">
-                <div className="h-1/2 overflow-hidden">
-                  <TasksPanel />
-                </div>
-                <div className="h-1/2 overflow-hidden">
-                  {isAdmin ? <LiveFeed /> : <RepPerformanceCard />}
-                </div>
-              </div>
-            )}
-
-            {/* Column 2: News & Conditional Component */}
-            <div className="flex flex-col gap-4 h-[500px] xl:h-full min-h-0">
-              <div className="h-1/2 overflow-hidden">
-                <NewsPanel />
-              </div>
-              <div className="h-1/2 overflow-hidden">
-                {isAdmin ? (
-                  <GmailPanel />
-                ) : (
-                  <div className="flex flex-col gap-4 h-full">
-                    <div className="h-1/2 min-h-[100px]">
-                      <RepTargetsBox />
-                    </div>
-                    <div className="h-1/2 min-h-0">
-                      <WhatsAppPlaceholder />
-                    </div>
-                  </div>
-                )}
+              <div className="flex-[0.65] min-h-0 overflow-hidden">
+                {isAdmin ? <LiveFeed /> : <RepPerformanceCard />}
               </div>
             </div>
 
-            {/* Column 3: WhatsApp/Gmail Monitor (Double Height) */}
-            <div className="h-[500px] xl:h-full overflow-hidden">
-              {isAdmin ? <WhatsAppMonitor /> : <GmailPanel />}
+            {/* CENTER COLUMN: Lead Analytics & Call Monitoring */}
+            <div className="lg:col-span-4 flex flex-col gap-2 min-h-0">
+              <div className="flex-[0.5] min-h-0 overflow-hidden">
+                <CallMonitoringPanel />
+              </div>
+              <div className="flex-[0.5] min-h-0 overflow-hidden">
+                <LeadSourcesPanel />
+              </div>
             </div>
 
-            {/* Column 4: Team Messages (Double Height) */}
-            <div className="h-[500px] xl:h-full overflow-hidden">
-              <TeamMessages />
+            {/* RIGHT COLUMN: Unified Messages */}
+            <div className="lg:col-span-4 flex flex-col min-h-0 overflow-hidden">
+              <div className="flex-1 min-h-0 overflow-hidden">
+                <UnifiedMessagesPanel />
+              </div>
             </div>
-          </div>
 
-          {/* Footer */}
-          <div className="mt-6 text-center pb-2">
-            <p className="text-xs text-gray-600 font-medium">© 2026 Openlead. All rights reserved.</p>
           </div>
-
-        </div>
-      </main>
+        </main>
+      </div>
 
       <style jsx global>{`
         @keyframes wave {

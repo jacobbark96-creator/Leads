@@ -32,7 +32,12 @@ type GroupChat = {
   isGroup: true;
 };
 
-export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; isModal?: boolean }> = ({ isOpen = true, onClose, isModal = true }) => {
+export const InternalChat: React.FC<{ 
+  isOpen?: boolean; 
+  onClose?: () => void; 
+  isModal?: boolean;
+  initialActiveChat?: any;
+}> = ({ isOpen = true, onClose, isModal = true, initialActiveChat }) => {
   const { profile } = useAuthStore();
   const dialerContext = useContext(DialerContext);
   const activeCall = dialerContext?.activeCall;
@@ -42,7 +47,13 @@ export const InternalChat: React.FC<{ isOpen?: boolean; onClose?: () => void; is
   const groupsRef = useRef<GroupChat[]>([]);
   const [presences, setPresences] = useState<Record<string, UserPresence>>({});
   const [now, setNow] = useState(Date.now());
-  const [activeChatUser, setActiveChatUser] = useState<any | null>(null);
+  const [activeChatUser, setActiveChatUser] = useState<any | null>(initialActiveChat || null);
+
+  useEffect(() => {
+    if (initialActiveChat) {
+      setActiveChatUser(initialActiveChat);
+    }
+  }, [initialActiveChat]);
 
   // Force re-render every minute to update online/away/offline statuses
   useEffect(() => {

@@ -16,20 +16,15 @@ interface KpiCardProps {
 export const KpiCard: React.FC<KpiCardProps> = ({ title, value, trend, isPositive, icon: Icon, iconColor, delay = 0, onClick }) => {
   return (
     <div onClick={onClick} className={onClick ? "cursor-pointer h-full" : "h-full"}>
-      <GlassCard delay={delay} className={`p-3 sm:p-4 flex flex-col justify-between h-full ${onClick ? 'hover:bg-white/10 transition-colors' : ''}`}>
-        <div className="flex items-start justify-between mb-2 sm:mb-3">
-          <div className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg sm:rounded-xl flex items-center justify-center ${iconColor} bg-white/5 shrink-0`}>
-            <Icon className="w-3.5 h-3.5 sm:w-4 h-4" />
+      <GlassCard delay={delay} className={`p-2 px-3 flex flex-col justify-center h-full bg-[#0a0f1c]/60 backdrop-blur-xl border-white/10 ${onClick ? 'hover:bg-white/[0.04] transition-colors' : ''}`}>
+        <div className="flex items-center gap-2">
+          <div className={`w-7 h-7 rounded-lg flex items-center justify-center ${iconColor} bg-white/5 shrink-0`}>
+            <Icon className="w-3.5 h-3.5" />
           </div>
-          <div className="text-right min-w-0">
-            <p className="text-gray-400 text-[10px] sm:text-sm font-medium truncate">{title}</p>
+          <div className="min-w-0">
+            <h3 className="text-lg font-bold text-white leading-none mb-0.5 truncate">{value}</h3>
+            <p className="text-gray-400 text-[9px] font-bold uppercase tracking-wider truncate">{title}</p>
           </div>
-        </div>
-        <div>
-          <h3 className="text-xl sm:text-3xl font-bold text-white mb-0.5 sm:mb-1 truncate">{value}</h3>
-          <p className={`text-[9px] sm:text-[11px] font-medium ${isPositive ? 'text-emerald-400' : 'text-red-400'}`}>
-            {isPositive && trend !== '-' ? '+' : ''}{trend}
-          </p>
         </div>
       </GlassCard>
     </div>

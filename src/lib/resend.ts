@@ -24,8 +24,34 @@ const sendResendEmail = async (payload: any) => {
 };
 
 /**
- * Sends a welcome email to a newly onboarded client.
+ * Sends a trial login email with credentials.
  */
+export const sendTrialLoginEmail = async (email: string, username: string, password: string) => {
+  try {
+    const payload = {
+      from: `OpenLead CRM <${defaultFromEmail}>`,
+      to: email,
+      subject: 'Your OpenLead CRM Trial Logins',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #10b981;">Welcome to your OpenLead Trial!</h2>
+          <p>Here are your login credentials for the OpenLead CRM.</p>
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0;"><strong>Login URL:</strong> <a href="https://openlead.co.uk/login">https://openlead.co.uk/login</a></p>
+            <p style="margin: 0 0 10px 0;"><strong>Username:</strong> ${username}</p>
+            <p style="margin: 0;"><strong>Password:</strong> ${password}</p>
+          </div>
+          <p>We recommend changing your password after your first login.</p>
+          <p>Best regards,<br>The OpenLead Team</p>
+        </div>
+      `
+    };
+    return await sendResendEmail(payload);
+  } catch (error) {
+    console.error('Error sending trial login email:', error);
+    return { success: false, error };
+  }
+};
 export const sendWelcomeEmail = async (email: string, name: string) => {
   try {
     return await sendResendEmail({

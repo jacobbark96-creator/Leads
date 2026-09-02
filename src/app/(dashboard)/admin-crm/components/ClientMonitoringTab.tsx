@@ -6,6 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { Activity, Clock, Eye, Target, LogIn, Search, ChevronUp, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { ClientActivityModal } from './ClientActivityModal';
+import { UserProfile } from '@/types';
 
 interface ClientStats {
   user_id: string;
@@ -22,7 +23,11 @@ interface ClientStats {
 type SortField = 'is_online' | 'company_name' | 'last_login' | 'leads_viewed' | 'time_spent_24h_seconds' | 'top_lead_views';
 type SortDirection = 'asc' | 'desc';
 
-export const ClientMonitoringTab = () => {
+interface ClientMonitoringTabProps {
+  users?: UserProfile[];
+}
+
+export const ClientMonitoringTab: React.FC<ClientMonitoringTabProps> = ({ users = [] }) => {
   const [stats, setStats] = useState<ClientStats[]>([]);
   const [loading, setLoading] = useState(true);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
@@ -178,7 +183,14 @@ export const ClientMonitoringTab = () => {
                   No client activity recorded yet.
                 </td>
               </tr>
-            ) : sortedStats.map((stat) => (
+            ) : sortedStats.map((stat) => {
+              const matchedUser = users?.find(u => u.id === stat.user_id);
+              const isTrial = matchedUser?.email?.toLowerCase().startsWith('trial') && matchedUser?.role === 'rep';
+              const displayName = isTrial && matchedUser?.name 
+                ? `${stat.company_name} (${matchedUser.name})`
+                : stat.company_name;
+              
+              return (
               <tr key={stat.user_id} className="transition-colors hover:bg-gray-50/80">
                 <td className="py-3 px-4">
                   <div className="flex items-center justify-center">
@@ -191,7 +203,7 @@ export const ClientMonitoringTab = () => {
                   </div>
                 </td>
                 <td className="py-3 px-4">
-                  <span className="text-xs font-semibold text-gray-900">{stat.company_name}</span>
+                  <span className="text-xs font-semibold text-gray-900">{displayName}</span>
                 </td>
                 <td className="py-3 px-4">
                   <span className="text-xs text-gray-600">
@@ -248,7 +260,8 @@ export const ClientMonitoringTab = () => {
                   </div>
                 </td>
               </tr>
-            ))}
+              );
+            })}
           </tbody>
         </table>
       </div>

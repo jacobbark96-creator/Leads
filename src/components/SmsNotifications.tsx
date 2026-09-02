@@ -118,84 +118,25 @@ export function SmsNotifications() {
           chunks.push(uniqueNumbers.slice(i, i + 2));
         }
 
-        const nameMap: Record<string, string> = {};
-
-        for (const chunk of chunks) {
-          try {
-            const cleanChunk = chunk.map(n => (n as string).replace(/[^\d]/g, '').slice(-10)).filter(n => n.length >= 7);
-            if (cleanChunk.length === 0) continue;
-
-            // Limit chunk size for Supabase ILIKE queries to prevent 500 errors from URL length limits
-            // A chunk size of 1-2 numbers is much safer for these massive OR statements
-            const SAFE_CHUNK_SIZE = 1;
-            const subChunks = [];
-            for (let i = 0; i < cleanChunk.length; i += SAFE_CHUNK_SIZE) {
-               subChunks.push(cleanChunk.slice(i, i + SAFE_CHUNK_SIZE));
-            }
-
-            const processResults = (list: any[] | null, isContractor: boolean, subChunk: string[]) => {
-              list?.forEach(item => {
-                const phones = isContractor 
-                  ? [item.phone, item.secondary_phone, item.other_contact_numbers]
-                  : [item.phone, item.secondary_phone];
-                
-                phones.forEach(dbPhone => {
-                  if (!dbPhone) return;
-                  const cleanDb = dbPhone.replace(/[^\d]/g, '').slice(-10);
-                  const isValidName = (name?: string | null) => name && typeof name === 'string' && !name.toLowerCase().includes('unknown');
-                  
-                  let fallbackName = dbPhone;
-                  if (isContractor) {
-                    if (isValidName(item.contact_name) || isValidName(item.company_name)) {
-                      fallbackName = isValidName(item.contact_name) ? item.contact_name : item.company_name;
-                    }
-                  } else {
-                    if (isValidName(item.name) || isValidName(item.company)) {
-                      fallbackName = isValidName(item.name) ? item.name : item.company;
-                    }
-                  }
-
-                  subChunk.forEach(num => {
-                    const cleanNum = (num as string).replace(/[^\d]/g, '').slice(-10);
-                    if (cleanDb === cleanNum && cleanNum.length >= 7) {
-                      nameMap[num as string] = fallbackName;
-                    }
-                  });
+        if (chunks.length > 0) {
+              const allNumbers = uniqueNumbers;
+              try {
+                const res = await fetch('/api/contacts/resolve', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ numbers: allNumbers })
                 });
-              });
-            };
-
-            for (const subChunk of subChunks) {
-              const subOrQuery = subChunk.map(num => `phone.ilike.%${num}%`).join(',');
-              const subOrQuerySecondary = subChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
-              
-              const subContractorOrQuery = subChunk.map(num => `phone.ilike.%${num}%`).join(',');
-              const subContractorOrQuerySecondary = subChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
-              const subContractorOrQueryOther = subChunk.map(num => `other_contact_numbers.ilike.%${num}%`).join(',');
-
-              const [leadsData, contractorsData] = await Promise.all([
-                supabase.from('leads')
-                  .select('phone, secondary_phone, name, company')
-                  .or(`${subOrQuery},${subOrQuerySecondary}`),
-                supabase.from('contractors')
-                  .select('phone, secondary_phone, other_contact_numbers, company_name, contact_name')
-                  .or(`${subContractorOrQuery},${subContractorOrQuerySecondary},${subContractorOrQueryOther}`)
-              ]);
-
-              processResults(leadsData.data, false, subChunk);
-              processResults(contractorsData.data, true, subChunk);
+                
+                if (res.ok) {
+                  const { nameMap } = await res.json();
+                  if (nameMap) {
+                    setContactNames(prev => ({ ...prev, ...nameMap }));
+                  }
+                }
+              } catch (err) {
+                console.error('Error resolving SMS names via API:', err);
+              }
             }
-            
-            // Sequential delay to let DB breathe
-            if (chunks.length > 1) {
-              await new Promise(r => setTimeout(r, 200));
-            }
-          } catch (chunkErr) {
-            console.error('Error processing SMS name chunk:', chunkErr);
-          }
-        }
-        
-        setContactNames(prev => ({ ...prev, ...nameMap }));
       }
 
     } catch (err) {

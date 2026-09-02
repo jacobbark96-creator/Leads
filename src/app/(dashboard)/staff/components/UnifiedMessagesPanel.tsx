@@ -179,10 +179,8 @@ export const UnifiedMessagesPanel = () => {
                 ))
               )}
             </div>
-            <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-between cursor-pointer group shrink-0">
-              <Link href="/staff/messages" className="text-[10px] font-medium text-gray-400 group-hover:text-white transition-colors">
-                View all →
-              </Link>
+            <div className="mt-2 pt-2 border-t border-white/5 flex items-center justify-center shrink-0">
+              <span className="text-[10px] text-gray-500">All messages loaded</span>
             </div>
           </motion.div>
         ) : (

@@ -211,40 +211,31 @@ export default function StaffPortal() {
     const fetchKpiData = async () => {
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
-
-      const [leadsRes, callsRes, clientsRes, revenueRes] = await Promise.all([
-        supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', startOfDay.toISOString()),
-        supabase.from('activities').select('*', { count: 'exact', head: true }).eq('activity_type', 'call_made').gte('created_at', startOfDay.toISOString()),
-        supabase.from('clients').select('*', { count: 'exact', head: true }).gte('created_at', startOfDay.toISOString()),
-        supabase.from('client_transactions').select('amount').eq('type', 'lead_purchase').gte('created_at', startOfDay.toISOString())
-      ]);
-
-      const leadsToday = leadsRes.count || 0;
-      const callsToday = callsRes.count || 0;
-      const clientsToday = clientsRes.count || 0;
-      const revenueToday = (revenueRes.data || []).reduce((acc, curr) => acc + Number(curr.amount), 0);
-
-      // Fetch yesterday's data for comparison
+      
       const startOfYesterday = new Date(startOfDay);
       startOfYesterday.setDate(startOfYesterday.getDate() - 1);
       const endOfYesterday = new Date(startOfDay);
       endOfYesterday.setMilliseconds(-1);
 
-      const [prevLeadsRes, prevCallsRes] = await Promise.all([
-        supabase.from('leads').select('*', { count: 'exact', head: true }).gte('created_at', startOfYesterday.toISOString()).lte('created_at', endOfYesterday.toISOString()),
-        supabase.from('activities').select('*', { count: 'exact', head: true }).eq('activity_type', 'call_made').gte('created_at', startOfYesterday.toISOString()).lte('created_at', endOfYesterday.toISOString())
-      ]);
+      try {
+        const res = await fetch(`/api/tracker/kpi?startOfDay=${startOfDay.toISOString()}&startOfYesterday=${startOfYesterday.toISOString()}&endOfYesterday=${endOfYesterday.toISOString()}`);
+        if (!res.ok) throw new Error('Failed to fetch KPI data');
+        
+        const data = await res.json();
+        
+        const leadsDiff = data.leadsToday - data.prevLeads;
+        const callsDiff = data.callsToday - data.prevCalls;
 
-      const leadsDiff = leadsToday - (prevLeadsRes.count || 0);
-      const callsDiff = callsToday - (prevCallsRes.count || 0);
-
-      setKpiData([
-        { title: 'New Leads', value: leadsToday.toString(), trend: `${leadsDiff >= 0 ? '+' : ''}${leadsDiff} today`, isPositive: leadsDiff >= 0, icon: Target, iconColor: 'text-blue-400' },
-        { title: 'Calls Made', value: callsToday.toString(), trend: `${callsDiff >= 0 ? '+' : ''}${callsDiff} today`, isPositive: callsDiff >= 0, icon: TrendingUp, iconColor: 'text-emerald-400' },
-        { title: 'New Clients', value: clientsToday.toString(), trend: 'No change', isPositive: true, icon: Users, iconColor: 'text-purple-400' },
-        { title: 'Sales', value: '0', trend: 'No change', isPositive: true, icon: Award, iconColor: 'text-amber-400' },
-        { title: 'Revenue', value: `£${revenueToday.toFixed(2)}`, trend: 'Today', isPositive: true, icon: DollarSign, iconColor: 'text-emerald-400' }
-      ]);
+        setKpiData([
+          { title: 'New Leads', value: data.leadsToday.toString(), trend: `${leadsDiff >= 0 ? '+' : ''}${leadsDiff} today`, isPositive: leadsDiff >= 0, icon: Target, iconColor: 'text-blue-400' },
+          { title: 'Calls Made', value: data.callsToday.toString(), trend: `${callsDiff >= 0 ? '+' : ''}${callsDiff} today`, isPositive: callsDiff >= 0, icon: TrendingUp, iconColor: 'text-emerald-400' },
+          { title: 'New Clients', value: data.clientsToday.toString(), trend: 'No change', isPositive: true, icon: Users, iconColor: 'text-purple-400' },
+          { title: 'Sales', value: '0', trend: 'No change', isPositive: true, icon: Award, iconColor: 'text-amber-400' },
+          { title: 'Revenue', value: `£${data.revenueToday.toFixed(2)}`, trend: 'Today', isPositive: true, icon: DollarSign, iconColor: 'text-emerald-400' }
+        ]);
+      } catch (err) {
+        console.error('Error fetching admin KPIs:', err);
+      }
     };
 
     fetchKpiData();

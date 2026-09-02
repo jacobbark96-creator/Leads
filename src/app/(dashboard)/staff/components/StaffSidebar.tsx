@@ -31,7 +31,7 @@ export const StaffSidebar = ({ profile }: { profile: any }) => {
       title: 'COMMUNICATION',
       items: [
         { label: 'Messages & Team', href: '/staff#messages', icon: MessageSquare },
-        { label: 'Call Monitoring', href: '/call-monitoring', icon: Phone },
+        { label: 'Call Monitoring', href: '/staff#call-monitoring', icon: Phone },
       ]
     },
     {

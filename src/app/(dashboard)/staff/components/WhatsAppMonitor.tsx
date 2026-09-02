@@ -163,78 +163,33 @@ export const WhatsAppMonitor = () => {
           chunks.push(uniqueNumbers.slice(i, i + chunkSize));
         }
 
-        // Process chunks sequentially
-        for (const chunk of chunks) {
-          try {
-            const cleanChunk = chunk.map(n => (n as string).replace(/[^\d]/g, '').slice(-10)).filter(n => n.length >= 7);
-            if (cleanChunk.length === 0) continue;
-
-            // Limit chunk size for Supabase ILIKE queries to prevent 500 errors from URL length limits
-            // A chunk size of 1-2 numbers is much safer for these massive OR statements
-            const SAFE_CHUNK_SIZE = 1;
-            const subChunks = [];
-            for (let i = 0; i < cleanChunk.length; i += SAFE_CHUNK_SIZE) {
-               subChunks.push(cleanChunk.slice(i, i + SAFE_CHUNK_SIZE));
-            }
-
-            for (const subChunk of subChunks) {
-              const subOrQuery = subChunk.map(num => `phone.ilike.%${num}%`).join(',');
-              const subOrQuerySecondary = subChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
-              const subContractorOrQuery = subChunk.map(num => `phone.ilike.%${num}%`).join(',');
-              const subContractorOrQuerySecondary = subChunk.map(num => `secondary_phone.ilike.%${num}%`).join(',');
-              const subContractorOrQueryOther = subChunk.map(num => `other_contact_numbers.ilike.%${num}%`).join(',');
-
-              const [leadsData, contractorsData] = await Promise.all([
-                supabase.from('leads')
-                  .select('id, phone, secondary_phone, name, company')
-                  .or(`${subOrQuery},${subOrQuerySecondary}`),
-                supabase.from('contractors')
-                  .select('id, phone, secondary_phone, other_contact_numbers, company_name, contact_name')
-                  .or(`${subContractorOrQuery},${subContractorOrQuerySecondary},${subContractorOrQueryOther}`)
-              ]);
-
-              const leads = leadsData.data;
-              const contractors = contractorsData.data;
-
-              const processResults = (list: any[] | null, isContractor: boolean) => {
-                list?.forEach(item => {
-                  const phones = isContractor 
-                    ? [item.phone, item.secondary_phone, item.other_contact_numbers]
-                    : [item.phone, item.secondary_phone];
-                  
-                  phones.forEach(dbPhone => {
-                    if (!dbPhone) return;
-                    const cleanDb = dbPhone.replace(/[^\d]/g, '').slice(-10);
-                    const fallbackName = isContractor 
-                      ? (item.contact_name || item.company_name || dbPhone)
-                      : (item.name || item.company || dbPhone);
-
-                    chunk.forEach(num => {
-                      const cleanNum = (num as string).replace(/[^\d]/g, '').slice(-10);
-                      if (cleanDb === cleanNum && cleanNum.length >= 7) {
-                        newNamesFound[num as string] = {
-                          name: fallbackName,
-                          id: item.id,
-                          type: isContractor ? 'contractor' : 'lead'
+            if (chunks.length > 0) {
+              const allNumbers = uniqueNumbers;
+              try {
+                const res = await fetch('/api/contacts/resolve', {
+                  method: 'POST',
+                  headers: { 'Content-Type': 'application/json' },
+                  body: JSON.stringify({ numbers: allNumbers })
+                });
+                
+                if (res.ok) {
+                  const { nameMap } = await res.json();
+                  if (nameMap) {
+                    for (const num of allNumbers) {
+                      if (nameMap[num]) {
+                        newNamesFound[num] = {
+                          name: nameMap[num],
+                          id: num,
+                          type: 'lead' // Default to lead, the API resolves the best name
                         };
                       }
-                    });
-                  });
-                });
-              };
-
-              processResults(leads, false);
-              processResults(contractors, true);
+                    }
+                  }
+                }
+              } catch (err) {
+                console.error('Error resolving SMS names via API:', err);
+              }
             }
-            
-            // Short delay between chunks to let DB breathe
-            if (chunks.length > 1) {
-              await new Promise(r => setTimeout(r, 200));
-            }
-          } catch (chunkErr) {
-            console.error('Error processing name chunk:', chunkErr);
-          }
-        }
 
         if (Object.keys(newNamesFound).length > 0) {
           setContactNames(prev => {

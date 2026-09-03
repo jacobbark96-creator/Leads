@@ -39,8 +39,7 @@ export const CallMonitoringPanel = () => {
         if (data.representatives) {
           const mapped = data.representatives.map((rep: any) => {
             const activeCall = rep.logs.find((l: any) => {
-              const logTime = new Date(l.time).getTime();
-              return (Date.now() - logTime) < 5 * 60 * 1000; // Active in last 5 mins
+              return ['in-progress', 'ringing', 'queued'].includes(l.status);
             });
 
             return {

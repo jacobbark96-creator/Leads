@@ -48,6 +48,8 @@ export const CallMonitoringPanel = () => {
               agent: rep.name.split(' ')[0] + (rep.name.split(' ')[1] ? ' ' + rep.name.split(' ')[1][0] + '.' : ''),
               status: activeCall ? 'ON CALL' : (rep.totalCalls > 0 ? 'AVAILABLE' : 'IDLE'),
               activeCallTime: activeCall ? activeCall.time : null,
+              activeCallLeadId: activeCall ? activeCall.leadId : null,
+              activeCallEntityType: activeCall ? activeCall.entityType : null,
               duration: rep.formattedDuration,
               totalCalls: rep.totalCalls,
               avgDuration: rep.formattedAvgDuration
@@ -134,7 +136,15 @@ export const CallMonitoringPanel = () => {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.4, type: "spring", bounce: 0.2 }}
-                onClick={() => window.location.href = `/staff/call-logs?agent=${call.id}`}
+                onClick={() => {
+                  if (call.status === 'ON CALL' && call.activeCallLeadId) {
+                    window.location.href = call.activeCallEntityType === 'contractor' 
+                      ? '/admin-crm?tab=users' 
+                      : `/sales-crm/lead-v2?id=${call.activeCallLeadId}`;
+                  } else {
+                    window.location.href = `/staff/call-logs?agent=${call.id}`;
+                  }
+                }}
                 className={`flex items-center justify-between bg-white/[0.01] p-1.5 rounded-lg group cursor-pointer border ${
                   call.status === 'ON CALL'
                     ? 'border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.1)] hover:bg-emerald-500/10'

@@ -203,6 +203,7 @@ export default function StaffPortal() {
   if (!profile) return null;
 
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+  const isRep = (profile?.role as string) === 'rep' || (profile?.role as string) === 'representative' || profile?.role === 'Residential Rep';
   const [kpiData, setKpiData] = useState<any[]>([]);
 
   useEffect(() => {
@@ -338,10 +339,12 @@ export default function StaffPortal() {
 
             {/* CENTER COLUMN: Lead Analytics & Call Monitoring */}
             <div className="lg:col-span-4 flex flex-col gap-2 min-h-0">
-              <div className="flex-[0.5] min-h-0 overflow-hidden">
-                <CallMonitoringPanel />
-              </div>
-              <div className="flex-[0.5] min-h-0 overflow-hidden">
+              {!isRep && (
+                <div className="flex-[0.5] min-h-0 overflow-hidden">
+                  <CallMonitoringPanel />
+                </div>
+              )}
+              <div className={!isRep ? "flex-[0.5] min-h-0 overflow-hidden" : "flex-1 min-h-0 overflow-hidden"}>
                 <LeadSourcesPanel />
               </div>
             </div>

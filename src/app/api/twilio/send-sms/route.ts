@@ -52,7 +52,7 @@ export async function POST(req: Request) {
     
     if (isWhatsApp) {
       // Always use the explicit WhatsApp number or Messaging Service SID
-      const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
+      const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID || 'MG2c1cb1f3b84df6efe3668d4d46d700ea';
       if (messagingServiceSid) {
         formattedFrom = messagingServiceSid;
       } else {

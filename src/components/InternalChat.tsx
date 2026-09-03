@@ -358,6 +358,7 @@ export const InternalChat: React.FC<{
   const [searchQuery, setSearchQuery] = useState('');
   
   const [isCreateGroupOpen, setIsCreateGroupOpen] = useState(false);
+  const [isEditGroupOpen, setIsEditGroupOpen] = useState(false);
   const [newGroupName, setNewGroupName] = useState('');
   const [selectedGroupMembers, setSelectedGroupMembers] = useState<string[]>([]);
   
@@ -1038,6 +1039,65 @@ export const InternalChat: React.FC<{
     }
   };
 
+  const handleEditGroup = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newGroupName.trim() || !profile || !activeChatUser?.isGroup) return;
+
+    try {
+      // Update group name
+      const { error: nameError } = await supabase
+        .from('internal_group_chats')
+        .update({ name: newGroupName.trim() })
+        .eq('id', activeChatUser.id);
+      
+      if (nameError) throw nameError;
+
+      // Update members: delete all existing except creator, then insert new ones
+      // To simplify, we delete ALL members for this group and re-insert the selected ones + current user
+      const { error: deleteError } = await supabase
+        .from('internal_group_members')
+        .delete()
+        .eq('group_id', activeChatUser.id);
+        
+      if (deleteError) throw deleteError;
+
+      // Always ensure current user is in the group
+      const finalMembers = Array.from(new Set([...selectedGroupMembers, profile.id]));
+      
+      const { error: insertError } = await supabase
+        .from('internal_group_members')
+        .insert(finalMembers.map(uid => ({ group_id: activeChatUser.id, user_id: uid })));
+
+      if (insertError) throw insertError;
+
+      // Update local state
+      setGroups(prev => prev.map(g => g.id === activeChatUser.id ? { ...g, name: newGroupName.trim() } : g));
+      setActiveChatUser({ ...activeChatUser, name: newGroupName.trim() });
+      setIsEditGroupOpen(false);
+      toast.success("Group updated successfully");
+      fetchData(); // Refresh group lists and members
+    } catch (error: any) {
+      console.error("Error updating group:", error);
+      toast.error("Failed to update group: " + error.message);
+    }
+  };
+
+  const openEditGroup = async () => {
+    if (!activeChatUser?.isGroup) return;
+    setNewGroupName(activeChatUser.name);
+    
+    // Fetch current members
+    const { data } = await supabase
+      .from('internal_group_members')
+      .select('user_id')
+      .eq('group_id', activeChatUser.id);
+      
+    if (data) {
+      setSelectedGroupMembers(data.map(m => m.user_id));
+    }
+    setIsEditGroupOpen(true);
+  };
+
   const filteredUsers = users.filter(u => 
     u.name?.toLowerCase().includes(searchQuery.toLowerCase()) || 
     u.role?.toLowerCase().includes(searchQuery.toLowerCase())
@@ -1247,27 +1307,76 @@ export const InternalChat: React.FC<{
                   )}
                 </div>
                 <div>
-                  <h3 className="text-white text-sm sm:text-base font-bold leading-tight">
+                  <h3 
+                    className={`text-white text-sm sm:text-base font-bold leading-tight ${activeChatUser.isGroup ? 'cursor-pointer hover:underline' : ''}`}
+                    onClick={() => activeChatUser.isGroup && openEditGroup()}
+                  >
                     {activeChatUser.isGroup && activeChatUser.name?.startsWith('Max Support - ') 
                       ? activeChatUser.name.replace('Max Support - ', '') 
                       : activeChatUser.name}
                   </h3>
                   <p className="text-gray-400 text-[10px] sm:text-[11px] flex items-center gap-1">
                     {activeChatUser.isGroup 
-                      ? 'Group Chat' 
+                      ? 'Group Chat (Click name to edit)' 
                       : getUserStatusLabel(activeChatUser.id)}
                   </p>
                 </div>
               </div>
-              {isModal && onClose && (
-                <button onClick={onClose} className="text-gray-400 hover:text-white sm:hidden p-1">
-                  <X className="w-6 h-6" />
-                </button>
-              )}
+              <div className="flex items-center gap-2">
+                {isModal && onClose && (
+                  <button onClick={onClose} className="text-gray-400 hover:text-white sm:hidden p-1">
+                    <X className="w-6 h-6" />
+                  </button>
+                )}
+              </div>
             </div>
 
             {/* Messages Area */}
             <div className="flex-1 overflow-y-auto p-3 sm:p-4 space-y-4 sm:space-y-3 custom-scrollbar min-h-0 bg-[#0a0a0f]">
+              
+              {isEditGroupOpen ? (
+                <div className="p-3 absolute inset-0 bg-gray-900/95 z-10 flex flex-col animate-in fade-in">
+                  <div className="flex justify-between items-center mb-3">
+                    <h3 className="text-white text-sm font-bold">Edit Group</h3>
+                    <button onClick={() => setIsEditGroupOpen(false)} className="text-gray-400 hover:text-white"><X className="w-3.5 h-3.5"/></button>
+                  </div>
+                  <form onSubmit={handleEditGroup} className="flex flex-col gap-3 h-full">
+                    <input 
+                      type="text" 
+                      placeholder="Group Name" 
+                      value={newGroupName}
+                      onChange={(e) => setNewGroupName(e.target.value)}
+                      className="w-full bg-white/5 border border-white/10 rounded-lg py-2 sm:py-1.5 px-3 text-sm sm:text-xs text-white focus:ring-1 focus:ring-blue-500"
+                      required
+                    />
+                    <div className="flex-1 overflow-y-auto custom-scrollbar border border-white/5 rounded-lg p-2">
+                      <p className="text-[11px] text-gray-500 mb-2 font-semibold">Manage Members</p>
+                      {users.map(u => (
+                        <label key={u.id} className="flex items-center gap-3 sm:gap-2 p-2 sm:p-1.5 hover:bg-white/5 rounded cursor-pointer">
+                          <input 
+                            type="checkbox" 
+                            checked={selectedGroupMembers.includes(u.id)}
+                            onChange={(e) => {
+                              if (e.target.checked) setSelectedGroupMembers(prev => [...prev, u.id]);
+                              else setSelectedGroupMembers(prev => prev.filter(id => id !== u.id));
+                            }}
+                            className="rounded border-gray-600 bg-gray-800 text-blue-500 focus:ring-blue-500/20 focus:ring-offset-0 w-4 h-4 sm:w-3 sm:h-3"
+                          />
+                          <span className="text-sm sm:text-xs text-gray-300">{u.name}</span>
+                        </label>
+                      ))}
+                    </div>
+                    <button 
+                      type="submit" 
+                      disabled={!newGroupName.trim()}
+                      className="bg-blue-600 text-white text-sm sm:text-xs font-bold py-2.5 sm:py-2 rounded-lg hover:bg-blue-700 disabled:opacity-50"
+                    >
+                      Save Changes
+                    </button>
+                  </form>
+                </div>
+              ) : null}
+
               {messages.map((msg, idx) => {
                 const isMine = msg.sender_id === profile?.id;
                 const showDate = idx === 0 || new Date(messages[idx-1].created_at).getDate() !== new Date(msg.created_at).getDate();

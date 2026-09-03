@@ -86,6 +86,16 @@ export async function POST(req: Request) {
     });
 
     if (!result.success) {
+      // Log the error to the database so we can see it in the UI and debug
+      await supabase.from('sms_messages').insert([{
+        user_id: userId, 
+        contact_number: to, 
+        direction: 'outbound',
+        body: `[ERROR: ${result.error}] ${body}`, 
+        is_read: false, 
+        twilio_sid: null, 
+        delivery_status: 'failed'
+      }]);
       throw new Error(result.error);
     }
 

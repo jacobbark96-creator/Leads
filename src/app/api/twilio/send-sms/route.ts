@@ -60,10 +60,20 @@ export async function POST(req: Request) {
     const host = req.headers.get('host') || 'openlead.co.uk';
     const forwardedProto = req.headers.get('x-forwarded-proto');
     const protocol = forwardedProto || (host.includes('localhost') ? 'http' : 'https');
-    const statusCallbackUrl = `${protocol}://${host}/api/${providerType}/sms-status`;
+    
+    let provider;
+    let actualProviderType = providerType;
+    
+    if (isWhatsApp) {
+      const { TwilioProvider } = await import('@/lib/communication/twilio');
+      provider = new TwilioProvider();
+      actualProviderType = 'twilio';
+    } else {
+      const { getCommunicationProvider } = await import('@/lib/communication/factory');
+      provider = await getCommunicationProvider();
+    }
 
-    const { getCommunicationProvider } = await import('@/lib/communication/factory');
-    const provider = await getCommunicationProvider();
+    const statusCallbackUrl = `${protocol}://${host}/api/${actualProviderType}/sms-status`;
 
     const result = await provider.sendSMS({
       to: formattedTo,

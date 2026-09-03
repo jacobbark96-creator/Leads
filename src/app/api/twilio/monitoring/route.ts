@@ -83,6 +83,7 @@ export async function GET(request: Request) {
       id: user.id,
       name: user.name || 'Unknown User',
       twilioNumber: user.twilio_number,
+      role: user.role,
       totalCalls: 0,
       totalDuration: 0,
       logs: [] as any[]

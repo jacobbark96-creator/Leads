@@ -16,12 +16,7 @@ export const CallMonitoringPanel = () => {
         
         const data = await res.json();
         if (data.representatives) {
-          // Filter out clients and super admins if necessary, but keep reps and sales staff
-          const staffOnly = data.representatives.filter((rep: any) => 
-            ['rep', 'admin', 'super_admin', 'Residential Rep', 'Residential Sales', 'Commercial Sales', 'growth_manager'].includes(rep.role)
-          );
-
-          const mapped = staffOnly.map((rep: any) => ({
+          const mapped = data.representatives.map((rep: any) => ({
             id: rep.id,
             agent: rep.name.split(' ')[0] + (rep.name.split(' ')[1] ? ' ' + rep.name.split(' ')[1][0] + '.' : ''),
             status: rep.logs.some((l: any) => {
@@ -105,18 +100,26 @@ export const CallMonitoringPanel = () => {
             <div 
               key={call.id} 
               onClick={() => window.location.href = `/staff/call-logs?agent=${call.id}`}
-              className="flex items-center justify-between bg-white/[0.01] border border-white/[0.01] hover:bg-white/[0.03] p-1.5 rounded-lg group transition-colors cursor-pointer"
+              className={`flex items-center justify-between bg-white/[0.01] p-1.5 rounded-lg group transition-colors cursor-pointer border ${
+                call.status === 'ON CALL'
+                  ? 'border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.1)] hover:bg-emerald-500/10'
+                  : 'border-white/[0.01] hover:bg-white/[0.03]'
+              }`}
             >
-              <div className="flex items-center gap-1.5">
-                <span className={`w-1 h-1 rounded-full ${call.status === 'ON CALL' ? 'bg-emerald-500' : 'bg-blue-500/30'}`}></span>
-                <span className="text-[11px] font-medium text-gray-300">{call.agent}</span>
+              <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                <span className={`w-1.5 h-1.5 shrink-0 rounded-full ${call.status === 'ON CALL' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500/30'}`}></span>
+                <span className="text-[11px] font-medium text-gray-300 truncate">{call.agent}</span>
               </div>
-              <div className="flex items-center gap-2">
-                <span className={`text-[9px] ${call.status === 'ON CALL' ? 'text-emerald-400 font-bold' : 'text-gray-500'}`}>
-                  {call.status === 'ON CALL' ? call.duration : 'Idle'}
-                </span>
+              <div className="flex items-center gap-2 shrink-0">
+                <div className="flex items-center gap-1.5 text-[9px]">
+                  <span className="text-gray-500">Dials: <span className="text-gray-300">{call.totalCalls}</span></span>
+                  <span className="text-white/10">|</span>
+                  <span className="text-gray-500">Time: <span className="text-gray-300">{call.duration}</span></span>
+                  <span className="text-white/10">|</span>
+                  <span className="text-gray-500">Avg: <span className="text-gray-300">{call.avgDuration}</span></span>
+                </div>
                 {call.status === 'ON CALL' && (
-                  <div className="flex items-center gap-0.5 h-2">
+                  <div className="flex items-center gap-0.5 h-2 ml-1">
                     <div className="w-0.5 h-1 bg-emerald-500/60 rounded-full animate-[pulse_1s_ease-in-out_infinite]"></div>
                     <div className="w-0.5 h-2 bg-emerald-500/80 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.1s]"></div>
                     <div className="w-0.5 h-1.5 bg-emerald-500/80 rounded-full animate-[pulse_1.5s_ease-in-out_infinite_0.3s]"></div>

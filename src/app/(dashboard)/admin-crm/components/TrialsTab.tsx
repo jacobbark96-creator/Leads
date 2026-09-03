@@ -2,7 +2,7 @@ import React, { useState, useMemo } from 'react';
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types';
 import toast from 'react-hot-toast';
-import { Mail, Plus, Save } from 'lucide-react';
+import { Mail, Plus, Save, Trash2 } from 'lucide-react';
 
 interface TrialsTabProps {
   users: UserProfile[];
@@ -13,6 +13,7 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
   const [editingUserId, setEditingUserId] = useState<string | null>(null);
   const [editForm, setEditForm] = useState({ name: '', secondary_email: '' });
   const [isCreating, setIsCreating] = useState(false);
+  const [isClearingChats, setIsClearingChats] = useState(false);
   const [isSendingLogin, setIsSendingLogin] = useState<string | null>(null);
 
   // Filter trial accounts
@@ -103,11 +104,57 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
     }
   };
 
+  const handleClearChats = async () => {
+    if (!window.confirm('Are you sure you want to clear all internal chats for all trial accounts? This action cannot be undone.')) {
+      return;
+    }
+
+    setIsClearingChats(true);
+    try {
+      const trialUserIds = trialAccounts.map(u => u.id);
+      
+      if (trialUserIds.length === 0) {
+        toast.error('No trial accounts found');
+        return;
+      }
+
+      const response = await fetch('/api/trials/clear-chats', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: trialUserIds })
+      });
+      const data = await response.json();
+      
+      if (!response.ok) throw new Error(data.error || 'Failed to clear chats');
+      
+      toast.success('Internal chats cleared for all trial accounts');
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsClearingChats(false);
+    }
+  };
+
   return (
     <div className="bg-white rounded-lg shadow-sm border border-gray-200">
-      <div className="p-6 border-b border-gray-200">
-        <h2 className="text-lg font-semibold text-gray-900">Trial Accounts</h2>
-        <p className="text-sm text-gray-500">Manage representative trial accounts and dispatch login details.</p>
+      <div className="p-6 border-b border-gray-200 flex justify-between items-start">
+        <div>
+          <h2 className="text-lg font-semibold text-gray-900">Trial Accounts</h2>
+          <p className="text-sm text-gray-500">Manage representative trial accounts and dispatch login details.</p>
+        </div>
+        <button
+          onClick={handleClearChats}
+          disabled={isClearingChats || trialAccounts.length === 0}
+          className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition-colors"
+          title="Clear all internal chats for all trial accounts"
+        >
+          {isClearingChats ? (
+            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+          ) : (
+            <Trash2 className="w-4 h-4" />
+          )}
+          Clear Chats
+        </button>
       </div>
       
       <div className="overflow-x-auto">

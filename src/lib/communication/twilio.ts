@@ -19,7 +19,11 @@ export class TwilioProvider implements CommunicationProvider {
     const isWhatsApp = to.startsWith('whatsapp:');
     const params = new URLSearchParams();
     params.append('To', to);
-    params.append('From', from);
+    if (from.startsWith('MG')) {
+      params.append('MessagingServiceSid', from);
+    } else {
+      params.append('From', from);
+    }
     if (statusCallback) {
       params.append('StatusCallback', statusCallback);
     }

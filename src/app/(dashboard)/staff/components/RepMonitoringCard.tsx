@@ -80,11 +80,17 @@ export function RepMonitoringCard() {
         
         const data = await res.json();
         if (data.representatives) {
-          // 1. Filter out Super Admins
-          // 2. Sort by total duration descending
-          const filteredAndSorted = data.representatives
-            .filter((rep: any) => rep.role !== 'super_admin')
-            .sort((a: any, b: any) => (b.totalDuration || 0) - (a.totalDuration || 0));
+          let filteredAndSorted = data.representatives;
+          
+          // If the user is a rep/representative, only show their own stats
+          if (profile?.role === 'rep' || (profile?.role as string) === 'representative' || profile?.role === 'Residential Rep') {
+            filteredAndSorted = data.representatives.filter((rep: any) => rep.id === profile.id);
+          } else {
+            // Otherwise (admin/manager), show all except super_admin
+            filteredAndSorted = data.representatives
+              .filter((rep: any) => rep.role !== 'super_admin')
+              .sort((a: any, b: any) => (b.totalDuration || 0) - (a.totalDuration || 0));
+          }
 
           setRepresentatives(filteredAndSorted);
           

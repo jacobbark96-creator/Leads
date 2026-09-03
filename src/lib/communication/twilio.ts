@@ -21,6 +21,10 @@ export class TwilioProvider implements CommunicationProvider {
     params.append('To', to);
     if (from.startsWith('MG')) {
       params.append('MessagingServiceSid', from);
+      // For WhatsApp, we still need a From address even with a MessagingServiceSid according to some Twilio API versions
+      if (isWhatsApp) {
+        params.append('From', `whatsapp:${process.env.TWILIO_WHATSAPP_NUMBER || '+447380308873'}`);
+      }
     } else {
       params.append('From', from);
     }

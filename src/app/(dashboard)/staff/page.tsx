@@ -339,14 +339,25 @@ export default function StaffPortal() {
 
             {/* CENTER COLUMN: Lead Analytics & Call Monitoring */}
             <div className="lg:col-span-4 flex flex-col gap-2 min-h-0">
-              {!isRep && (
-                <div className="flex-[0.5] min-h-0 overflow-hidden">
-                  <CallMonitoringPanel />
-                </div>
+              {!isRep ? (
+                <>
+                  <div className="flex-[0.5] min-h-0 overflow-hidden">
+                    <CallMonitoringPanel />
+                  </div>
+                  <div className="flex-[0.5] min-h-0 overflow-hidden">
+                    <LeadSourcesPanel />
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="flex-[0.5] min-h-0 overflow-hidden">
+                    <GmailPanel />
+                  </div>
+                  <div className="flex-[0.5] min-h-0 overflow-hidden">
+                    <RepMonitoringCard />
+                  </div>
+                </>
               )}
-              <div className={!isRep ? "flex-[0.5] min-h-0 overflow-hidden" : "flex-1 min-h-0 overflow-hidden"}>
-                <LeadSourcesPanel />
-              </div>
             </div>
 
             {/* RIGHT COLUMN: Unified Messages */}

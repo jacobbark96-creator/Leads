@@ -8,6 +8,9 @@ import { DialerContext } from '@/contexts/DialerContext';
 import { useContext } from 'react';
 
 import toast from 'react-hot-toast';
+import EmojiPicker, { Theme, EmojiClickData } from 'emoji-picker-react';
+import { GifPicker } from 'gif-picker-react';
+import { Tenor } from 'gif-picker-react/providers/tenor';
 
 type UserPresence = {
   id: string;
@@ -87,11 +90,69 @@ export const InternalChat: React.FC<{
   }, [activeChatUser]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [newMessage, setNewMessage] = useState('');
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+  const [showGifPicker, setShowGifPicker] = useState(false);
+  const pickerRef = useRef<HTMLDivElement>(null);
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [typingUsers, setTypingUsers] = useState<Record<string, { isTyping: boolean; name?: string }>>({});
   const [notificationPermission, setNotificationPermission] = useState<string>('default');
   const [groupsLoaded, setGroupsLoaded] = useState(false);
   const groupReadAtRef = useRef<Record<string, string | null>>({});
+
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (pickerRef.current && !pickerRef.current.contains(event.target as Node)) {
+        setShowEmojiPicker(false);
+        setShowGifPicker(false);
+      }
+    }
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const onEmojiClick = (emojiData: EmojiClickData) => {
+    setNewMessage(prev => prev + emojiData.emoji);
+  };
+
+  const onGifClick = async (gif: any) => {
+    setShowGifPicker(false);
+    
+    if (!profile || !activeChatUser) return;
+    
+    const messageContent = `[GIF] ${gif.imageUrl}`;
+    
+    const msgData: any = {
+      sender_id: profile.id,
+      content: messageContent,
+      is_read: false
+    };
+
+    if (activeChatUser.isGroup) {
+      msgData.group_id = activeChatUser.id;
+    } else {
+      msgData.receiver_id = activeChatUser.id;
+    }
+
+    try {
+      const { error } = await supabase.from('internal_messages').insert([msgData]);
+      if (error) throw error;
+      
+      const optimisticMsg: Message = {
+        id: crypto.randomUUID(),
+        sender_id: profile.id,
+        receiver_id: msgData.receiver_id,
+        group_id: msgData.group_id,
+        content: messageContent,
+        is_read: false,
+        created_at: new Date().toISOString()
+      };
+      
+      setMessages(prev => [...prev, optimisticMsg]);
+    } catch (error) {
+      console.error('Error sending GIF:', error);
+      toast.error('Failed to send GIF');
+    }
+  };
   const groupReadStorageKey = profile?.id ? `internal-chat-group-read:${profile.id}` : null;
 
   const fetchData = async () => {
@@ -1232,7 +1293,15 @@ export const InternalChat: React.FC<{
                             : 'bg-gray-800 text-gray-200 rounded-bl-sm border border-white/5'
                         }`}
                       >
-                        <p className="text-sm sm:text-xs whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+                        {msg.content.startsWith('[GIF] ') ? (
+                          <img 
+                            src={msg.content.replace('[GIF] ', '')} 
+                            alt="GIF" 
+                            className="rounded-lg max-w-full"
+                          />
+                        ) : (
+                          <p className="text-sm sm:text-xs whitespace-pre-wrap break-words leading-relaxed">{msg.content}</p>
+                        )}
                       </div>
                       <div className="flex items-center gap-1 mt-1 px-1">
                         <span className="text-[10px] text-gray-500">{format(new Date(msg.created_at), 'HH:mm')}</span>
@@ -1275,10 +1344,59 @@ export const InternalChat: React.FC<{
             </div>
 
             {/* Input Area */}
-            <div className="p-3 sm:p-2 border-t border-gray-700/50 bg-black/40 shrink-0">
+            <div className="p-3 sm:p-2 border-t border-gray-700/50 bg-black/40 shrink-0 relative" ref={pickerRef}>
+              
+              {showEmojiPicker && (
+                <div className="absolute bottom-full left-0 mb-2 z-50">
+                  <EmojiPicker onEmojiClick={onEmojiClick} theme={Theme.DARK} />
+                </div>
+              )}
+              
+              {showGifPicker && (
+                <div className="absolute bottom-full left-0 mb-2 z-50 bg-gray-900 rounded-lg overflow-hidden shadow-xl border border-gray-700">
+                  {process.env.NEXT_PUBLIC_TENOR_API_KEY ? (
+                    <GifPicker 
+                      provider={Tenor(process.env.NEXT_PUBLIC_TENOR_API_KEY)}
+                      onGifClick={onGifClick} 
+                      theme={Theme.DARK}
+                    />
+                  ) : (
+                    <div className="p-6 text-center text-sm text-gray-400 w-[350px] bg-gray-900">
+                      <p className="mb-2 font-bold text-white">GIFs are not configured</p>
+                      <p className="text-xs mb-4">To enable GIFs, you need a free Tenor API Key.</p>
+                      <ol className="text-left text-xs list-decimal pl-5 space-y-1 mb-4">
+                        <li>Go to Google Cloud Console</li>
+                        <li>Enable "Tenor API"</li>
+                        <li>Create an API Key</li>
+                        <li>Add <code className="bg-gray-800 px-1 py-0.5 rounded">NEXT_PUBLIC_TENOR_API_KEY=your_key</code> to your .env file</li>
+                      </ol>
+                    </div>
+                  )}
+                </div>
+              )}
+
               <form onSubmit={handleSend} className="flex items-center gap-2 bg-white/5 rounded-full px-3 py-1.5 sm:px-2 sm:py-1 border border-white/10">
-                <button type="button" className="text-gray-400 hover:text-white p-1">
-                  <Smile className="w-5 h-5 sm:w-4 h-4" />
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setShowEmojiPicker(!showEmojiPicker);
+                    setShowGifPicker(false);
+                  }}
+                  className={`p-1 ${showEmojiPicker ? 'text-blue-400' : 'text-gray-400 hover:text-white'}`}
+                  title="Add Emoji"
+                >
+                  <Smile className="w-5 h-5 sm:w-4 sm:h-4" />
+                </button>
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setShowGifPicker(!showGifPicker);
+                    setShowEmojiPicker(false);
+                  }}
+                  className={`p-1 font-black text-[10px] tracking-wider ${showGifPicker ? 'text-blue-400' : 'text-gray-400 hover:text-white'}`}
+                  title="Add GIF"
+                >
+                  GIF
                 </button>
                 <input
                   type="text"

@@ -18,13 +18,8 @@ export async function POST(req: Request) {
     const { data: setting } = await supabase.from('system_settings').select('value').eq('key', 'communication_provider').single();
     const providerType = setting?.value || 'twilio';
 
-    let fromNumber = providerType === 'telnyx' ? user?.telnyx_number : user?.twilio_number;
-    
-    if (!fromNumber) {
-      return NextResponse.json({ error: `User does not have a ${providerType} number` }, { status: 400 });
-    }
-
     const normalizeNumber = (num: string) => {
+      if (!num) return '';
       let cleaned = num.replace(/[^\d+a-z:]/g, '');
       if (!cleaned.includes('+')) {
         const isWhatsapp = cleaned.startsWith('whatsapp:');
@@ -45,13 +40,19 @@ export async function POST(req: Request) {
     };
 
     let formattedTo = normalizeNumber(to);
-    let formattedFrom = normalizeNumber(fromNumber);
-
     const isWhatsApp = formattedTo.startsWith('whatsapp:');
+
+    let fromNumber = providerType === 'telnyx' ? user?.telnyx_number : user?.twilio_number;
+    
+    if (!isWhatsApp && !fromNumber) {
+      return NextResponse.json({ error: `User does not have a ${providerType} number` }, { status: 400 });
+    }
+
+    let formattedFrom = isWhatsApp ? '' : normalizeNumber(fromNumber);
     
     if (isWhatsApp) {
-      // Always use the explicit environment variable for WhatsApp, fallback to standard phone number
-      const companyNumber = process.env.TWILIO_WHATSAPP_NUMBER || process.env.TWILIO_PHONE_NUMBER || '+447380308873';
+      // Always use the explicit WhatsApp number for WhatsApp messages
+      const companyNumber = process.env.TWILIO_WHATSAPP_NUMBER || '+447380308873';
       formattedFrom = companyNumber.startsWith('whatsapp:') ? companyNumber : `whatsapp:${companyNumber}`;
     } else if (!isWhatsApp && formattedFrom.startsWith('whatsapp:')) {
       formattedFrom = formattedFrom.replace('whatsapp:', '');

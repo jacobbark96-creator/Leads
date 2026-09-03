@@ -605,14 +605,6 @@ function LeadDetailsV2Content() {
     };
   }, []);
 
-  // Dial on load if autodial is enabled
-  useEffect(() => {
-    if (isAutoDialEnabled && !activeCall && lead?.phone && !hasDialedRef.current) {
-      hasDialedRef.current = true;
-      onCallClick(lead.phone);
-    }
-  }, [isAutoDialEnabled, activeCall, lead?.phone, lead?.id]);
-
   // Reset dial ref when lead changes
   useEffect(() => {
     hasDialedRef.current = false;
@@ -620,6 +612,14 @@ function LeadDetailsV2Content() {
     userDidActivityRef.current = false;
     setAutoDialCountdown(null);
   }, [lead?.id]);
+
+  // Dial on load if autodial is enabled
+  useEffect(() => {
+    if (isAutoDialEnabled && !activeCall && lead?.phone && !hasDialedRef.current) {
+      hasDialedRef.current = true;
+      onCallClick(lead.phone);
+    }
+  }, [isAutoDialEnabled, activeCall, lead?.phone, lead?.id]);
 
   useEffect(() => {
     // When the call ends, start the post-call sequence

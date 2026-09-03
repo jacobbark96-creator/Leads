@@ -148,8 +148,8 @@ export async function POST(req: NextRequest) {
     const host = req.headers.get('host') || 'openlead.co.uk';
     const protocol = host.includes('localhost') ? 'http' : 'https';
     
-    // Create the OG image URL
-    const mediaUrl = `${protocol}://${host}/api/og/lead-writeup?town=${encodeURIComponent(town)}&type=${encodeURIComponent(type)}&system=${encodeURIComponent(system)}&price=${encodeURIComponent(price)}&notes=${notes}`;
+    // Create the OG image URL with a .png extension so Twilio accepts it
+    const mediaUrl = `${protocol}://${host}/api/og/lead-writeup.png?town=${encodeURIComponent(town)}&type=${encodeURIComponent(type)}&system=${encodeURIComponent(system)}&price=${encodeURIComponent(price)}&notes=${notes}`;
 
     const messageBody = `New lead in ${town} just hit the market`;
 

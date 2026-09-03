@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Phone, ArrowRight, Mic } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const LiveCounter = ({ startTime }: { startTime: string }) => {
   const [duration, setDuration] = useState('0m 0s');
@@ -53,10 +54,13 @@ export const CallMonitoringPanel = () => {
             };
           });
 
-          // Sort by status priority
+          // Sort by status priority, then by total calls
           const sorted = mapped.sort((a: any, b: any) => {
             const priority: Record<string, number> = { 'ON CALL': 0, 'AVAILABLE': 1, 'IDLE': 2 };
-            return priority[a.status] - priority[b.status];
+            if (priority[a.status] !== priority[b.status]) {
+              return priority[a.status] - priority[b.status];
+            }
+            return b.totalCalls - a.totalCalls;
           });
 
           setActiveCalls(sorted);
@@ -114,51 +118,58 @@ export const CallMonitoringPanel = () => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1 pr-1">
+      <div className="flex-1 overflow-y-auto min-h-0 space-y-1.5 pr-1 custom-scrollbar">
         {activeCalls.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center opacity-30">
             <Mic className="w-4 h-4 text-gray-500 mb-1" />
             <span className="text-[9px] text-gray-500">No agents</span>
           </div>
         ) : (
-          activeCalls.map((call) => (
-            <div 
-              key={call.id} 
-              onClick={() => window.location.href = `/staff/call-logs?agent=${call.id}`}
-              className={`flex items-center justify-between bg-white/[0.01] p-1.5 rounded-lg group transition-colors cursor-pointer border ${
-                call.status === 'ON CALL'
-                  ? 'border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.1)] hover:bg-emerald-500/10'
-                  : 'border-white/[0.01] hover:bg-white/[0.03]'
-              }`}
-            >
-              <div className="flex items-center gap-1.5 min-w-0 pr-2">
-                <span className={`w-1.5 h-1.5 shrink-0 rounded-full ${call.status === 'ON CALL' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500/30'}`}></span>
-                <span className="text-[11px] font-medium text-gray-300 truncate">{call.agent}</span>
-              </div>
-              <div className="flex items-center gap-2 shrink-0">
-                <div className="flex items-center gap-1.5 text-[9px]">
-                  <span className="text-gray-500">Dials: <span className="text-gray-300">{call.totalCalls}</span></span>
-                  <span className="text-white/10">|</span>
-                  <span className="text-gray-500">Time: <span className="text-gray-300">
-                    {call.status === 'ON CALL' && call.activeCallTime ? (
-                      <LiveCounter startTime={call.activeCallTime} />
-                    ) : (
-                      call.duration
-                    )}
-                  </span></span>
-                  <span className="text-white/10">|</span>
-                  <span className="text-gray-500">Avg: <span className="text-gray-300">{call.avgDuration}</span></span>
+          <AnimatePresence>
+            {activeCalls.map((call) => (
+              <motion.div 
+                key={call.id} 
+                layout
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ duration: 0.4, type: "spring", bounce: 0.2 }}
+                onClick={() => window.location.href = `/staff/call-logs?agent=${call.id}`}
+                className={`flex items-center justify-between bg-white/[0.01] p-1.5 rounded-lg group cursor-pointer border ${
+                  call.status === 'ON CALL'
+                    ? 'border-emerald-500/50 shadow-[0_0_10px_rgba(16,185,129,0.1)] hover:bg-emerald-500/10'
+                    : 'border-white/[0.01] hover:bg-white/[0.03] transition-colors'
+                }`}
+              >
+                <div className="flex items-center gap-1.5 min-w-0 pr-2">
+                  <span className={`w-1.5 h-1.5 shrink-0 rounded-full ${call.status === 'ON CALL' ? 'bg-emerald-500 animate-pulse' : 'bg-blue-500/30'}`}></span>
+                  <span className="text-[11px] font-medium text-gray-300 truncate">{call.agent}</span>
                 </div>
-                {call.status === 'ON CALL' && (
-                  <div className="flex items-center gap-0.5 h-2 ml-1">
-                    <div className="w-0.5 h-1 bg-emerald-500/60 rounded-full animate-[pulse_1s_ease-in-out_infinite]"></div>
-                    <div className="w-0.5 h-2 bg-emerald-500/80 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.1s]"></div>
-                    <div className="w-0.5 h-1.5 bg-emerald-500/80 rounded-full animate-[pulse_1.5s_ease-in-out_infinite_0.3s]"></div>
+                <div className="flex items-center gap-2 shrink-0">
+                  <div className="flex items-center gap-1.5 text-[9px]">
+                    <span className="text-gray-500">Dials: <span className="text-gray-300">{call.totalCalls}</span></span>
+                    <span className="text-white/10">|</span>
+                    <span className="text-gray-500">Time: <span className="text-gray-300">
+                      {call.status === 'ON CALL' && call.activeCallTime ? (
+                        <LiveCounter startTime={call.activeCallTime} />
+                      ) : (
+                        call.duration
+                      )}
+                    </span></span>
+                    <span className="text-white/10">|</span>
+                    <span className="text-gray-500">Avg: <span className="text-gray-300">{call.avgDuration}</span></span>
                   </div>
-                )}
-              </div>
-            </div>
-          ))
+                  {call.status === 'ON CALL' && (
+                    <div className="flex items-center gap-0.5 h-2 ml-1">
+                      <div className="w-0.5 h-1 bg-emerald-500/60 rounded-full animate-[pulse_1s_ease-in-out_infinite]"></div>
+                      <div className="w-0.5 h-2 bg-emerald-500/80 rounded-full animate-[pulse_1.2s_ease-in-out_infinite_0.1s]"></div>
+                      <div className="w-0.5 h-1.5 bg-emerald-500/80 rounded-full animate-[pulse_1.5s_ease-in-out_infinite_0.3s]"></div>
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         )}
       </div>
 

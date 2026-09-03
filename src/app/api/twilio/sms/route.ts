@@ -24,21 +24,24 @@ export async function POST(req: Request) {
     const { data: users } = await supabase.from('users').select('id, twilio_number, name').not('twilio_number', 'is', null);
     const user = users?.find(u => u.twilio_number && u.twilio_number.replace(/[^\d]/g, '').endsWith(numberToMatch));
 
+    const fromMatch = fromNumber.replace(/[^\d]/g, '').slice(-10);
+    const exactMatch = `%${fromMatch}%`;
+    const { data: leads } = await supabase.from('leads')
+      .select('id, name, user_id')
+      .or(`phone.ilike.${exactMatch},secondary_phone.ilike.${exactMatch}`)
+      .limit(1);
+      
+    // If we matched a lead, assign the SMS to the lead's owner. Otherwise, fallback to the Twilio number match.
+    const assignedUserId = (leads && leads.length > 0 && leads[0].user_id) ? leads[0].user_id : (user ? user.id : null);
+
     await supabase.from('sms_messages').insert([{
-      user_id: user ? user.id : null,
+      user_id: assignedUserId,
       contact_number: fromNumber, 
       direction: 'inbound',
       body: body, 
       media_url: mediaUrl, 
       is_read: false
     }]);
-
-    const fromMatch = fromNumber.replace(/[^\d]/g, '').slice(-10);
-    const fuzzyFromMatch = fromMatch.split('').join('%');
-    const { data: leads } = await supabase.from('leads')
-      .select('id, name')
-      .or(`phone.ilike.%${fuzzyFromMatch}%,secondary_phone.ilike.%${fuzzyFromMatch}%`)
-      .limit(1);
       
     if (leads && leads.length > 0) {
       const matchedLead = leads[0];

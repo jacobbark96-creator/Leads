@@ -1,11 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { MessageSquare, ArrowRight, Search, Users, User, Shield, ArrowLeft } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { MessageSquare, ArrowRight, Search, Users, User, Shield, ArrowLeft, MessageCircle } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { formatDistanceToNow } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { InternalChat } from '../../../../components/InternalChat';
+import { SmsChatWindow } from '../../../../components/SmsChatWindow';
 
 export const UnifiedMessagesPanel = () => {
   const { profile } = useAuthStore();
@@ -27,7 +28,7 @@ export const UnifiedMessagesPanel = () => {
       const groupIds = memberships?.map(m => m.group_id) || [];
 
       // 2. Fetch latest messages for each group and direct chat
-      const { data: messages } = await supabase
+      const internalQuery = supabase
         .from('internal_messages')
         .select(`
           *,
@@ -39,10 +40,29 @@ export const UnifiedMessagesPanel = () => {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      if (messages) {
-        const chatMap = new Map();
+      // 3. Fetch SMS/WhatsApp messages
+      const smsQuery = supabase
+        .from('sms_messages')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(100);
 
-        messages.forEach(msg => {
+      // Restrict SMS to user if not admin
+      const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
+      if (!isAdmin) {
+        smsQuery.eq('user_id', profile.id);
+      }
+
+      // 4. Fetch clients to map SMS names if needed
+      const clientsQuery = supabase.from('clients').select('user_id, company_name');
+
+      const [internalRes, smsRes, clientsRes] = await Promise.all([internalQuery, smsQuery, clientsQuery]);
+
+      const chatMap = new Map();
+
+      // Process Internal Messages
+      if (internalRes.data) {
+        internalRes.data.forEach(msg => {
           let chatId, chatName, chatType, isGroup;
           
           if (msg.group_id) {
@@ -73,19 +93,55 @@ export const UnifiedMessagesPanel = () => {
             chatMap.get(chatId).unread += 1;
           }
         });
-
-        setConversations(Array.from(chatMap.values()));
       }
+
+      // Process SMS Messages
+      if (smsRes.data) {
+        smsRes.data.forEach(msg => {
+          const chatId = msg.contact_number;
+          
+          // Try to get name from clients or just use number
+          let chatName = chatId;
+          
+          if (!chatMap.has(chatId)) {
+            chatMap.set(chatId, {
+              id: chatId,
+              name: chatName,
+              type: 'SMS',
+              isGroup: false,
+              msg: msg.body || 'Media message',
+              time: formatDistanceToNow(new Date(msg.created_at), { addSuffix: true }).replace('about ', ''),
+              unread: msg.direction === 'inbound' && !msg.is_read ? 1 : 0,
+              created_at: msg.created_at
+            });
+          } else if (msg.direction === 'inbound' && !msg.is_read) {
+            chatMap.get(chatId).unread += 1;
+          }
+        });
+      }
+
+      // Sort combined messages
+      const sortedConversations = Array.from(chatMap.values()).sort((a, b) => 
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+      );
+      
+      setConversations(sortedConversations);
     };
 
     fetchConversations();
 
-    const channel = supabase.channel('internal-messages-panel')
+    const channelInternal = supabase.channel('internal-messages-panel')
       .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'internal_messages' }, fetchConversations)
+      .subscribe();
+      
+    const channelSms = supabase.channel('sms-messages-panel')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sms_messages' }, fetchConversations)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sms_messages' }, fetchConversations)
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(channelInternal);
+      supabase.removeChannel(channelSms);
     };
   }, [profile]);
 
@@ -118,7 +174,7 @@ export const UnifiedMessagesPanel = () => {
             </div>
 
             <div className="flex items-center gap-1.5 mb-2.5 bg-white/5 p-1 rounded-xl shrink-0">
-              {['ALL', 'DIRECT', 'GROUPS', 'TEAM'].map(tab => (
+              {['ALL', 'DIRECT', 'GROUPS', 'TEAM', 'SMS'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -156,7 +212,7 @@ export const UnifiedMessagesPanel = () => {
                     className="flex items-center gap-2.5 bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/10 p-2 rounded-2xl transition-all cursor-pointer group"
                   >
                     <div className="relative shrink-0">
-                      <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-blue-600/80 to-blue-800/80 flex items-center justify-center shadow-inner text-white font-bold text-[10px]">
+                      <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${chat.type === 'SMS' ? (chat.name.toLowerCase().startsWith('whatsapp:') ? 'from-[#00a884] to-[#00d4aa]' : 'from-green-600/80 to-green-800/80') : 'from-blue-600/80 to-blue-800/80'} flex items-center justify-center shadow-inner text-white font-bold text-[10px]`}>
                         {chat.name.substring(0, 2).toUpperCase()}
                       </div>
                       {chat.unread > 0 && (
@@ -200,12 +256,20 @@ export const UnifiedMessagesPanel = () => {
               </button>
             </div>
             <div className="flex-1 min-h-0 bg-[#0a0f1c]/40">
-              <InternalChat 
-                isOpen={true} 
-                isModal={false} 
-                hideSidebar={selectedChat.id !== 'new'}
-                initialActiveChat={selectedChat.id === 'new' ? 'NEW_CHAT' : selectedChat}
-              />
+              {selectedChat.type === 'SMS' ? (
+                <SmsChatWindow
+                  contactNumber={selectedChat.id}
+                  contactName={selectedChat.name}
+                  onClose={() => setSelectedChat(null)}
+                />
+              ) : (
+                <InternalChat 
+                  isOpen={true} 
+                  isModal={false} 
+                  hideSidebar={selectedChat.id !== 'new'}
+                  initialActiveChat={selectedChat.id === 'new' ? 'NEW_CHAT' : selectedChat}
+                />
+              )}
             </div>
           </motion.div>
         )}

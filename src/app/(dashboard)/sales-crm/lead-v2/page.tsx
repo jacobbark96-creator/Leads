@@ -2205,7 +2205,7 @@ function LeadDetailsV2Content() {
               <span className="text-gray-900 truncate max-w-[150px] md:max-w-none">{lead.company || lead.name}</span>
             </div>
             <div className="flex flex-wrap items-center gap-3 md:gap-4 w-full md:w-auto">
-              {packId && profile?.permissions?.includes('can_autodial') && (
+              {packId && (profile?.role === 'super_admin' || profile?.role === 'rep' || profile?.role === 'admin' || profile?.permissions?.includes('can_autodial')) && (
                 <button
                   onClick={() => setIsAutoDialEnabled(!isAutoDialEnabled)}
                   className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-colors shadow-sm ${isAutoDialEnabled ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200'}`}

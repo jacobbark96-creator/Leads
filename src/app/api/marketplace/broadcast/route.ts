@@ -168,15 +168,27 @@ export async function POST(req: NextRequest) {
 
         const whatsappTo = `whatsapp:${formattedPhone}`;
 
-        await sendTwilioMessage(
-          whatsappTo,
-          twilioPhoneNumber,
-          messageBody,
-          mediaUrl
-        );
+        // If a real Template SID is provided, use the Twilio Content API to comply with the 24-hour rule
+        if (TWILIO_WHATSAPP_TEMPLATE_SID && !TWILIO_WHATSAPP_TEMPLATE_SID.startsWith('HXXX')) {
+          await sendWhatsAppTemplate(
+            whatsappTo,
+            twilioPhoneNumber,
+            TWILIO_WHATSAPP_TEMPLATE_SID,
+            { town, mediaUrl } // Maps to {{1}} and {{2}} in Twilio Content API
+          );
+          console.log(`[Broadcast] Sent WhatsApp TEMPLATE message to ${contractor.company_name || contractor.contact_name} (${formattedPhone})`);
+        } else {
+          // Fallback to standard messaging (only works if 24h session is open or matches exact template string)
+          await sendTwilioMessage(
+            whatsappTo,
+            twilioPhoneNumber,
+            messageBody,
+            mediaUrl
+          );
+          console.log(`[Broadcast] Sent custom WhatsApp message with media to ${contractor.company_name || contractor.contact_name} (${formattedPhone})`);
+        }
         
         sentCount++;
-        console.log(`[Broadcast] Sent custom WhatsApp message with media to ${contractor.company_name || contractor.contact_name} (${formattedPhone})`);
         
       } catch (err: any) {
         console.error(`[Broadcast] Failed to send to ${contractor.phone}:`, err.message);

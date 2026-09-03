@@ -10,7 +10,7 @@ import { useContext } from 'react';
 import toast from 'react-hot-toast';
 import EmojiPicker, { Theme, EmojiClickData } from 'emoji-picker-react';
 import { GifPicker } from 'gif-picker-react';
-import { Tenor } from 'gif-picker-react/providers/tenor';
+import { Giphy } from 'gif-picker-react/providers/giphy';
 
 type UserPresence = {
   id: string;
@@ -1463,21 +1463,21 @@ export const InternalChat: React.FC<{
               
               {showGifPicker && (
                 <div className="absolute bottom-full left-0 mb-2 z-50 bg-gray-900 rounded-lg overflow-hidden shadow-xl border border-gray-700">
-                  {process.env.NEXT_PUBLIC_TENOR_API_KEY ? (
+                  {process.env.NEXT_PUBLIC_GIPHY_API_KEY ? (
                     <GifPicker 
-                      provider={Tenor(process.env.NEXT_PUBLIC_TENOR_API_KEY)}
+                      provider={Giphy(process.env.NEXT_PUBLIC_GIPHY_API_KEY)}
                       onGifClick={onGifClick} 
                       theme={Theme.DARK}
                     />
                   ) : (
                     <div className="p-6 text-center text-sm text-gray-400 w-[350px] bg-gray-900">
                       <p className="mb-2 font-bold text-white">GIFs are not configured</p>
-                      <p className="text-xs mb-4">To enable GIFs, you need a free Tenor API Key.</p>
+                      <p className="text-xs mb-4">To enable GIFs, you need a free Giphy API Key.</p>
                       <ol className="text-left text-xs list-decimal pl-5 space-y-1 mb-4">
-                        <li>Go to Google Cloud Console</li>
-                        <li>Enable "Tenor API"</li>
-                        <li>Create an API Key</li>
-                        <li>Add <code className="bg-gray-800 px-1 py-0.5 rounded">NEXT_PUBLIC_TENOR_API_KEY=your_key</code> to your .env file</li>
+                        <li>Go to developers.giphy.com</li>
+                        <li>Create an App</li>
+                        <li>Get your API Key</li>
+                        <li>Add <code className="bg-gray-800 px-1 py-0.5 rounded">NEXT_PUBLIC_GIPHY_API_KEY=your_key</code> to your .env file</li>
                       </ol>
                     </div>
                   )}

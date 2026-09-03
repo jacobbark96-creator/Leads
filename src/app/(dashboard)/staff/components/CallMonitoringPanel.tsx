@@ -142,7 +142,7 @@ export const CallMonitoringPanel = () => {
                       ? '/admin-crm?tab=users' 
                       : `/sales-crm/lead-v2?id=${call.activeCallLeadId}`;
                   } else {
-                    window.location.href = `/staff/call-logs?agent=${call.id}`;
+                    window.location.href = `/admin-crm/monitoring?agent=${call.id}`;
                   }
                 }}
                 className={`flex items-center justify-between bg-white/[0.01] p-1.5 rounded-lg group cursor-pointer border ${

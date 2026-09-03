@@ -48,10 +48,13 @@ export const InternalChat: React.FC<{
   const groupsRef = useRef<GroupChat[]>([]);
   const [presences, setPresences] = useState<Record<string, UserPresence>>({});
   const [now, setNow] = useState(Date.now());
-  const [activeChatUser, setActiveChatUser] = useState<any | null>(initialActiveChat || null);
+  const [activeChatUser, setActiveChatUser] = useState<any | null>(initialActiveChat === 'NEW_CHAT' ? null : (initialActiveChat || null));
 
   useEffect(() => {
-    if (initialActiveChat) {
+    if (initialActiveChat === 'NEW_CHAT') {
+      setActiveChatUser(null);
+      sessionStorage.removeItem('activeChatUser');
+    } else if (initialActiveChat) {
       setActiveChatUser(initialActiveChat);
     }
   }, [initialActiveChat]);
@@ -66,6 +69,7 @@ export const InternalChat: React.FC<{
 
   // Persist active chat user to session storage so it survives unmounts
   useEffect(() => {
+    if (initialActiveChat === 'NEW_CHAT') return;
     const saved = sessionStorage.getItem('activeChatUser');
     if (saved && !activeChatUser) {
       try {

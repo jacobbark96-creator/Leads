@@ -203,8 +203,8 @@ export const UnifiedMessagesPanel = () => {
               <InternalChat 
                 isOpen={true} 
                 isModal={false} 
-                hideSidebar={true}
-                initialActiveChat={selectedChat.id === 'new' ? null : selectedChat}
+                hideSidebar={selectedChat.id !== 'new'}
+                initialActiveChat={selectedChat.id === 'new' ? 'NEW_CHAT' : selectedChat}
               />
             </div>
           </motion.div>

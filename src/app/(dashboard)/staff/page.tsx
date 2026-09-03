@@ -333,7 +333,7 @@ export default function StaffPortal() {
                 <TasksPanel />
               </div>
               <div className="flex-[0.65] min-h-0 overflow-hidden">
-                {isAdmin ? <LiveFeed /> : <RepPerformanceCard />}
+                {isRep ? <RepPerformanceCard /> : <LiveFeed />}
               </div>
             </div>
 

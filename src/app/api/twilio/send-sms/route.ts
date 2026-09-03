@@ -51,9 +51,14 @@ export async function POST(req: Request) {
     let formattedFrom = isWhatsApp ? '' : normalizeNumber(fromNumber);
     
     if (isWhatsApp) {
-      // Always use the explicit WhatsApp number for WhatsApp messages
-      const companyNumber = process.env.TWILIO_WHATSAPP_NUMBER || '+447380308873';
-      formattedFrom = companyNumber.startsWith('whatsapp:') ? companyNumber : `whatsapp:${companyNumber}`;
+      // Always use the explicit WhatsApp number or Messaging Service SID
+      const messagingServiceSid = process.env.TWILIO_MESSAGING_SERVICE_SID;
+      if (messagingServiceSid) {
+        formattedFrom = messagingServiceSid;
+      } else {
+        const companyNumber = process.env.TWILIO_WHATSAPP_NUMBER || '+447380308873';
+        formattedFrom = companyNumber.startsWith('whatsapp:') ? companyNumber : `whatsapp:${companyNumber}`;
+      }
     } else if (!isWhatsApp && formattedFrom.startsWith('whatsapp:')) {
       formattedFrom = formattedFrom.replace('whatsapp:', '');
     }

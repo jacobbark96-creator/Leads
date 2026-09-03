@@ -82,7 +82,7 @@ export async function POST(req: Request) {
       contact_number: to, 
       direction: 'outbound',
       body: isWhatsApp && template ? `[Template: ${template}] ${body}` : body, 
-      is_read: true, 
+      is_read: false, 
       twilio_sid: result.sid, 
       delivery_status: result.status || 'sent'
     }]);

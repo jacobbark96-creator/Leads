@@ -93,7 +93,7 @@ export const SmsChatWindow = ({
       contact_number: contactNumber,
       direction: 'outbound',
       body: messageText,
-      is_read: true,
+      is_read: false,
       delivery_status: 'sent',
       created_at: new Date().toISOString()
     };

@@ -50,7 +50,8 @@ export async function POST(req: Request) {
     const isWhatsApp = formattedTo.startsWith('whatsapp:');
     
     if (isWhatsApp) {
-      const companyNumber = process.env.TWILIO_PHONE_NUMBER || '+15559601534';
+      // Always use the explicit environment variable for WhatsApp, fallback to standard phone number
+      const companyNumber = process.env.TWILIO_WHATSAPP_NUMBER || process.env.TWILIO_PHONE_NUMBER || '+447380308873';
       formattedFrom = companyNumber.startsWith('whatsapp:') ? companyNumber : `whatsapp:${companyNumber}`;
     } else if (!isWhatsApp && formattedFrom.startsWith('whatsapp:')) {
       formattedFrom = formattedFrom.replace('whatsapp:', '');

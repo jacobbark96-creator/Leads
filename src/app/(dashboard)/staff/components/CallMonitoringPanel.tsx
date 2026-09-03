@@ -74,7 +74,7 @@ export const CallMonitoringPanel = () => {
     };
 
     fetchMonitoringData();
-    const interval = setInterval(fetchMonitoringData, 30000); // Refresh every 30s
+    const interval = setInterval(fetchMonitoringData, 3000); // Refresh every 3s to feel instant
 
     const channel = supabase.channel('call-monitoring')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'activities', filter: "activity_type=eq.call_made" }, fetchMonitoringData)

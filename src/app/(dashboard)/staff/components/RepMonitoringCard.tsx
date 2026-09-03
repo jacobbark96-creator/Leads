@@ -101,7 +101,7 @@ export function RepMonitoringCard() {
     };
 
     fetchMonitoringData();
-    const interval = setInterval(() => fetchMonitoringData(true), 30000); // Update every 30s
+    const interval = setInterval(() => fetchMonitoringData(true), 5000); // Update every 5s to feel real-time
     return () => clearInterval(interval);
   }, []);
 

@@ -21,7 +21,19 @@ export const LiveFeed = () => {
         .limit(20);
 
       if (!error && data && data.length > 0) {
-        setEvents(data.map(act => {
+        // Deduplicate by lead_id to ensure a lead only appears once in the feed
+        const uniqueActs: any[] = [];
+        const seenLeads = new Set();
+        
+        for (const act of data) {
+          if (act.lead_id) {
+            if (seenLeads.has(act.lead_id)) continue;
+            seenLeads.add(act.lead_id);
+          }
+          uniqueActs.push(act);
+        }
+
+        setEvents(uniqueActs.map(act => {
           let statusLabel = act.activity_type?.toUpperCase() || 'ACTIVITY';
           
           if (act.activity_type === 'sold' || act.activity_type === 'won') {

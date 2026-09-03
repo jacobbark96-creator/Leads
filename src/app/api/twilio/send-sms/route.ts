@@ -52,8 +52,13 @@ export async function POST(req: Request) {
     
     if (isWhatsApp) {
       // Always use the explicit WhatsApp number to avoid Channel errors
-      const companyNumber = process.env.TWILIO_WHATSAPP_NUMBER || '+447380308873';
-      formattedFrom = companyNumber.startsWith('whatsapp:') ? companyNumber : `whatsapp:${companyNumber}`;
+      // Force the exact number +447380308873 since the env var might be misconfigured with the boilerplate +1555 number
+      let companyNumber = process.env.TWILIO_WHATSAPP_NUMBER || '+447380308873';
+      if (companyNumber.includes('1555')) {
+        companyNumber = '+447380308873';
+      }
+      companyNumber = companyNumber.replace(/whatsapp:/g, '');
+      formattedFrom = `whatsapp:${companyNumber}`;
     } else if (!isWhatsApp && formattedFrom.startsWith('whatsapp:')) {
       formattedFrom = formattedFrom.replace('whatsapp:', '');
     }

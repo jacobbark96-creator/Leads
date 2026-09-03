@@ -3,6 +3,26 @@ import { Phone, ArrowRight, Mic } from 'lucide-react';
 import Link from 'next/link';
 import { supabase } from '@/lib/supabase';
 
+const LiveCounter = ({ startTime }: { startTime: string }) => {
+  const [duration, setDuration] = useState('0m 0s');
+
+  useEffect(() => {
+    const updateDuration = () => {
+      const start = new Date(startTime).getTime();
+      const diff = Math.max(0, Math.floor((Date.now() - start) / 1000));
+      const m = Math.floor(diff / 60);
+      const s = diff % 60;
+      setDuration(`${m}m ${s}s`);
+    };
+
+    updateDuration();
+    const interval = setInterval(updateDuration, 1000);
+    return () => clearInterval(interval);
+  }, [startTime]);
+
+  return <span className="text-emerald-400 font-bold drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]">{duration}</span>;
+};
+
 export const CallMonitoringPanel = () => {
   const [activeCalls, setActiveCalls] = useState<any[]>([]);
   const [callsToday, setCallsToday] = useState(0);
@@ -16,17 +36,22 @@ export const CallMonitoringPanel = () => {
         
         const data = await res.json();
         if (data.representatives) {
-          const mapped = data.representatives.map((rep: any) => ({
-            id: rep.id,
-            agent: rep.name.split(' ')[0] + (rep.name.split(' ')[1] ? ' ' + rep.name.split(' ')[1][0] + '.' : ''),
-            status: rep.logs.some((l: any) => {
+          const mapped = data.representatives.map((rep: any) => {
+            const activeCall = rep.logs.find((l: any) => {
               const logTime = new Date(l.time).getTime();
               return (Date.now() - logTime) < 5 * 60 * 1000; // Active in last 5 mins
-            }) ? 'ON CALL' : (rep.totalCalls > 0 ? 'AVAILABLE' : 'IDLE'),
-            duration: rep.formattedDuration,
-            totalCalls: rep.totalCalls,
-            avgDuration: rep.formattedAvgDuration
-          }));
+            });
+
+            return {
+              id: rep.id,
+              agent: rep.name.split(' ')[0] + (rep.name.split(' ')[1] ? ' ' + rep.name.split(' ')[1][0] + '.' : ''),
+              status: activeCall ? 'ON CALL' : (rep.totalCalls > 0 ? 'AVAILABLE' : 'IDLE'),
+              activeCallTime: activeCall ? activeCall.time : null,
+              duration: rep.formattedDuration,
+              totalCalls: rep.totalCalls,
+              avgDuration: rep.formattedAvgDuration
+            };
+          });
 
           // Sort by status priority
           const sorted = mapped.sort((a: any, b: any) => {
@@ -114,7 +139,13 @@ export const CallMonitoringPanel = () => {
                 <div className="flex items-center gap-1.5 text-[9px]">
                   <span className="text-gray-500">Dials: <span className="text-gray-300">{call.totalCalls}</span></span>
                   <span className="text-white/10">|</span>
-                  <span className="text-gray-500">Time: <span className="text-gray-300">{call.duration}</span></span>
+                  <span className="text-gray-500">Time: <span className="text-gray-300">
+                    {call.status === 'ON CALL' && call.activeCallTime ? (
+                      <LiveCounter startTime={call.activeCallTime} />
+                    ) : (
+                      call.duration
+                    )}
+                  </span></span>
                   <span className="text-white/10">|</span>
                   <span className="text-gray-500">Avg: <span className="text-gray-300">{call.avgDuration}</span></span>
                 </div>

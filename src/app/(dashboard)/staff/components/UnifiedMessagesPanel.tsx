@@ -41,17 +41,17 @@ export const UnifiedMessagesPanel = () => {
         .limit(100);
 
       // 3. Fetch SMS/WhatsApp messages
+      const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
+      const smsFilter = isAdmin 
+        ? `user_id.eq.${profile.id},contact_number.ilike.whatsapp:%`
+        : `user_id.eq.${profile.id}`;
+
       const smsQuery = supabase
         .from('sms_messages')
         .select('*')
+        .or(smsFilter)
         .order('created_at', { ascending: false })
         .limit(100);
-
-      // Restrict SMS to user if not admin
-      const isAdmin = profile.role === 'admin' || profile.role === 'super_admin';
-      if (!isAdmin) {
-        smsQuery.eq('user_id', profile.id);
-      }
 
       // 4. Fetch clients to map SMS names if needed
       const clientsQuery = supabase.from('clients').select('user_id, company_name');

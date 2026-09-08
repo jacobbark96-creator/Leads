@@ -43,6 +43,7 @@ export default function ClientDashboard() {
   const [showPasswordResetModal, setShowPasswordResetModal] = useState(false);
   const [clientId, setClientId] = useState<string | null>(null);
   const [creditBalance, setCreditBalance] = useState<number>(0);
+  const [prepaidBalance, setPrepaidBalance] = useState<number>(0);
   const [creditLimit, setCreditLimit] = useState<number>(0);
   const [creditUsed, setCreditUsed] = useState<number>(0);
   const [clientLocation, setClientLocation] = useState<{lat: number, lng: number} | null>(null);
@@ -103,6 +104,7 @@ export default function ClientDashboard() {
       }
 
       setClientId(clientData.id);
+      setPrepaidBalance(Number(clientData.credit_balance) || 0);
       
       const userLimit = Number(profile?.trade_limit_setting) || 0;
       const userUsage = Number(profile?.current_trade_usage) || 0;
@@ -569,19 +571,26 @@ export default function ClientDashboard() {
   return (
     <div className="flex flex-col gap-4 w-full max-w-[1400px] mx-auto pb-6">
       {/* 4 Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
-        {/* Card 1: Account */}
-        <div className="bg-[#E8F2FF] rounded-2xl p-3 border border-[#B3D1FF] shadow-sm flex flex-col justify-between relative overflow-hidden h-[150px]">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+        {/* Card 1: Flex Account */}
+        <div className={`bg-[#E8F2FF] rounded-2xl p-3 border border-[#B3D1FF] shadow-sm flex flex-col justify-between relative overflow-hidden h-[150px] ${!profile?.trade_account_enabled ? 'grayscale opacity-60' : ''}`}>
+          {!profile?.trade_account_enabled && (
+            <div className="absolute inset-0 z-20 flex items-center justify-center bg-gray-900/5 backdrop-blur-[1px]">
+              <div className="bg-gray-900/80 text-white text-[10px] font-black px-3 py-1.5 rounded-full uppercase tracking-widest shadow-xl border border-white/10">
+                Flex not active
+              </div>
+            </div>
+          )}
           <div className="absolute -right-4 -bottom-4 text-[#0066FF] opacity-[0.05]">
             <CreditCard className="w-20 h-20" />
           </div>
           <div className="relative z-10 flex flex-col items-center">
             <div className="flex justify-between items-start w-full mb-0">
               <h3 className="text-[9px] font-bold text-[#0047B3] uppercase tracking-widest flex items-center gap-1">
-                OPENLEAD ACCOUNT <span className="w-2.5 h-2.5 rounded-full border border-[#0047B3]/30 text-[7px] flex items-center justify-center text-[#0047B3]">i</span>
+                FLEX ACCOUNT <span className="w-2.5 h-2.5 rounded-full border border-[#0047B3]/30 text-[7px] flex items-center justify-center text-[#0047B3]">i</span>
               </h3>
               <div className="w-5 h-5 rounded-md bg-white/80 flex items-center justify-center text-[#0066FF] shadow-sm backdrop-blur-sm">
-                <CreditCard className="w-2.5 h-2.5" />
+                <Zap className="w-2.5 h-2.5" />
               </div>
             </div>
             <div className="text-3xl font-black text-gray-900 mb-0 tracking-tight leading-none text-center">£{(creditBalance).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}</div>
@@ -617,7 +626,33 @@ export default function ClientDashboard() {
           </div>
         </div>
 
-        {/* Card 2: Purchased Leads */}
+        {/* Card 2: Prepaid Credit */}
+        <div className="bg-white rounded-2xl p-3 border border-gray-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow h-[150px]">
+          <div className="flex justify-between items-start mb-1">
+            <h3 className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">PREPAID CREDIT</h3>
+            <div className="w-5 h-5 rounded-md bg-[#F0FDF4] flex items-center justify-center text-[#10B981]">
+              <CreditCard className="w-2.5 h-2.5" />
+            </div>
+          </div>
+          <div className="flex-1 flex flex-col justify-center">
+            <div className="text-2xl font-black text-gray-900 mb-0.5 leading-none">£{prepaidBalance.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+            <div className="text-[8px] font-bold text-gray-500">Available in your wallet</div>
+          </div>
+          <div className="mt-auto pt-2 border-t border-gray-100 flex justify-between items-center">
+             <button 
+               onClick={() => {
+                 if (profile?.id) trackClientActivity(profile.id, 'button_click', { button: 'Top Up' });
+                 setShowTopUpModal(true);
+               }}
+               className="text-[9px] font-black text-[#0066FF] hover:underline"
+             >
+               Top Up Wallet
+             </button>
+             <span className="text-[9px] leading-none text-[#0066FF]">→</span>
+          </div>
+        </div>
+
+        {/* Card 3: Purchased Leads */}
         <div className="bg-white rounded-2xl p-3 border border-gray-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow h-[150px]">
           <div className="flex justify-between items-start mb-1">
             <h3 className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">PURCHASED LEADS</h3>
@@ -640,7 +675,7 @@ export default function ClientDashboard() {
           </div>
         </div>
 
-        {/* Card 3: Surveyed Leads */}
+        {/* Card 4: Surveyed Leads */}
         <div className="bg-white rounded-2xl p-3 border border-gray-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow h-[150px]">
           <div className="flex justify-between items-start mb-1">
             <h3 className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">SURVEYED LEADS</h3>
@@ -666,7 +701,7 @@ export default function ClientDashboard() {
           </div>
         </div>
 
-        {/* Card 4: Won Deals */}
+        {/* Card 5: Won Deals */}
         <div className="bg-white rounded-2xl p-3 border border-gray-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow h-[150px]">
           <div className="flex justify-between items-start mb-1">
             <h3 className="text-[9px] font-bold text-gray-500 uppercase tracking-widest">WON DEALS</h3>

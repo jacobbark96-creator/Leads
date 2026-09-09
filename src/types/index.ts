@@ -1,4 +1,4 @@
-export type UserRole = 'client' | 'sales' | 'admin' | 'super_admin' | 'rep' | 'growth_manager' | 'Residential Rep' | 'Residential Sales' | 'Commercial Sales';
+export type UserRole = 'client' | 'sales' | 'admin' | 'super_admin' | 'rep' | 'growth_manager' | 'Residential Rep' | 'Residential Sales' | 'Commercial Sales' | 'referral_partner';
 
 export interface UserProfile {
   id: string;
@@ -301,3 +301,4 @@ export interface DiscountCode {
   created_at: string;
   created_by: string | null;
 }
+export * from './referral';

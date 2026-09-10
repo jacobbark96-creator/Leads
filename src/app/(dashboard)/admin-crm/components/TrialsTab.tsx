@@ -1,8 +1,8 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types';
 import toast from 'react-hot-toast';
-import { Mail, Plus, Save, Trash2 } from 'lucide-react';
+import { Mail, Plus, Save, Trash2, KeyRound, CheckCircle2, XCircle } from 'lucide-react';
 
 interface TrialsTabProps {
   users: UserProfile[];
@@ -14,7 +14,9 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
   const [editForm, setEditForm] = useState({ name: '', secondary_email: '' });
   const [isCreating, setIsCreating] = useState(false);
   const [isClearingChats, setIsClearingChats] = useState(false);
+  const [isResettingPasswords, setIsResettingPasswords] = useState(false);
   const [isSendingLogin, setIsSendingLogin] = useState<string | null>(null);
+  const [statuses, setStatuses] = useState<Record<string, boolean>>({});
 
   // Filter trial accounts
   const trialAccounts = useMemo(() => {
@@ -27,6 +29,28 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
       return numA - numB;
     });
   }, [users]);
+
+  const fetchStatuses = async () => {
+    if (trialAccounts.length === 0) return;
+    try {
+      const response = await fetch('/api/trials/check-status', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: trialAccounts.map(u => u.id) })
+      });
+      const data = await response.json();
+      if (data.statuses) {
+        setStatuses(data.statuses);
+      }
+    } catch (err) {
+      console.error('Failed to fetch statuses', err);
+    }
+  };
+
+  useEffect(() => {
+    fetchStatuses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [trialAccounts.length]);
 
   const handleEditClick = (user: UserProfile) => {
     setEditingUserId(user.id);
@@ -104,6 +128,38 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
     }
   };
 
+  const handleShuffleLogins = async () => {
+    if (!window.confirm('Are you sure you want to shuffle logins for all trial accounts? This will generate new passwords and update their login credentials.')) {
+      return;
+    }
+
+    setIsResettingPasswords(true);
+    try {
+      const trialUserIds = trialAccounts.map(u => u.id);
+      
+      if (trialUserIds.length === 0) {
+        toast.error('No trial accounts found');
+        return;
+      }
+
+      const response = await fetch('/api/trials/reset-all', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ userIds: trialUserIds })
+      });
+      const data = await response.json();
+      
+      if (!response.ok) throw new Error(data.error || 'Failed to shuffle logins');
+      
+      toast.success('Logins shuffled for all trial accounts');
+      fetchStatuses();
+    } catch (err: any) {
+      toast.error(err.message);
+    } finally {
+      setIsResettingPasswords(false);
+    }
+  };
+
   const handleClearChats = async () => {
     if (!window.confirm('Are you sure you want to clear all internal chats for all trial accounts? This action cannot be undone.')) {
       return;
@@ -142,19 +198,34 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
           <h2 className="text-lg font-semibold text-gray-900">Trial Accounts</h2>
           <p className="text-sm text-gray-500">Manage representative trial accounts and dispatch login details.</p>
         </div>
-        <button
-          onClick={handleClearChats}
-          disabled={isClearingChats || trialAccounts.length === 0}
-          className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition-colors"
-          title="Clear all internal chats for all trial accounts"
-        >
-          {isClearingChats ? (
-            <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
-          ) : (
-            <Trash2 className="w-4 h-4" />
-          )}
-          Clear Chats
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleShuffleLogins}
+            disabled={isResettingPasswords || trialAccounts.length === 0}
+            className="flex items-center gap-2 px-3 py-1.5 bg-amber-50 text-amber-600 rounded-lg text-sm font-medium hover:bg-amber-100 disabled:opacity-50 transition-colors"
+            title="Generate new passwords for all trial accounts"
+          >
+            {isResettingPasswords ? (
+              <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <KeyRound className="w-4 h-4" />
+            )}
+            Shuffle Logins
+          </button>
+          <button
+            onClick={handleClearChats}
+            disabled={isClearingChats || trialAccounts.length === 0}
+            className="flex items-center gap-2 px-3 py-1.5 bg-red-50 text-red-600 rounded-lg text-sm font-medium hover:bg-red-100 disabled:opacity-50 transition-colors"
+            title="Clear all internal chats for all trial accounts"
+          >
+            {isClearingChats ? (
+              <div className="w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full animate-spin"></div>
+            ) : (
+              <Trash2 className="w-4 h-4" />
+            )}
+            Clear Chats
+          </button>
+        </div>
       </div>
       
       <div className="overflow-x-auto">
@@ -163,6 +234,7 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
             <tr>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Account</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Twilio Number</th>
               <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Personal Email</th>
               <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions</th>
@@ -190,6 +262,15 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
                       />
                     ) : (
                       user.name || '-'
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {statuses[user.id] === true ? (
+                      <CheckCircle2 className="w-5 h-5 text-emerald-500" title="Password matches sent credentials" />
+                    ) : statuses[user.id] === false ? (
+                      <XCircle className="w-5 h-5 text-red-500" title="Password mismatch" />
+                    ) : (
+                      <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" title="Checking status..." />
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
@@ -251,7 +332,7 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
             
             {trialAccounts.length === 0 && (
               <tr>
-                <td colSpan={5} className="px-6 py-4 text-center text-sm text-gray-500">
+                <td colSpan={6} className="px-6 py-4 text-center text-sm text-gray-500">
                   No trial accounts found.
                 </td>
               </tr>

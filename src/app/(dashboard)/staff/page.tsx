@@ -99,30 +99,10 @@ export default function StaffPortal() {
         const todayIso = today.toISOString();
 
         // 1. New Leads (Qualified Today)
-        // Find leads that had a 'qualified' activity today from 'fresh' status
-        const { data: qualifiedActivities } = await supabase
-          .from('activities')
-          .select('lead_id, metadata')
-          .eq('activity_type', 'qualified')
-          .gte('created_at', todayIso);
-          
-        // Count only those that were 'fresh' or have no metadata (assuming fresh for legacy)
-        const qualifiedLeadIds = [...new Set(
-          qualifiedActivities
-            ?.filter(a => !a.metadata || (a.metadata as any).old_status === 'fresh')
-            .map(a => a.lead_id) || []
-        )];
-        
-        let qualifiedCount = 0;
-        if (qualifiedLeadIds.length > 0) {
-          // Verify they are still in 'qualified' or higher status
-          const { count } = await supabase
-            .from('leads')
-            .select('*', { count: 'exact', head: true })
-            .in('status', ['qualified', 'marketplace', 'awaiting_sales', 'sold'])
-            .in('id', qualifiedLeadIds);
-          qualifiedCount = count || 0;
-        }
+        const { count: qualifiedCount } = await supabase
+          .from('leads')
+          .select('*', { count: 'exact', head: true })
+          .gte('qualified_at', todayIso);
 
         // 2. Calls Made (from Twilio monitoring API)
         const callRes = await fetch('/api/twilio/monitoring?dateRange=today');

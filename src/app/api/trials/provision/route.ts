@@ -17,6 +17,11 @@ export async function POST(req: NextRequest) {
     }
 
     // Get user details
+    const { data: userAuth, error: authError } = await supabaseAdmin.auth.admin.getUserById(userId);
+    if (authError || !userAuth.user) {
+      return NextResponse.json({ error: 'Auth User not found' }, { status: 404 });
+    }
+
     const { data: user, error: userError } = await supabaseAdmin
       .from('users')
       .select('email, secondary_email')
@@ -31,25 +36,13 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No personal email configured for this user' }, { status: 400 });
     }
 
-    // Generate random password
-    const newPassword = Array(12)
-      .fill('0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!@#$%^&*')
-      .map(x => x[Math.floor(Math.random() * x.length)])
-      .join('');
-
-    // Update password in Supabase Auth
-    const { error: updateError } = await supabaseAdmin.auth.admin.updateUserById(
-      userId,
-      { password: newPassword }
-    );
-
-    if (updateError) {
-      console.error('Auth update error:', updateError);
-      return NextResponse.json({ error: 'Failed to reset user password' }, { status: 500 });
+    const trialPassword = userAuth.user.user_metadata?.trial_password;
+    if (!trialPassword) {
+      return NextResponse.json({ error: 'No trial password generated for this account yet. Please reset passwords first.' }, { status: 400 });
     }
 
     // Send email with credentials
-    const emailResult = await sendTrialLoginEmail(user.secondary_email, user.email, newPassword);
+    const emailResult = await sendTrialLoginEmail(user.secondary_email, user.email, trialPassword);
 
     if (!emailResult.success) {
       console.error('Email send error:', emailResult.error);

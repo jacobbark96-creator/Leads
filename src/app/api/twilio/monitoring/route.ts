@@ -43,26 +43,33 @@ export async function GET(request: Request) {
       startTimeFilter = `&StartTime>=${twentyNineDaysAgo.toISOString().split('T')[0]}`;
     }
 
-    const callsUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?PageSize=500${startTimeFilter}`;
-    const recordingsUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Recordings.json?PageSize=500${startTimeFilter.replace('StartTime', 'DateCreated')}`;
+    const callsUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?PageSize=1000${startTimeFilter}`;
+    const recordingsUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Recordings.json?PageSize=1000${startTimeFilter.replace('StartTime', 'DateCreated')}`;
     const balanceUrl = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Balance.json`;
 
-    const [callsResponse, recordingsResponse, balanceResponse] = await Promise.all([
-      fetch(callsUrl, { headers: { 'Authorization': authHeader } }),
-      fetch(recordingsUrl, { headers: { 'Authorization': authHeader } }),
+    const fetchAllTwilioPages = async (initialUrl: string, dataKey: string) => {
+      let results: any[] = [];
+      let nextUrl: string | null = initialUrl;
+      let pageCount = 0;
+      while (nextUrl && pageCount < 10) { // Fetch up to 10,000 records
+        const response = await fetch(nextUrl, { headers: { 'Authorization': authHeader } });
+        if (!response.ok) {
+          if (pageCount === 0) throw new Error(`Failed to fetch ${dataKey}`);
+          break;
+        }
+        const data = await response.json();
+        results = results.concat(data[dataKey] || []);
+        nextUrl = data.next_page_uri ? `https://api.twilio.com${data.next_page_uri}` : null;
+        pageCount++;
+      }
+      return results;
+    };
+
+    const [calls, recordings, balanceResponse] = await Promise.all([
+      fetchAllTwilioPages(callsUrl, 'calls').catch(e => { console.error(e); return []; }),
+      fetchAllTwilioPages(recordingsUrl, 'recordings').catch(e => { console.error(e); return []; }),
       fetch(balanceUrl, { headers: { 'Authorization': authHeader } })
     ]);
-
-    if (!callsResponse.ok) return NextResponse.json({ error: 'Failed to fetch calls', status: callsResponse.status, text: await callsResponse.text() }, { status: 500 });
-    
-    const callsData = await callsResponse.json();
-    const calls = callsData.calls || [];
-
-    let recordings = [];
-    if (recordingsResponse.ok) {
-      const recordingsData = await recordingsResponse.json();
-      recordings = recordingsData.recordings || [];
-    }
 
     let balance = '0.00';
     let currency = 'USD';

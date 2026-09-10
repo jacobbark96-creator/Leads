@@ -41,76 +41,77 @@ export function LeadStatsTab() {
           break;
       }
 
-      // Fetch leads generated in this period
+      // 1. Fetch leads generated (qualified) in this period
       const { data: leads } = await supabase
         .from('leads')
-        .select('id, created_at, status, is_marketed, is_exclusive_sold, marked_as_sold, purchase_date')
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString());
+        .select('id, qualified_at')
+        .gte('qualified_at', start.toISOString())
+        .lte('qualified_at', end.toISOString());
 
-      // Fetch lead purchases for these leads to accurately count sold
-      const leadIds = leads?.map(l => l.id) || [];
-      
-      let purchases: any[] = [];
-      if (leadIds.length > 0) {
-        // Chunk to avoid URL too long
-        const chunkSize = 200;
-        for (let i = 0; i < leadIds.length; i += chunkSize) {
-          const chunk = leadIds.slice(i, i + chunkSize);
-          const { data: chunkPurchases } = await supabase
-            .from('lead_purchases')
-            .select('lead_id, status')
-            .in('lead_id', chunk);
-          if (chunkPurchases) purchases = [...purchases, ...chunkPurchases];
-        }
-      }
+      // 2. Fetch leads sold in this period (via lead_purchases)
+      const { data: purchasesInPeriod } = await supabase
+        .from('lead_purchases')
+        .select('id, lead_id, status, purchased_at')
+        .gte('purchased_at', start.toISOString())
+        .lte('purchased_at', end.toISOString());
+
+      // 3. Fetch leads sold in this period (via direct purchase_date on leads)
+      const { data: directSoldLeads } = await supabase
+        .from('leads')
+        .select('id, status, purchase_date')
+        .gte('purchase_date', start.toISOString())
+        .lte('purchase_date', end.toISOString());
 
       const generated = leads?.length || 0;
-      
-      // Calculate metrics
-      let qualified = 0;
-      let sold = 0;
-      let surveyed = 0;
-      let won = 0;
-      let lost = 0;
+      const qualified = generated; // Generated and qualified are the same in this context
 
-      const purchasedLeadIds = new Set(purchases.filter(p => ['new', 'sat', 'won', 'sold'].includes(p.status)).map(p => p.lead_id));
+      // Calculate metrics based on the events that occurred in this period
+      const soldSet = new Set<string>();
+      const surveyedSet = new Set<string>();
+      const wonSet = new Set<string>();
+      const lostSet = new Set<string>();
 
-      leads?.forEach(lead => {
-        const isSold = lead.is_exclusive_sold || lead.marked_as_sold || purchasedLeadIds.has(lead.id);
-        const isQualified = lead.is_marketed || isSold || ['sat', 'won', 'sold', 'qualified', 'awaiting_sales'].includes(lead.status?.toLowerCase());
-        const isSurveyed = ['sat', 'won'].includes(lead.status?.toLowerCase()) || purchases.some(p => p.lead_id === lead.id && ['sat', 'won'].includes(p.status));
-        const isWon = lead.status?.toLowerCase() === 'won' || purchases.some(p => p.lead_id === lead.id && p.status === 'won');
-        const isLost = ['rejected', 'lost', 'dead'].includes(lead.status?.toLowerCase());
-
-        if (isQualified) qualified++;
-        if (isSold) sold++;
-        if (isSurveyed) surveyed++;
-        if (isWon) won++;
-        if (isLost) lost++;
+      // Process purchases in period
+      purchasesInPeriod?.forEach(p => {
+        if (['new', 'sat', 'won', 'sold'].includes(p.status)) soldSet.add(p.lead_id);
+        if (['sat', 'won', 'proposal'].includes(p.status)) surveyedSet.add(p.lead_id);
+        if (p.status === 'won') wonSet.add(p.lead_id);
+        if (['rejected', 'lost', 'dead'].includes(p.status)) lostSet.add(p.lead_id);
       });
+
+      // Process direct sold leads in period
+      directSoldLeads?.forEach(lead => {
+        soldSet.add(lead.id);
+        if (['sat', 'won', 'proposal'].includes(lead.status?.toLowerCase())) surveyedSet.add(lead.id);
+        if (lead.status?.toLowerCase() === 'won') wonSet.add(lead.id);
+        if (['rejected', 'lost', 'dead'].includes(lead.status?.toLowerCase())) lostSet.add(lead.id);
+      });
+
+      const sold = soldSet.size;
+      const surveyed = surveyedSet.size;
+      const won = wonSet.size;
+      const lost = lostSet.size;
 
       // Prepare Graph Data
       const days = eachDayOfInterval({ start, end });
       const graphData = days.map(day => {
-        const dayLeads = leads?.filter(l => isSameDay(parseISO(l.created_at), day)) || [];
+        const dayLeads = leads?.filter(l => l.qualified_at && isSameDay(parseISO(l.qualified_at), day)) || [];
+        const dayPurchases = purchasesInPeriod?.filter(p => p.purchased_at && isSameDay(parseISO(p.purchased_at), day)) || [];
+        const dayDirectSold = directSoldLeads?.filter(l => l.purchase_date && isSameDay(parseISO(l.purchase_date), day)) || [];
         
-        let dayQualified = 0;
-        let daySold = 0;
+        let dayQualified = dayLeads.length;
         
-        dayLeads.forEach(lead => {
-          const isSold = lead.is_exclusive_sold || lead.marked_as_sold || purchasedLeadIds.has(lead.id);
-          const isQualified = lead.is_marketed || isSold || ['sat', 'won', 'sold', 'qualified', 'awaiting_sales'].includes(lead.status?.toLowerCase());
-          
-          if (isQualified) dayQualified++;
-          if (isSold) daySold++;
+        const daySoldSet = new Set<string>();
+        dayPurchases.forEach(p => {
+          if (['new', 'sat', 'won', 'sold'].includes(p.status)) daySoldSet.add(p.lead_id);
         });
+        dayDirectSold.forEach(l => daySoldSet.add(l.id));
 
         return {
           date: format(day, 'MMM d'),
           generated: dayLeads.length,
           qualified: dayQualified,
-          sold: daySold
+          sold: daySoldSet.size
         };
       });
 

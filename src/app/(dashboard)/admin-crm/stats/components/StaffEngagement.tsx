@@ -79,7 +79,10 @@ export function StaffEngagement() {
           dials: 0,
           qualified: 0,
           notes: 0,
-          qualifiedLeadIds: new Set<string>()
+          leadsSold: 0,
+          leadsSurveyed: 0,
+          leadsWon: 0,
+          leadsLost: 0,
         };
       });
 
@@ -93,71 +96,83 @@ export function StaffEngagement() {
           grouped[uid].notes++;
         } else if (act.activity_type === 'qualified') {
           grouped[uid].qualified++;
-          if (act.lead_id) {
-            grouped[uid].qualifiedLeadIds.add(act.lead_id);
-          }
         }
       });
 
-      // 2. Fetch lead performance for the qualified leads
-      // We need to collect all unique lead IDs across all staff that were qualified in this period
-      const allQualifiedLeadIds = new Set<string>();
-      Object.values(grouped).forEach(g => {
-        g.qualifiedLeadIds.forEach((id: string) => allQualifiedLeadIds.add(id));
+      // 2. Fetch leads sold in this period (via lead_purchases)
+      const { data: purchasesInPeriod } = await supabase
+        .from('lead_purchases')
+        .select('id, lead_id, status, purchased_at')
+        .gte('purchased_at', start.toISOString())
+        .lte('purchased_at', end.toISOString());
+
+      // 3. Fetch leads sold in this period (via direct purchase_date on leads)
+      const { data: directSoldLeads } = await supabase
+        .from('leads')
+        .select('id, status, purchase_date')
+        .gte('purchase_date', start.toISOString())
+        .lte('purchase_date', end.toISOString());
+
+      const soldSet = new Set<string>();
+      const surveyedSet = new Set<string>();
+      const wonSet = new Set<string>();
+      const lostSet = new Set<string>();
+
+      purchasesInPeriod?.forEach(p => {
+        if (['new', 'sat', 'won', 'sold'].includes(p.status)) soldSet.add(p.lead_id);
+        if (['sat', 'won', 'proposal'].includes(p.status)) surveyedSet.add(p.lead_id);
+        if (p.status === 'won') wonSet.add(p.lead_id);
+        if (['rejected', 'lost', 'dead'].includes(p.status)) lostSet.add(p.lead_id);
       });
 
-      const leadIdArray = Array.from(allQualifiedLeadIds);
-      let leadsData: any[] = [];
-      let purchasesData: any[] = [];
+      directSoldLeads?.forEach(lead => {
+        soldSet.add(lead.id);
+        if (['sat', 'won', 'proposal'].includes(lead.status?.toLowerCase())) surveyedSet.add(lead.id);
+        if (lead.status?.toLowerCase() === 'won') wonSet.add(lead.id);
+        if (['rejected', 'lost', 'dead'].includes(lead.status?.toLowerCase())) lostSet.add(lead.id);
+      });
 
-      if (leadIdArray.length > 0) {
-        // Chunk to avoid long URLs
+      // Now we need to find out WHO qualified these leads.
+      const allActionLeadIds = Array.from(new Set([...soldSet, ...surveyedSet, ...wonSet, ...lostSet]));
+      
+      if (allActionLeadIds.length > 0) {
         const chunkSize = 200;
-        for (let i = 0; i < leadIdArray.length; i += chunkSize) {
-          const chunk = leadIdArray.slice(i, i + chunkSize);
-          
-          const { data: chunkLeads } = await supabase
-            .from('leads')
-            .select('id, status, is_marketed, is_exclusive_sold, marked_as_sold')
-            .in('id', chunk);
-          if (chunkLeads) leadsData = [...leadsData, ...chunkLeads];
-
-          const { data: chunkPurchases } = await supabase
-            .from('lead_purchases')
-            .select('lead_id, status')
+        let qualifiers: any[] = [];
+        for (let i = 0; i < allActionLeadIds.length; i += chunkSize) {
+          const chunk = allActionLeadIds.slice(i, i + chunkSize);
+          const { data: chunkActs } = await supabase
+            .from('activities')
+            .select('user_id, lead_id')
+            .eq('activity_type', 'qualified')
             .in('lead_id', chunk);
-          if (chunkPurchases) purchasesData = [...purchasesData, ...chunkPurchases];
+          if (chunkActs) qualifiers = [...qualifiers, ...chunkActs];
         }
+
+        const leadToQualifier: Record<string, string> = {};
+        qualifiers.forEach(act => {
+          if (act.user_id) leadToQualifier[act.lead_id] = act.user_id;
+        });
+
+        soldSet.forEach(leadId => {
+          const uid = leadToQualifier[leadId];
+          if (uid && grouped[uid]) grouped[uid].leadsSold++;
+        });
+        surveyedSet.forEach(leadId => {
+          const uid = leadToQualifier[leadId];
+          if (uid && grouped[uid]) grouped[uid].leadsSurveyed++;
+        });
+        wonSet.forEach(leadId => {
+          const uid = leadToQualifier[leadId];
+          if (uid && grouped[uid]) grouped[uid].leadsWon++;
+        });
+        lostSet.forEach(leadId => {
+          const uid = leadToQualifier[leadId];
+          if (uid && grouped[uid]) grouped[uid].leadsLost++;
+        });
       }
 
-      // Map purchases to a Set for quick lookup
-      const purchasedLeadIds = new Set(purchasesData.filter(p => ['new', 'sat', 'won', 'sold'].includes(p.status)).map(p => p.lead_id));
-
-      // Calculate performance metrics per staff
-      Object.values(grouped).forEach(staff => {
-        staff.leadsSold = 0;
-        staff.leadsSurveyed = 0;
-        staff.leadsWon = 0;
-        staff.leadsLost = 0;
-
-        staff.qualifiedLeadIds.forEach((leadId: string) => {
-          const lead = leadsData.find(l => l.id === leadId);
-          if (!lead) return;
-
-          const isSold = lead.is_exclusive_sold || lead.marked_as_sold || purchasedLeadIds.has(lead.id);
-          const isSurveyed = ['sat', 'won'].includes(lead.status?.toLowerCase()) || purchasesData.some(p => p.lead_id === lead.id && ['sat', 'won'].includes(p.status));
-          const isWon = lead.status?.toLowerCase() === 'won' || purchasesData.some(p => p.lead_id === lead.id && p.status === 'won');
-          const isLost = ['rejected', 'lost', 'dead'].includes(lead.status?.toLowerCase());
-
-          if (isSold) staff.leadsSold++;
-          if (isSurveyed) staff.leadsSurveyed++;
-          if (isWon) staff.leadsWon++;
-          if (isLost) staff.leadsLost++;
-        });
-      });
-
       // Filter out staff with 0 activity
-      const result = Object.values(grouped).filter(s => s.dials > 0 || s.qualified > 0 || s.notes > 0);
+      const result = Object.values(grouped).filter(s => s.dials > 0 || s.qualified > 0 || s.notes > 0 || s.leadsSold > 0);
       
       // Sort by qualified
       result.sort((a, b) => b.qualified - a.qualified);

@@ -27,6 +27,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Home', path: '/staff', icon: Home, exact: true },
     { name: 'User Management', path: '/admin-crm', icon: Users, exact: true, id: 'admin-crm/users' },
     { name: 'Categories', path: '/admin-crm/categories', icon: Tags, id: 'admin-crm/categories' },
+    { name: 'Stats', path: '/admin-crm/stats', icon: BarChart2, id: 'admin-crm/stats' },
     { name: 'Lead Packs', path: '/admin-crm/lead-packs', icon: Database, id: 'admin-crm/lead-packs' },
     { name: 'Discount Codes', path: '/admin-crm/discounts', icon: Ticket, id: 'admin-crm/discounts' },
     { name: 'Emails', path: '/admin-crm/emails', icon: Mail, id: 'admin-crm/emails' },

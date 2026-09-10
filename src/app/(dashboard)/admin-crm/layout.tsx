@@ -32,6 +32,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Emails', path: '/admin-crm/emails', icon: Mail, id: 'admin-crm/emails' },
     { name: 'Sales Tracker', path: '/admin-crm/tracker', icon: TrendingUp, id: 'admin-crm/tracker', roles: ['super_admin'] },
     { name: 'Monitoring', path: '/admin-crm/monitoring', icon: Activity, id: 'admin-crm/monitoring', roles: ['super_admin'] },
+    { name: 'Referrals', path: '/admin-crm/referrals', icon: Users, id: 'admin-crm/referrals' },
     { name: 'Partners', path: '/admin-crm/partners', icon: Briefcase, id: 'admin-crm/partners' },
     { name: 'Openlead Max', path: '/admin-crm/openlead-max', icon: Sparkles, id: 'admin-crm/openlead-max' },
     { name: 'Recruitment', path: '/admin-crm/recruitment', icon: Briefcase, id: 'admin-crm/recruitment' },

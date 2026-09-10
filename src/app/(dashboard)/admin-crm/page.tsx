@@ -17,12 +17,9 @@ import { ConciergeTab } from './components/ConciergeTab';
 import { TargetsTab } from './components/TargetsTab';
 import { SystemSettingsTab } from './components/SystemSettingsTab';
 import { TrialsTab } from './components/TrialsTab';
-import { ReferralQuestionsTab } from './components/ReferralQuestionsTab';
-import { ReferredLeadsTab } from './components/ReferredLeadsTab';
-import { ReferralPaymentsTab } from './components/ReferralPaymentsTab';
 
 export default function UserManagement() {
-  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'stats' | 'background' | 'trials' | 'press' | 'feedback' | 'divisions' | 'finance' | 'concierge' | 'targets' | 'settings' | 'referral_questions' | 'referred_leads' | 'referral_payments'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'stats' | 'background' | 'trials' | 'press' | 'feedback' | 'divisions' | 'finance' | 'concierge' | 'targets' | 'settings'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuthStore();
@@ -266,6 +263,7 @@ export default function UserManagement() {
   const clientCount = users.filter(u => u.role === 'client').length;
 
   const filteredUsers = users.filter(u => {
+    if (u.role === 'referral_partner') return false; // Filter out referral partners from main user list
     if (roleFilter === 'all') return true;
     if (roleFilter === 'admin') return u.role === 'admin' || u.role === 'super_admin';
     if (roleFilter === 'rep') return u.role === 'rep' || u.role === 'Residential Rep';
@@ -365,24 +363,6 @@ export default function UserManagement() {
             <div className="flex items-center gap-2"><Briefcase className="w-4 h-4" /> Divisions</div>
           </button>
         )}
-        <button
-          onClick={() => setActiveTab('referral_questions')}
-          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'referral_questions' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-        >
-          <div className="flex items-center gap-2"><Database className="w-4 h-4" /> Referral Questions</div>
-        </button>
-        <button
-          onClick={() => setActiveTab('referred_leads')}
-          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'referred_leads' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-        >
-          <div className="flex items-center gap-2"><Users className="w-4 h-4" /> Referred Leads</div>
-        </button>
-        <button
-          onClick={() => setActiveTab('referral_payments')}
-          className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'referral_payments' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
-        >
-          <div className="flex items-center gap-2"><PoundSterling className="w-4 h-4" /> Referral Payments</div>
-        </button>
       </div>
 
       {activeTab === 'users' && (
@@ -756,9 +736,6 @@ export default function UserManagement() {
       {activeTab === 'targets' && <TargetsTab />}
       {activeTab === 'settings' && profile?.role === 'super_admin' && <SystemSettingsTab />}
       {activeTab === 'divisions' && profile?.role === 'super_admin' && <DivisionsTab />}
-      {activeTab === 'referral_questions' && <ReferralQuestionsTab />}
-      {activeTab === 'referred_leads' && <ReferredLeadsTab />}
-      {activeTab === 'referral_payments' && <ReferralPaymentsTab />}
     </div>
   );
 };

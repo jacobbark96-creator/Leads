@@ -7,10 +7,12 @@ import toast from 'react-hot-toast';
 
 export default function AddReferralModal({ 
   partnerId, 
+  partnerRef,
   onClose, 
   onSuccess 
 }: { 
   partnerId: string;
+  partnerRef: string;
   onClose: () => void;
   onSuccess: () => void;
 }) {
@@ -62,39 +64,30 @@ export default function AddReferralModal({
 
     setSubmitting(true);
     try {
-      // 1. Create Lead in existing CRM
-      const { data: lead, error: leadError } = await supabase
-        .from('leads')
-        .insert({
-          name,
-          phone,
-          email,
-          lead_type: leadType,
-          lead_source: partnerId,
-          status: 'new'
-        })
-        .select('id')
-        .single();
-
-      if (leadError) throw leadError;
-
-      // 2. Map Question Text to Answers for Tracking
       const mappedAnswers: Record<string, string> = {};
       questions.forEach(q => {
         mappedAnswers[q.question_text] = answers[q.id] || 'Not answered';
       });
 
-      // 3. Create Referral Tracking Record
-      const { error: trackError } = await supabase
-        .from('referral_tracking')
-        .insert({
-          lead_id: lead.id,
-          partner_id: partnerId,
-          kanban_status: 'NEW',
-          questionnaire_responses: mappedAnswers
-        });
+      // 1. Call API Route to submit referral and bypass RLS
+      const response = await fetch('/api/referral/submit', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          partnerId,
+          partnerRef,
+          leadType,
+          name,
+          phone,
+          email,
+          mappedAnswers
+        })
+      });
 
-      if (trackError) throw trackError;
+      if (!response.ok) {
+        const resData = await response.json();
+        throw new Error(resData.error || 'Failed to submit referral');
+      }
 
       toast.success('Referral submitted successfully!');
       onSuccess();

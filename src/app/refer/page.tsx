@@ -70,21 +70,7 @@ export default function ReferralAuth() {
         if (authError) throw authError;
 
         if (authData.user) {
-          // 2. Create User Profile
-          const { error: profileError } = await supabase
-            .from('users')
-            .insert({
-              id: authData.user.id,
-              email,
-              name,
-              role: 'referral_partner'
-            });
-
-          if (profileError && profileError.code !== '23505') {
-            throw profileError; // ignore duplicate key if they already existed
-          }
-
-          // 3. Resolve parent partner ID if ?ref is present
+          // Resolve parent partner ID if ?ref is present
           let parentPartnerId = null;
           if (parentRef) {
             const { data: parentData } = await supabase
@@ -97,19 +83,25 @@ export default function ReferralAuth() {
             }
           }
 
-          // 4. Create Referral Partner Profile
           const partnerId = generatePartnerId();
-          const { error: partnerError } = await supabase
-            .from('referral_partners')
-            .insert({
-              user_id: authData.user.id,
-              partner_id: partnerId,
-              parent_partner_id: parentPartnerId,
-              tc_version: 'v1.0',
-              tc_accepted_at: new Date().toISOString()
-            });
 
-          if (partnerError) throw partnerError;
+          // Call API route to bypass RLS for creation
+          const response = await fetch('/api/referral/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+              userId: authData.user.id,
+              email,
+              name,
+              partnerId,
+              parentPartnerId
+            })
+          });
+
+          if (!response.ok) {
+            const resData = await response.json();
+            throw new Error(resData.error || 'Failed to create partner account');
+          }
 
           toast.success('Account created successfully!');
           router.push('/refer/dashboard');

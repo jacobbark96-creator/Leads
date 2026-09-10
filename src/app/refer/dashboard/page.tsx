@@ -36,15 +36,20 @@ export default function ReferralDashboard() {
         return;
       }
 
-      const { data: partnerData } = await supabase
+      const { data: partnerData, error: partnerError } = await supabase
         .from('referral_partners')
         .select('*, users(name)')
         .eq('user_id', session.user.id)
-        .single();
+        .maybeSingle();
+
+      if (partnerError && partnerError.code !== 'PGRST116') {
+        console.error('Error fetching partner:', partnerError);
+      }
 
       if (!partnerData) {
         // Not a partner
-        router.push('/');
+        toast.error('You are not registered as a Referral Partner.');
+        router.push('/refer');
         return;
       }
 
@@ -267,7 +272,8 @@ export default function ReferralDashboard() {
 
       {isAddModalOpen && (
         <AddReferralModal 
-          partnerId={partner?.partner_id} 
+          partnerId={partner?.id} 
+          partnerRef={partner?.partner_id}
           onClose={() => setIsAddModalOpen(false)} 
           onSuccess={() => {
             setIsAddModalOpen(false);

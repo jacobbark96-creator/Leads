@@ -32,6 +32,7 @@ export default function LeadPacksPage() {
   const [showEditModal, setShowEditModal] = useState<LeadPack | null>(null);
   const [showUploadModal, setShowUploadModal] = useState<string | null>(null); // Pack ID
   const [autodialingPack, setAutodialingPack] = useState<string | null>(null);
+  const [isFixingNumbers, setIsFixingNumbers] = useState(false);
   const { profile } = useAuthStore();
   
   const [newPack, setNewPack] = useState({
@@ -141,6 +142,31 @@ export default function LeadPacksPage() {
       fetchPacks();
     } catch (error: any) {
       toast.error('Failed to create pack: ' + error.message);
+    }
+  };
+
+  const handleFixNumbers = async (packId: string) => {
+    try {
+      setIsFixingNumbers(true);
+      const toastId = toast.loading('Checking and fixing numbers...');
+      
+      const response = await fetch('/api/packs/fix-numbers', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ packId })
+      });
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to fix numbers');
+      }
+      
+      toast.success(`Fixed ${data.fixedCount} numbers successfully!`, { id: toastId });
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to fix numbers');
+    } finally {
+      setIsFixingNumbers(false);
     }
   };
 
@@ -750,13 +776,23 @@ export default function LeadPacksPage() {
                       .length === 0 && <span className="text-xs text-gray-500 p-1">No representatives found in this division</span>}
                   </div>
                 </div>
-                <div className="pt-4 flex justify-end gap-3">
-                  <button type="button" onClick={() => setShowEditModal(null)} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg border border-gray-200">
-                    Cancel
+                <div className="pt-4 flex items-center justify-between border-t border-gray-100 mt-4">
+                  <button 
+                    type="button" 
+                    onClick={() => handleFixNumbers(showEditModal.id)}
+                    disabled={isFixingNumbers}
+                    className="px-4 py-2 text-sm font-medium text-orange-700 bg-orange-50 hover:bg-orange-100 rounded-lg border border-orange-200 transition-colors disabled:opacity-50"
+                  >
+                    {isFixingNumbers ? 'Fixing...' : 'Number Check'}
                   </button>
-                  <button type="submit" className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm">
-                    Save Changes
-                  </button>
+                  <div className="flex gap-3">
+                    <button type="button" onClick={() => setShowEditModal(null)} className="px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 rounded-lg border border-gray-200">
+                      Cancel
+                    </button>
+                    <button type="submit" className="px-4 py-2 text-sm font-bold text-white bg-blue-600 hover:bg-blue-700 rounded-lg shadow-sm">
+                      Save Changes
+                    </button>
+                  </div>
                 </div>
               </form>
             </div>

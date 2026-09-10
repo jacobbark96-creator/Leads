@@ -47,7 +47,18 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Failed to create partner profile' }, { status: 500 });
     }
 
-    return NextResponse.json({ success: true });
+    // Update their role to referral_partner in users table
+    const { error: userError } = await supabaseAdmin
+      .from('users')
+      .update({ role: 'referral_partner' })
+      .eq('id', userId);
+
+    if (userError) {
+      console.error('Failed to update user role:', userError);
+      return NextResponse.json({ error: 'Failed to update user profile' }, { status: 500 });
+    }
+
+    return NextResponse.json({ success: true, partner_id: partnerId });
 
   } catch (error: any) {
     console.error('Registration API Error:', error);

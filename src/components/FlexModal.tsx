@@ -149,29 +149,6 @@ export const FlexModal: React.FC<FlexModalProps> = ({
 
                 {!profile?.has_active_dd && (
                   <div className="pt-3 border-t border-slate-100 space-y-2.5">
-                    <div className="bg-gradient-to-br from-slate-900 to-slate-800 p-[1px] rounded-2xl shadow-md shadow-emerald-900/10">
-                      <div className="bg-white rounded-[15px] p-3 relative overflow-hidden flex flex-col items-center text-center">
-                        <div className="absolute top-0 right-0 w-20 h-20 bg-emerald-500/10 rounded-full blur-2xl translate-x-8 -translate-y-8"></div>
-                        <div className="absolute bottom-0 left-0 w-16 h-16 bg-blue-500/10 rounded-full blur-xl -translate-x-8 translate-y-8"></div>
-                        
-                        <div className="relative z-10 w-full">
-                          <div className="flex items-center justify-center gap-2 mb-1.5">
-                            <div className="h-[1px] flex-1 bg-gradient-to-r from-transparent to-slate-200"></div>
-                            <h4 className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Pay by Direct Debit</h4>
-                            <div className="h-[1px] flex-1 bg-gradient-to-l from-transparent to-slate-200"></div>
-                          </div>
-                          
-                          <div className="flex flex-col items-center justify-center gap-0.5 mb-1.5 py-1">
-                            <span className="text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-600 to-emerald-400 tracking-tighter drop-shadow-sm leading-none">10% OFF</span>
-                            <span className="text-[9px] font-bold text-slate-500 uppercase tracking-widest bg-slate-50 px-2 py-0.5 rounded-full border border-slate-100 mt-1">Every Invoice</span>
-                          </div>
-                          
-                          <p className="text-[9px] text-slate-500 font-medium leading-snug px-1">
-                            Set up your secure mandate today and your discount will be applied automatically.
-                          </p>
-                        </div>
-                      </div>
-                    </div>
                     <button
                       onClick={async () => {
                         try {
@@ -193,7 +170,7 @@ export const FlexModal: React.FC<FlexModalProps> = ({
                         }
                       }}
                       disabled={loading}
-                      className="w-full py-2.5 bg-gradient-to-r from-emerald-600 to-emerald-500 text-white font-black rounded-xl hover:from-emerald-700 hover:to-emerald-600 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-md shadow-emerald-600/20 text-[11px] group"
+                      className="w-full py-2.5 bg-gradient-to-r from-slate-800 to-slate-700 text-white font-black rounded-xl hover:from-slate-900 hover:to-slate-800 disabled:opacity-50 transition-all flex items-center justify-center gap-2 shadow-md shadow-slate-900/20 text-[11px] group"
                     >
                       {loading ? 'Processing...' : (
                         <>
@@ -215,12 +192,9 @@ export const FlexModal: React.FC<FlexModalProps> = ({
                         <div className="flex flex-col text-left">
                           <h4 className="text-[10px] font-black text-emerald-900 uppercase tracking-widest leading-none mb-0.5">Direct Debit Active</h4>
                           <p className="text-[9px] text-emerald-600 font-bold leading-none">
-                            Your 10% discount is applied
+                            Your payments are processed automatically
                           </p>
                         </div>
-                      </div>
-                      <div className="relative z-10 bg-emerald-500 text-white text-[9px] font-black px-1.5 py-0.5 rounded shadow-sm">
-                        -10%
                       </div>
                     </div>
                   </div>

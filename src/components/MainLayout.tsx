@@ -402,6 +402,15 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
             
             <div className={`flex items-center gap-4 bg-white/50 backdrop-blur-md rounded-2xl p-2 shadow-sm border border-white/20 relative`}>
+              {profile.trade_account_enabled && (
+                <button 
+                  onClick={() => setShowFlexModal(true)}
+                  className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-xl text-xs font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20"
+                >
+                  <Zap className="w-3.5 h-3.5" />
+                  Flex
+                </button>
+              )}
               <div className="flex items-center gap-3 bg-white rounded-xl py-1.5 pl-1.5 pr-4 shadow-sm border border-gray-100">
                 <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#0066FF] to-cyan-500 flex items-center justify-center text-white font-bold text-sm">
                   {(clientName || profile.name)?.charAt(0).toUpperCase() || 'U'}
@@ -717,6 +726,18 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                   </div>
 
                   <div className="p-6 border-t border-gray-100 bg-gray-50/50 backdrop-blur-md">
+                    {profile.trade_account_enabled && (
+                      <button 
+                        onClick={() => {
+                          setMobileMenuOpen(false);
+                          setShowFlexModal(true);
+                        }}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-3 mb-4 bg-blue-600 text-white rounded-xl text-sm font-bold hover:bg-blue-700 transition-all shadow-md shadow-blue-500/20"
+                      >
+                        <Zap className="w-4 h-4" />
+                        Manage Flex Limit
+                      </button>
+                    )}
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-4">
                         <div className="w-12 h-12 rounded-2xl bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-black text-lg shadow-lg shadow-blue-600/20">

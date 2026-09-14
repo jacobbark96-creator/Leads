@@ -40,7 +40,17 @@ export async function DELETE(req: Request) {
       return NextResponse.json({ error: 'Unauthorized to delete this user' }, { status: 403 });
     }
 
-    // 3. Delete the user using Admin Auth (this will cascade to public.users if references are set to CASCADE)
+    // 3. Clear any active dialer sessions to prevent foreign key constraint errors
+    const { error: leadsError } = await supabaseAdmin
+      .from('leads')
+      .update({ being_dialed_by: null })
+      .eq('being_dialed_by', userId);
+
+    if (leadsError) {
+      console.warn('Failed to clear leads being dialed by user, deletion might fail:', leadsError);
+    }
+
+    // 4. Delete the user using Admin Auth (this will cascade to public.users if references are set to CASCADE)
     // Note: If references are not set to cascade, we'll need to manually delete from public.clients and public.users first.
     // Based on previous migrations, public.users references auth.users with ON DELETE CASCADE.
     const { error: deleteError } = await supabaseAdmin.auth.admin.deleteUser(userId);

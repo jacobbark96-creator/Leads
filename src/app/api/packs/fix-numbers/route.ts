@@ -45,19 +45,21 @@ export async function POST(request: Request) {
     }
 
     // Fetch all leads in this pack
-    const { data: leads, error: fetchError } = await supabaseAdmin
-      .from('leads')
-      .select('id, phone')
-      .eq('pack_id', packId);
+    const { data: memberships, error: fetchError } = await supabaseAdmin
+      .from('lead_pack_memberships')
+      .select('lead_id, leads(id, phone)')
+      .eq('lead_pack_id', packId);
 
     if (fetchError) {
       console.error('Fetch error:', fetchError);
-      return NextResponse.json({ error: 'Failed to fetch leads' }, { status: 500 });
+      return NextResponse.json({ error: 'Failed to fetch leads', details: fetchError }, { status: 500 });
     }
 
-    if (!leads || leads.length === 0) {
+    if (!memberships || memberships.length === 0) {
       return NextResponse.json({ message: 'No leads found in this pack', fixedCount: 0 });
     }
+
+    const leads = memberships.map(m => Array.isArray(m.leads) ? m.leads[0] : m.leads).filter(Boolean);
 
     let fixedCount = 0;
     const updates = [];
@@ -72,19 +74,25 @@ export async function POST(request: Request) {
     }
 
     if (updates.length > 0) {
-      // Process updates in batches of 100 to avoid limits
-      const batchSize = 100;
+      // Process updates in batches of 50 using Promise.all and .update()
+      const batchSize = 50;
       for (let i = 0; i < updates.length; i += batchSize) {
         const batch = updates.slice(i, i + batchSize);
-        const { error: updateError } = await supabaseAdmin
-          .from('leads')
-          .upsert(batch, { onConflict: 'id' });
-          
-        if (updateError) {
-          console.error('Update error:', updateError);
-          return NextResponse.json({ error: 'Failed to update leads' }, { status: 500 });
-        }
+        
+        await Promise.all(batch.map(async (update) => {
+          const { error: updateError } = await supabaseAdmin
+            .from('leads')
+            .update({ phone: update.phone })
+            .eq('id', update.id);
+            
+          if (updateError) {
+            console.error(`Update error for lead ${update.id}:`, updateError);
+          }
+        }));
+        
         fixedCount += batch.length;
+        // Small delay to avoid hammering the DB
+        await new Promise(r => setTimeout(r, 100));
       }
     }
 

@@ -15,7 +15,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Invalid userIds array' }, { status: 400 });
     }
 
-    const statuses: Record<string, boolean> = {};
+    const statuses: Record<string, { valid: boolean; reason?: string; password?: string }> = {};
 
     // Process in smaller batches to avoid rate limits
     const batchSize = 5;
@@ -26,13 +26,13 @@ export async function POST(req: NextRequest) {
         try {
           const { data: { user }, error } = await supabaseAdmin.auth.admin.getUserById(userId);
           if (error || !user) {
-            statuses[userId] = false;
+            statuses[userId] = { valid: false, reason: 'User not found in Auth system' };
             return;
           }
 
           const trialPassword = user.user_metadata?.trial_password;
           if (!trialPassword) {
-            statuses[userId] = false;
+            statuses[userId] = { valid: false, reason: 'No trial_password saved in user_metadata' };
             return;
           }
 
@@ -45,12 +45,12 @@ export async function POST(req: NextRequest) {
           });
 
           if (signInError || !signInData.user) {
-            statuses[userId] = false;
+            statuses[userId] = { valid: false, reason: signInError?.message || 'Invalid credentials', password: trialPassword };
           } else {
-            statuses[userId] = true;
+            statuses[userId] = { valid: true, password: trialPassword };
           }
-        } catch (e) {
-          statuses[userId] = false;
+        } catch (e: any) {
+          statuses[userId] = { valid: false, reason: e.message || 'Unexpected error' };
         }
       }));
       

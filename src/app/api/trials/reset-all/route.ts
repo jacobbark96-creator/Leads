@@ -36,7 +36,12 @@ export async function POST(req: NextRequest) {
 
         if (!updateError) {
           successCount++;
+        } else {
+          console.error(`Update error for ${userId}:`, updateError);
         }
+        
+        // Add a small delay to avoid rate limits
+        await new Promise(resolve => setTimeout(resolve, 100));
       } catch (e) {
         console.error(`Failed to reset password for ${userId}`, e);
       }

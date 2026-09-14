@@ -154,20 +154,15 @@ export async function GET(request: Request) {
 
     if (last10Digits.length > 0) {
       const chunks: string[][] = [];
-      // Reduce chunk size from 20 to 1 to prevent 500 error from Supabase URL limit/timeout
-      for (let i = 0; i < last10Digits.length; i += 1) {
-        chunks.push(last10Digits.slice(i, i + 1));
+      // Chunk size of 20 keeps the generated URL under ~2200 chars (safe for 4KB limits)
+      // while drastically reducing the number of queries to prevent 503/524 timeouts.
+      for (let i = 0; i < last10Digits.length; i += 20) {
+        chunks.push(last10Digits.slice(i, i + 20));
       }
       
       const chunkPromises = chunks.flatMap(chunk => {
-        // Create fuzzy patterns like %7%9%3%2%1%2%3%4%5%6% to match phone numbers with spaces or dashes
-        const leadOrQuery = chunk.map(num => {
-          return `phone.ilike.%${num}%,secondary_phone.ilike.%${num}%`;
-        }).join(',');
-        
-        const contractorOrQuery = chunk.map(num => {
-          return `phone.ilike.%${num}%,secondary_phone.ilike.%${num}%,other_contact_numbers.ilike.%${num}%`;
-        }).join(',');
+        const leadOrQuery = chunk.map(num => `phone.ilike.%${num}%,secondary_phone.ilike.%${num}%`).join(',');
+        const contractorOrQuery = chunk.map(num => `phone.ilike.%${num}%,secondary_phone.ilike.%${num}%,other_contact_numbers.ilike.%${num}%`).join(',');
 
         return [
           supabaseAdmin.from('leads').select('id, name, company, phone, secondary_phone').or(leadOrQuery),
@@ -175,17 +170,14 @@ export async function GET(request: Request) {
         ];
       });
       
-      // Execute in batches of 4 promises at a time to prevent exhausting Supabase connection pool
-      for (let i = 0; i < chunkPromises.length; i += 4) {
-        const batch = chunkPromises.slice(i, i + 4);
+      // Execute in batches of 10 promises at a time to balance connection pool and speed
+      for (let i = 0; i < chunkPromises.length; i += 10) {
+        const batch = chunkPromises.slice(i, i + 10);
         const results = await Promise.all(batch);
         for (const res of results) {
           if (res.data) {
-            // Determine entityType based on whether it has contact_name/company_name aliased to name/company
-            // The leads query returns id, name, company, phone, secondary_phone
-            // The contractors query returns id, name, company, phone, secondary_phone, other_contact_numbers
             const isContractor = res.data.length > 0 && 'other_contact_numbers' in res.data[0];
-            const mappedData = res.data.map(d => ({ ...d, entityType: isContractor ? 'contractor' : 'lead' }));
+            const mappedData = res.data.map((d: any) => ({ ...d, entityType: isContractor ? 'contractor' : 'lead' }));
             matchedEntities = matchedEntities.concat(mappedData);
           }
         }

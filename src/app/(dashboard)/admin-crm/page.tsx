@@ -102,6 +102,9 @@ export default function UserManagement() {
     if (!window.confirm('Are you sure you want to completely delete this user? They will be able to sign up again in the future.')) return;
     
     try {
+      // Clear any active dialer sessions for this user to prevent foreign key constraint errors
+      await supabase.from('leads').update({ being_dialed_by: null }).eq('being_dialed_by', userId);
+
       const { error } = await supabase.rpc('delete_user_completely', { target_user_id: userId });
       if (error) throw error;
       toast.success('User completely deleted');
@@ -115,6 +118,9 @@ export default function UserManagement() {
     if (!window.confirm(`Are you sure you want to BAN ${email}? They will be deleted and NEVER be able to sign up again.`)) return;
     
     try {
+      // Clear any active dialer sessions for this user to prevent foreign key constraint errors
+      await supabase.from('leads').update({ being_dialed_by: null }).eq('being_dialed_by', userId);
+
       const { error } = await supabase.rpc('ban_user_completely', { 
         target_user_id: userId,
         target_email: email 

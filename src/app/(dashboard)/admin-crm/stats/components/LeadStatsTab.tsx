@@ -146,9 +146,8 @@ export function LeadStatsTab() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h2 className="text-lg font-bold text-gray-900">Lead Conversion Funnel</h2>
+    <div className="space-y-4">
+      <div className="flex justify-end items-center">
         <select 
           value={timeframe}
           onChange={(e) => setTimeframe(e.target.value)}

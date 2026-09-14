@@ -375,7 +375,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                             )}
                           </div>
                           <div className="flex flex-col justify-center pl-2 w-1/2">
-                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size</span>
+                            <span className="text-[9px] text-gray-400 uppercase tracking-wider font-bold mb-1 flex items-center gap-1.5"><LayoutGrid className="w-3 h-3" /> Roof Size (SqM)</span>
                             <DisplayValue 
                               value={activeBuildingIndex === 0 ? lead.roof_size?.toString().replace(/\s*sqm\s*/i, '').trim() : activeBuilding?.roof_size_sqm} 
                               suffix=" SqM" 

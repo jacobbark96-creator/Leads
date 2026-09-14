@@ -16,7 +16,7 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
   const [isClearingChats, setIsClearingChats] = useState(false);
   const [isResettingPasswords, setIsResettingPasswords] = useState(false);
   const [isSendingLogin, setIsSendingLogin] = useState<string | null>(null);
-  const [statuses, setStatuses] = useState<Record<string, boolean>>({});
+  const [statuses, setStatuses] = useState<Record<string, { valid: boolean; reason?: string; password?: string }>>({});
 
   // Filter trial accounts
   const trialAccounts = useMemo(() => {
@@ -261,14 +261,26 @@ export const TrialsTab: React.FC<TrialsTabProps> = ({ users, onUpdate }) => {
                         placeholder="Enter name"
                       />
                     ) : (
-                      user.name || '-'
+                      <div className="relative group inline-block cursor-help">
+                        <span>{user.name || '-'}</span>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-max bg-gray-900 text-white text-xs rounded px-2 py-1 z-50 shadow-lg">
+                          {statuses[user.id]?.password ? `Password: ${statuses[user.id]?.password}` : 'Password not loaded'}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {statuses[user.id] === true ? (
+                    {statuses[user.id]?.valid === true ? (
                       <CheckCircle2 className="w-5 h-5 text-emerald-500" title="Password matches sent credentials" />
-                    ) : statuses[user.id] === false ? (
-                      <XCircle className="w-5 h-5 text-red-500" title="Password mismatch" />
+                    ) : statuses[user.id]?.valid === false ? (
+                      <div className="relative group inline-block cursor-help">
+                        <XCircle className="w-5 h-5 text-red-500" />
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-max max-w-xs bg-gray-900 text-white text-xs rounded px-2 py-1 z-50 shadow-lg whitespace-normal text-center">
+                          {`Password mismatch: ${statuses[user.id]?.reason || 'Unknown error'}`}
+                          <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-gray-900"></div>
+                        </div>
+                      </div>
                     ) : (
                       <div className="w-5 h-5 border-2 border-gray-300 border-t-transparent rounded-full animate-spin" title="Checking status..." />
                     )}

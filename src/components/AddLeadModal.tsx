@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { X, Sparkles, AlertCircle, CheckCircle2 } from 'lucide-react';
+import { X, Sparkles, AlertCircle, CheckCircle2, MapPin, CheckCircle, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
+import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+
+const libraries: "places"[] = ['places'];
 
 interface AddLeadModalProps {
   isOpen: boolean;
@@ -40,7 +43,39 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
     gm_pipeline_status: 'Callbacks',
     lead_type: profile?.role?.includes('Residential') ? 'residential' : 'commercial' as 'residential' | 'commercial',
     division_id: profile?.division_id || '',
+    latitude: null as number | null,
+    longitude: null as number | null,
   });
+
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
+
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  const onLoadAutocomplete = (autoC: google.maps.places.Autocomplete) => setAutocomplete(autoC);
+
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
+      const place = autocomplete.getPlace();
+      if (place) {
+        const lat = place.geometry?.location?.lat() || null;
+        const lng = place.geometry?.location?.lng() || null;
+        
+        let finalAddress = place.formatted_address || place.name || '';
+        if (place.name && place.formatted_address && !place.formatted_address.includes(place.name)) {
+          finalAddress = `${place.name}, ${place.formatted_address}`;
+        }
+
+        setFormData(prev => ({ 
+          ...prev, 
+          location: finalAddress || prev.location,
+          latitude: lat,
+          longitude: lng
+        }));
+      }
+    }
+  };
 
   const [duplicates, setDuplicates] = useState<{ leads: any[], contractors: any[] }>({ leads: [], contractors: [] });
   const [checkingDuplicates, setCheckingDuplicates] = useState(false);
@@ -108,6 +143,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         gm_pipeline_status: (editData as any).gm_pipeline_status || 'Callbacks',
         lead_type: (editData as any).lead_type || 'commercial',
         division_id: (editData as any).division_id || '',
+        latitude: (editData as any).latitude || null,
+        longitude: (editData as any).longitude || null,
       });
     } else if (isOpen) {
       setFormData({
@@ -121,6 +158,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         gm_pipeline_status: 'Callbacks',
         lead_type: profile?.role?.includes('Residential') ? 'residential' : 'commercial' as 'residential' | 'commercial',
         division_id: profile?.division_id || '',
+        latitude: null,
+        longitude: null,
       });
       setAiMode(false);
       setProfileMode(false);
@@ -217,6 +256,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           email: formData.email || null,
           company: formData.company || null,
           location: formData.location || null,
+          latitude: formData.latitude || null,
+          longitude: formData.longitude || null,
           other_contacts: formData.other_contacts || null,
           other_contact_numbers: formData.other_contact_numbers || null,
           lead_type: formData.lead_type,
@@ -267,6 +308,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           email: formData.email || null,
           company: formData.company || null,
           location: formData.location || null,
+          latitude: formData.latitude || null,
+          longitude: formData.longitude || null,
           other_contacts: formData.other_contacts || null,
           other_contact_numbers: formData.other_contact_numbers || null,
           status: status,
@@ -308,6 +351,8 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
           gm_pipeline_status: 'Callbacks',
           lead_type: 'commercial',
           division_id: '',
+          latitude: null,
+          longitude: null,
         });
         
         onLeadAdded(data);
@@ -566,16 +611,53 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
                 />
               </div>
 
-              <div>
+              <div className="relative">
                 <label htmlFor="location" className="block text-sm font-medium text-gray-700">Address / Location</label>
-                <input
-                  type="text"
-                  name="location"
-                  id="location"
-                  value={formData.location}
-                  onChange={(e) => setFormData({...formData, location: e.target.value})}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
-                />
+                <div className="relative mt-1">
+                  {isLoaded ? (
+                    <Autocomplete
+                      onLoad={onLoadAutocomplete}
+                      onPlaceChanged={onPlaceChanged}
+                      options={{
+                        types: [],
+                        componentRestrictions: { country: "gb" },
+                        fields: ['formatted_address', 'geometry', 'name']
+                      }}
+                    >
+                      <input
+                        type="text"
+                        name="location"
+                        id="location"
+                        value={formData.location}
+                        onChange={(e) => setFormData({...formData, location: e.target.value})}
+                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-10 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="Search address..."
+                      />
+                    </Autocomplete>
+                  ) : (
+                    <input
+                      type="text"
+                      name="location"
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => setFormData({...formData, location: e.target.value})}
+                      className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-10 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  )}
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    {formData.latitude && formData.longitude ? (
+                      <div title="Location coordinates found">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      </div>
+                    ) : (formData.location) ? (
+                      <div title="Coordinates missing - lead will not show on map">
+                        <Info className="h-4 w-4 text-amber-500" />
+                      </div>
+                    ) : (
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                    )}
+                  </div>
+                </div>
               </div>
 
               <div>

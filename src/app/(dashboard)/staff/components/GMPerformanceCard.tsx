@@ -16,6 +16,7 @@ export const GMPerformanceCard = () => {
     if (!profile) return;
 
     const fetchMTD = async () => {
+      if (!profile) return;
       const now = new Date();
       const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
 
@@ -76,17 +77,24 @@ export const GMPerformanceCard = () => {
       }
     };
 
+    const fetchTimeoutRef = { current: null as any };
+    const debouncedFetchMTD = () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+      fetchTimeoutRef.current = setTimeout(fetchMTD, 30000); // 30s debounce
+    };
+
     fetchMTD();
     
     // Listen for updates
     const sub = supabase.channel('gm-perf-stats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients', filter: `assigned_to=eq.${profile?.id}` }, fetchMTD)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads', filter: `assigned_to=eq.${profile?.id}` }, fetchMTD)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_purchases' }, fetchMTD)
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'client_transactions' }, fetchMTD)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'clients', filter: `assigned_to=eq.${profile?.id}` }, debouncedFetchMTD)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads', filter: `assigned_to=eq.${profile?.id}` }, debouncedFetchMTD)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_purchases' }, debouncedFetchMTD)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'client_transactions' }, debouncedFetchMTD)
       .subscribe();
 
     return () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
       supabase.removeChannel(sub);
     };
   }, [profile]);

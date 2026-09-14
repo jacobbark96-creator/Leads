@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       let results: any[] = [];
       let nextUrl: string | null = initialUrl;
       let pageCount = 0;
-      while (nextUrl && pageCount < 10) { // Fetch up to 10,000 records
+      while (nextUrl && pageCount < 5) { // Fetch up to 5,000 records
         const response = await fetch(nextUrl, { headers: { 'Authorization': authHeader } });
         if (!response.ok) {
           if (pageCount === 0) throw new Error(`Failed to fetch ${dataKey}`);
@@ -147,7 +147,7 @@ export async function GET(request: Request) {
     });
 
     let matchedEntities: any[] = [];
-    const targetNumbersArray = Array.from(uniqueTargetNumbers);
+    const targetNumbersArray = Array.from(uniqueTargetNumbers).slice(0, 200); // Limit resolution to first 200 unique numbers to prevent timeouts
     const last10Digits = targetNumbersArray
       .map(num => num.replace(/[^\d]/g, '').slice(-10))
       .filter(n => n.length >= 7);

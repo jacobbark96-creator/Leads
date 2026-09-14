@@ -62,7 +62,7 @@ function formatDuration(seconds: number) {
   return `${m}m ${s}s`;
 }
 
-export function RepMonitoringCard() {
+export function RepMonitoringCard({ monitoringData }: { monitoringData?: any }) {
   const { profile } = useAuthStore();
   const [loading, setLoading] = useState(true);
   const [representatives, setRepresentatives] = useState<any[]>([]);
@@ -71,6 +71,35 @@ export function RepMonitoringCard() {
   const canMonitor = profile?.role === 'super_admin' || profile?.permissions?.includes('can_monitor_calls');
 
   useEffect(() => {
+    const processData = (data: any) => {
+      if (data.representatives) {
+        let filteredAndSorted = data.representatives;
+        
+        // If the user is a rep/representative, only show their own stats
+        if (profile?.role === 'rep' || (profile?.role as string) === 'representative' || profile?.role === 'Residential Rep') {
+          filteredAndSorted = data.representatives.filter((rep: any) => rep.id === profile.id);
+        } else {
+          // Otherwise (admin/manager), show all except super_admin
+          filteredAndSorted = data.representatives
+            .filter((rep: any) => rep.role !== 'super_admin')
+            .sort((a: any, b: any) => (b.totalDuration || 0) - (a.totalDuration || 0));
+        }
+
+        setRepresentatives(filteredAndSorted);
+        
+        if (selectedRep) {
+          const updated = filteredAndSorted.find((r: any) => r.id === selectedRep.id);
+          if (updated) setSelectedRep(updated);
+        }
+      }
+    };
+
+    if (monitoringData) {
+      processData(monitoringData);
+      setLoading(false);
+      return;
+    }
+
     const fetchMonitoringData = async (isBackground = false) => {
       try {
         if (!isBackground) setLoading(true);
@@ -79,26 +108,7 @@ export function RepMonitoringCard() {
         if (!res.ok) throw new Error('Failed to fetch monitoring data');
         
         const data = await res.json();
-        if (data.representatives) {
-          let filteredAndSorted = data.representatives;
-          
-          // If the user is a rep/representative, only show their own stats
-          if (profile?.role === 'rep' || (profile?.role as string) === 'representative' || profile?.role === 'Residential Rep') {
-            filteredAndSorted = data.representatives.filter((rep: any) => rep.id === profile.id);
-          } else {
-            // Otherwise (admin/manager), show all except super_admin
-            filteredAndSorted = data.representatives
-              .filter((rep: any) => rep.role !== 'super_admin')
-              .sort((a: any, b: any) => (b.totalDuration || 0) - (a.totalDuration || 0));
-          }
-
-          setRepresentatives(filteredAndSorted);
-          
-          if (selectedRep) {
-            const updated = filteredAndSorted.find((r: any) => r.id === selectedRep.id);
-            if (updated) setSelectedRep(updated);
-          }
-        }
+        processData(data);
       } catch (error) {
         console.error(error);
       } finally {
@@ -107,9 +117,9 @@ export function RepMonitoringCard() {
     };
 
     fetchMonitoringData();
-    const interval = setInterval(() => fetchMonitoringData(true), 5000); // Update every 5s to feel real-time
+    const interval = setInterval(() => fetchMonitoringData(true), 60000); // Update every 60s (reduced from 30s)
     return () => clearInterval(interval);
-  }, []);
+  }, [monitoringData]);
 
   return (
     <GlassCard className="h-full flex flex-col overflow-hidden">

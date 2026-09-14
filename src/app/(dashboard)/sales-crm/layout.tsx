@@ -56,24 +56,29 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     const fetchPacks = async () => {
-      const { data } = await supabase
+      if (!profile) return;
+
+      let query = supabase
         .from('lead_packs')
         .select('*')
-        .eq('status', 'active')
-        .order('created_at', { ascending: false });
+        .eq('status', 'active');
         
-      if (data && profile) {
-        const visiblePacks = data.filter(pack => {
-          if (profile.role === 'super_admin' || profile.role === 'admin') return true;
-          return pack.assigned_users && Array.isArray(pack.assigned_users) && pack.assigned_users.includes(profile.id);
-        });
-        setLeadPacks(visiblePacks);
+      // Filter by assigned users for reps and other non-admin roles
+      if (profile.role !== 'super_admin' && profile.role !== 'admin') {
+        query = query.contains('assigned_users', [profile.id]);
+      }
+
+      const { data, error } = await query.order('created_at', { ascending: false });
+        
+      if (data) {
+        setLeadPacks(data);
+      } else if (error) {
+        console.error('Error fetching lead packs:', error);
       }
     };
-    if (profile) {
-      fetchPacks();
-    }
-  }, [pathname, profile]);
+    
+    fetchPacks();
+  }, [profile?.id, activeDivisionId]);
 
   const sidebarItems = [
     { id: 'staff', name: 'Home', path: '/staff', icon: Home, exact: true },
@@ -86,20 +91,22 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
     { id: 'sales-crm/my-sales', name: 'My Sales', path: '/sales-crm/my-sales', icon: BarChart2 },
   ].filter(item => {
     if (isOpenEnergyResidential && item.id === 'sales-crm/fresh') return false;
+    
+    const userRole = profile?.role as string;
 
-    if (profile?.role === 'growth_manager') {
+    if (userRole === 'growth_manager') {
       return ['staff', 'sales-crm/my-clients', 'sales-crm/my-sales', 'sales-crm/pipeline'].includes(item.id || '');
     }
-    if (profile?.role === 'Residential Sales' || profile?.role === 'Commercial Sales') {
+    if (userRole === 'Residential Sales' || userRole === 'Commercial Sales') {
       return ['staff', 'sales-crm/pipeline', 'sales-crm/calendar'].includes(item.id || '');
     }
-    if (profile?.role === 'Residential Rep') {
+    if (userRole === 'Residential Rep') {
       return ['staff', 'sales-crm/pipeline', 'sales-crm/calendar', 'sales-crm/fresh', 'sales-crm/qualified', 'sales-crm/import'].includes(item.id || '');
     }
-    if (profile?.role === 'rep' || profile?.role === 'Residential Rep') {
+    if (userRole === 'rep' || userRole === 'Residential Rep') {
       return profile.permissions?.includes(item.id) || ['sales-crm/pipeline', 'sales-crm/calendar'].includes(item.id || '');
     }
-    if (profile?.role !== 'rep' && profile?.role !== 'Residential Rep') {
+    if (userRole !== 'rep' && userRole !== 'Residential Rep') {
       // Reps and Growth Managers see specific tabs, others see all except growth manager specific ones unless defined
       return !['sales-crm/my-clients', 'sales-crm/my-sales'].includes(item.id);
     }

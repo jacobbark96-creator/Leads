@@ -36,7 +36,7 @@ export const PackMonitoringTab = () => {
 
   useEffect(() => {
     fetchActiveSessions();
-    const interval = setInterval(fetchActiveSessions, 15000);
+    const interval = setInterval(fetchActiveSessions, 45000); // Refresh every 45s
     return () => clearInterval(interval);
   }, []);
 

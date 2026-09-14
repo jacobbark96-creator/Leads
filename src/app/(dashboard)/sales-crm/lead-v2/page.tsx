@@ -61,6 +61,7 @@ import {
   Send,
   Copy,
   AlertCircle,
+  Info,
   Sun,
   Cloud,
   Battery,
@@ -466,7 +467,36 @@ function LeadDetailsV2Content() {
   const [isEnhancingNotes, setIsEnhancingNotes] = useState(false);
   const [isEnrichingCompany, setIsEnrichingCompany] = useState(false);
   const [isCalculatingRoof, setIsCalculatingRoof] = useState(false);
+  const [isGeocoding, setIsGeocoding] = useState(false);
   
+  const attemptGeocode = async (targetLead: Lead) => {
+    if (!targetLead.location || (targetLead.latitude && targetLead.longitude) || isGeocoding) return;
+    
+    setIsGeocoding(true);
+    try {
+      const geocoder = new window.google.maps.Geocoder();
+      geocoder.geocode({ address: targetLead.location }, async (results, status) => {
+        if (status === 'OK' && results && results[0]) {
+          const loc = results[0].geometry.location;
+          const lat = loc.lat();
+          const lng = loc.lng();
+          
+          // Update local state
+          setLead(prev => prev ? { ...prev, latitude: lat, longitude: lng } : null);
+          
+          // Update DB silently
+          await supabase.from('leads').update({ latitude: lat, longitude: lng }).eq('id', targetLead.id);
+          
+          console.log('Successfully auto-geocoded lead:', targetLead.id);
+        }
+        setIsGeocoding(false);
+      });
+    } catch (err) {
+      console.error('Auto-geocoding failed:', err);
+      setIsGeocoding(false);
+    }
+  };
+
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [isRoofTypeDropdownOpen, setIsRoofTypeDropdownOpen] = useState(false);
   const [files, setFiles] = useState<any[]>([]);
@@ -478,6 +508,7 @@ function LeadDetailsV2Content() {
   const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
   const [isAddBuildingModalOpen, setIsAddBuildingModalOpen] = useState(false);
   const [newBuildingAddress, setNewBuildingAddress] = useState('');
+  const [newBuildingCoords, setNewBuildingCoords] = useState<{ lat: number | null, lng: number | null }>({ lat: null, lng: null });
   const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
 
   const [isMarketConfirmOpen, setIsMarketConfirmOpen] = useState(false);
@@ -528,6 +559,12 @@ function LeadDetailsV2Content() {
     libraries,
   });
 
+  useEffect(() => {
+    if (isLoaded && lead && lead.location && (!lead.latitude || !lead.longitude)) {
+      attemptGeocode(lead);
+    }
+  }, [isLoaded, lead?.id, lead?.location, lead?.latitude, lead?.longitude]);
+
   const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const [buildingAutocomplete, setBuildingAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
   const onLoadAutocomplete = (autoC: google.maps.places.Autocomplete) => setAutocomplete(autoC);
@@ -559,11 +596,15 @@ function LeadDetailsV2Content() {
     if (buildingAutocomplete !== null) {
       const place = buildingAutocomplete.getPlace();
       if (place) {
+        const lat = place.geometry?.location?.lat() || null;
+        const lng = place.geometry?.location?.lng() || null;
+        
         let finalAddress = place.formatted_address || place.name || '';
         if (place.name && place.formatted_address && !place.formatted_address.includes(place.name)) {
           finalAddress = `${place.name}, ${place.formatted_address}`;
         }
         setNewBuildingAddress(finalAddress);
+        setNewBuildingCoords({ lat, lng });
       }
     }
   };
@@ -2008,6 +2049,8 @@ function LeadDetailsV2Content() {
         .insert([{
           lead_id: lead.id,
           address: newBuildingAddress,
+          latitude: newBuildingCoords.lat,
+          longitude: newBuildingCoords.lng,
           use_primary_notes: true
         }])
         .select()
@@ -3110,25 +3153,82 @@ function LeadDetailsV2Content() {
                 <div className={`w-full md:w-[55%] grid grid-cols-2 gap-x-3 gap-y-2 flex-1 overflow-y-auto pr-2 custom-scrollbar ${editingCard === 'building' ? 'pb-32' : ''}`}>
                   <div className="flex flex-col col-span-2">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Address</span>
-                    {editingCard === 'building' ? (
-                      isLoaded ? (
-                        <Autocomplete
-                          onLoad={onLoadAutocomplete}
-                          onPlaceChanged={onPlaceChanged}
-                          options={{
-                            types: [],
-                            componentRestrictions: { country: "gb" },
-                            fields: ['formatted_address', 'geometry', 'name']
-                          }}
-                        >
-                          <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 w-full mt-1" />
-                        </Autocomplete>
+                    <div className="relative">
+                      {editingCard === 'building' ? (
+                        isLoaded ? (
+                          <Autocomplete
+                            onLoad={onLoadAutocomplete}
+                            onPlaceChanged={onPlaceChanged}
+                            options={{
+                              types: [],
+                              componentRestrictions: { country: "gb" },
+                              fields: ['formatted_address', 'geometry', 'name']
+                            }}
+                          >
+                            <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 pr-8 text-sm focus:ring-1 focus:ring-blue-500 w-full mt-1" />
+                          </Autocomplete>
+                        ) : (
+                          <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 pr-8 text-sm focus:ring-1 focus:ring-blue-500 w-full mt-1" />
+                        )
                       ) : (
-                        <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 w-full mt-1" />
-                      )
-                    ) : (
-                      <span className="text-gray-900 text-sm font-medium">{lead.location || 'N/A'}</span>
-                    )}
+                        <span className="text-gray-900 text-sm font-medium">{lead.location || 'N/A'}</span>
+                      )}
+                      
+                      {/* Geocode Status Indicator */}
+                      {(editingCard === 'building' ? (editForm.latitude && editForm.longitude) : (lead.latitude && lead.longitude)) ? (
+                        <div className={`absolute ${editingCard === 'building' ? 'right-2 top-2.5' : '-right-6 top-0.5'}`} title="Location coordinates found - will show on map">
+                          <CheckCircle className="h-3.5 w-3.5 text-green-500" />
+                        </div>
+                      ) : (lead.location || (editingCard === 'building' && editForm.location)) && (
+                        <div className={`absolute ${editingCard === 'building' ? 'right-2 top-2.5' : '-right-6 top-0.5'} group/geo`} title="Coordinates missing - lead will not show on map">
+                          <div className="flex items-center gap-1.5">
+                            {isGeocoding ? (
+                              <Loader2 className="h-3.5 w-3.5 text-blue-500 animate-spin" />
+                            ) : (
+                              <>
+                                <Info className="h-3.5 w-3.5 text-amber-500 cursor-help" />
+                                {editingCard === 'building' && (
+                                  <button 
+                                    onClick={async (e) => {
+                                      e.preventDefault();
+                                      e.stopPropagation();
+                                      if (!editForm.location) return;
+                                      try {
+                                        setIsGeocoding(true);
+                                        toast.loading('Fetching coordinates...', { id: 'geocoding' });
+                                        const geocoder = new window.google.maps.Geocoder();
+                                        geocoder.geocode({ address: editForm.location }, (results, status) => {
+                                          if (status === 'OK' && results && results[0]) {
+                                            const loc = results[0].geometry.location;
+                                            setEditForm(prev => ({
+                                              ...prev,
+                                              latitude: loc.lat(),
+                                              longitude: loc.lng(),
+                                              location: results[0].formatted_address
+                                            }));
+                                            toast.success('Coordinates found!', { id: 'geocoding' });
+                                          } else {
+                                            toast.error('Could not find coordinates for this address', { id: 'geocoding' });
+                                          }
+                                          setIsGeocoding(false);
+                                        });
+                                      } catch (err) {
+                                        toast.error('Geocoding failed', { id: 'geocoding' });
+                                        setIsGeocoding(false);
+                                      }
+                                    }}
+                                    className="hidden group-hover/geo:flex absolute right-0 top-0 -translate-y-full mb-1 bg-white border border-gray-200 rounded px-2 py-1 shadow-lg text-[10px] font-bold text-blue-600 whitespace-nowrap items-center gap-1 hover:bg-blue-50 transition-colors z-[110]"
+                                  >
+                                    <MapPin className="w-2.5 h-2.5" />
+                                    Fix Map Location
+                                  </button>
+                                )}
+                              </>
+                            )}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
                   <div className="flex flex-col">
                     <span className="text-gray-500 text-[11px] uppercase tracking-wider">Building Type</span>

@@ -39,6 +39,32 @@ export default function StaffPortal() {
     missingBills: 0,
     callsMade: 0
   });
+  const [monitoringData, setMonitoringData] = useState<any>(null);
+  
+  // 1. Unified monitoring data fetch for child components
+  useEffect(() => {
+    if (!profile) return;
+    
+    const fetchMonitoring = async () => {
+      try {
+        const res = await fetch('/api/twilio/monitoring?dateRange=today');
+        if (res.ok) {
+          const data = await res.json();
+          setMonitoringData(data);
+          
+          // Also update the callsMade stat from this unified fetch
+          const totalCalls = data.representatives?.reduce((acc: number, r: any) => acc + (r.totalCalls || 0), 0) || 0;
+          setStats(prev => ({ ...prev, callsMade: totalCalls }));
+        }
+      } catch (err) {
+        console.error("Error fetching monitoring data:", err);
+      }
+    };
+
+    fetchMonitoring();
+    const interval = setInterval(fetchMonitoring, 60000); // 60s unified refresh
+    return () => clearInterval(interval);
+  }, [profile?.id]);
   
   const [currentTime, setCurrentTime] = useState('');
   const [currentDate, setCurrentDate] = useState('');
@@ -85,14 +111,20 @@ export default function StaffPortal() {
     };
 
     updateTime();
-    const interval = setInterval(updateTime, 10000); // update every 10 seconds
+    const interval = setInterval(updateTime, 60000); // update every minute
     return () => clearInterval(interval);
   }, []);
+
+  // Use a ref to track if a fetch is already pending to avoid overlapping fetches
+  const isFetchingStats = React.useRef(false);
+  const fetchTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!profile) return;
     
     const fetchStats = async () => {
+      if (isFetchingStats.current) return;
+      isFetchingStats.current = true;
       try {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
@@ -104,22 +136,14 @@ export default function StaffPortal() {
           .select('*', { count: 'exact', head: true })
           .gte('qualified_at', todayIso);
 
-        // 2. Calls Made (from Twilio monitoring API)
-        const callRes = await fetch('/api/twilio/monitoring?dateRange=today');
-        let callsCount = 0;
-        if (callRes.ok) {
-          const callData = await callRes.json();
-          callsCount = callData.representatives?.reduce((acc: number, r: any) => acc + (r.totalCalls || 0), 0) || 0;
-        }
-
-        // 3. New Clients (Role = client, created today)
+        // 2. New Clients (Role = client, created today)
         const { count: clientsCount } = await supabase
           .from('users')
           .select('*', { count: 'exact', head: true })
           .eq('role', 'client')
           .gte('created_at', todayIso);
 
-        // 4. Sales & Revenue
+        // 3. Sales & Revenue
         const { data: purchases } = await supabase
           .from('lead_purchases')
           .select('price_paid, purchased_at')
@@ -133,46 +157,60 @@ export default function StaffPortal() {
           totalRevenue = purchases.reduce((sum, p) => sum + (Number(p.price_paid) || 0), 0);
         }
 
-        // 5. Missing Bills (Qualified leads with no bills)
+        // 4. Missing Bills (Qualified leads with no bills)
         const { count: missingBillsCount } = await supabase
           .from('leads')
           .select('*', { count: 'exact', head: true })
           .eq('status', 'qualified')
           .or('bills_url.is.null,bills_url.eq.');
 
-        setStats({
+        setStats(prev => ({
+          ...prev,
           newLeads: qualifiedCount || 0,
           newClients: clientsCount || 0,
           sales: totalSales,
           revenue: totalRevenue,
-          missingBills: missingBillsCount || 0,
-          callsMade: callsCount
-        });
+          missingBills: missingBillsCount || 0
+        }));
       } catch (err) {
         console.error("Error fetching KPIs:", err);
+      } finally {
+        isFetchingStats.current = false;
       }
+    };
+
+    const debouncedFetchStats = () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+      fetchTimeoutRef.current = setTimeout(fetchStats, 15000); // 15s debounce (increased from 3s)
     };
 
     fetchStats();
     
-    // Set up realtime listeners for live updates
+    // Set up realtime listeners for live updates (Admins only for global stats)
+    const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
+    if (!isAdmin) return;
+
     const leadsSub = supabase.channel('leads-stats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, fetchStats)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, debouncedFetchStats)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'leads' }, debouncedFetchStats)
       .subscribe();
       
     const activitiesSub = supabase.channel('activities-stats')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities' }, fetchStats)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities' }, debouncedFetchStats)
       .subscribe();
       
     const usersSub = supabase.channel('users-stats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, fetchStats)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'users' }, debouncedFetchStats)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'users' }, debouncedFetchStats)
       .subscribe();
       
     const purchasesSub = supabase.channel('purchases-stats')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_purchases' }, fetchStats)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lead_purchases' }, debouncedFetchStats)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'lead_purchases' }, debouncedFetchStats)
       .subscribe();
 
     return () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
       supabase.removeChannel(leadsSub);
       supabase.removeChannel(activitiesSub);
       supabase.removeChannel(usersSub);
@@ -185,11 +223,16 @@ export default function StaffPortal() {
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
   const isRep = (profile?.role as string) === 'rep' || (profile?.role as string) === 'representative' || profile?.role === 'Residential Rep';
   const [kpiData, setKpiData] = useState<any[]>([]);
+  
+  const isFetchingKpis = React.useRef(false);
+  const kpiTimeoutRef = React.useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (!isAdmin) return;
 
     const fetchKpiData = async () => {
+      if (isFetchingKpis.current) return;
+      isFetchingKpis.current = true;
       const startOfDay = new Date();
       startOfDay.setHours(0, 0, 0, 0);
       
@@ -216,20 +259,28 @@ export default function StaffPortal() {
         ]);
       } catch (err) {
         console.error('Error fetching admin KPIs:', err);
+      } finally {
+        isFetchingKpis.current = false;
       }
+    };
+
+    const debouncedFetchKpis = () => {
+      if (kpiTimeoutRef.current) clearTimeout(kpiTimeoutRef.current);
+      kpiTimeoutRef.current = setTimeout(fetchKpiData, 30000); // 30s debounce (increased from 5s)
     };
 
     fetchKpiData();
 
     // Realtime subscriptions
     const channels = [
-      supabase.channel('kpi-leads').on('postgres_changes', { event: '*', schema: 'public', table: 'leads' }, fetchKpiData).subscribe(),
-      supabase.channel('kpi-activities').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities', filter: "activity_type=eq.call_made" }, fetchKpiData).subscribe(),
-      supabase.channel('kpi-clients').on('postgres_changes', { event: '*', schema: 'public', table: 'clients' }, fetchKpiData).subscribe(),
-      supabase.channel('kpi-transactions').on('postgres_changes', { event: '*', schema: 'public', table: 'client_transactions' }, fetchKpiData).subscribe()
+      supabase.channel('kpi-leads').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'leads' }, debouncedFetchKpis).subscribe(),
+      supabase.channel('kpi-activities').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'activities', filter: "activity_type=eq.call_made" }, debouncedFetchKpis).subscribe(),
+      supabase.channel('kpi-clients').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'clients' }, debouncedFetchKpis).subscribe(),
+      supabase.channel('kpi-transactions').on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'client_transactions' }, debouncedFetchKpis).subscribe()
     ];
 
     return () => {
+      if (kpiTimeoutRef.current) clearTimeout(kpiTimeoutRef.current);
       channels.forEach(channel => supabase.removeChannel(channel));
     };
   }, [isAdmin]);
@@ -313,7 +364,7 @@ export default function StaffPortal() {
                 <TasksPanel />
               </div>
               <div className="flex-[0.65] min-h-0 overflow-hidden">
-                {isRep ? <RepPerformanceCard /> : <LiveFeed />}
+                {isRep ? <RepPerformanceCard monitoringData={monitoringData} /> : <LiveFeed />}
               </div>
             </div>
 
@@ -322,7 +373,7 @@ export default function StaffPortal() {
               {!isRep ? (
                 <>
                   <div className="flex-[0.5] min-h-0 overflow-hidden">
-                    <CallMonitoringPanel />
+                    <CallMonitoringPanel monitoringData={monitoringData} />
                   </div>
                   <div className="flex-[0.5] min-h-0 overflow-hidden">
                     <LeadSourcesPanel />
@@ -334,7 +385,7 @@ export default function StaffPortal() {
                     <GmailPanel />
                   </div>
                   <div className="flex-[0.5] min-h-0 overflow-hidden">
-                    <RepMonitoringCard />
+                    <RepMonitoringCard monitoringData={monitoringData} />
                   </div>
                 </>
               )}

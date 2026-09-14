@@ -4,7 +4,7 @@ import { Target, Trophy, Phone, Clock, Activity } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import { useAuthStore } from '../../../../store/authStore';
 
-export const RepPerformanceCard = () => {
+export const RepPerformanceCard = ({ monitoringData }: { monitoringData?: any }) => {
   const { profile } = useAuthStore();
   const [metrics, setMetrics] = useState({
     qualified: 0,
@@ -48,19 +48,28 @@ export const RepPerformanceCard = () => {
           qualifiedToday = count || 0;
         }
 
-        // 2. Call Metrics Today (from Twilio API)
-        const callRes = await fetch('/api/twilio/monitoring?dateRange=today');
+        // 2. Call Metrics Today (from Twilio API or Prop)
         let dials = 0;
         let totalCallSeconds = 0;
         let avgCallSeconds = 0;
 
-        if (callRes.ok) {
-          const callData = await callRes.json();
-          const myRepData = callData.representatives?.find((r: any) => r.id === profile.id);
+        if (monitoringData) {
+          const myRepData = monitoringData.representatives?.find((r: any) => r.id === profile.id);
           if (myRepData) {
             dials = myRepData.totalCalls || 0;
             totalCallSeconds = myRepData.totalDuration || 0;
             avgCallSeconds = myRepData.avgDuration || 0;
+          }
+        } else {
+          const callRes = await fetch('/api/twilio/monitoring?dateRange=today');
+          if (callRes.ok) {
+            const callData = await callRes.json();
+            const myRepData = callData.representatives?.find((r: any) => r.id === profile.id);
+            if (myRepData) {
+              dials = myRepData.totalCalls || 0;
+              totalCallSeconds = myRepData.totalDuration || 0;
+              avgCallSeconds = myRepData.avgDuration || 0;
+            }
           }
         }
 
@@ -76,10 +85,17 @@ export const RepPerformanceCard = () => {
     };
 
     fetchDailyMetrics();
-    const interval = setInterval(fetchDailyMetrics, 10000); // Refresh every 10s
     
-    return () => clearInterval(interval);
-  }, [profile]);
+    // Only set interval if we don't have monitoringData from parent
+    let interval: any;
+    if (!monitoringData) {
+      interval = setInterval(fetchDailyMetrics, 60000); // Refresh every minute
+    }
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [profile, monitoringData]);
 
   const formatDuration = (seconds: number) => {
     const h = Math.floor(seconds / 3600);

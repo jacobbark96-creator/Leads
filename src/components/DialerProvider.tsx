@@ -419,11 +419,18 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             // and to guarantee the browser allows upstream audio.
             if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
               try {
+                // Check if permission was already denied to avoid re-triggering prompt unnecessarily
+                const permissionStatus = await navigator.permissions.query({ name: 'microphone' as any }).catch(() => null);
+                if (permissionStatus?.state === 'denied') return;
+
                 const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
                 // Stop the tracks immediately after getting permission, Twilio will request its own stream when connecting
                 stream.getTracks().forEach(track => track.stop());
-              } catch (err) {
-                console.warn('Microphone permission was not granted during init:', err);
+              } catch (err: any) {
+                // Silent catch for common permission errors to avoid console noise
+                if (err.name !== 'NotAllowedError' && err.name !== 'NotFoundError') {
+                  console.warn('Microphone permission check failed:', err);
+                }
               }
             }
             const devices = await navigator.mediaDevices.enumerateDevices();

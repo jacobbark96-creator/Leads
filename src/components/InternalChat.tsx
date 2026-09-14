@@ -427,6 +427,75 @@ export const InternalChat: React.FC<{
     return !error;
   };
 
+  const fetchDataTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedFetchData = () => {
+    if (fetchDataTimeoutRef.current) clearTimeout(fetchDataTimeoutRef.current);
+    fetchDataTimeoutRef.current = setTimeout(fetchData, 2000);
+  };
+
+  const fetchUnread = async () => {
+    if (!profile || !groupsLoaded) return;
+    const groupIds = groupsRef.current.map(g => g.id);
+
+    // 1. Fetch direct unread messages (already efficient)
+    const { data: directMessages } = await supabase
+      .from('internal_messages')
+      .select('sender_id')
+      .eq('receiver_id', profile.id)
+      .eq('is_read', false);
+
+    // 2. Fetch group messages efficiently
+    // We only need to check if there are NEW messages since last_read_at
+    const counts: Record<string, number> = {};
+
+    if (directMessages) {
+      directMessages.forEach(msg => {
+        if (msg.sender_id) {
+          counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1;
+        }
+      });
+    }
+
+    // For groups, we query per-group but with a date filter to avoid fetching history
+    if (groupIds.length > 0) {
+      await Promise.all(groupIds.map(async (groupId) => {
+        const lastReadAt = groupReadAtRef.current[groupId];
+        let query = supabase
+          .from('internal_messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('group_id', groupId)
+          .neq('sender_id', profile.id);
+
+        if (lastReadAt) {
+          query = query.gt('created_at', lastReadAt);
+        }
+
+        const { count } = await query;
+        if (count && count > 0) {
+          counts[groupId] = count;
+        }
+      }));
+    }
+
+    // CRITICAL: If we are currently chatting with someone, their unread count should be 0
+    const savedChatUserStr = sessionStorage.getItem('activeChatUser');
+    if (savedChatUserStr && isOpen) {
+      try {
+        const activeUser = JSON.parse(savedChatUserStr);
+        delete counts[activeUser.id];
+      } catch(e) {}
+    }
+
+    setUnreadCounts(counts);
+    updateGlobalUnreadBadge(counts);
+  };
+
+  const fetchUnreadTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedFetchUnread = () => {
+    if (fetchUnreadTimeoutRef.current) clearTimeout(fetchUnreadTimeoutRef.current);
+    fetchUnreadTimeoutRef.current = setTimeout(fetchUnread, 3000);
+  };
+
   // 1. Fetch eligible users (staff) and groups
   useEffect(() => {
     fetchData();
@@ -438,12 +507,11 @@ export const InternalChat: React.FC<{
         schema: 'public',
         table: 'internal_group_members',
         filter: `user_id=eq.${profile.id}`
-      }, () => {
-        fetchData();
-      })
+      }, debouncedFetchData)
       .subscribe();
 
     return () => {
+      if (fetchDataTimeoutRef.current) clearTimeout(fetchDataTimeoutRef.current);
       supabase.removeChannel(membershipSub);
     };
   }, [profile]);
@@ -626,56 +694,6 @@ export const InternalChat: React.FC<{
   useEffect(() => {
     if (!profile || !groupsLoaded) return;
 
-    const fetchUnread = async () => {
-      const groupIds = groupsRef.current.map(g => g.id);
-
-      const { data: directMessages } = await supabase
-        .from('internal_messages')
-        .select('sender_id')
-        .eq('receiver_id', profile.id)
-        .eq('is_read', false);
-
-      const groupMessages = groupIds.length > 0
-        ? await supabase
-            .from('internal_messages')
-            .select('group_id, created_at')
-            .in('group_id', groupIds)
-            .neq('sender_id', profile.id)
-        : { data: [] as { group_id: string; created_at: string }[] };
-
-      if (directMessages || groupMessages.data) {
-        const counts: Record<string, number> = {};
-
-        directMessages?.forEach(msg => {
-          if (msg.sender_id) {
-            counts[msg.sender_id] = (counts[msg.sender_id] || 0) + 1;
-          }
-        });
-
-        groupMessages.data?.forEach((msg: { group_id: string; created_at: string }) => {
-          if (msg.group_id) {
-            const lastReadAt = groupReadAtRef.current[msg.group_id];
-            if (lastReadAt && new Date(msg.created_at).getTime() <= new Date(lastReadAt).getTime()) {
-              return;
-            }
-            counts[msg.group_id] = (counts[msg.group_id] || 0) + 1;
-          }
-        });
-
-        // CRITICAL: If we are currently chatting with someone, their unread count should be 0
-        const savedChatUserStr = sessionStorage.getItem('activeChatUser');
-        if (savedChatUserStr && isOpen) {
-          try {
-            const activeUser = JSON.parse(savedChatUserStr);
-            delete counts[activeUser.id];
-          } catch(e) {}
-        }
-
-        setUnreadCounts(counts);
-        updateGlobalUnreadBadge(counts);
-      }
-    };
-
     fetchUnread();
 
     const msgChannelName = 'internal_messages_updates';
@@ -694,8 +712,8 @@ export const InternalChat: React.FC<{
       }, (payload) => {
         const newMsg = payload.new as Message;
         
-        // Always refresh unread counts on new messages
-        fetchUnread();
+        // Debounce refresh unread counts on new messages to reduce DB load
+        debouncedFetchUnread();
         
         // Ignore messages we sent ourselves (unless testing multiple tabs)
         if (newMsg.sender_id === profile.id) return;
@@ -732,7 +750,7 @@ export const InternalChat: React.FC<{
           }
           return prev;
         });
-        fetchUnread();
+        debouncedFetchUnread();
       })
       .subscribe();
 

@@ -24,72 +24,76 @@ const LiveCounter = ({ startTime }: { startTime: string }) => {
   return <span className="text-emerald-400 font-bold drop-shadow-[0_0_8px_rgba(52,211,153,0.8)]">{duration}</span>;
 };
 
-export const CallMonitoringPanel = () => {
+export const CallMonitoringPanel = ({ monitoringData }: { monitoringData?: any }) => {
   const [activeCalls, setActiveCalls] = useState<any[]>([]);
   const [callsToday, setCallsToday] = useState(0);
   const [avgDuration, setAvgDuration] = useState('00:00');
 
   useEffect(() => {
+    const processData = (data: any) => {
+      if (data && data.representatives) {
+        const mapped = data.representatives.map((rep: any) => {
+          const activeCall = rep.logs.find((l: any) => {
+            return ['in-progress', 'ringing', 'queued'].includes(l.status);
+          });
+
+          return {
+            id: rep.id,
+            agent: rep.name.split(' ')[0] + (rep.name.split(' ')[1] ? ' ' + rep.name.split(' ')[1][0] + '.' : ''),
+            status: activeCall ? 'ON CALL' : (rep.totalCalls > 0 ? 'AVAILABLE' : 'IDLE'),
+            activeCallTime: activeCall ? activeCall.time : null,
+            activeCallLeadId: activeCall ? activeCall.leadId : null,
+            activeCallEntityType: activeCall ? activeCall.entityType : null,
+            duration: rep.formattedDuration,
+            totalCalls: rep.totalCalls,
+            avgDuration: rep.formattedAvgDuration
+          };
+        });
+
+        // Sort by status priority, then by total calls
+        const sorted = mapped.sort((a: any, b: any) => {
+          const priority: Record<string, number> = { 'ON CALL': 0, 'AVAILABLE': 1, 'IDLE': 2 };
+          if (priority[a.status] !== priority[b.status]) {
+            return priority[a.status] - priority[b.status];
+          }
+          return b.totalCalls - a.totalCalls;
+        });
+
+        setActiveCalls(sorted);
+        
+        // Calculate summary totals
+        const totalCallsToday = data.representatives.reduce((acc: number, r: any) => acc + (r.totalCalls || 0), 0);
+        const liveCount = mapped.filter((m: any) => m.status === 'ON CALL').length;
+        
+        setCallsToday(totalCallsToday);
+        setAvgDuration(liveCount.toString());
+      }
+    };
+
+    if (monitoringData) {
+      processData(monitoringData);
+      return;
+    }
+
     const fetchMonitoringData = async () => {
       try {
         const res = await fetch('/api/twilio/monitoring?dateRange=today');
         if (!res.ok) throw new Error('Failed to fetch monitoring data');
         
         const data = await res.json();
-        if (data.representatives) {
-          const mapped = data.representatives.map((rep: any) => {
-            const activeCall = rep.logs.find((l: any) => {
-              return ['in-progress', 'ringing', 'queued'].includes(l.status);
-            });
-
-            return {
-              id: rep.id,
-              agent: rep.name.split(' ')[0] + (rep.name.split(' ')[1] ? ' ' + rep.name.split(' ')[1][0] + '.' : ''),
-              status: activeCall ? 'ON CALL' : (rep.totalCalls > 0 ? 'AVAILABLE' : 'IDLE'),
-              activeCallTime: activeCall ? activeCall.time : null,
-              activeCallLeadId: activeCall ? activeCall.leadId : null,
-              activeCallEntityType: activeCall ? activeCall.entityType : null,
-              duration: rep.formattedDuration,
-              totalCalls: rep.totalCalls,
-              avgDuration: rep.formattedAvgDuration
-            };
-          });
-
-          // Sort by status priority, then by total calls
-          const sorted = mapped.sort((a: any, b: any) => {
-            const priority: Record<string, number> = { 'ON CALL': 0, 'AVAILABLE': 1, 'IDLE': 2 };
-            if (priority[a.status] !== priority[b.status]) {
-              return priority[a.status] - priority[b.status];
-            }
-            return b.totalCalls - a.totalCalls;
-          });
-
-          setActiveCalls(sorted);
-          
-          // Calculate summary totals
-          const totalCallsToday = data.representatives.reduce((acc: number, r: any) => acc + (r.totalCalls || 0), 0);
-          const liveCount = mapped.filter((m: any) => m.status === 'ON CALL').length;
-          
-          setCallsToday(totalCallsToday);
-          setAvgDuration(liveCount.toString());
-        }
+        processData(data);
       } catch (error) {
         console.error('Error fetching monitoring data:', error);
       }
     };
 
     fetchMonitoringData();
-    const interval = setInterval(fetchMonitoringData, 3000); // Refresh every 3s to feel instant
-
-    const channel = supabase.channel('call-monitoring')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'activities', filter: "activity_type=eq.call_made" }, fetchMonitoringData)
-      .subscribe();
+    const interval = setInterval(fetchMonitoringData, 60000); // Refresh every 60s (reduced from 20s)
 
     return () => {
       clearInterval(interval);
-      supabase.removeChannel(channel);
     };
-  }, []);
+  }, [monitoringData]);
 
   return (
     <div className="bg-[#0a0f1c]/60 backdrop-blur-xl border border-white/10 rounded-3xl p-3 h-full flex flex-col shadow-[0_8px_32px_0_rgba(0,0,0,0.5)] overflow-hidden">

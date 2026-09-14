@@ -204,6 +204,14 @@ export const WhatsAppMonitor = () => {
     }
   }, [profile?.id]);
 
+  const fetchTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const debouncedFetch = useCallback(() => {
+    if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+    fetchTimeoutRef.current = setTimeout(() => {
+      fetchMessages();
+    }, 3000);
+  }, [fetchMessages]);
+
   useEffect(() => {
     if (!profile) return;
 
@@ -236,7 +244,7 @@ export const WhatsAppMonitor = () => {
         }
         
         if (newMsg.direction === 'inbound') {
-          fetchMessages();
+          debouncedFetch();
         }
       })
       .on('postgres_changes', { 
@@ -268,7 +276,7 @@ export const WhatsAppMonitor = () => {
           newMsg.receiver_id === profile.id || 
           newMsg.group_id
         ) {
-          fetchMessages();
+          debouncedFetch();
         }
       })
       .on('postgres_changes', { 
@@ -282,7 +290,7 @@ export const WhatsAppMonitor = () => {
           updatedMsg.receiver_id === profile.id || 
           updatedMsg.group_id
         ) {
-          fetchMessages();
+          debouncedFetch();
         }
       })
       .subscribe((status) => {
@@ -292,11 +300,12 @@ export const WhatsAppMonitor = () => {
     channelRef.current = channel;
 
     return () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
       if (channelRef.current) {
         supabase.removeChannel(channelRef.current);
       }
     };
-  }, [profile, fetchMessages]);
+  }, [profile, fetchMessages, debouncedFetch]);
 
   useEffect(() => {
     if (activeContact) {

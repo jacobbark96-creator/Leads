@@ -16,44 +16,69 @@ export async function POST(req: Request) {
     );
 
     const nameMap: Record<string, string> = {};
+    const numbersToProcess = numbers.filter(n => {
+      const clean = String(n).replace(/[^\d]/g, '').slice(-10);
+      return clean.length >= 7;
+    });
 
-    // Process all numbers sequentially to avoid rate limits
-    for (const num of numbers) {
-      const cleanNum = String(num).replace(/[^\d]/g, '').slice(-10);
-      if (cleanNum.length < 7) continue;
+    if (numbersToProcess.length === 0) {
+      return NextResponse.json({ nameMap });
+    }
 
-      const subOrQuery = `phone.ilike.%${cleanNum}%,secondary_phone.ilike.%${cleanNum}%`;
-      const subContractorOrQuery = `phone.ilike.%${cleanNum}%,secondary_phone.ilike.%${cleanNum}%,other_contact_numbers.ilike.%${cleanNum}%`;
+    // Chunk numbers to process in batches
+    const chunks: string[][] = [];
+    const last10Digits = numbersToProcess.map(n => String(n).replace(/[^\d]/g, '').slice(-10));
+    
+    for (let i = 0; i < last10Digits.length; i += 20) {
+      chunks.push(last10Digits.slice(i, i + 20));
+    }
 
-      const [leadsData, contractorsData] = await Promise.all([
-        supabase.from('leads')
-          .select('phone, secondary_phone, name, company')
-          .or(subOrQuery)
-          .limit(1),
-        supabase.from('contractors')
-          .select('phone, secondary_phone, other_contact_numbers, company_name, contact_name')
-          .or(subContractorOrQuery)
-          .limit(1)
-      ]);
+    let matchedEntities: any[] = [];
+    const chunkPromises = chunks.flatMap(chunk => {
+      const leadOrQuery = chunk.map(num => `phone.ilike.%${num}%,secondary_phone.ilike.%${num}%`).join(',');
+      const contractorOrQuery = chunk.map(num => `phone.ilike.%${num}%,secondary_phone.ilike.%${num}%,other_contact_numbers.ilike.%${num}%`).join(',');
 
-      const isValidName = (name?: string | null) => name && typeof name === 'string' && !name.toLowerCase().includes('unknown');
+      return [
+        supabase.from('leads').select('name, company, phone, secondary_phone').or(leadOrQuery),
+        supabase.from('contractors').select('contact_name, company_name, phone, secondary_phone, other_contact_numbers').or(contractorOrQuery)
+      ];
+    });
 
-      let resolvedName = null;
-
-      if (leadsData.data && leadsData.data.length > 0) {
-        const item = leadsData.data[0];
-        if (isValidName(item.name)) resolvedName = item.name;
-        else if (isValidName(item.company)) resolvedName = item.company;
+    // Execute in batches of 10
+    for (let i = 0; i < chunkPromises.length; i += 10) {
+      const batch = chunkPromises.slice(i, i + 10);
+      const results = await Promise.all(batch);
+      for (const res of results) {
+        if (res.data) {
+          matchedEntities = matchedEntities.concat(res.data);
+        }
       }
+    }
 
-      if (!resolvedName && contractorsData.data && contractorsData.data.length > 0) {
-        const item = contractorsData.data[0];
-        if (isValidName(item.contact_name)) resolvedName = item.contact_name;
-        else if (isValidName(item.company_name)) resolvedName = item.company_name;
-      }
+    const isValidName = (name?: string | null) => name && typeof name === 'string' && !name.toLowerCase().includes('unknown');
 
-      if (resolvedName) {
-        nameMap[num] = resolvedName;
+    // Map results back to original numbers
+    for (const originalNum of numbersToProcess) {
+      const cleanNum = String(originalNum).replace(/[^\d]/g, '').slice(-10);
+      
+      const matched = matchedEntities.find(l => {
+        const p1 = l.phone ? l.phone.replace(/[^\d]/g, '') : '';
+        const p2 = l.secondary_phone ? l.secondary_phone.replace(/[^\d]/g, '') : '';
+        const p3 = l.other_contact_numbers ? l.other_contact_numbers.replace(/[^\d]/g, '') : '';
+        return p1.includes(cleanNum) || p2.includes(cleanNum) || p3.includes(cleanNum);
+      });
+
+      if (matched) {
+        let name = null;
+        if ('name' in matched) {
+          name = isValidName(matched.name) ? matched.name : matched.company;
+        } else {
+          name = isValidName(matched.contact_name) ? matched.contact_name : matched.company_name;
+        }
+        
+        if (isValidName(name)) {
+          nameMap[originalNum] = name;
+        }
       }
     }
 

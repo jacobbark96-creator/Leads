@@ -96,16 +96,23 @@ export const Leaderboard = () => {
   useEffect(() => {
     fetchLeaderboard();
     
+    const fetchTimeoutRef = { current: null as any };
+    const debouncedFetch = () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+      fetchTimeoutRef.current = setTimeout(fetchLeaderboard, 60000); // 60s debounce for global leaderboard
+    };
+
     // Set up realtime listeners for updates
     const activitiesSub = supabase.channel('leaderboard-activities')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, fetchLeaderboard)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'activities' }, debouncedFetch)
       .subscribe();
       
     const purchasesSub = supabase.channel('leaderboard-purchases')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_purchases' }, fetchLeaderboard)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'lead_purchases' }, debouncedFetch)
       .subscribe();
 
     return () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
       supabase.removeChannel(activitiesSub);
       supabase.removeChannel(purchasesSub);
     };

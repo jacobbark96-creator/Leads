@@ -14,6 +14,7 @@ export const UnifiedMessagesPanel = () => {
   const [conversations, setConversations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedChat, setSelectedChat] = useState<any | null>(null);
+  const fetchTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
     if (!profile) return;
@@ -128,18 +129,24 @@ export const UnifiedMessagesPanel = () => {
       setConversations(sortedConversations);
     };
 
+    const debouncedFetchConversations = () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
+      fetchTimeoutRef.current = setTimeout(fetchConversations, 5000); // 5s debounce
+    };
+
     fetchConversations();
 
     const channelInternal = supabase.channel('internal-messages-panel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'internal_messages' }, fetchConversations)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'internal_messages' }, debouncedFetchConversations)
       .subscribe();
       
     const channelSms = supabase.channel('sms-messages-panel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sms_messages' }, fetchConversations)
-      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sms_messages' }, fetchConversations)
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'sms_messages' }, debouncedFetchConversations)
+      .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sms_messages' }, debouncedFetchConversations)
       .subscribe();
 
     return () => {
+      if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
       supabase.removeChannel(channelInternal);
       supabase.removeChannel(channelSms);
     };

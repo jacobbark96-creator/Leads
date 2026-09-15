@@ -17,7 +17,7 @@ export function ReferralPartnersTab() {
   const fetchPartners = async () => {
     try {
       const { data, error } = await supabase
-        .from('referral_partners')
+        .from('partners')
         .select(`
           *,
           users!inner(name, email, role, created_at)

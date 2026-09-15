@@ -171,7 +171,7 @@ export default function LeadPacksPage() {
   };
 
   const handleRegeneratePack = async (id: string) => {
-    if (!window.confirm(`Are you sure you want to regenerate this pack? "Call Backs" will be moved to the rep's personal queue. Unassigned leads (Voicemail, No Answer) will be placed back into the pack for anyone to call.`)) return;
+    if (!window.confirm(`Are you sure you want to regenerate this pack? "Call Backs" will be moved to the rep's personal queue. Unassigned leads (Voicemail, Not viable) will be placed back into the pack for anyone to call.`)) return;
     
     try {
       const { error } = await supabase.rpc('regenerate_pack', { p_pack_id: id });

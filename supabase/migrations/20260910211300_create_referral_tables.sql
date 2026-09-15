@@ -1,9 +1,9 @@
--- Create the referral_partners table
-CREATE TABLE IF NOT EXISTS public.referral_partners (
+-- Create the partners table
+CREATE TABLE IF NOT EXISTS public.partners (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID NOT NULL REFERENCES public.users(id) ON DELETE CASCADE,
     partner_id TEXT NOT NULL UNIQUE,
-    parent_partner_id UUID REFERENCES public.referral_partners(id) ON DELETE SET NULL,
+    parent_partner_id UUID REFERENCES public.partners(id) ON DELETE SET NULL,
     tc_version TEXT NOT NULL,
     tc_accepted_at TIMESTAMPTZ NOT NULL DEFAULT now(),
     created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
@@ -11,15 +11,15 @@ CREATE TABLE IF NOT EXISTS public.referral_partners (
 );
 
 -- Enable RLS
-ALTER TABLE public.referral_partners ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.partners ENABLE ROW LEVEL SECURITY;
 
 -- Create policies
 CREATE POLICY "Users can view their own referral partner profile"
-    ON public.referral_partners FOR SELECT
+    ON public.partners FOR SELECT
     USING (auth.uid() = user_id);
 
 CREATE POLICY "Admins have full access to referral partners"
-    ON public.referral_partners FOR ALL
+    ON public.partners FOR ALL
     USING (
         EXISTS (
             SELECT 1 FROM public.users
@@ -31,7 +31,7 @@ CREATE POLICY "Admins have full access to referral partners"
 CREATE TABLE IF NOT EXISTS public.referral_tracking (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID NOT NULL REFERENCES public.leads(id) ON DELETE CASCADE,
-    partner_id UUID NOT NULL REFERENCES public.referral_partners(id) ON DELETE CASCADE,
+    partner_id UUID NOT NULL REFERENCES public.partners(id) ON DELETE CASCADE,
     kanban_status TEXT NOT NULL DEFAULT 'NEW',
     questionnaire_responses JSONB NOT NULL DEFAULT '{}'::jsonb,
     dealt_with_at TIMESTAMPTZ,
@@ -48,9 +48,9 @@ CREATE POLICY "Partners can view their own referral tracking"
     ON public.referral_tracking FOR SELECT
     USING (
         EXISTS (
-            SELECT 1 FROM public.referral_partners
-            WHERE referral_partners.id = referral_tracking.partner_id
-            AND referral_partners.user_id = auth.uid()
+            SELECT 1 FROM public.partners
+            WHERE partners.id = referral_tracking.partner_id
+            AND partners.user_id = auth.uid()
         )
     );
 
@@ -67,8 +67,8 @@ CREATE POLICY "Admins have full access to referral tracking"
 CREATE TABLE IF NOT EXISTS public.referral_commissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID NOT NULL REFERENCES public.leads(id) ON DELETE CASCADE,
-    partner_id UUID NOT NULL REFERENCES public.referral_partners(id) ON DELETE CASCADE,
-    parent_partner_id UUID REFERENCES public.referral_partners(id) ON DELETE SET NULL,
+    partner_id UUID NOT NULL REFERENCES public.partners(id) ON DELETE CASCADE,
+    parent_partner_id UUID REFERENCES public.partners(id) ON DELETE SET NULL,
     lead_sale_value NUMERIC,
     commission_type TEXT NOT NULL, -- 'direct' or 'parent'
     commission_amount NUMERIC NOT NULL,
@@ -90,9 +90,9 @@ CREATE POLICY "Partners can view their own commissions"
     ON public.referral_commissions FOR SELECT
     USING (
         EXISTS (
-            SELECT 1 FROM public.referral_partners
-            WHERE referral_partners.id = referral_commissions.partner_id
-            AND referral_partners.user_id = auth.uid()
+            SELECT 1 FROM public.partners
+            WHERE partners.id = referral_commissions.partner_id
+            AND partners.user_id = auth.uid()
         )
     );
 

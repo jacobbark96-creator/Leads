@@ -33,7 +33,7 @@ BEGIN
 
     -- 3. Find the partner
     SELECT id, parent_partner_id INTO v_partner_id, v_parent_partner_id
-    FROM public.referral_partners
+    FROM public.partners
     WHERE partner_id = v_lead_source;
 
     -- If partner found, generate commissions

@@ -74,7 +74,7 @@ export default function ReferralAuth() {
           let parentPartnerId = null;
           if (parentRef) {
             const { data: parentData } = await supabase
-              .from('referral_partners')
+              .from('partners')
               .select('id')
               .eq('partner_id', parentRef)
               .single();
@@ -120,7 +120,7 @@ export default function ReferralAuth() {
       {/* Left Side - Info */}
       <div className="hidden md:flex md:w-1/2 bg-[#001E2B] text-white flex-col justify-center px-12 lg:px-24">
         <div className="mb-12">
-          <img src="/openlead-logo-white.png" alt="OpenLead" className="h-10 object-contain" onError={(e) => (e.currentTarget.src = '/openlead-logo.png')} />
+          <img src="/openlead-logo.png" alt="OpenLead" className="h-10 object-contain" />
         </div>
         <h1 className="text-4xl font-bold mb-6">OpenLead Referral Partner Portal</h1>
         <p className="text-xl text-gray-300 mb-8">

@@ -2270,10 +2270,10 @@ function LeadDetailsV2Content() {
                     Voicemail
                   </button>
                   <button
-                    onClick={() => handlePackDisposition('No Answer')}
+                    onClick={() => handlePackDisposition('Not viable')}
                     className="px-2 md:px-2.5 py-1 rounded-lg font-bold text-[10px] md:text-[11px] bg-amber-50 text-amber-700 hover:bg-amber-100 transition-colors shrink-0"
                   >
-                    No Answer
+                    Not viable
                   </button>
                   <button
                     onClick={() => handlePackDisposition('Call Back')}
@@ -2295,10 +2295,10 @@ function LeadDetailsV2Content() {
                   </button>
                   <div className="w-px h-4 bg-gray-200 mx-1 shrink-0"></div>
                   <button
-                    onClick={() => handlePackDisposition('Skipped')}
+                    onClick={() => handlePackDisposition('Has Solar')}
                     className="px-2 md:px-2.5 py-1 rounded-lg font-bold text-[10px] md:text-[11px] bg-gray-100 text-gray-700 hover:bg-gray-200 transition-colors flex items-center gap-1 shrink-0"
                   >
-                    Skip <ArrowRight className="w-3 h-3" />
+                    Has Solar <ArrowRight className="w-3 h-3" />
                   </button>
                 </div>
               )}

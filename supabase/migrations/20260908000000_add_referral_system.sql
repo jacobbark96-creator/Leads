@@ -15,21 +15,21 @@ BEGIN
 END $$;
 
 -- ==============================================================================
--- 2. Create Referral Partners Table
+-- 2. Create Partners Table
 -- ==============================================================================
-CREATE TABLE IF NOT EXISTS public.referral_partners (
+CREATE TABLE IF NOT EXISTS public.partners (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     user_id UUID REFERENCES public.users(id) ON DELETE CASCADE,
     partner_id VARCHAR(50) UNIQUE NOT NULL,
-    parent_partner_id UUID REFERENCES public.referral_partners(id) ON DELETE SET NULL,
+    parent_partner_id UUID REFERENCES public.partners(id) ON DELETE SET NULL,
     tc_version VARCHAR(50) NOT NULL,
     tc_accepted_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(user_id)
 );
 
-CREATE INDEX IF NOT EXISTS idx_referral_partners_user_id ON public.referral_partners(user_id);
-CREATE INDEX IF NOT EXISTS idx_referral_partners_partner_id ON public.referral_partners(partner_id);
+CREATE INDEX IF NOT EXISTS idx_partners_user_id ON public.partners(user_id);
+CREATE INDEX IF NOT EXISTS idx_partners_partner_id ON public.partners(partner_id);
 
 -- ==============================================================================
 -- 3. Create Referral Questions Table
@@ -52,8 +52,8 @@ CREATE TABLE IF NOT EXISTS public.referral_questions (
 CREATE TABLE IF NOT EXISTS public.referral_commissions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID REFERENCES public.leads(id) ON DELETE CASCADE,
-    partner_id UUID REFERENCES public.referral_partners(id) ON DELETE CASCADE,
-    parent_partner_id UUID REFERENCES public.referral_partners(id) ON DELETE SET NULL,
+    partner_id UUID REFERENCES public.partners(id) ON DELETE CASCADE,
+    parent_partner_id UUID REFERENCES public.partners(id) ON DELETE SET NULL,
     commission_type VARCHAR(20) NOT NULL CHECK (commission_type IN ('direct', 'tier2')),
     amount NUMERIC NOT NULL,
     status VARCHAR(20) NOT NULL DEFAULT 'Pending' CHECK (status IN ('Pending', 'Earned', 'Due', 'Paid', 'Cancelled')),
@@ -75,7 +75,7 @@ CREATE INDEX IF NOT EXISTS idx_ref_commissions_status ON public.referral_commiss
 CREATE TABLE IF NOT EXISTS public.referral_tracking (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     lead_id UUID REFERENCES public.leads(id) ON DELETE CASCADE,
-    partner_id UUID REFERENCES public.referral_partners(id) ON DELETE CASCADE,
+    partner_id UUID REFERENCES public.partners(id) ON DELETE CASCADE,
     kanban_status VARCHAR(20) NOT NULL DEFAULT 'NEW' CHECK (kanban_status IN ('NEW', 'DEALT_WITH')),
     dealt_with_at TIMESTAMPTZ,
     dealt_with_by UUID REFERENCES auth.users(id) ON DELETE SET NULL,
@@ -119,23 +119,23 @@ CREATE TRIGGER update_referral_tracking_updated_at
 -- ==============================================================================
 -- 7. Row Level Security (RLS)
 -- ==============================================================================
-ALTER TABLE public.referral_partners ENABLE ROW LEVEL SECURITY;
+ALTER TABLE public.partners ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.referral_questions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.referral_commissions ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.referral_tracking ENABLE ROW LEVEL SECURITY;
 
 -- Partners: Partners can read their own profile. Admins can read all.
-CREATE POLICY "Partners can read own profile" ON public.referral_partners
+CREATE POLICY "Partners can read own profile" ON public.partners
     FOR SELECT USING (user_id = auth.uid());
     
-CREATE POLICY "Partners can read child profiles" ON public.referral_partners
+CREATE POLICY "Partners can read child profiles" ON public.partners
     FOR SELECT USING (
         parent_partner_id IN (
-            SELECT id FROM public.referral_partners WHERE user_id = auth.uid()
+            SELECT id FROM public.partners WHERE user_id = auth.uid()
         )
     );
 
-CREATE POLICY "Admins can manage referral_partners" ON public.referral_partners
+CREATE POLICY "Admins can manage partners" ON public.partners
     FOR ALL USING (
         EXISTS (SELECT 1 FROM public.users WHERE id = auth.uid() AND role IN ('admin', 'super_admin'))
     );
@@ -152,8 +152,8 @@ CREATE POLICY "Admins can manage questions" ON public.referral_questions
 -- Commissions: Partners can read their own (direct or parent). Admins can manage.
 CREATE POLICY "Partners can read own commissions" ON public.referral_commissions
     FOR SELECT USING (
-        partner_id IN (SELECT id FROM public.referral_partners WHERE user_id = auth.uid()) OR
-        parent_partner_id IN (SELECT id FROM public.referral_partners WHERE user_id = auth.uid())
+        partner_id IN (SELECT id FROM public.partners WHERE user_id = auth.uid()) OR
+        parent_partner_id IN (SELECT id FROM public.partners WHERE user_id = auth.uid())
     );
 
 CREATE POLICY "Admins can manage commissions" ON public.referral_commissions
@@ -164,7 +164,7 @@ CREATE POLICY "Admins can manage commissions" ON public.referral_commissions
 -- Tracking: Partners can read tracking for their own leads. Admins can manage.
 CREATE POLICY "Partners can read own tracking" ON public.referral_tracking
     FOR SELECT USING (
-        partner_id IN (SELECT id FROM public.referral_partners WHERE user_id = auth.uid())
+        partner_id IN (SELECT id FROM public.partners WHERE user_id = auth.uid())
     );
 
 CREATE POLICY "Admins can manage tracking" ON public.referral_tracking

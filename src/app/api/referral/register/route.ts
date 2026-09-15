@@ -33,7 +33,7 @@ export async function POST(request: Request) {
 
     // 2. Create Referral Partner Profile
     const { error: partnerError } = await supabaseAdmin
-      .from('referral_partners')
+      .from('partners')
       .insert({
         user_id: userId,
         partner_id: partnerId,

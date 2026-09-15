@@ -238,7 +238,7 @@ export async function POST(req: Request) {
 
         let statusText = callStatus;
         if (callStatus === 'completed') statusText = 'Answered';
-        if (callStatus === 'no-answer') statusText = 'No Answer';
+        if (callStatus === 'no-answer') statusText = 'Not viable';
         if (callStatus === 'busy') statusText = 'Busy';
         if (callStatus === 'failed') statusText = 'Failed';
 

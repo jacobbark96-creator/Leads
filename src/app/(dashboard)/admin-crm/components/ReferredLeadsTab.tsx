@@ -37,7 +37,7 @@ export function ReferredLeadsTab() {
           leads (
             id, name, phone, email, lead_type, status
           ),
-          referral_partners (
+          partners (
             partner_id,
             users (name)
           )
@@ -77,7 +77,7 @@ export function ReferredLeadsTab() {
 
   const filteredLeads = leads.filter(l => 
     l.leads?.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    l.referral_partners?.users?.name?.toLowerCase().includes(searchTerm.toLowerCase())
+    l.partners?.users?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const newReferrals = filteredLeads.filter(l => l.kanban_status === 'NEW');
@@ -99,8 +99,8 @@ export function ReferredLeadsTab() {
       <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100 mb-3">
         <div className="text-xs text-blue-800 font-medium mb-1">Partner Info</div>
         <div className="text-xs text-gray-600 flex justify-between">
-          <span>{item.referral_partners?.users?.name}</span>
-          <span className="font-mono">{item.referral_partners?.partner_id}</span>
+          <span>{item.partners?.users?.name}</span>
+          <span className="font-mono">{item.partners?.partner_id}</span>
         </div>
       </div>
 

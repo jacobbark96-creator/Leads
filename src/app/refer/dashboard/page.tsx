@@ -37,7 +37,7 @@ export default function ReferralDashboard() {
       }
 
       const { data: partnerData, error: partnerError } = await supabase
-        .from('referral_partners')
+        .from('partners')
         .select('*, users(name)')
         .eq('user_id', session.user.id)
         .maybeSingle();

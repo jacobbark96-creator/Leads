@@ -18,11 +18,11 @@ export async function POST(req: Request) {
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // 1. Get Google refresh token
+    // 1. Get Google refresh token and user signature
     console.log('Fetching refresh token for userId:', userId);
     const { data: user, error: userError } = await supabase
       .from('users')
-      .select('google_refresh_token, name, email')
+      .select('google_refresh_token, name, email, email_signature, division_id, divisions(logo_url)')
       .eq('id', userId)
       .single();
 
@@ -65,6 +65,25 @@ export async function POST(req: Request) {
 
     const accessToken = tokenData.access_token;
 
+    // 2.5 Fetch Gmail Signature for the specific alias if possible
+    let gmailSignature = '';
+    try {
+      if (fromEmail) {
+        const sendAsResponse = await fetch(`https://gmail.googleapis.com/gmail/v1/users/me/settings/sendAs/${encodeURIComponent(fromEmail)}`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (sendAsResponse.ok) {
+          const sendAsData = await sendAsResponse.json();
+          if (sendAsData.signature) {
+            gmailSignature = sendAsData.signature;
+            console.log('Found Gmail-specific signature for alias:', fromEmail);
+          }
+        }
+      }
+    } catch (e) {
+      console.error('Error fetching Gmail alias signature:', e);
+    }
+
     // 3. Send Email via Gmail API
     // Gmail API requires base64url encoded message
     
@@ -77,6 +96,32 @@ export async function POST(req: Request) {
     };
 
     const utf8Subject = `=?utf-8?B?${btoa(unescape(encodeURIComponent(subject)))}?=`;
+    
+    // Check if body is HTML
+    const isHtml = /<[a-z][\s\S]*>/i.test(body);
+    const processedBody = isHtml ? body : body.replace(/\n/g, '<br/>');
+
+    // Append signature if it exists
+    let fullBody = processedBody;
+    // Prefer Gmail alias signature, then CRM user signature
+    const signature = gmailSignature || user.email_signature;
+    const logoUrl = (user as any).divisions?.logo_url;
+
+    if ((signature && signature.trim() && signature !== '<p><br></p>') || logoUrl) {
+      let sigHtml = '<br/><br/>';
+      
+      if (signature && signature.trim() && signature !== '<p><br></p>') {
+        const sigIsHtml = /<[a-z][\s\S]*>/i.test(signature);
+        sigHtml += sigIsHtml ? signature : signature.replace(/\n/g, '<br/>');
+      }
+      
+      if (logoUrl) {
+        sigHtml += `<br/><img src="${logoUrl}" alt="Division Logo" style="max-height: 60px; width: auto; margin-top: 10px;" />`;
+      }
+      
+      fullBody = `${processedBody}${sigHtml}`;
+    }
+
     const messageParts = [
       `From: ${user.name || 'Openlead User'} <${fromEmail || user.email}>`,
       `To: ${to}`,
@@ -84,7 +129,7 @@ export async function POST(req: Request) {
       'MIME-Version: 1.0',
       'Content-Type: text/html; charset=utf-8',
       '',
-      body.replace(/\n/g, '<br/>'),
+      fullBody,
     ];
     const message = messageParts.join('\r\n');
     const encodedMessage = base64url(message);

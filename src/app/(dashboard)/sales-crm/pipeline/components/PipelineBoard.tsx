@@ -32,16 +32,31 @@ const SALES_COLUMNS = [
   { id: 'Lost', label: 'Lost', color: 'gray', icon: FileText },
 ];
 
+const BD_COLUMNS = [
+  { id: 'Fresh', label: 'Fresh', color: 'blue', icon: PhoneCall },
+  { id: 'Intro', label: 'Intro', color: 'purple', icon: Megaphone },
+  { id: 'Follow up', label: 'Follow up', color: 'orange', icon: FileText },
+  { id: 'Chase up', label: 'Chase up', color: 'red', icon: PhoneCall },
+  { id: 'Intent call', label: 'Intent call', color: 'green', icon: UserCheck },
+  { id: 'Market', label: 'Market', color: 'yellow', icon: Trophy },
+  { id: 'Sold', label: 'Sold', color: 'green', icon: CheckCircle },
+];
+
 export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: PipelineBoardProps) {
   const isGM = role === 'growth_manager';
   const isSales = role === 'Residential Sales' || role === 'Commercial Sales';
-  let columns = isGM ? GM_COLUMNS : isSales ? SALES_COLUMNS : COLUMNS;
+  const isBD = role === 'bd'; // We'll pass 'bd' as a role when on the BD page
+  let columns = isGM ? GM_COLUMNS : isSales ? SALES_COLUMNS : isBD ? BD_COLUMNS : COLUMNS;
 
   if (isOpenEnergyResidential) {
     columns = columns.filter(c => c.id !== 'marketed');
   }
 
   const getLeadsByStatus = (status: string) => {
+    if (isBD) {
+      return leads.filter(l => l.bd_pipeline_status === status);
+    }
+    
     if (isGM) {
       return leads.filter(l => l.gm_pipeline_status === status);
     }

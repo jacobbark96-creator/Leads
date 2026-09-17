@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home, Archive, ChevronLeft, Calendar } from 'lucide-react';
+import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home, Archive, ChevronLeft, Calendar, Briefcase } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
@@ -71,7 +71,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
       const { data, error } = await query.order('created_at', { ascending: false });
         
       if (data) {
-        setLeadPacks(data);
+        setLeadPacks(data.filter(p => p.name !== 'Business Development'));
       } else if (error) {
         console.error('Error fetching lead packs:', error);
       }
@@ -86,6 +86,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
     { id: 'sales-crm/calendar', name: 'Calendar', path: '/sales-crm/calendar', icon: Calendar },
     { id: 'sales-crm/fresh', name: 'Unqualified Leads', path: '/sales-crm', icon: Users, exact: true },
     { id: 'sales-crm/qualified', name: 'Qualified Leads', path: '/sales-crm/qualified', icon: CheckCircle },
+    { id: 'sales-crm/bd', name: 'Business Development', path: '/sales-crm/bd', icon: Briefcase },
     { id: 'sales-crm/import', name: 'Import Leads', path: '/sales-crm/import', icon: Upload },
     { id: 'sales-crm/my-clients', name: 'My Clients', path: '/sales-crm/my-clients', icon: Users },
     { id: 'sales-crm/my-sales', name: 'My Sales', path: '/sales-crm/my-sales', icon: BarChart2 },

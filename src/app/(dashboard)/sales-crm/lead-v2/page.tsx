@@ -78,6 +78,7 @@ import { MagicCheckoutModal } from '@/components/MagicCheckoutModal';
 import { MarketplaceLeadModal } from '@/components/MarketplaceLeadModal';
 import { SmsChatModal } from '@/components/SmsChatModal';
 import { EmailModal } from '@/components/EmailModal';
+import { BdEmailSender } from './components/BdEmailSender';
 
 const noteTimestampFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'medium',
@@ -428,6 +429,7 @@ function LeadDetailsV2Content() {
   const packId = searchParams.get('pack');
 
   const [lead, setLead] = useState<Lead | null>(null);
+  const [isBdLead, setIsBdLead] = useState(false);
   const [packInfo, setPackInfo] = useState<any>(null);
   const [packMembership, setPackMembership] = useState<any>(null);
   const [notes, setNotes] = useState<LeadNote[]>([]);
@@ -939,6 +941,9 @@ function LeadDetailsV2Content() {
       if (leadError) throw leadError;
       if (!leadData) throw new Error('Lead not found or you do not have permission to view it.');
       setLead(leadData);
+
+      // Check if this is a Business Development lead by status
+      setIsBdLead(!!leadData.bd_pipeline_status);
 
       // Extract other contacts if stored in JSON or similar (depends on DB structure)
       // For now we assume they might be in a separate table or json field.
@@ -2435,12 +2440,48 @@ function LeadDetailsV2Content() {
                   </div>
                 </div>
               <div className="flex flex-wrap justify-center gap-1.5 mt-4">
-                <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
-                  lead.status === 'qualified' ? 'bg-blue-100 text-blue-700' :
-                  lead.status === 'fresh' ? 'bg-green-100 text-green-700' :
-                  lead.status === 'dnc' ? 'bg-red-100 text-red-700' :
-                  'bg-gray-100 text-gray-700'
-                }`}>{lead.status}</span>
+                {isBdLead ? (
+                  <select
+                    value={lead.bd_pipeline_status || 'Fresh'}
+                    onChange={async (e) => {
+                      const newStatus = e.target.value;
+                      try {
+                        const { error } = await supabase
+                          .from('leads')
+                          .update({ 
+                            bd_pipeline_status: newStatus,
+                            status: newStatus 
+                          })
+                          .eq('id', lead.id);
+                        if (error) throw error;
+                        setLead({ ...lead, bd_pipeline_status: newStatus, status: newStatus });
+                        toast.success('BD Status updated');
+                      } catch (err: any) {
+                        toast.error('Failed to update BD status: ' + err.message);
+                      }
+                    }}
+                    className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase border-none focus:ring-1 focus:ring-blue-500 cursor-pointer ${
+                      lead.bd_pipeline_status === 'Sold' || lead.bd_pipeline_status === 'Intent call' ? 'bg-green-100 text-green-700' :
+                      lead.bd_pipeline_status === 'Fresh' ? 'bg-blue-100 text-blue-700' :
+                      lead.bd_pipeline_status === 'Intro' ? 'bg-purple-100 text-purple-700' :
+                      lead.bd_pipeline_status === 'Follow up' ? 'bg-orange-100 text-orange-700' :
+                      lead.bd_pipeline_status === 'Chase up' ? 'bg-red-100 text-red-700' :
+                      lead.bd_pipeline_status === 'Market' ? 'bg-yellow-100 text-yellow-700' :
+                      'bg-gray-100 text-gray-700'
+                    }`}
+                  >
+                    {['Fresh', 'Intro', 'Follow up', 'Chase up', 'Intent call', 'Market', 'Sold'].map(s => (
+                      <option key={s} value={s}>{s}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
+                    lead.status === 'qualified' ? 'bg-blue-100 text-blue-700' :
+                    lead.status === 'fresh' ? 'bg-green-100 text-green-700' :
+                    lead.status === 'dnc' ? 'bg-red-100 text-red-700' :
+                    'bg-gray-100 text-gray-700'
+                  }`}>{lead.status}</span>
+                )}
                 {/* @ts-ignore */}
                 {lead.score && <span className="px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-semibold">Score: {lead.score}</span>}
               </div>
@@ -3518,68 +3559,74 @@ function LeadDetailsV2Content() {
                   <span className="px-2.5 py-1 bg-blue-50 text-blue-600 text-[11px] font-semibold rounded-md">EV Charging Potential</span>
                 </div>
               </div>
-              <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5 flex flex-col h-auto md:h-full min-h-[400px]">
-                <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Team Notes</h3>
-                <div className="flex-1 flex flex-col min-h-0 bg-gray-50/50 rounded-lg border border-gray-100 overflow-hidden">
-                  <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 max-h-[500px]" ref={notesEndRef}>
-                    {notes.filter(n => !n.content.startsWith('📞') && !n.content.startsWith('✉️') && !n.content.startsWith('📅') && n.author_name !== 'System').map(note => (
-                      <div key={note.id} className="flex gap-3">
-                        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${note.is_pinned ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-600'}`}>
-                          {getInitials(note.author_name)}
-                        </div>
-                        <div className="flex flex-col flex-1">
-                          <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                              <span className="text-sm font-bold text-gray-900">{note.author_name}</span>
-                              <span className="text-xs text-gray-400">{formatNoteTimestamp(note.created_at)}</span>
+              <div className={`${isBdLead ? 'p-0 overflow-hidden' : 'bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5'} flex flex-col h-auto md:h-full min-h-[400px]`}>
+                {isBdLead ? (
+                  <BdEmailSender lead={lead!} user={profile!} onSendSuccess={fetchLeadAndNotes} />
+                ) : (
+                  <>
+                    <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Team Notes</h3>
+                    <div className="flex-1 flex flex-col min-h-0 bg-gray-50/50 rounded-lg border border-gray-100 overflow-hidden">
+                      <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 max-h-[500px]" ref={notesEndRef}>
+                        {notes.filter(n => !n.content.startsWith('📞') && !n.content.startsWith('✉️') && !n.content.startsWith('📅') && n.author_name !== 'System').map(note => (
+                          <div key={note.id} className="flex gap-3">
+                            <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${note.is_pinned ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-600'}`}>
+                              {getInitials(note.author_name)}
                             </div>
-                            <button onClick={() => togglePinNote(note.id, !!note.is_pinned)} className={`p-1 rounded hover:bg-gray-100 ${note.is_pinned ? 'text-amber-500' : 'text-gray-400'}`}>
-                              <Pin className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-                          <div className={`text-sm p-3 rounded-xl rounded-tl-none shadow-sm ${note.is_pinned ? 'bg-amber-50 border border-amber-200 text-amber-900' : 'bg-white border border-gray-200 text-gray-700'}`}>
-                            {note.content}
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                    
-                    {typingUsers.length > 0 && (
-                      <div className="flex gap-3 items-center">
-                         <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
-                            <div className="flex gap-1">
-                              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
-                              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
-                              <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                            <div className="flex flex-col flex-1">
+                              <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm font-bold text-gray-900">{note.author_name}</span>
+                                  <span className="text-xs text-gray-400">{formatNoteTimestamp(note.created_at)}</span>
+                                </div>
+                                <button onClick={() => togglePinNote(note.id, !!note.is_pinned)} className={`p-1 rounded hover:bg-gray-100 ${note.is_pinned ? 'text-amber-500' : 'text-gray-400'}`}>
+                                  <Pin className="w-3.5 h-3.5" />
+                                </button>
+                              </div>
+                              <div className={`text-sm p-3 rounded-xl rounded-tl-none shadow-sm ${note.is_pinned ? 'bg-amber-50 border border-amber-200 text-amber-900' : 'bg-white border border-gray-200 text-gray-700'}`}>
+                                {note.content}
+                              </div>
                             </div>
-                         </div>
-                         <span className="text-xs text-gray-500 italic">{typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...</span>
+                          </div>
+                        ))}
+                        
+                        {typingUsers.length > 0 && (
+                          <div className="flex gap-3 items-center">
+                            <div className="w-8 h-8 rounded-full bg-gray-100 flex items-center justify-center flex-shrink-0">
+                                <div className="flex gap-1">
+                                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce"></span>
+                                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.2s' }}></span>
+                                  <span className="w-1.5 h-1.5 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0.4s' }}></span>
+                                </div>
+                            </div>
+                            <span className="text-xs text-gray-500 italic">{typingUsers.join(', ')} {typingUsers.length === 1 ? 'is' : 'are'} typing...</span>
+                          </div>
+                        )}
                       </div>
-                    )}
-                  </div>
-                  <div className="p-3 bg-white border-t border-gray-200">
-                    <form onSubmit={submitNote} className="relative flex gap-2">
-                      <div className="relative flex-1">
-                        <textarea 
-                          value={newNote}
-                          onChange={onNoteInputChange}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' && !e.shiftKey) {
-                              e.preventDefault();
-                              submitNote(e as any);
-                            }
-                          }}
-                          className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-3 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white resize-none" 
-                          placeholder="Write a note..."
-                          rows={2}
-                        ></textarea>
+                      <div className="p-3 bg-white border-t border-gray-200">
+                        <form onSubmit={submitNote} className="relative flex gap-2">
+                          <div className="relative flex-1">
+                            <textarea 
+                              value={newNote}
+                              onChange={onNoteInputChange}
+                              onKeyDown={(e) => {
+                                if (e.key === 'Enter' && !e.shiftKey) {
+                                  e.preventDefault();
+                                  submitNote(e as any);
+                                }
+                              }}
+                              className="w-full bg-gray-50 border border-gray-200 rounded-lg pl-3 pr-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-blue-500 focus:bg-white resize-none" 
+                              placeholder="Write a note..."
+                              rows={2}
+                            ></textarea>
+                          </div>
+                          <button type="submit" disabled={!newNote.trim()} className="self-end p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center">
+                            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
+                          </button>
+                        </form>
                       </div>
-                      <button type="submit" disabled={!newNote.trim()} className="self-end p-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 disabled:opacity-50 flex items-center justify-center">
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" /></svg>
-                      </button>
-                    </form>
-                  </div>
-                </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 

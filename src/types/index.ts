@@ -4,6 +4,7 @@ export interface UserProfile {
   id: string;
   email: string;
   secondary_email?: string | null;
+  default_sender_email?: string | null;
   role: UserRole;
   name: string;
   phone?: string | null;
@@ -164,6 +165,7 @@ export interface Lead {
   lead_type?: 'residential' | 'commercial';
   division_id?: string | null;
   sales_pipeline_status?: 'Upcoming' | 'Pitched' | 'No Show' | 'Sold' | 'Lost';
+  bd_pipeline_status?: string | null;
   partner_plus_status?: string | null;
   buildings?: Building[];
   has_concierge?: boolean;

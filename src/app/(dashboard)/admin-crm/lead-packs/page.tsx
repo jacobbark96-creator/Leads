@@ -69,7 +69,7 @@ export default function LeadPacksPage() {
         .order('created_at', { ascending: false });
 
       if (error) throw error;
-      setPacks(data || []);
+      setPacks((data || []).filter(p => p.name !== 'Business Development'));
     } catch (error: any) {
       toast.error('Failed to fetch lead packs: ' + error.message);
     } finally {

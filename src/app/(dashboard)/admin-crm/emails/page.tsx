@@ -17,12 +17,12 @@ interface Template {
   name: string;
   subject: string;
   body: string;
-  type: 'request_bills' | 'chase_bills' | 'custom';
+  type: 'request_bills' | 'chase_bills' | 'intro' | 'follow' | 'chase' | 'custom';
   created_at: string;
 }
 
 export default function EmailsPage() {
-  const [activeTab, setActiveTab] = useState<'request_bills' | 'chase_bills' | 'custom'>('request_bills');
+  const [activeTab, setActiveTab] = useState<'request_bills' | 'chase_bills' | 'intro' | 'follow' | 'chase' | 'custom'>('request_bills');
   const [templates, setTemplates] = useState<Template[]>([]);
   const [loading, setLoading] = useState(true);
   const [editingId, setEditingId] = useState<string | null>(null);
@@ -164,11 +164,14 @@ export default function EmailsPage() {
       </div>
 
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
-        <div className="flex border-b border-gray-200 bg-gray-50/50">
+        <div className="flex border-b border-gray-200 bg-gray-50/50 overflow-x-auto custom-scrollbar">
           {[
             { id: 'request_bills', label: 'Request Bills', icon: FileText },
             { id: 'chase_bills', label: 'Chase Bills', icon: Clock },
-            { id: 'custom', label: 'Custom Templates', icon: Mail }
+            { id: 'intro', label: 'BD: Intro', icon: Send },
+            { id: 'follow', label: 'BD: Follow Up', icon: Mail },
+            { id: 'chase', label: 'BD: Chase Up', icon: Clock },
+            { id: 'custom', label: 'Custom', icon: Mail }
           ].map(tab => (
             <button
               key={tab.id}
@@ -176,7 +179,7 @@ export default function EmailsPage() {
                 setActiveTab(tab.id as any);
                 setEditingId(null);
               }}
-              className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative ${
+              className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors relative whitespace-nowrap ${
                 activeTab === tab.id 
                 ? 'text-blue-600 bg-white border-r border-l first:border-l-0 border-gray-200' 
                 : 'text-gray-500 hover:text-gray-700 hover:bg-gray-100/50'
@@ -306,11 +309,17 @@ export default function EmailsPage() {
                       )}
                     </div>
 
-                    <div className="pt-2 flex items-center gap-4 text-[10px] text-gray-400">
+                    <div className="pt-2 flex flex-col gap-2 text-[10px] text-gray-400">
                       <div className="flex items-center gap-1">
                         <Check className="w-3 h-3 text-green-500" />
-                        Available Placeholders: <span className="text-gray-600 font-mono">{'{company_name}'}</span>, <span className="text-gray-600 font-mono">{'{contact_name}'}</span>, <span className="text-gray-600 font-mono">{'{Rep_Name}'}</span>
+                        Standard Placeholders: <span className="text-gray-600 font-mono">{'{company_name}'}</span>, <span className="text-gray-600 font-mono">{'{contact_name}'}</span>, <span className="text-gray-600 font-mono">{'{Rep_Name}'}</span>
                       </div>
+                      {['intro', 'follow', 'chase'].includes(activeTab) && (
+                        <div className="flex items-center gap-1">
+                          <Check className="w-3 h-3 text-blue-500" />
+                          BD Placeholders: <span className="text-gray-600 font-mono">{'{{Name}}'}</span>, <span className="text-gray-600 font-mono">{'{{Company}}'}</span>, <span className="text-gray-600 font-mono">{'{{Roof size}}'}</span>, <span className="text-gray-600 font-mono">{'{{Location}}'}</span>, <span className="text-gray-600 font-mono">{'{{Industry}}'}</span>
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

@@ -1,12 +1,21 @@
 "use client";
-import React, { useState } from 'react';
-import { Upload } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Upload, Briefcase, ChevronDown } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { supabase } from '@/lib/supabase';
+import { useSearchParams } from 'next/navigation';
 
 export default function LeadImport() {
+  const searchParams = useSearchParams();
+  const packNameParam = searchParams.get('pack');
+  
   const [isUploading, setIsUploading] = useState(false);
   const [uploadTarget, setUploadTarget] = useState<'fresh' | 'qualified'>('fresh');
   const [uploadName, setUploadName] = useState('');
+  const [leadPacks, setLeadPacks] = useState<{ id: string, name: string }[]>([]);
+  const [selectedPackId, setSelectedPackId] = useState<string>('');
+  const [loadingPacks, setLoadingPacks] = useState(true);
+  
   const [progress, setProgress] = useState<{ 
     total: number; 
     processed: number; 
@@ -17,6 +26,37 @@ export default function LeadImport() {
     duplicateList: any[];
   } | null>(null);
   const [showDetailModal, setShowDetailModal] = useState<'failed' | 'duplicates' | null>(null);
+
+  useEffect(() => {
+    fetchLeadPacks();
+  }, []);
+
+  const fetchLeadPacks = async () => {
+    try {
+      setLoadingPacks(true);
+      const { data, error } = await supabase
+        .from('lead_packs')
+        .select('id, name')
+        .eq('status', 'active')
+        .order('name');
+
+      if (error) throw error;
+      setLeadPacks((data || []).filter(p => p.name !== 'Business Development'));
+
+      // If we have a pack name in the URL, try to find and select it
+      if (packNameParam && data) {
+        const matchingPack = data.find(p => p.name.toLowerCase() === packNameParam.toLowerCase());
+        if (matchingPack) {
+          setSelectedPackId(matchingPack.id);
+          toast.success(`Targeting pack: ${matchingPack.name}`);
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load lead packs:', err);
+    } finally {
+      setLoadingPacks(false);
+    }
+  };
 
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     try {
@@ -49,7 +89,8 @@ export default function LeadImport() {
         body: JSON.stringify({
           csvText: fileText,
           uploadTarget: uploadTarget,
-          uploadName: uploadName || undefined
+          uploadName: uploadName || undefined,
+          leadPackId: selectedPackId || undefined
         }),
       });
 
@@ -121,6 +162,29 @@ export default function LeadImport() {
               <option value="fresh">Unqualified Leads (Fresh)</option>
               <option value="qualified">Qualified Leads</option>
             </select>
+          </div>
+
+          <div>
+            <div className="flex items-center gap-2 mb-2">
+              <label className="block text-sm font-medium text-gray-700">Assign to Lead Pack</label>
+              <Briefcase className="w-3.5 h-3.5 text-gray-400" />
+            </div>
+            <select
+              value={selectedPackId}
+              onChange={(e) => setSelectedPackId(e.target.value)}
+              className="block w-full pl-3 pr-10 py-2 text-base border-gray-300 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm rounded-md"
+              disabled={isUploading || loadingPacks}
+            >
+              <option value="">No specific pack (Global Pool)</option>
+              {leadPacks.map(pack => (
+                <option key={pack.id} value={pack.id}>{pack.name}</option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-[10px] text-gray-400 italic">
+              {selectedPackId 
+                ? "Leads will be automatically added to this pack's dialling queue." 
+                : "Leads will go to the general pool for any rep to pick up."}
+            </p>
           </div>
         </div>
 

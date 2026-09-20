@@ -57,20 +57,47 @@ export default function ReferralDashboard() {
         // Fallback: Check if user exists in users table with referral_partner role
         const { data: userData } = await supabase
           .from('users')
-          .select('role, name')
+          .select('id, role, name')
           .eq('id', session.user.id)
           .single();
 
         if (userData?.role === 'referral_partner') {
-          // User has the role but no partner record - this is an edge case (e.g. manual role change)
-          // We should ideally create a partner record here or redirect to a "complete registration" step
-          console.warn('User has referral_partner role but no partners record');
-          toast.error('Partner profile not found. Please contact support.');
+          // Self-healing: Create the missing partner record
+          console.log('Self-healing: Creating missing partner record for', userData.name);
+          
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+          let newPartnerId = 'REF-';
+          for (let i = 0; i < 6; i++) {
+            newPartnerId += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+
+          const { data: newPartner, error: createError } = await supabase
+            .from('partners')
+            .insert({
+              user_id: session.user.id,
+              partner_id: newPartnerId,
+              tc_version: 'v1.0',
+              tc_accepted_at: new Date().toISOString()
+            })
+            .select()
+            .single();
+
+          if (createError) {
+            console.error('Failed to self-heal partner record:', createError);
+            toast.error('Partner profile not found. Please contact support.');
+            router.push('/refer');
+            return;
+          }
+
+          // Successfully healed, continue with the new partner data
+          setPartner({ ...newPartner, users: { name: userData.name } });
+          fetchDashboardData(); // Retry fetching the rest of the data
+          return;
         } else {
           toast.error('You are not registered as a Referral Partner.');
+          router.push('/refer');
+          return;
         }
-        router.push('/refer');
-        return;
       }
 
       setPartner(partnerData);

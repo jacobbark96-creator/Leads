@@ -36,19 +36,39 @@ export default function ReferralDashboard() {
         return;
       }
 
+      // Fetch partner data with explicit join to avoid PGRST200 ambiguity
       const { data: partnerData, error: partnerError } = await supabase
         .from('partners')
-        .select('*, users(name)')
+        .select(`
+          *,
+          users!user_id(name)
+        `)
         .eq('user_id', session.user.id)
         .maybeSingle();
 
-      if (partnerError && partnerError.code !== 'PGRST116') {
+      if (partnerError) {
         console.error('Error fetching partner:', partnerError);
+        toast.error('Error accessing partner portal. Please try again.');
+        setLoading(false);
+        return;
       }
 
       if (!partnerData) {
-        // Not a partner
-        toast.error('You are not registered as a Referral Partner.');
+        // Fallback: Check if user exists in users table with referral_partner role
+        const { data: userData } = await supabase
+          .from('users')
+          .select('role, name')
+          .eq('id', session.user.id)
+          .single();
+
+        if (userData?.role === 'referral_partner') {
+          // User has the role but no partner record - this is an edge case (e.g. manual role change)
+          // We should ideally create a partner record here or redirect to a "complete registration" step
+          console.warn('User has referral_partner role but no partners record');
+          toast.error('Partner profile not found. Please contact support.');
+        } else {
+          toast.error('You are not registered as a Referral Partner.');
+        }
         router.push('/refer');
         return;
       }

@@ -91,6 +91,33 @@ export default function UserManagement() {
         .eq('id', userId);
 
       if (error) throw error;
+
+      // If changing to referral_partner, ensure a partner record exists
+      if (newRole === 'referral_partner') {
+        const { data: partnerData } = await supabase
+          .from('partners')
+          .select('id')
+          .eq('user_id', userId)
+          .maybeSingle();
+
+        if (!partnerData) {
+          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+          let partnerId = 'REF-';
+          for (let i = 0; i < 6; i++) {
+            partnerId += chars.charAt(Math.floor(Math.random() * chars.length));
+          }
+
+          await supabase
+            .from('partners')
+            .insert({
+              user_id: userId,
+              partner_id: partnerId,
+              tc_version: 'v1.0',
+              tc_accepted_at: new Date().toISOString()
+            });
+        }
+      }
+
       toast.success('User role updated successfully');
       fetchUsers();
     } catch (error: any) {

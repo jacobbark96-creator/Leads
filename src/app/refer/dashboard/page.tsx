@@ -62,37 +62,37 @@ export default function ReferralDashboard() {
           .single();
 
         if (userData?.role === 'referral_partner') {
-          // Self-healing: Create the missing partner record
+          // Self-healing: Create the missing partner record using the registration API
           console.log('Self-healing: Creating missing partner record for', userData.name);
           
-          const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-          let newPartnerId = 'REF-';
-          for (let i = 0; i < 6; i++) {
-            newPartnerId += chars.charAt(Math.floor(Math.random() * chars.length));
-          }
+          const newPartnerId = 'REF-' + Math.random().toString(36).substring(2, 8).toUpperCase();
 
-          const { data: newPartner, error: createError } = await supabase
-            .from('partners')
-            .insert({
-              user_id: session.user.id,
-              partner_id: newPartnerId,
-              tc_version: 'v1.0',
-              tc_accepted_at: new Date().toISOString()
-            })
-            .select()
-            .single();
+          try {
+            const response = await fetch('/api/referral/register', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: session.user.id,
+                email: session.user.email,
+                name: userData.name,
+                partnerId: newPartnerId
+              })
+            });
 
-          if (createError) {
-            console.error('Failed to self-heal partner record:', createError);
+            if (!response.ok) {
+              const errorData = await response.json();
+              throw new Error(errorData.error || 'Failed to heal partner record');
+            }
+
+            // Successfully healed, fetch fresh data
+            fetchDashboardData();
+            return;
+          } catch (healError) {
+            console.error('Failed to self-heal partner record:', healError);
             toast.error('Partner profile not found. Please contact support.');
             router.push('/refer');
             return;
           }
-
-          // Successfully healed, continue with the new partner data
-          setPartner({ ...newPartner, users: { name: userData.name } });
-          fetchDashboardData(); // Retry fetching the rest of the data
-          return;
         } else {
           toast.error('You are not registered as a Referral Partner.');
           router.push('/refer');

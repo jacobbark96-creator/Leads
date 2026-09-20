@@ -32,7 +32,7 @@ export default function AdminPartnersPage() {
   const fetchPartners = async () => {
     try {
       const { data, error } = await supabase
-        .from('partners')
+        .from('marketing_partners')
         .select('*')
         .order('created_at', { ascending: false });
         
@@ -79,7 +79,7 @@ export default function AdminPartnersPage() {
     try {
       if (editingPartner) {
         const { error } = await supabase
-          .from('partners')
+          .from('marketing_partners')
           .update(formData)
           .eq('id', editingPartner.id);
           
@@ -87,7 +87,7 @@ export default function AdminPartnersPage() {
         toast.success('Partner updated');
       } else {
         const { error } = await supabase
-          .from('partners')
+          .from('marketing_partners')
           .insert([formData]);
           
         if (error) throw error;
@@ -104,7 +104,7 @@ export default function AdminPartnersPage() {
     if (!window.confirm('Are you sure you want to delete this partner?')) return;
     try {
       const { error } = await supabase
-        .from('partners')
+        .from('marketing_partners')
         .delete()
         .eq('id', id);
         

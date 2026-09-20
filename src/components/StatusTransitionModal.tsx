@@ -106,9 +106,19 @@ export const StatusTransitionModal: React.FC<StatusTransitionModalProps> = ({ is
       case 'sat':
         return (
           <>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Date of Survey</label>
+                <input type="date" required className="w-full p-2 border border-gray-200 rounded-lg text-sm" onChange={e => setFormData({...formData, date: e.target.value})} />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-gray-700 mb-1">Time of Survey</label>
+                <input type="time" required className="w-full p-2 border border-gray-200 rounded-lg text-sm" onChange={e => setFormData({...formData, time: e.target.value})} />
+              </div>
+            </div>
             <div>
-              <label className="block text-xs font-bold text-gray-700 mb-1">Date of Survey</label>
-              <input type="date" required className="w-full p-2 border border-gray-200 rounded-lg text-sm" onChange={e => setFormData({...formData, date: e.target.value})} />
+              <label className="block text-xs font-bold text-gray-700 mb-1">Installer Name</label>
+              <input type="text" required placeholder="e.g. John Doe" className="w-full p-2 border border-gray-200 rounded-lg text-sm" onChange={e => setFormData({...formData, installer: e.target.value})} />
             </div>
             <div>
               <label className="block text-xs font-bold text-gray-700 mb-1">Method</label>

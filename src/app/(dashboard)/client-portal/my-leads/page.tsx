@@ -225,7 +225,9 @@ export default function MyLeadsKanban() {
           onClose={() => setPendingTransition(null)}
           lead={pendingTransition.lead}
           newStatus={pendingTransition.newStatus}
-          onSuccess={(updatedData) => {
+          onSuccess={async (updatedData) => {
+            const currentLead = leads.find(l => l.purchase_id === pendingTransition.leadId);
+            
             setLeads(prev => prev.map(l => 
               l.purchase_id === pendingTransition.leadId 
                 ? { 
@@ -236,6 +238,53 @@ export default function MyLeadsKanban() {
                   } 
                 : l
             ));
+
+            // If survey is happening today, add to Super Admin and Growth Manager's todo list
+            if (updatedData.status === 'sat' && updatedData.metadata?.sat?.date && currentLead) {
+              const surveyDate = new Date(updatedData.metadata.sat.date);
+              const today = new Date();
+              
+              const isToday = surveyDate.getFullYear() === today.getFullYear() &&
+                              surveyDate.getMonth() === today.getMonth() &&
+                              surveyDate.getDate() === today.getDate();
+
+              if (isToday) {
+                try {
+                  const { data: staff } = await supabase
+                    .from('users')
+                    .select('id')
+                    .in('role', ['super_admin', 'growth_manager']);
+                  
+                  if (staff && staff.length > 0) {
+                    const satData = updatedData.metadata.sat;
+                    const surveyTime = satData.time || '';
+                    const installer = satData.installer || 'Assigned Installer';
+                    
+                    let timeLabel = surveyTime;
+                    if (surveyTime.includes(':')) {
+                      const [h] = surveyTime.split(':').map(Number);
+                      const ampm = h >= 12 ? 'pm' : 'am';
+                      const displayH = h % 12 || 12;
+                      timeLabel = `${displayH}${ampm}`;
+                    }
+
+                    const reminders = staff.map(user => ({
+                      lead_id: currentLead.id,
+                      user_id: user.id,
+                      reminder_at: new Date().toISOString(),
+                      content: `"${currentLead.company || currentLead.name}" survey at ${timeLabel} by ${installer} and to get feedback.`,
+                      is_completed: false
+                    }));
+                    
+                    await supabase.from('lead_reminders').insert(reminders);
+                  }
+                } catch (err) {
+                  console.error('Failed to create survey reminders', err);
+                }
+              }
+            }
+            
+            setPendingTransition(null);
           }}
         />
       )}

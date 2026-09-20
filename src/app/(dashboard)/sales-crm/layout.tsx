@@ -11,6 +11,7 @@ import { DivisionSelector } from '@/components/DivisionSelector';
 import { useDivisionStore } from '@/store/divisionStore';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
+import { formatRole } from '@/lib/utils';
 
 import toast from 'react-hot-toast';
 
@@ -213,7 +214,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-gray-900 truncate">{profile?.name}</p>
-                      <p className="text-xs text-gray-500 truncate uppercase tracking-wider">{profile?.role?.replace('_', ' ')}</p>
+                      <p className="text-xs text-gray-500 truncate uppercase tracking-wider">{formatRole(profile?.role)}</p>
                     </div>
                     <button onClick={() => signOut()} className="p-2 text-gray-400 hover:text-red-600">
                       <LogOut className="w-5 h-5" />
@@ -315,7 +316,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
               </div>
               <div className="flex flex-col min-w-0 flex-1">
                 <span className="text-[13px] font-bold text-gray-900 truncate">{profile?.name}</span>
-                <span className="text-[9px] text-gray-500 truncate uppercase tracking-wider">{profile?.role?.replace('_', ' ')}</span>
+                <span className="text-[9px] text-gray-500 truncate uppercase tracking-wider">{formatRole(profile?.role)}</span>
               </div>
               <button onClick={() => signOut()} className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors">
                 <LogOut className="w-3.5 h-3.5" />

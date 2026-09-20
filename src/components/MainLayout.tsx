@@ -12,6 +12,7 @@ import { SmsNotifications } from './SmsNotifications';
 import { AskMaxChat } from './AskMaxChat';
 import { supabase } from '../lib/supabase';
 import { FlexModal } from './FlexModal';
+import { formatRole } from '../lib/utils';
 
 export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { profile, signOut, refreshProfile } = useAuthStore();
@@ -101,6 +102,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const getHomePath = () => {
     if (!profile) return '/';
     if (profile.role === 'client') return '/client-portal';
+    if (profile.role === 'referral_partner') return '/refer/dashboard';
     return '/staff';
   };
 
@@ -611,7 +613,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                     )}
                     {profile.role !== 'client' && (
                       <span className="text-[10px] font-medium text-gray-500 uppercase tracking-wider mt-0.5 leading-none">
-                        {profile.role.replace('_', ' ')}
+                        {formatRole(profile.role)}
                       </span>
                     )}
                   </div>
@@ -746,7 +748,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
                         <div>
                           <div className="text-base font-black text-gray-900 leading-none mb-1">{clientName || profile.name}</div>
                           <div className="text-[10px] font-black text-gray-500 uppercase tracking-widest">
-                            {profile.role === 'client' ? (clientCompanyName || 'Client Account') : profile.role.replace('_', ' ')}
+                            {profile.role === 'client' ? (clientCompanyName || 'Client Account') : formatRole(profile.role)}
                           </div>
                         </div>
                       </div>

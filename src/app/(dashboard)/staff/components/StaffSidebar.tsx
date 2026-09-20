@@ -4,6 +4,7 @@ import { usePathname } from 'next/navigation';
 import { Home, Database, Users, Map, BarChart2, MessageSquare, Phone, CheckSquare, Calendar, Settings, ChevronLeft, ChevronRight, LogOut, Search } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
+import { formatRole } from '@/lib/utils';
 
 export const StaffSidebar = ({ profile }: { profile: any }) => {
   const [collapsed, setCollapsed] = useState(false);
@@ -127,7 +128,7 @@ export const StaffSidebar = ({ profile }: { profile: any }) => {
             {!collapsed && (
               <div className="flex flex-col overflow-hidden">
                 <span className="text-sm font-bold text-white leading-tight truncate">{profile?.name}</span>
-                <span className="text-[10px] text-gray-400 capitalize truncate">{profile?.role?.replace('_', ' ')}</span>
+                <span className="text-[10px] text-gray-400 truncate">{formatRole(profile?.role)}</span>
               </div>
             )}
           </div>

@@ -79,6 +79,7 @@ import { MarketplaceLeadModal } from '@/components/MarketplaceLeadModal';
 import { SmsChatModal } from '@/components/SmsChatModal';
 import { EmailModal } from '@/components/EmailModal';
 import { BdEmailSender } from './components/BdEmailSender';
+import { StatusTransitionModal } from '@/components/StatusTransitionModal';
 
 const noteTimestampFormatter = new Intl.DateTimeFormat(undefined, {
   dateStyle: 'medium',
@@ -429,7 +430,10 @@ function LeadDetailsV2Content() {
   const packId = searchParams.get('pack');
 
   const [lead, setLead] = useState<Lead | null>(null);
+  const [leadPurchase, setLeadPurchase] = useState<any>(null);
   const [isBdLead, setIsBdLead] = useState(false);
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false);
+  const [pendingStatus, setPendingStatus] = useState<string | null>(null);
   const [packInfo, setPackInfo] = useState<any>(null);
   const [packMembership, setPackMembership] = useState<any>(null);
   const [notes, setNotes] = useState<LeadNote[]>([]);
@@ -942,6 +946,21 @@ function LeadDetailsV2Content() {
       if (!leadData) throw new Error('Lead not found or you do not have permission to view it.');
       setLead(leadData);
 
+      // Fetch lead purchase data if it exists
+      const { data: purchaseData } = await supabase
+        .from('lead_purchases')
+        .select('*')
+        .eq('lead_id', id)
+        .order('purchased_at', { ascending: false })
+        .limit(1)
+        .maybeSingle();
+      
+      if (purchaseData) {
+        setLeadPurchase(purchaseData);
+      } else {
+        setLeadPurchase(null);
+      }
+
       // Check if this is a Business Development lead by status
       setIsBdLead(!!leadData.bd_pipeline_status);
 
@@ -1099,6 +1118,61 @@ function LeadDetailsV2Content() {
       toast.success('Status updated');
     } catch (error: any) {
       toast.error('Failed to update status: ' + error.message);
+    }
+  };
+
+  const onStatusTransitionSuccess = async (updatedData: any) => {
+    if (leadPurchase) {
+      const newPurchase = { ...leadPurchase, ...updatedData };
+      setLeadPurchase(newPurchase);
+      
+      // If survey is happening today, add to Super Admin and Growth Manager's todo list
+      if (updatedData.status === 'sat' && updatedData.metadata?.sat?.date) {
+        const surveyDate = new Date(updatedData.metadata.sat.date);
+        const today = new Date();
+        
+        // Use local date comparison to check if it's "today"
+        const isToday = surveyDate.getFullYear() === today.getFullYear() &&
+                        surveyDate.getMonth() === today.getMonth() &&
+                        surveyDate.getDate() === today.getDate();
+
+        if (isToday) {
+          try {
+            const { data: staff } = await supabase
+              .from('users')
+              .select('id')
+              .in('role', ['super_admin', 'growth_manager']);
+            
+            if (staff && staff.length > 0) {
+              const satData = updatedData.metadata.sat;
+              const surveyTime = satData.time || '';
+              const installer = satData.installer || 'Assigned Installer';
+              
+              // Format time (e.g., 14:00 to 2pm)
+              let timeLabel = surveyTime;
+              if (surveyTime.includes(':')) {
+                const [h] = surveyTime.split(':').map(Number);
+                const ampm = h >= 12 ? 'pm' : 'am';
+                const displayH = h % 12 || 12;
+                timeLabel = `${displayH}${ampm}`;
+              }
+
+              const reminders = staff.map(user => ({
+                lead_id: lead?.id,
+                user_id: user.id,
+                reminder_at: new Date().toISOString(),
+                content: `"${lead?.company || lead?.name}" survey at ${timeLabel} by ${installer} and to get feedback.`,
+                is_completed: false
+              }));
+              
+              await supabase.from('lead_reminders').insert(reminders);
+              toast.success('Survey task added to admin todo list');
+            }
+          } catch (err) {
+            console.error('Failed to create survey reminders', err);
+          }
+        }
+      }
     }
   };
 
@@ -2461,7 +2535,7 @@ function LeadDetailsV2Content() {
                       }
                     }}
                     className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase border-none focus:ring-1 focus:ring-blue-500 cursor-pointer ${
-                      lead.bd_pipeline_status === 'Sold' || lead.bd_pipeline_status === 'Intent call' ? 'bg-green-100 text-green-700' :
+                      lead.bd_pipeline_status === 'Sold' || lead.status === 'sold' || lead.bd_pipeline_status === 'Intent call' ? 'bg-green-100 text-green-700' :
                       lead.bd_pipeline_status === 'Fresh' ? 'bg-blue-100 text-blue-700' :
                       lead.bd_pipeline_status === 'Intro' ? 'bg-purple-100 text-purple-700' :
                       lead.bd_pipeline_status === 'Follow up' ? 'bg-orange-100 text-orange-700' :
@@ -2476,6 +2550,7 @@ function LeadDetailsV2Content() {
                   </select>
                 ) : (
                   <span className={`px-2 py-0.5 rounded-full text-[10px] font-semibold uppercase ${
+                    lead.status === 'sold' ? 'bg-green-100 text-green-700' :
                     lead.status === 'qualified' ? 'bg-blue-100 text-blue-700' :
                     lead.status === 'fresh' ? 'bg-green-100 text-green-700' :
                     lead.status === 'dnc' ? 'bg-red-100 text-red-700' :
@@ -2923,104 +2998,181 @@ function LeadDetailsV2Content() {
               </div>
               <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
                 <div className="flex items-center justify-between mb-4">
-                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Solar Opportunity</h3>
-                  <button onClick={() => handleEditClick('opportunity')} className="text-gray-400 hover:text-blue-600 transition-colors">
-                    {editingCard === 'opportunity' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
-                  </button>
+                  <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">
+                    {lead.bd_pipeline_status === 'Sold' || lead.status === 'sold' ? 'Lead Status' : 'Solar Opportunity'}
+                  </h3>
+                  {lead.bd_pipeline_status !== 'Sold' && lead.status !== 'sold' && (
+                    <button onClick={() => handleEditClick('opportunity')} className="text-gray-400 hover:text-blue-600 transition-colors">
+                      {editingCard === 'opportunity' ? <Save className="w-3.5 h-3.5" /> : <Pencil className="w-3.5 h-3.5" />}
+                    </button>
+                  )}
                 </div>
                 
-                {(() => {
-                  const systemSizeKwp = buildingEnrichment?.max_array_panels_count
-                    ? (buildingEnrichment.max_array_panels_count * 0.4)
-                    : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate)
-                      || ((lead as any).est_system_size ? parseFloat((lead as any).est_system_size) : null);
-                      
-                  const indicativeValue = calculateIndicativeSystemValue(systemSizeKwp);
-                  
-                  return (
-                    <div className="flex flex-col gap-3">
-                      <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                        <span className="text-gray-500 text-xs">Est. System Size</span>
-                        {editingCard === 'opportunity' ? (
-                          <input type="text" value={(editForm as any).est_system_size || ''} onChange={e => setEditForm({...editForm, est_system_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                        ) : (
-                          <span className="text-gray-900 text-sm font-medium">
-                            {systemSizeKwp ? `${systemSizeKwp.toFixed(1)} kWp` : 'N/A'}
-                          </span>
-                        )}
+                {lead.bd_pipeline_status === 'Sold' || lead.status === 'sold' ? (
+                  <div className="flex flex-col gap-4">
+                    {!leadPurchase ? (
+                      <div className="flex flex-col items-center justify-center py-6 text-center">
+                        <AlertCircle className="w-8 h-8 text-amber-500 mb-2" />
+                        <p className="text-xs text-gray-500 font-medium">No client purchase record found.</p>
+                        <p className="text-[10px] text-gray-400 mt-1">Status tracking is only available for purchased leads.</p>
                       </div>
-                      <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                        <span className="text-gray-500 text-xs">Est. Generation</span>
-                        {editingCard === 'opportunity' ? (
-                          <input type="text" value={(editForm as any).est_ann_generation || ''} onChange={e => setEditForm({...editForm, est_ann_generation: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
-                        ) : (
-                          <span className="text-gray-900 text-sm font-medium">
-                            {systemSizeKwp
-                              ? `${(Math.min(systemSizeKwp * 850, lead.est_ann_consumption || Infinity)).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh/yr`
-                              : (lead as any).est_ann_generation || 'N/A'}
-                          </span>
+                    ) : (
+                      <>
+                        <div className="flex flex-col gap-1.5">
+                          <span className="text-gray-500 text-[10px] font-bold uppercase tracking-wider">Current Client Status</span>
+                          <div className="flex flex-wrap gap-2">
+                            {[
+                              { id: 'new', label: 'Purchased', color: 'blue' },
+                              { id: 'contacted', label: 'Contacted', color: 'purple' },
+                              { id: 'sat', label: 'Surveyed', color: 'amber' },
+                              { id: 'proposal', label: 'Proposal', color: 'indigo' },
+                              { id: 'won', label: 'Won', color: 'emerald' },
+                              { id: 'archive', label: 'Archive', color: 'slate' }
+                            ].map((s) => (
+                              <button
+                                key={s.id}
+                                onClick={() => {
+                                  if (leadPurchase?.status === s.id) return;
+                                  setPendingStatus(s.id);
+                                  setIsStatusModalOpen(true);
+                                }}
+                                className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all border ${
+                                  leadPurchase?.status === s.id
+                                    ? `bg-${s.color}-600 text-white border-${s.color}-600 shadow-md`
+                                    : `bg-white text-gray-600 border-gray-200 hover:border-${s.color}-300 hover:bg-${s.color}-50`
+                                }`}
+                              >
+                                {s.label}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+
+                        {leadPurchase?.metadata && (
+                          <div className="mt-2 space-y-3 pt-3 border-t border-gray-50">
+                            {leadPurchase.metadata.contacted && (
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase">Contacted Details</span>
+                                <div className="bg-gray-50 rounded-lg p-2 text-xs">
+                                  <p className="text-gray-600"><span className="font-semibold">Date:</span> {leadPurchase.metadata.contacted.date}</p>
+                                  <p className="text-gray-600"><span className="font-semibold">Method:</span> {leadPurchase.metadata.contacted.method}</p>
+                                  {leadPurchase.metadata.contacted.description && (
+                                    <p className="text-gray-500 mt-1 italic line-clamp-2">{leadPurchase.metadata.contacted.description}</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                            {leadPurchase.metadata.sat && (
+                              <div className="flex flex-col gap-1">
+                                <span className="text-[10px] font-bold text-gray-400 uppercase">Survey Details</span>
+                                <div className="bg-gray-50 rounded-lg p-2 text-xs">
+                                  <p className="text-gray-600"><span className="font-semibold">Date:</span> {leadPurchase.metadata.sat.date}</p>
+                                  <p className="text-gray-600"><span className="font-semibold">Method:</span> {leadPurchase.metadata.sat.method}</p>
+                                  {leadPurchase.metadata.sat.notes && (
+                                    <p className="text-gray-500 mt-1 italic line-clamp-2">{leadPurchase.metadata.sat.notes}</p>
+                                  )}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         )}
-                      </div>
-                      
-                      <div className="flex flex-col py-2 border-b border-gray-50">
-                        <div className="flex justify-between items-center mb-1">
-                          <span className="text-gray-500 text-xs">Indicative System Value</span>
+                      </>
+                    )}
+                  </div>
+                ) : (
+                  (() => {
+                    const systemSizeKwp = buildingEnrichment?.max_array_panels_count
+                      ? (buildingEnrichment.max_array_panels_count * 0.4)
+                      : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate)
+                        || ((lead as any).est_system_size ? parseFloat((lead as any).est_system_size) : null);
+                        
+                    const indicativeValue = calculateIndicativeSystemValue(systemSizeKwp);
+                    
+                    return (
+                      <div className="flex flex-col gap-3">
+                        <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                          <span className="text-gray-500 text-xs">Est. System Size</span>
                           {editingCard === 'opportunity' ? (
-                            <input type="text" value={(editForm as any).est_savings || ''} onChange={e => setEditForm({...editForm, est_savings: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                            <input type="text" value={(editForm as any).est_system_size || ''} onChange={e => setEditForm({...editForm, est_system_size: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
                           ) : (
-                            <span className="text-green-600 text-sm font-bold">
-                              {indicativeValue 
-                                ? `£${indicativeValue.central.toLocaleString('en-GB', { maximumFractionDigits: 0 })}` 
-                                : (lead as any).est_savings ? `£${(lead as any).est_savings}` : 'N/A'}
+                            <span className="text-gray-900 text-sm font-medium">
+                              {systemSizeKwp ? `${systemSizeKwp.toFixed(1)} kWp` : 'N/A'}
+                            </span>
+                          )}
+                        </div>
+                        <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                          <span className="text-gray-500 text-xs">Est. Generation</span>
+                          {editingCard === 'opportunity' ? (
+                            <input type="text" value={(editForm as any).est_ann_generation || ''} onChange={e => setEditForm({...editForm, est_ann_generation: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                          ) : (
+                            <span className="text-gray-900 text-sm font-medium">
+                              {systemSizeKwp
+                                ? `${(Math.min(systemSizeKwp * 850, lead.est_ann_consumption || Infinity)).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh/yr`
+                                : (lead as any).est_ann_generation || 'N/A'}
                             </span>
                           )}
                         </div>
                         
-                        {indicativeValue && (
-                          <>
-                            <div className="flex justify-between items-center mt-1">
-                              <span className="text-gray-400 text-[10px]">Estimated Cost</span>
-                              <span className="text-gray-500 text-[10px] font-medium">£{indicativeValue.rate}/kWp</span>
-                            </div>
-                            <div className="flex justify-between items-center mt-0.5">
-                              <span className="text-gray-400 text-[10px]">Estimated range</span>
-                              <span className="text-gray-500 text-[10px] font-medium">
-                                {formatSensibleCurrency(indicativeValue.rangeMin)}–{formatSensibleCurrency(indicativeValue.rangeMax)}
+                        <div className="flex flex-col py-2 border-b border-gray-50">
+                          <div className="flex justify-between items-center mb-1">
+                            <span className="text-gray-500 text-xs">Indicative System Value</span>
+                            {editingCard === 'opportunity' ? (
+                              <input type="text" value={(editForm as any).est_savings || ''} onChange={e => setEditForm({...editForm, est_savings: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" />
+                            ) : (
+                              <span className="text-green-600 text-sm font-bold">
+                                {indicativeValue 
+                                  ? `£${indicativeValue.central.toLocaleString('en-GB', { maximumFractionDigits: 0 })}` 
+                                  : (lead as any).est_savings ? `£${(lead as any).est_savings}` : 'N/A'}
                               </span>
-                            </div>
-                            <div className="mt-2 text-[9px] text-gray-400 leading-tight italic">
-                              Indicative estimate based on typical UK commercial solar installation costs. Final pricing is subject to site survey, roof condition, DNO requirements, system design and installer specification.
+                            )}
+                          </div>
+                          
+                          {indicativeValue && (
+                            <>
+                              <div className="flex justify-between items-center mt-1">
+                                <span className="text-gray-400 text-[10px]">Estimated Cost</span>
+                                <span className="text-gray-500 text-[10px] font-medium">£{indicativeValue.rate}/kWp</span>
+                              </div>
+                              <div className="flex justify-between items-center mt-0.5">
+                                <span className="text-gray-400 text-[10px]">Estimated range</span>
+                                <span className="text-gray-500 text-[10px] font-medium">
+                                  {formatSensibleCurrency(indicativeValue.rangeMin)}–{formatSensibleCurrency(indicativeValue.rangeMax)}
+                                </span>
+                              </div>
+                              <div className="mt-2 text-[9px] text-gray-400 leading-tight italic">
+                                Indicative estimate based on typical UK commercial solar installation costs. Final pricing is subject to site survey, roof condition, DNO requirements, system design and installer specification.
+                              </div>
+                            </>
+                          )}
+                        </div>
+                        
+                        {profile?.role === 'super_admin' && (
+                          <>
+                            <div className="flex justify-between items-center py-1 border-b border-gray-50">
+                              <span className="text-gray-500 text-xs">Exclusive Price</span>
+                              {editingCard === 'opportunity' ? (
+                                <input type="number" value={editForm.exclusive_price || ''} onChange={e => setEditForm({...editForm, exclusive_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 135" />
+                              ) : (
+                                <span className="text-gray-900 text-sm font-medium flex items-center gap-2">
+                                  {lead.exclusive_price ? `£${lead.exclusive_price}` : 'N/A'}
+                                  {lead.exclusive_price && (
+                                    <button 
+                                      onClick={() => setIsPricePromotionModalOpen(true)}
+                                      className="text-gray-400 hover:text-blue-600 transition-colors"
+                                      title="Promotions & Discounts"
+                                    >
+                                      <Tag className="w-3.5 h-3.5" />
+                                    </button>
+                                  )}
+                                </span>
+                              )}
                             </div>
                           </>
                         )}
                       </div>
-                      
-                      {profile?.role === 'super_admin' && (
-                        <>
-                          <div className="flex justify-between items-center py-1 border-b border-gray-50">
-                            <span className="text-gray-500 text-xs">Exclusive Price</span>
-                            {editingCard === 'opportunity' ? (
-                              <input type="number" value={editForm.exclusive_price || ''} onChange={e => setEditForm({...editForm, exclusive_price: Number(e.target.value)})} className="border rounded px-1.5 py-0.5 text-xs text-right w-24 focus:ring-1 focus:ring-blue-500" placeholder="e.g. 135" />
-                            ) : (
-                              <span className="text-gray-900 text-sm font-medium flex items-center gap-2">
-                                {lead.exclusive_price ? `£${lead.exclusive_price}` : 'N/A'}
-                                {lead.exclusive_price && (
-                                  <button 
-                                    onClick={() => setIsPricePromotionModalOpen(true)}
-                                    className="text-gray-400 hover:text-blue-600 transition-colors"
-                                    title="Promotions & Discounts"
-                                  >
-                                    <Tag className="w-3.5 h-3.5" />
-                                  </button>
-                                )}
-                              </span>
-                            )}
-                          </div>
-                        </>
-                      )}
-                    </div>
-                  );
-                })()}
+                    );
+                  })()
+                )}
               </div>
                 <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
                   <div className="flex items-center justify-between mb-4">
@@ -4152,6 +4304,19 @@ function LeadDetailsV2Content() {
           onSave={(updatedCsvData: any) => {
             setLead({ ...lead, csv_data: updatedCsvData } as any);
           }}
+        />
+      )}
+
+      {isStatusModalOpen && pendingStatus && leadPurchase && (
+        <StatusTransitionModal
+          isOpen={isStatusModalOpen}
+          onClose={() => {
+            setIsStatusModalOpen(false);
+            setPendingStatus(null);
+          }}
+          lead={{ ...lead, purchase_id: leadPurchase.id, metadata: leadPurchase.metadata }}
+          newStatus={pendingStatus}
+          onSuccess={onStatusTransitionSuccess}
         />
       )}
       

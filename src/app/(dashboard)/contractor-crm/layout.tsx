@@ -8,6 +8,7 @@ import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
 import { SmsNotifications } from '@/components/SmsNotifications';
 import { DivisionSelector } from '@/components/DivisionSelector';
+import { formatRole } from '@/lib/utils';
 
 export default function ContractorLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -94,7 +95,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
               </div>
               <div className="flex flex-col min-w-0 flex-1">
                 <span className="text-[13px] font-bold text-gray-900 truncate">{profile?.name}</span>
-                <span className="text-[9px] text-gray-500 truncate uppercase tracking-wider">{profile?.role?.replace('_', ' ')}</span>
+                <span className="text-[9px] text-gray-500 truncate uppercase tracking-wider">{formatRole(profile?.role)}</span>
               </div>
               <button onClick={() => signOut()} className="p-1.5 text-gray-400 hover:text-red-600 rounded-md hover:bg-red-50 transition-colors">
                 <LogOut className="w-3.5 h-3.5" />

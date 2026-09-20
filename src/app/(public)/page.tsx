@@ -23,6 +23,7 @@ export default function Home() {
   const getDashboardLink = () => {
     if (!profile) return '/login';
     if (profile.role === 'client') return '/client-portal';
+    if (profile.role === 'referral_partner') return '/refer/dashboard';
     return '/staff';
   };
 

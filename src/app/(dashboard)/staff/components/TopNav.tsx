@@ -8,6 +8,7 @@ import toast from 'react-hot-toast';
 import { supabase } from '../../../../lib/supabase';
 import { AdminNotifications } from '../../../../components/AdminNotifications';
 import { SmsNotifications } from '../../../../components/SmsNotifications';
+import { formatRole } from '@/lib/utils';
 
 export const TopNav = ({ profile }: { profile: any }) => {
   const router = useRouter();
@@ -189,7 +190,7 @@ export const TopNav = ({ profile }: { profile: any }) => {
               )}
               <div className="hidden sm:block text-left">
                 <div className="text-sm font-bold text-white leading-none">{profile?.name}</div>
-                <div className="text-[10px] text-gray-400 mt-0.5 capitalize">{profile?.role?.replace('_', ' ')}</div>
+                <div className="text-[10px] text-gray-400 mt-0.5 capitalize">{formatRole(profile?.role)}</div>
               </div>
               <ChevronDown className="w-4 h-4 text-gray-400 group-hover:rotate-180 transition-transform" />
             </button>

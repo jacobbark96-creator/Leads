@@ -4,7 +4,7 @@ import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
-import { Plus, Edit, Trash2, Ban, Shield, Users, Briefcase, X, Activity, BarChart2, Database, Image as ImageIcon, FileText, Eye, MessageSquare, PoundSterling, Calendar, Settings } from 'lucide-react';
+import { Plus, Edit, Trash2, Ban, Shield, Users, Briefcase, X, Activity, BarChart2, Database, Image as ImageIcon, FileText, Eye, MessageSquare, PoundSterling, Calendar, Settings, Share2 } from 'lucide-react';
 import { UserDetailsModal } from '@/components/UserDetailsModal';
 import { ClientMonitoringTab } from './components/ClientMonitoringTab';
 import { StatsTab } from './components/StatsTab';
@@ -201,7 +201,14 @@ export default function UserManagement() {
         }
       });
       
-      if (error) throw error;
+      if (error) {
+        if (error.message.includes('User already registered')) {
+          toast.error('This email is already registered in the system.');
+          setIsCreatingUser(false);
+          return;
+        }
+        throw error;
+      }
       
       toast.success('User created successfully. They will need to verify their email.');
       setNewUser({ email: '', name: '', role: 'client', password: '', division_id: '' });
@@ -267,13 +274,14 @@ export default function UserManagement() {
   const salesCount = users.filter(u => u.role === 'Residential Sales' || u.role === 'Commercial Sales').length;
   const growthManagerCount = users.filter(u => u.role === 'growth_manager').length;
   const clientCount = users.filter(u => u.role === 'client').length;
+  const referrerCount = users.filter(u => u.role === 'referral_partner').length;
 
   const filteredUsers = users.filter(u => {
-    if (u.role === 'referral_partner') return false; // Filter out referral partners from main user list
     if (roleFilter === 'all') return true;
     if (roleFilter === 'admin') return u.role === 'admin' || u.role === 'super_admin';
     if (roleFilter === 'rep') return u.role === 'rep' || u.role === 'Residential Rep';
     if (roleFilter === 'Residential Sales') return u.role === 'Residential Sales' || u.role === 'Commercial Sales';
+    if (roleFilter === 'referral_partner') return u.role === 'referral_partner';
     return u.role === roleFilter;
   });
 
@@ -374,7 +382,7 @@ export default function UserManagement() {
       {activeTab === 'users' && (
         <>
           <div className="flex flex-col md:flex-row gap-4 mb-6">
-          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <div className="flex-1 grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4">
           <button 
             onClick={() => setRoleFilter(roleFilter === 'admin' ? 'all' : 'admin')}
             className={`bg-white shadow-sm border rounded-lg p-4 flex items-center justify-between text-left transition-all ${roleFilter === 'admin' ? 'border-purple-500 ring-1 ring-purple-500 bg-purple-50/30' : 'border-gray-200 hover:border-purple-300'}`}
@@ -437,6 +445,19 @@ export default function UserManagement() {
             </div>
             <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
                <Users className="w-4 h-4" />
+            </div>
+          </button>
+
+          <button 
+            onClick={() => setRoleFilter(roleFilter === 'referral_partner' ? 'all' : 'referral_partner')}
+            className={`bg-white shadow-sm border rounded-lg p-4 flex items-center justify-between text-left transition-all ${roleFilter === 'referral_partner' ? 'border-teal-500 ring-1 ring-teal-500 bg-teal-50/30' : 'border-gray-200 hover:border-teal-300'}`}
+          >
+            <div>
+              <p className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">Referrers</p>
+              <p className="text-xl font-bold text-gray-900 mt-1">{referrerCount}</p>
+            </div>
+            <div className="w-8 h-8 rounded-full bg-teal-50 flex items-center justify-center text-teal-600">
+               <Share2 className="w-4 h-4" />
             </div>
           </button>
         </div>
@@ -569,9 +590,11 @@ export default function UserManagement() {
                           user.role === 'Residential Rep' ? 'bg-amber-100 text-amber-800 border-amber-300' :
                           user.role === 'Residential Sales' ? 'bg-blue-100 text-blue-800 border-blue-300' :
                           user.role === 'Commercial Sales' ? 'bg-indigo-100 text-indigo-800 border-indigo-300' :
+                          user.role === 'referral_partner' ? 'bg-teal-50 text-teal-700 border-teal-200' :
                           'bg-gray-50 text-gray-700 border-gray-200'}`}
                     >
                       <option value="client">Contractor / Client</option>
+                      <option value="referral_partner">Referrer</option>
                       <option value="rep">Representative</option>
                       <option value="Residential Rep">Residential Rep</option>
                       <option value="Residential Sales">Residential Sales</option>

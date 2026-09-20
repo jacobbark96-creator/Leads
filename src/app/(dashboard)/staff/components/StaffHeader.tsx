@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Bell } from 'lucide-react';
 import { AdminNotifications } from '@/components/AdminNotifications';
+import { formatRole } from '@/lib/utils';
 
 export const StaffHeader = ({ profile }: { profile: any }) => {
   return (
@@ -37,7 +38,7 @@ export const StaffHeader = ({ profile }: { profile: any }) => {
         <div className="flex items-center gap-3 pl-6 border-l border-white/10">
           <div className="flex flex-col text-right hidden sm:flex">
             <span className="text-sm font-bold text-white leading-tight">{profile?.name}</span>
-            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">{profile?.role?.replace('_', ' ')}</span>
+            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">{formatRole(profile?.role)}</span>
           </div>
           {profile?.avatar_url ? (
             <img src={profile.avatar_url} alt="Profile" className="w-10 h-10 rounded-xl object-cover shadow-lg border border-white/10" />

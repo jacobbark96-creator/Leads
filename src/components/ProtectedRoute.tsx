@@ -222,12 +222,18 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         if (path.startsWith('/intranet/careers') && (perms.includes('intranet/careers') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
         
         if (!hasAccess && path !== '/staff' && path !== '/') {
-          router.replace('/staff');
+          if (profile.role === 'referral_partner') {
+            router.replace('/refer/dashboard');
+          } else {
+            router.replace('/staff');
+          }
         }
       } else if (allowedRoles && !allowedRoles.includes(profile.role)) {
         // Redirect based on user's role if they try to access an unauthorized page
         if (profile.role === 'client') {
           router.replace('/my-openlead');
+        } else if (profile.role === 'referral_partner') {
+          router.replace('/refer/dashboard');
         } else {
           router.replace('/staff');
         }

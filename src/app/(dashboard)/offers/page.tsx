@@ -20,7 +20,7 @@ export default function OffersPage() {
   const fetchPartners = async () => {
     try {
       const { data, error } = await supabase
-        .from('partners')
+        .from('marketing_partners')
         .select('*')
         .eq('active', true)
         .order('created_at', { ascending: false });

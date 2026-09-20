@@ -636,6 +636,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                       className="block w-full pl-10 py-2 sm:text-sm border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500"
                     >
                       <option value="client">Contractor / Client</option>
+                      <option value="referral_partner">Referrer</option>
                       <option value="rep">Representative</option>
                       <option value="Residential Rep">Residential Rep</option>
                       <option value="Residential Sales">Residential Sales</option>

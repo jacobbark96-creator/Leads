@@ -13,7 +13,7 @@ import toast from 'react-hot-toast';
 import { useDialer } from '@/contexts/DialerContext';
 
 import { SmsChatModal } from '@/components/SmsChatModal';
-import { calculateMatchScore, extractTown } from '@/lib/utils';
+import { calculateMatchScore, calculateMatchScoreDetails, extractTown } from '@/lib/utils';
 
 import { 
   LayoutDashboard, 
@@ -363,16 +363,25 @@ function ContractorDetailsV2Content() {
     const prefs = {
       min_system_size_kw: (contractor as any).min_system_size_kw,
       preferred_roof_types: (contractor as any).preferred_roof_types,
-      latitude: (contractor as any).latitude,
-      longitude: (contractor as any).longitude,
-      service_areas: (contractor as any).service_areas
+      latitude: (contractor as any).latitude || mapCenter?.lat,
+      longitude: (contractor as any).longitude || mapCenter?.lng,
+      service_areas: (contractor as any).service_areas,
+      max_distance: (contractor as any).max_distance
     };
     
-    return mapLeads.map(lead => ({
-      ...lead,
-      score: calculateMatchScore(lead, prefs)
-    })).sort((a, b) => b.score - a.score).slice(0, 20); // Top 20 best matching leads
-  }, [mapLeads, contractor]);
+    return mapLeads
+      .map(lead => {
+        const scoreDetails = calculateMatchScoreDetails(lead, prefs);
+        return {
+          ...lead,
+          score: scoreDetails.score,
+          outwithWorkingArea: scoreDetails.details?.outwithWorkingArea || false
+        };
+      })
+      .filter(lead => !lead.outwithWorkingArea && lead.score >= 50) // Strictly filter by working area and minimum score
+      .sort((a, b) => b.score - a.score)
+      .slice(0, 20);
+  }, [mapLeads, contractor, mapCenter]);
 
   useEffect(() => {
     if (contractor && isLoaded) {
@@ -591,7 +600,11 @@ function ContractorDetailsV2Content() {
         contractorData.latitude = contractorData.clients.latitude;
         contractorData.longitude = contractorData.clients.longitude;
         
-        if (!contractorData.service_areas && contractorData.clients.service_areas) {
+        const hasServiceAreas = contractorData.service_areas && 
+                              Array.isArray(contractorData.service_areas) && 
+                              contractorData.service_areas.length > 0;
+                              
+        if (!hasServiceAreas && contractorData.clients.service_areas) {
            contractorData.service_areas = contractorData.clients.service_areas;
         }
         
@@ -630,7 +643,16 @@ function ContractorDetailsV2Content() {
         }
       }
 
-      setContractor(contractorData);
+      // Parse service_areas if stored as JSON string
+      if (contractorData.service_areas && typeof contractorData.service_areas === 'string') {
+        try {
+          contractorData.service_areas = JSON.parse(contractorData.service_areas);
+        } catch (e) {
+          console.error('Failed to parse service_areas:', e);
+        }
+      }
+
+      setContractor({ ...contractorData });
 
       // Extract other contacts if stored in JSON or similar (depends on DB structure)
       // For now we assume they might be in a separate table or json field.
@@ -776,7 +798,7 @@ function ContractorDetailsV2Content() {
       
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, latitude, longitude, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, service_areas, latitude, longitude, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
         .eq('id', contractor.id)
         .single();
         
@@ -797,6 +819,21 @@ function ContractorDetailsV2Content() {
         
         freshContractor.latitude = freshContractor.clients.latitude;
         freshContractor.longitude = freshContractor.clients.longitude;
+
+        const hasServiceAreas = freshContractor.service_areas && 
+                              Array.isArray(freshContractor.service_areas) && 
+                              freshContractor.service_areas.length > 0;
+                              
+        if (!hasServiceAreas && freshContractor.clients.service_areas) {
+           freshContractor.service_areas = freshContractor.clients.service_areas;
+        }
+
+        // Parse service_areas if stored as JSON string
+        if (freshContractor.service_areas && typeof freshContractor.service_areas === 'string') {
+          try {
+            freshContractor.service_areas = JSON.parse(freshContractor.service_areas);
+          } catch (e) {}
+        }
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (freshContractor.clients.services_offered) {
@@ -835,16 +872,24 @@ function ContractorDetailsV2Content() {
         if (updatePayload.assigned_to !== undefined) clientUpdate.assigned_to = updatePayload.assigned_to;
         if (min_system_size_kw !== undefined) clientUpdate.min_system_size_kw = min_system_size_kw;
         if (preferred_roof_types !== undefined) clientUpdate.preferred_roof_types = preferred_roof_types;
+        if (service_areas !== undefined) clientUpdate.service_areas = service_areas;
+        if (updatePayload.latitude !== undefined) clientUpdate.latitude = updatePayload.latitude;
+        if (updatePayload.longitude !== undefined) clientUpdate.longitude = updatePayload.longitude;
         
         if (Object.keys(clientUpdate).length > 0) {
           await supabase.from('clients').update(clientUpdate).eq('id', contractor.client_id);
         }
       }
       
+      // Also update service_areas in contractors table if present
+      if (service_areas !== undefined) {
+        await supabase.from('contractors').update({ service_areas }).eq('id', contractor.id);
+      }
+      
       // Force a fresh fetch to ensure all data is in sync
       const { data: freshContractor } = await supabase
         .from('contractors')
-        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, latitude, longitude, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
+        .select('*, categories!contractors_category_id_fkey(name), clients(address, other_contacts, other_contact_numbers, services_offered, min_system_size_kw, preferred_roof_types, service_areas, latitude, longitude, users(email, created_at, trade_account_enabled, approved_trade_amount, current_trade_usage, trade_limit_setting))')
         .eq('id', contractor.id)
         .single();
         
@@ -868,6 +913,21 @@ function ContractorDetailsV2Content() {
         
         freshContractor.latitude = freshContractor.clients.latitude;
         freshContractor.longitude = freshContractor.clients.longitude;
+
+        const hasServiceAreas = freshContractor.service_areas && 
+                              Array.isArray(freshContractor.service_areas) && 
+                              freshContractor.service_areas.length > 0;
+                              
+        if (!hasServiceAreas && freshContractor.clients.service_areas) {
+           freshContractor.service_areas = freshContractor.clients.service_areas;
+        }
+
+        // Parse service_areas if stored as JSON string
+        if (freshContractor.service_areas && typeof freshContractor.service_areas === 'string') {
+          try {
+            freshContractor.service_areas = JSON.parse(freshContractor.service_areas);
+          } catch (e) {}
+        }
         
         // Always sync category_id from clients.services_offered to ensure consistency
         if (freshContractor.clients.services_offered) {

@@ -61,13 +61,26 @@ export default function ReferralAuth() {
           throw new Error('Name is required');
         }
 
-        // 1. Sign up user
+        // 1. Sign up user with the correct role in metadata to ensure the trigger sets it correctly
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
+          options: {
+            data: {
+              role: 'referral_partner',
+              name: name
+            }
+          }
         });
 
-        if (authError) throw authError;
+        if (authError) {
+          if (authError.message.includes('User already registered')) {
+            toast.error('This email is already registered. Please log in instead.');
+            setIsLogin(true);
+            return;
+          }
+          throw authError;
+        }
 
         if (authData.user) {
           // Resolve parent partner ID if ?ref is present
@@ -192,19 +205,21 @@ export default function ReferralAuth() {
             </div>
 
             {!isLogin && (
-              <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-600 space-y-2 max-h-48 overflow-y-auto custom-scrollbar">
-                <h4 className="font-semibold text-gray-900">Referral Partner Terms & Conditions</h4>
-                <ul className="list-disc pl-4 space-y-1">
-                  <li>Referral Partners introduce homeowners and business owners to OpenLead.</li>
-                  <li>Referrals should be people genuinely interested in exploring solar energy.</li>
-                  <li>Residential referrals should be homeowners.</li>
-                  <li>Commercial referrals should be business owners/decision makers.</li>
-                  <li>The Referral Partner must obtain permission from the person before submitting their details.</li>
-                  <li>The direct referral commission is a flat £35 per valid sold lead.</li>
-                  <li>Commission is not calculated as a percentage of the lead sale price.</li>
-                  <li>OpenLead may reject referrals that do not meet the requirements.</li>
-                </ul>
-                <div className="pt-2 flex items-start gap-2">
+              <div className="space-y-4">
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 text-sm text-gray-600 space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                  <h4 className="font-semibold text-gray-900">Referral Partner Terms & Conditions</h4>
+                  <ul className="list-disc pl-4 space-y-1">
+                    <li>Referral Partners introduce homeowners and business owners to OpenLead.</li>
+                    <li>Referrals should be people genuinely interested in exploring solar energy.</li>
+                    <li>Residential referrals should be homeowners.</li>
+                    <li>Commercial referrals should be business owners/decision makers.</li>
+                    <li>The Referral Partner must obtain permission from the person before submitting their details.</li>
+                    <li>The direct referral commission is a flat £35 per valid sold lead.</li>
+                    <li>Commission is not calculated as a percentage of the lead sale price.</li>
+                    <li>OpenLead may reject referrals that do not meet the requirements.</li>
+                  </ul>
+                </div>
+                <div className="flex items-start gap-2">
                   <input
                     type="checkbox"
                     id="tc"
@@ -212,7 +227,7 @@ export default function ReferralAuth() {
                     onChange={(e) => setTcAccepted(e.target.checked)}
                     className="mt-1 w-4 h-4 text-[#0066FF] border-gray-300 rounded focus:ring-[#0066FF]"
                   />
-                  <label htmlFor="tc" className="font-medium text-gray-900 cursor-pointer">
+                  <label htmlFor="tc" className="text-sm font-medium text-gray-900 cursor-pointer">
                     I have read and agree to the Referral Partner Terms & Conditions.
                   </label>
                 </div>

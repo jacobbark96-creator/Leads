@@ -225,7 +225,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
             <div className="col-span-12 md:col-span-8 flex flex-col gap-2">
               
               {/* TOP ROW: Contact Card */}
-              <div className="bg-white rounded-xl p-2.5 border border-blue-200 shadow-sm w-full flex flex-col justify-center relative overflow-hidden">
+              <div className={`bg-white rounded-xl p-2.5 border border-blue-200 shadow-sm w-full flex flex-col relative overflow-hidden ${lead.has_concierge && lead.concierge_status === 'pending' ? 'min-h-[200px]' : ''}`}>
                 <div className="absolute top-0 right-0 w-20 h-20 bg-blue-50 rounded-bl-full -mr-4 -mt-2 opacity-50 z-0 pointer-events-none"></div>
                 <h3 className="text-[10px] font-bold text-blue-800 uppercase tracking-wider mb-2 flex items-center gap-1.5 relative z-10">
                   <User className="w-3.5 h-3.5" /> Contact Details
@@ -250,7 +250,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                   </div>
                   <div className={`flex flex-col col-span-2 ${parsedContacts.length > 0 ? 'md:col-span-3' : 'md:col-span-4'}`}>
                     <span className="text-[9px] text-gray-500 uppercase tracking-wider font-bold mb-0.5 flex items-center gap-1"><MapPin className="w-3 h-3 text-gray-400"/> Full Address</span>
-                    <span className="text-xs font-bold text-gray-900 truncate">{lead.location || 'No address provided'}</span>
+                    <span className="text-xs font-bold text-gray-900 whitespace-normal break-words">{lead.location || 'No address provided'}</span>
                   </div>
                   
                   {parsedContacts.length > 0 && (
@@ -293,7 +293,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                 )}
 
                 {lead.has_concierge && lead.concierge_status === 'pending' && (
-                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-[2px]">
+                  <div className="absolute inset-0 z-20 flex flex-col items-center justify-center bg-white/80 backdrop-blur-[2px] overflow-y-auto p-4">
                     {(!lead.concierge_dates || lead.concierge_dates.length === 0) ? (
                       <div className="bg-white p-4 rounded-xl shadow-2xl border border-amber-200 text-center w-64 max-w-[90%]">
                         <Clock className="w-6 h-6 text-amber-500 mx-auto mb-2" />

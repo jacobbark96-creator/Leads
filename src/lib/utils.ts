@@ -164,6 +164,25 @@ export function calculateEstimatedSystemSize(
   return sizeByRoof ?? sizeBySpend;
 }
 
+export function formatRole(role: string | null | undefined): string {
+  if (!role) return 'User';
+  
+  const roleMap: Record<string, string> = {
+    'client': 'Contractor',
+    'referral_partner': 'Referrer',
+    'super_admin': 'Super Admin',
+    'admin': 'Admin',
+    'sales': 'Sales',
+    'rep': 'Representative',
+    'growth_manager': 'Growth Manager',
+    'Residential Rep': 'Residential Rep',
+    'Residential Sales': 'Residential Sales',
+    'Commercial Sales': 'Commercial Sales'
+  };
+
+  return roleMap[role] || role.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+}
+
 export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
   if (!lead || !installerPrefs) return { score: 0, details: {} };
 
@@ -298,26 +317,68 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
 
   let finalPercentage = Math.round((totalScore / maxScore) * 100);
 
-  // Apply -20% penalty if lead is outside installer's working area
+  // Apply penalty/filter if lead is outside installer's working area
   let isOutwithWorkingArea = false;
-  if (lead.latitude && lead.longitude && installerPrefs.service_areas && Array.isArray(installerPrefs.service_areas) && installerPrefs.service_areas.length > 0) {
-    const isNational = installerPrefs.service_areas.some((sa: any) => sa.radiusMiles === 99999);
-    if (!isNational) {
-      const isWithinAny = installerPrefs.service_areas.some((sa: any) => {
-        if (sa.lat && sa.lng && sa.radiusMiles) {
-          const dist = calculateDistance(lead.latitude, lead.longitude, sa.lat, sa.lng);
-          return dist <= sa.radiusMiles;
-        }
-        return false;
+  const leadLat = typeof lead.latitude === 'string' ? parseFloat(lead.latitude) : lead.latitude;
+  const leadLng = typeof lead.longitude === 'string' ? parseFloat(lead.longitude) : lead.longitude;
+
+  if (leadLat !== null && leadLat !== undefined && leadLng !== null && leadLng !== undefined) {
+    const hasServiceAreas = installerPrefs.service_areas && 
+                          Array.isArray(installerPrefs.service_areas) && 
+                          installerPrefs.service_areas.length > 0;
+
+    if (hasServiceAreas) {
+      const isNational = installerPrefs.service_areas.some((sa: any) => {
+        const area = sa.area || sa;
+        const radius = typeof area.radiusMiles === 'string' ? parseInt(area.radiusMiles) : area.radiusMiles;
+        return radius === 99999 || area.isNational === true || area.isNational === 'true';
       });
-      if (!isWithinAny) {
-        isOutwithWorkingArea = true;
+      
+      if (!isNational) {
+        const isWithinAny = installerPrefs.service_areas.some((sa: any) => {
+          const area = sa.area || sa;
+          const areaLat = typeof area.lat === 'string' ? parseFloat(area.lat) : area.lat;
+          const areaLng = typeof area.lng === 'string' ? parseFloat(area.lng) : area.lng;
+          const areaRadius = typeof area.radiusMiles === 'string' ? parseInt(area.radiusMiles) : area.radiusMiles;
+
+          if (areaLat !== null && areaLat !== undefined && 
+              areaLng !== null && areaLng !== undefined && 
+              areaRadius) {
+            const dist = calculateDistance(leadLat, leadLng, areaLat, areaLng);
+            return dist <= areaRadius;
+          }
+          return false;
+        });
+        if (!isWithinAny) {
+          isOutwithWorkingArea = true;
+        }
+      }
+    } else {
+      const prefLat = typeof installerPrefs.latitude === 'string' ? parseFloat(installerPrefs.latitude) : installerPrefs.latitude;
+      const prefLng = typeof installerPrefs.longitude === 'string' ? parseFloat(installerPrefs.longitude) : installerPrefs.longitude;
+
+      if (prefLat !== null && prefLat !== undefined && prefLng !== null && prefLng !== undefined) {
+        // Fallback to max_distance from base location if no specific service areas are defined
+        const dist = calculateDistance(leadLat, leadLng, prefLat, prefLng);
+        
+        // Handle max_distance more robustly
+        let maxDist = 50; // Default
+        if (installerPrefs.max_distance !== undefined && installerPrefs.max_distance !== null) {
+          const parsed = parseInt(installerPrefs.max_distance.toString().replace(/[^0-9]/g, ''));
+          if (!isNaN(parsed)) {
+            maxDist = parsed;
+          }
+        }
+        
+        if (dist > maxDist) {
+          isOutwithWorkingArea = true;
+        }
       }
     }
   }
 
   if (isOutwithWorkingArea) {
-    finalPercentage = Math.max(0, finalPercentage - 20);
+    finalPercentage = 0; // Strictly exclude by setting score to 0
   }
 
   return {

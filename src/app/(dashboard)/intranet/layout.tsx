@@ -12,6 +12,7 @@ import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '../../../components/AdminNotifications';
 import { SmsNotifications } from '../../../components/SmsNotifications';
+import { formatRole } from '@/lib/utils';
 
 export default function IntranetLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -90,7 +91,7 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
                 </div>
                 <div className="hidden sm:block text-left">
                   <div className="text-sm font-bold text-gray-900 leading-none">{profile?.name}</div>
-                  <div className="text-[10px] text-gray-500 mt-0.5 capitalize">{profile?.role?.replace('_', ' ')}</div>
+                  <div className="text-[10px] text-gray-500 mt-0.5 capitalize">{formatRole(profile?.role)}</div>
                 </div>
                 <ChevronDown className="w-4 h-4 text-gray-400" />
               </button>

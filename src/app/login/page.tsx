@@ -43,6 +43,7 @@ export default function Login() {
   const getHomePath = () => {
     if (!profile) return '/';
     if (profile.role === 'client') return '/client-portal';
+    if (profile.role === 'referral_partner') return '/refer/dashboard';
     return '/staff';
   };
 
@@ -55,6 +56,8 @@ export default function Login() {
         } else {
           router.replace('/client-portal');
         }
+      } else if (profile.role === 'referral_partner') {
+        router.replace('/refer/dashboard');
       } else {
         router.replace('/staff');
       }
@@ -109,7 +112,14 @@ export default function Login() {
             }
           }
         });
-        if (error) throw error;
+        if (error) {
+          if (error.message.includes('User already registered')) {
+            toast.error('This email is already registered. Please sign in instead.');
+            setIsSignUp(false);
+            return;
+          }
+          throw error;
+        }
         toast.success('Registration successful!');
         
         // Redirect to the check-email page instead of staying on login
@@ -140,6 +150,8 @@ export default function Login() {
               } else {
                 router.replace('/client-portal');
               }
+            } else if (profileData.role === 'referral_partner') {
+              router.replace('/refer/dashboard');
             } else {
               router.replace('/staff');
             }

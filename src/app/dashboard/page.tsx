@@ -14,6 +14,8 @@ export default function DashboardRedirect() {
       } else {
         if (profile.role === 'client') {
           router.replace('/my-openlead');
+        } else if (profile.role === 'referral_partner') {
+          router.replace('/refer/dashboard');
         } else {
           router.replace('/staff');
         }

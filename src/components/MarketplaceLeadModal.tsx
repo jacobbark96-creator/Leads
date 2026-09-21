@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Lead } from '../types';
 import { useAuthStore } from '../store/authStore';
 import { supabase } from '../lib/supabase';
+import toast from 'react-hot-toast';
 import { 
   X, MapPin, User, Calendar, Home, CheckCircle, Zap, ShieldCheck, 
   ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, Moon,
@@ -75,9 +76,43 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
   const [clientPrefs, setClientPrefs] = useState<any>(null);
   const { profile } = useAuthStore();
   const hasTrackedView = useRef(false);
+  const [divisions, setDivisions] = useState<any[]>([]);
+  const [currentDivisionId, setCurrentDivisionId] = useState(lead.division_id || '');
 
   const [showBusinessDetails, setShowBusinessDetails] = useState(false);
   
+  useEffect(() => {
+    setCurrentDivisionId(lead.division_id || '');
+  }, [lead.id, lead.division_id]);
+
+  useEffect(() => {
+    const fetchDivisions = async () => {
+      if (profile?.role !== 'super_admin') return;
+      try {
+        const { data } = await supabase.from('divisions').select('*').order('name');
+        if (data) setDivisions(data);
+      } catch (err) {}
+    };
+    fetchDivisions();
+  }, [profile?.role]);
+
+  const handleDivisionChange = async (newDivisionId: string) => {
+    if (!lead || profile?.role !== 'super_admin') return;
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ division_id: newDivisionId || null })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+      
+      setCurrentDivisionId(newDivisionId);
+      toast.success('Division updated successfully');
+    } catch (err: any) {
+      toast.error('Failed to update division: ' + err.message);
+    }
+  };
+
   useEffect(() => {
     const fetchBuildings = async () => {
       if (!isOpen || !lead?.id) return;
@@ -164,6 +199,18 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
               <h2 className="text-xl font-bold text-gray-900">Lead Details</h2>
               <div className="flex items-center gap-3 mt-1">
                 <p className="text-xs text-gray-500 font-medium uppercase tracking-wider">Ref: #{lead.id.split('-')[0]}</p>
+                {profile?.role === 'super_admin' && (
+                   <select
+                     value={currentDivisionId}
+                     onChange={(e) => handleDivisionChange(e.target.value)}
+                     className="text-[10px] font-bold bg-white border border-gray-200 rounded-lg px-2 py-0.5 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                   >
+                    <option value="">No Division</option>
+                    {divisions.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                )}
                 <span className="bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">
                   {window.innerWidth < 1024 ? 'Verified Lead' : 'New Lead'}
                 </span>

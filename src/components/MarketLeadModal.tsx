@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Lead, Category } from '../types';
+import { useAuthStore } from '../store/authStore';
 import { X, Upload, Trash2, MapPin, CheckCircle, Info } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
@@ -16,6 +17,7 @@ interface MarketLeadModalProps {
 }
 
 export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClose, lead, onSuccess }) => {
+  const { profile } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [isRoofTypeDropdownOpen, setIsRoofTypeDropdownOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -39,6 +41,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
     return [];
   });
   const [categories, setCategories] = useState<Category[]>([]);
+  const [divisions, setDivisions] = useState<any[]>([]);
   const [exclusivePrice, setExclusivePrice] = useState<string>(lead.exclusive_price ? lead.exclusive_price.toString() : (lead.price ? lead.price.toString() : '135'));
   const [sharePrice, setSharePrice] = useState<string>(lead.share_price ? lead.share_price.toString() : '45');
   const getSharePriceFromMatrix = (exclusive: number): number | null => {
@@ -102,6 +105,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
     availability: lead.availability || '',
     job_title: lead.job_title || '',
     bills_url: lead.bills_url || '',
+    division_id: lead.division_id || '',
   });
 
   useEffect(() => {
@@ -147,6 +151,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
   useEffect(() => {
     if (isOpen) {
       fetchCategories();
+      fetchDivisions();
       
       // Reset form data when opened to ensure it has the latest lead data
       setFormData({
@@ -175,6 +180,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
         availability: lead.availability || '',
         job_title: lead.job_title || '',
         bills_url: lead.bills_url || '',
+        division_id: lead.division_id || '',
       });
       setExclusivePrice(lead.exclusive_price ? lead.exclusive_price.toString() : '135');
       setSharePrice(lead.share_price ? lead.share_price.toString() : '45');
@@ -226,6 +232,20 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
       setCategories(data || []);
     } catch (error) {
       console.error('Failed to load categories:', error);
+    }
+  };
+
+  const fetchDivisions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('divisions')
+        .select('*')
+        .order('name');
+        
+      if (error) throw error;
+      setDivisions(data || []);
+    } catch (error) {
+      console.error('Failed to load divisions:', error);
     }
   };
 
@@ -384,6 +404,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
         availability: formData.availability,
         job_title: formData.job_title,
         bills_url: billUrls.length > 0 ? billUrls.join(', ') : null,
+        division_id: formData.division_id || null,
       };
 
       const { data, error } = await supabase
@@ -416,7 +437,21 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
               <CheckCircle className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-gray-900">{lead.is_marketed ? 'Edit Marketed Lead' : 'Market Lead'}</h2>
+              <div className="flex items-center gap-3">
+                <h2 className="text-xl font-bold text-gray-900">{lead.is_marketed ? 'Edit Marketed Lead' : 'Market Lead'}</h2>
+                {lead.is_marketed && profile?.role === 'super_admin' && (
+                  <select
+                    value={formData.division_id}
+                    onChange={(e) => setFormData({...formData, division_id: e.target.value})}
+                    className="text-xs font-bold bg-white border border-gray-200 rounded-lg px-2 py-1 focus:ring-blue-500 focus:border-blue-500 shadow-sm ml-2"
+                  >
+                    <option value="">No Division</option>
+                    {divisions.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                )}
+              </div>
               <p className="text-sm text-gray-500">Review and edit details before making them visible to clients.</p>
             </div>
           </div>

@@ -503,6 +503,23 @@ function LeadDetailsV2Content() {
     }
   };
 
+  const handleDivisionChange = async (newDivisionId: string) => {
+    if (!lead) return;
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({ division_id: newDivisionId || null })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+
+      setLead({ ...lead, division_id: newDivisionId || null });
+      toast.success('Division updated successfully');
+    } catch (err: any) {
+      toast.error('Failed to update division: ' + err.message);
+    }
+  };
+
   const [editingCard, setEditingCard] = useState<string | null>(null);
   const [isRoofTypeDropdownOpen, setIsRoofTypeDropdownOpen] = useState(false);
   const [files, setFiles] = useState<any[]>([]);
@@ -2325,6 +2342,21 @@ function LeadDetailsV2Content() {
               <Link href={`/sales-crm?tab=${tab}`} className="hover:text-gray-900 transition-colors capitalize">{tab} Leads</Link>
               <span className="mx-2">/</span>
               <span className="text-gray-900 truncate max-w-[150px] md:max-w-none">{lead.company || lead.name}</span>
+              {lead.is_marketed && profile?.role === 'super_admin' && (
+                <div className="flex items-center gap-2 ml-4">
+                  <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Division:</span>
+                  <select
+                    value={lead.division_id || ''}
+                    onChange={(e) => handleDivisionChange(e.target.value)}
+                    className="text-xs font-bold bg-white border border-gray-200 rounded-lg px-2 py-1 focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+                  >
+                    <option value="">No Division</option>
+                    {divisions.map(d => (
+                      <option key={d.id} value={d.id}>{d.name}</option>
+                    ))}
+                  </select>
+                </div>
+              )}
             </div>
             <div className="flex flex-wrap items-center gap-3 md:gap-4 w-full md:w-auto">
               {packId && (profile?.role === 'super_admin' || profile?.role === 'rep' || profile?.role === 'admin' || profile?.permissions?.includes('can_autodial')) && (

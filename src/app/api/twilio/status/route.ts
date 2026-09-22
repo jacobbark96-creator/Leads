@@ -93,7 +93,7 @@ export async function POST(req: Request) {
       const supabase = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!);
       let statusText = callStatus;
       if (callStatus === 'completed') statusText = 'Answered';
-      if (callStatus === 'no-answer') statusText = 'Not viable';
+      if (callStatus === 'no-answer') statusText = 'Voicemail';
       if (callStatus === 'busy') statusText = 'Busy';
       if (callStatus === 'failed') {
         // If the call dropped (e.g. AI closed the WebSocket) but had a duration, it was actually answered
@@ -120,9 +120,9 @@ export async function POST(req: Request) {
         call_sid: callSid
       }]);
 
-      // Disposition in lead_pack_memberships if it was a failed connection (Not viable, Busy, Failed)
+      // Disposition in lead_pack_memberships if it was a failed connection (Voicemail, Not viable, Busy, Failed)
       // If it was Answered, the ElevenLabs webhook will handle the disposition later based on AI feedback
-      if (entityType === 'lead' && ['Not viable', 'Busy', 'Failed', 'Canceled'].includes(statusText)) {
+      if (entityType === 'lead' && ['Voicemail', 'Not viable', 'Busy', 'Failed', 'Canceled'].includes(statusText)) {
         const { data: membership } = await supabase
           .from('lead_pack_memberships')
           .select('id')

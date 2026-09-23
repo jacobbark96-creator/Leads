@@ -113,7 +113,7 @@ export default function ReferralDashboard() {
             lead_type,
             created_at,
             status,
-            referral_commissions (amount, status)
+            referral_commissions (commission_amount, status)
           )
         `)
         .eq('partner_id', partnerData.id)
@@ -147,9 +147,10 @@ export default function ReferralDashboard() {
           if (lead.referral_commissions && lead.referral_commissions.length > 0) {
             sold++;
             lead.referral_commissions.forEach((comm: any) => {
-              if (comm.status === 'Earned' || comm.status === 'Due' || comm.status === 'Paid') earned += Number(comm.amount);
-              if (comm.status === 'Due') due += Number(comm.amount);
-              if (comm.status === 'Paid') paid += Number(comm.amount);
+              const amount = Number(comm.commission_amount || comm.amount || 0);
+              if (comm.status === 'Earned' || comm.status === 'Due' || comm.status === 'Paid') earned += amount;
+              if (comm.status === 'Due') due += amount;
+              if (comm.status === 'Paid') paid += amount;
             });
           }
         });
@@ -317,7 +318,7 @@ export default function ReferralDashboard() {
                         <td className="px-6 py-4 text-right">
                           {commission ? (
                             <div>
-                              <div className="font-medium text-gray-900">£{commission.amount}</div>
+                              <div className="font-medium text-gray-900">£{Number(commission.commission_amount || commission.amount || 0).toFixed(2)}</div>
                               <div className="text-xs text-gray-500">{commission.status}</div>
                             </div>
                           ) : (

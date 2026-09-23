@@ -72,8 +72,8 @@ export function ReferralPaymentsTab() {
     c.leads?.name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const totalDue = commissions.filter(c => c.status === 'Due').reduce((acc, c) => acc + Number(c.amount), 0);
-  const totalPaid = commissions.filter(c => c.status === 'Paid').reduce((acc, c) => acc + Number(c.amount), 0);
+  const totalDue = commissions.filter(c => c.status === 'Due').reduce((acc, c) => acc + Number(c.commission_amount || c.amount || 0), 0);
+  const totalPaid = commissions.filter(c => c.status === 'Paid').reduce((acc, c) => acc + Number(c.commission_amount || c.amount || 0), 0);
   const partnersDueCount = new Set(commissions.filter(c => c.status === 'Due').map(c => c.partner_id)).size;
 
   return (
@@ -175,7 +175,7 @@ export function ReferralPaymentsTab() {
                       )}
                     </td>
                     <td className="px-6 py-4 text-right font-bold text-gray-900">
-                      £{Number(c.amount).toFixed(2)}
+                      £{Number(c.commission_amount || c.amount || 0).toFixed(2)}
                     </td>
                     <td className="px-6 py-4">
                       <span className={`inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium ${

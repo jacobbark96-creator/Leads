@@ -102,22 +102,34 @@ export default function ReferralDashboard() {
 
       setPartner(partnerData);
 
-      // Fetch Referrals (leads with lead_source = partner_id)
-      const { data: leadsData } = await supabase
-        .from('leads')
+      // Fetch Referrals via referral_tracking table to ensure accurate linkage
+      const { data: trackingData, error: trackingError } = await supabase
+        .from('referral_tracking')
         .select(`
-          id, 
-          name, 
-          lead_type, 
-          created_at, 
-          status,
-          referral_tracking (kanban_status),
-          referral_commissions (amount, status)
+          kanban_status,
+          leads!lead_id (
+            id,
+            name,
+            lead_type,
+            created_at,
+            status,
+            referral_commissions (amount, status)
+          )
         `)
-        .eq('lead_source', partnerData.partner_id)
+        .eq('partner_id', partnerData.id)
         .order('created_at', { ascending: false });
 
-      if (leadsData) {
+      if (trackingError) {
+        console.error('Error fetching referrals:', trackingError);
+      } else if (trackingData) {
+        // Map tracking data to a flat lead structure for the UI
+        const leadsData = trackingData
+          .filter(t => t.leads)
+          .map(t => ({
+            ...t.leads,
+            referral_tracking: [{ kanban_status: t.kanban_status }]
+          }));
+        
         setReferrals(leadsData);
         
         // Calculate Stats

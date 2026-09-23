@@ -608,11 +608,11 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
             });
           }
           if (eId && duration === 0) {
-            fetch(`/api/twilio/status?entityId=${encodeURIComponent(eId)}&userName=${encodeURIComponent(uName || profile.name || '')}&entityType=${encodeURIComponent(eType)}`, {
-              method: 'POST',
-              body: new URLSearchParams({ CallStatus: 'no-answer', CallDuration: '0' })
-            }).catch(console.error);
-          }
+          fetch(`/api/twilio/status?entityId=${encodeURIComponent(eId)}&userName=${encodeURIComponent(uName || profile.name || '')}&userId=${profile.id}&entityType=${encodeURIComponent(eType)}`, {
+            method: 'POST',
+            body: new URLSearchParams({ CallStatus: 'no-answer', CallDuration: '0' })
+          }).catch(console.error);
+        }
           setTimeout(() => {
             setActiveCall(null);
             setCallStatus('');
@@ -645,6 +645,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           CallerId: String(callerNumber || ''),
           EntityId: String(entityId || ''),
           UserName: String(userName || profile.name || ''),
+          UserId: String(profile.id || ''),
           EntityType: String(entityType || 'lead')
         }
       });
@@ -667,7 +668,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         // Log manual disconnects if duration is 0 (failed to connect)
         if (entityId && duration === 0) {
-          fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&entityType=${encodeURIComponent(entityType)}`, {
+          fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&userId=${profile.id}&entityType=${encodeURIComponent(entityType)}`, {
             method: 'POST',
             body: new URLSearchParams({ CallStatus: 'no-answer', CallDuration: '0' })
           }).catch(console.error);
@@ -691,7 +692,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
         }
 
         if (entityId) {
-          fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&entityType=${encodeURIComponent(entityType)}`, {
+          fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&userId=${profile.id}&entityType=${encodeURIComponent(entityType)}`, {
             method: 'POST',
             body: new URLSearchParams({ CallStatus: 'canceled', CallDuration: '0' })
           }).catch(console.error);
@@ -717,7 +718,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
 
         // Log the failure
         if (entityId) {
-          fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&entityType=${encodeURIComponent(entityType)}`, {
+          fetch(`/api/twilio/status?entityId=${encodeURIComponent(entityId)}&userName=${encodeURIComponent(userName || profile.name || '')}&userId=${profile.id}&entityType=${encodeURIComponent(entityType)}`, {
             method: 'POST',
             body: new URLSearchParams({ CallStatus: 'failed', CallDuration: '0' })
           }).catch(console.error);

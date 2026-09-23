@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { X, Sparkles, AlertCircle, CheckCircle2, MapPin, CheckCircle, Info } from 'lucide-react';
+import { X, Sparkles, AlertCircle, CheckCircle2, MapPin, CheckCircle, Info, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useAuthStore } from '@/store/authStore';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+import { useRouter } from 'next/navigation';
 
 const libraries: "places"[] = ['places'];
 
@@ -25,6 +26,7 @@ interface AddLeadModalProps {
 }
 
 export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onLeadAdded, isContractor = false, editData = null }) => {
+  const router = useRouter();
   const { profile } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [aiMode, setAiMode] = useState(false);
@@ -102,7 +104,7 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         const email = formData.email.trim();
 
         let leadQuery = supabase.from('leads').select('id, name, company, status');
-        let contractorQuery = supabase.from('contractors').select('id, name, company, status');
+        let contractorQuery = supabase.from('contractors').select('id, name, company, company_name, contact_name, status');
 
         const filters = [];
         if (phone) filters.push(`phone.eq.${phone}`);
@@ -540,15 +542,41 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
                     </div>
                     <div className="space-y-1 text-sm text-amber-700">
                       {duplicates.leads.map(l => (
-                        <div key={l.id} className="flex items-center justify-between bg-white/50 p-1.5 rounded border border-amber-100">
-                          <span>Lead: <strong>{l.company || l.name}</strong> ({l.status})</span>
-                          <span className="text-[10px] font-bold bg-amber-200 px-1.5 py-0.5 rounded">CRM</span>
+                        <div 
+                          key={l.id} 
+                          onClick={() => {
+                            onClose();
+                            router.push(`/sales-crm/lead-v2?id=${l.id}`);
+                          }}
+                          className="flex items-center justify-between bg-white/50 p-1.5 rounded border border-amber-100 cursor-pointer hover:bg-white hover:border-amber-300 hover:shadow-sm transition-all group"
+                        >
+                          <span className="flex items-center gap-2">
+                            Lead: <strong className="group-hover:text-blue-600 transition-colors">{l.company || l.name}</strong> 
+                            <span className="text-[10px] text-gray-500 font-normal">({l.status})</span>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold bg-amber-200 px-1.5 py-0.5 rounded uppercase tracking-wider">CRM</span>
+                            <ExternalLink className="w-3 h-3 text-amber-400 group-hover:text-blue-500" />
+                          </div>
                         </div>
                       ))}
                       {duplicates.contractors.map(c => (
-                        <div key={c.id} className="flex items-center justify-between bg-white/50 p-1.5 rounded border border-amber-100">
-                          <span>Contractor: <strong>{c.company || c.name}</strong> ({c.status})</span>
-                          <span className="text-[10px] font-bold bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded">ONBOARDED</span>
+                        <div 
+                          key={c.id} 
+                          onClick={() => {
+                            onClose();
+                            router.push(`/contractor-crm/contractor-v2?id=${c.id}`);
+                          }}
+                          className="flex items-center justify-between bg-white/50 p-1.5 rounded border border-amber-100 cursor-pointer hover:bg-white hover:border-amber-300 hover:shadow-sm transition-all group"
+                        >
+                          <span className="flex items-center gap-2">
+                            Contractor: <strong className="group-hover:text-blue-600 transition-colors">{c.company_name || c.company || c.name || c.contact_name}</strong>
+                            <span className="text-[10px] text-gray-500 font-normal">({c.status})</span>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded uppercase tracking-wider">ONBOARDED</span>
+                            <ExternalLink className="w-3 h-3 text-amber-400 group-hover:text-blue-500" />
+                          </div>
                         </div>
                       ))}
                     </div>

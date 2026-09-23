@@ -60,15 +60,6 @@ export function StaffEngagement() {
           break;
       }
 
-      // 1. Fetch activities for the period
-      const { data: activities } = await supabase
-        .from('activities')
-        .select('activity_type, user_id, lead_id')
-        .gte('created_at', start.toISOString())
-        .lte('created_at', end.toISOString());
-
-      if (!activities) return;
-
       // Group activities by user
       const grouped: Record<string, any> = {};
       staffUsers.forEach(user => {
@@ -78,7 +69,8 @@ export function StaffEngagement() {
           role: user.role,
           dials: 0,
           qualified: 0,
-          notes: 0,
+          totalDuration: 0,
+          callCount: 0,
           leadsSold: 0,
           leadsSurveyed: 0,
           leadsWon: 0,
@@ -86,27 +78,92 @@ export function StaffEngagement() {
         };
       });
 
-      activities.forEach(act => {
-        const uid = act.user_id;
-        if (!uid || !grouped[uid]) return;
+      // 1. Process Call Logs from Notes (Dials & Duration)
+      const { data: leadNotes } = await supabase
+        .from('lead_notes')
+        .select('user_id, content, created_at')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+        .like('content', '📞 Call by %');
 
-        if (act.activity_type === 'call_made') {
+      const { data: contractorNotes } = await supabase
+        .from('contractor_notes')
+        .select('user_id, content, created_at')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString())
+        .like('content', '📞 Call by %');
+
+      const allCallNotes = [...(leadNotes || []), ...(contractorNotes || [])];
+      
+      allCallNotes.forEach(note => {
+        let uid = note.user_id;
+        
+        // Fallback: Attribute by name in content if user_id is missing (for older notes)
+        if (!uid) {
+          const nameMatch = note.content.match(/📞 Call by ([^:]+):/);
+          if (nameMatch && nameMatch[1]) {
+            const matchedUser = staffUsers.find(u => u.name === nameMatch[1].trim());
+            if (matchedUser) uid = matchedUser.id;
+          }
+        }
+
+        if (uid && grouped[uid]) {
           grouped[uid].dials++;
-        } else if (act.activity_type === 'note') {
-          grouped[uid].notes++;
-        } else if (act.activity_type === 'qualified') {
-          grouped[uid].qualified++;
+          
+          // Parse duration: (X seconds)
+          const durationMatch = note.content.match(/\((\d+) seconds\)/);
+          if (durationMatch && durationMatch[1]) {
+            const seconds = parseInt(durationMatch[1], 10);
+            if (seconds > 0) {
+              grouped[uid].totalDuration += seconds;
+              grouped[uid].callCount++;
+            }
+          }
         }
       });
 
-      // 2. Fetch leads sold in this period (via lead_purchases)
+      // 2. Process Activities (Qualified, Sold, etc.)
+      const { data: activities } = await supabase
+        .from('activities')
+        .select('activity_type, user_id, lead_id')
+        .gte('created_at', start.toISOString())
+        .lte('created_at', end.toISOString());
+
+      const qualifiedLeadIds = new Set<string>();
+
+      activities?.forEach(act => {
+        const uid = act.user_id;
+        if (!uid || !grouped[uid]) return;
+
+        if (act.activity_type === 'qualified') {
+          grouped[uid].qualified++;
+          qualifiedLeadIds.add(act.lead_id);
+        }
+      });
+
+      // 3. Fallback for Qualified leads (check leads table directly for missed activities)
+      const { data: qualifiedLeads } = await supabase
+        .from('leads')
+        .select('id, assigned_to, qualified_at')
+        .gte('qualified_at', start.toISOString())
+        .lte('qualified_at', end.toISOString());
+
+      qualifiedLeads?.forEach(lead => {
+        const uid = lead.assigned_to;
+        if (uid && grouped[uid] && !qualifiedLeadIds.has(lead.id)) {
+          grouped[uid].qualified++;
+          qualifiedLeadIds.add(lead.id);
+        }
+      });
+
+      // 4. Fetch leads sold in this period (via lead_purchases)
       const { data: purchasesInPeriod } = await supabase
         .from('lead_purchases')
         .select('id, lead_id, status, purchased_at')
         .gte('purchased_at', start.toISOString())
         .lte('purchased_at', end.toISOString());
 
-      // 3. Fetch leads sold in this period (via direct purchase_date on leads)
+      // 5. Fetch leads sold in this period (via direct purchase_date on leads)
       const { data: directSoldLeads } = await supabase
         .from('leads')
         .select('id, status, purchase_date')
@@ -132,7 +189,7 @@ export function StaffEngagement() {
         if (['rejected', 'lost', 'dead'].includes(lead.status?.toLowerCase())) lostSet.add(lead.id);
       });
 
-      // Now we need to find out WHO qualified these leads.
+      // Attribute performance to the person who QUALIFIED the lead
       const allActionLeadIds = Array.from(new Set([...soldSet, ...surveyedSet, ...wonSet, ...lostSet]));
       
       if (allActionLeadIds.length > 0) {
@@ -151,6 +208,18 @@ export function StaffEngagement() {
         const leadToQualifier: Record<string, string> = {};
         qualifiers.forEach(act => {
           if (act.user_id) leadToQualifier[act.lead_id] = act.user_id;
+        });
+
+        // Also check leads table for assigned_to as fallback for qualifier
+        const { data: leadQualifiers } = await supabase
+          .from('leads')
+          .select('id, assigned_to')
+          .in('id', allActionLeadIds);
+        
+        leadQualifiers?.forEach(l => {
+          if (l.assigned_to && !leadToQualifier[l.id]) {
+            leadToQualifier[l.id] = l.assigned_to;
+          }
         });
 
         soldSet.forEach(leadId => {
@@ -172,10 +241,10 @@ export function StaffEngagement() {
       }
 
       // Filter out staff with 0 activity
-      const result = Object.values(grouped).filter(s => s.dials > 0 || s.qualified > 0 || s.notes > 0 || s.leadsSold > 0);
+      const result = Object.values(grouped).filter(s => s.dials > 0 || s.qualified > 0 || s.leadsSold > 0);
       
-      // Sort by qualified
-      result.sort((a, b) => b.qualified - a.qualified);
+      // Sort by dials
+      result.sort((a, b) => b.dials - a.dials);
       
       setStaffStats(result);
     } catch (error) {
@@ -198,6 +267,14 @@ export function StaffEngagement() {
   const getPercentage = (val: number, total: number) => {
     if (total === 0) return 0;
     return Math.round((val / total) * 100);
+  };
+
+  const formatDuration = (seconds: number) => {
+    if (!seconds || seconds === 0) return '0s';
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    if (mins === 0) return `${secs}s`;
+    return `${mins}m ${secs}s`;
   };
 
   return (
@@ -238,7 +315,7 @@ export function StaffEngagement() {
             </tr>
             <tr className="bg-gray-50 text-gray-500 text-xs font-semibold">
               <th className="px-4 py-2 text-center border-l border-gray-200">Dials</th>
-              <th className="px-4 py-2 text-center">Notes</th>
+              <th className="px-4 py-2 text-center">Avg Duration</th>
               <th className="px-4 py-2 text-center border-l border-gray-200">Qualified</th>
               <th className="px-4 py-2 text-center">Sold</th>
               <th className="px-4 py-2 text-center">Surveyed</th>
@@ -256,7 +333,9 @@ export function StaffEngagement() {
                     <div className="text-xs text-gray-500 uppercase tracking-wider">{staff.role.replace('_', ' ')}</div>
                   </td>
                   <td className="px-4 py-3 text-center text-gray-600 border-l border-gray-100">{staff.dials}</td>
-                  <td className="px-4 py-3 text-center text-gray-600">{staff.notes}</td>
+                  <td className="px-4 py-3 text-center text-gray-600">
+                    {formatDuration(staff.callCount > 0 ? Math.round(staff.totalDuration / staff.callCount) : 0)}
+                  </td>
                   <td className="px-4 py-3 text-center border-l border-gray-100">
                     <span className="font-bold text-blue-600">{staff.qualified}</span>
                   </td>

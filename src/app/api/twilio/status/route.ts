@@ -9,6 +9,7 @@ export async function POST(req: Request) {
     const url = new URL(req.url);
     const entityId = url.searchParams.get('entityId');
     const userName = url.searchParams.get('userName') || 'A User';
+    const userId = url.searchParams.get('userId');
     const entityType = url.searchParams.get('entityType') || 'lead';
 
     const bodyText = await req.text();
@@ -117,6 +118,7 @@ export async function POST(req: Request) {
         [idField]: entityId,
         content: noteContent,
         author_name: 'System',
+        user_id: userId,
         call_sid: callSid
       }]);
 

@@ -11,6 +11,7 @@ export async function POST(req: Request) {
     const callerIdRaw = params.get('CallerId') || '';
     const entityId = params.get('EntityId') || '';
     const userName = params.get('UserName') || '';
+    const userId = params.get('UserId') || '';
     const entityType = params.get('EntityType') || 'lead';
 
     if (!toRaw) {
@@ -33,7 +34,7 @@ export async function POST(req: Request) {
     const host = req.headers.get('host') || 'localhost:3000';
     const protocol = host.includes('localhost') ? 'http' : 'https';
     
-    const statusCallbackUrl = `${protocol}://${host}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&amp;userName=${encodeURIComponent(userName)}&amp;entityType=${encodeURIComponent(entityType)}`;
+    const statusCallbackUrl = `${protocol}://${host}/api/twilio/status?entityId=${encodeURIComponent(entityId)}&amp;userName=${encodeURIComponent(userName)}&amp;userId=${encodeURIComponent(userId)}&amp;entityType=${encodeURIComponent(entityType)}`;
     const actionAttr = entityId ? ` action="${statusCallbackUrl}"` : '';
     const fallbackAttr = entityId ? ` statusCallback="${statusCallbackUrl}" statusCallbackEvent="completed"` : '';
     const recordingAttr = entityId ? ` recordingStatusCallback="${statusCallbackUrl}" recordingStatusCallbackEvent="completed"` : '';

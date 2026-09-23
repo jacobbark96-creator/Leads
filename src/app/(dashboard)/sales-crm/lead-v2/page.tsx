@@ -2986,15 +2986,13 @@ function LeadDetailsV2Content() {
                   <div className="flex justify-between items-center py-1 border-b border-gray-50">
                     <span className="text-gray-500 text-xs">Lead Source</span>
                     <div className="flex items-center gap-2">
-                      {!(lead as any).lead_source?.startsWith('REF-') && (
-                        <button 
-                          onClick={() => setIsReferModalOpen(true)}
-                          className="text-indigo-600 hover:text-indigo-700 transition-colors shrink-0"
-                          title="Mark as Referral"
-                        >
-                          <div className="w-4 h-4 rounded-full border border-indigo-600 flex items-center justify-center text-[9px] font-black bg-indigo-50 hover:bg-indigo-100 shadow-sm">R</div>
-                        </button>
-                      )}
+                      <button 
+                        onClick={() => setIsReferModalOpen(true)}
+                        className="text-indigo-600 hover:text-indigo-700 transition-colors shrink-0"
+                        title="Mark as Referral"
+                      >
+                        <div className="w-4 h-4 rounded-full border border-indigo-600 flex items-center justify-center text-[9px] font-black bg-indigo-50 hover:bg-indigo-100 shadow-sm">R</div>
+                      </button>
                       {editingCard === 'overview' ? (
                         <input type="text" value={editForm.upload_name || ''} onChange={e => setEditForm({...editForm, upload_name: e.target.value})} className="border rounded px-1.5 py-0.5 text-xs text-right w-32 focus:ring-1 focus:ring-blue-500" />
                       ) : (

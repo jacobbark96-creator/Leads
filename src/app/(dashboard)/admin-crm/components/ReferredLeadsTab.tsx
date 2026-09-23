@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
-import { Search, User, Phone, Mail, Building, Calendar, CheckCircle, ArrowRight } from 'lucide-react';
+import { Search, User, Phone, Mail, Building, Calendar, CheckCircle, ArrowRight, Link2Off, Trash2 } from 'lucide-react';
 
 export function ReferredLeadsTab() {
   const [leads, setLeads] = useState<any[]>([]);
@@ -30,6 +30,7 @@ export function ReferredLeadsTab() {
         .from('referral_tracking')
         .select(`
           id,
+          lead_id,
           kanban_status,
           questionnaire_responses,
           created_at,
@@ -51,6 +52,40 @@ export function ReferredLeadsTab() {
       toast.error('Failed to load referred leads');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleUnlinkReferral = async (trackingId: string, leadId: string) => {
+    if (!confirm('Are you sure you want to unlink this lead from the referral partner? The lead will remain in the CRM but will no longer appear in the partner portal.')) return;
+
+    try {
+      // 1. Remove the tracking record
+      const { error: deleteError } = await supabase
+        .from('referral_tracking')
+        .delete()
+        .eq('id', trackingId);
+
+      if (deleteError) throw deleteError;
+
+      // 2. Clear lead_source if it matches REF- format
+      const { data: leadData } = await supabase
+        .from('leads')
+        .select('lead_source')
+        .eq('id', leadId)
+        .single();
+
+      if (leadData?.lead_source?.startsWith('REF-')) {
+        await supabase
+          .from('leads')
+          .update({ lead_source: 'Organic' }) // Fallback to Organic or NULL
+          .eq('id', leadId);
+      }
+
+      toast.success('Referral unlinked successfully');
+      fetchReferredLeads();
+    } catch (error) {
+      console.error(error);
+      toast.error('Failed to unlink referral');
     }
   };
 
@@ -84,13 +119,22 @@ export function ReferredLeadsTab() {
   const dealtWith = filteredLeads.filter(l => l.kanban_status === 'DEALT_WITH');
 
   const LeadCard = ({ item }: { item: any }) => (
-    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-3">
-      <div className="flex justify-between items-start mb-2">
+    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-3 relative group">
+      <div className="flex justify-between items-start mb-2 pr-6">
         <h4 className="font-bold text-gray-900">{item.leads?.name}</h4>
         <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
           {item.leads?.lead_type}
         </span>
       </div>
+      
+      {/* Unlink Button */}
+      <button
+        onClick={() => handleUnlinkReferral(item.id, item.lead_id)}
+        className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors"
+        title="Unlink Referral Partner"
+      >
+        <Link2Off className="w-4 h-4" />
+      </button>
       <div className="space-y-1 mb-3">
         {item.leads?.phone && <div className="text-xs text-gray-500 flex items-center gap-1"><Phone className="w-3 h-3"/> {item.leads.phone}</div>}
         {item.leads?.email && <div className="text-xs text-gray-500 flex items-center gap-1"><Mail className="w-3 h-3"/> {item.leads.email}</div>}

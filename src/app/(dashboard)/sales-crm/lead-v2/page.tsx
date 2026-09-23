@@ -461,6 +461,8 @@ function LeadDetailsV2Content() {
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isMagicLinkModalOpen, setIsMagicLinkModalOpen] = useState(false);
   const [isReferModalOpen, setIsReferModalOpen] = useState(false);
+  const [partners, setPartners] = useState<any[]>([]);
+  const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const [referDivisionId, setReferDivisionId] = useState('');
   const [divisions, setDivisions] = useState<any[]>([]);
   const [isAddContactModalOpen, setIsAddContactModalOpen] = useState(false);
@@ -536,23 +538,41 @@ function LeadDetailsV2Content() {
 
   const [isMarketConfirmOpen, setIsMarketConfirmOpen] = useState(false);
   const handleReferLead = async () => {
-    if (!referDivisionId) {
-      toast.error('Please select a division to refer to.');
+    if (!selectedPartnerId) {
+      toast.error('Please select a referral partner.');
       return;
     }
 
-    try {
-      const { error } = await supabase
-        .from('leads')
-        .update({ division_id: referDivisionId })
-        .eq('id', lead.id);
+    const partner = partners.find(p => p.id === selectedPartnerId);
+    if (!partner) return;
 
-      if (error) throw error;
-      toast.success('Lead referred successfully!');
+    try {
+      // 1. Update lead source to match partner_id string (e.g. REF-XXXXXX)
+      const { error: leadError } = await supabase
+        .from('leads')
+        .update({ lead_source: partner.partner_id })
+        .eq('id', lead!.id);
+
+      if (leadError) throw leadError;
+
+      // 2. Insert into referral_tracking to link to partner dashboard
+      const { error: trackError } = await supabase
+        .from('referral_tracking')
+        .insert({
+          lead_id: lead!.id,
+          partner_id: partner.id,
+          kanban_status: 'NEW'
+        });
+
+      if (trackError && !trackError.message?.includes('duplicate key')) {
+        throw trackError;
+      }
+
+      toast.success('Lead successfully linked to referral partner!');
       setIsReferModalOpen(false);
-      router.push('/sales-crm');
+      await fetchLeadAndNotes();
     } catch (err: any) {
-      toast.error('Failed to refer lead: ' + err.message);
+      toast.error('Failed to link referral: ' + err.message);
     }
   };
 
@@ -797,7 +817,21 @@ function LeadDetailsV2Content() {
       const { data } = await supabase.from('divisions').select('*').order('name');
       if (data) setDivisions(data);
     };
+
+    const fetchPartners = async () => {
+      const { data } = await supabase
+        .from('partners')
+        .select(`
+          id,
+          partner_id,
+          users (name)
+        `)
+        .order('created_at', { ascending: false });
+      if (data) setPartners(data);
+    };
+
     fetchDivisions();
+    fetchPartners();
 
     if (id) {
       fetchLeadAndNotes();
@@ -4043,26 +4077,28 @@ function LeadDetailsV2Content() {
       {isReferModalOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
-            <h3 className="text-lg font-bold text-gray-900 mb-2">Refer Lead</h3>
-            <p className="text-sm text-gray-500 mb-4">Select the division to refer this lead to.</p>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Link to Referrer</h3>
+            <p className="text-sm text-gray-500 mb-4">Select the partner who referred this lead.</p>
             
             <div className="mb-6 text-left">
-              <label className="block text-sm font-medium text-gray-700 mb-2">Division</label>
+              <label className="block text-sm font-medium text-gray-700 mb-2">Referral Partner</label>
               <select
-                value={referDivisionId}
-                onChange={(e) => setReferDivisionId(e.target.value)}
-                className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500"
+                value={selectedPartnerId}
+                onChange={(e) => setSelectedPartnerId(e.target.value)}
+                className="w-full border-gray-300 rounded-lg shadow-sm focus:ring-blue-500 focus:border-blue-500 text-sm"
               >
-                <option value="">Select Division</option>
-                {divisions.map(d => (
-                  <option key={d.id} value={d.id}>{d.name}</option>
+                <option value="">Select Partner</option>
+                {partners.map(p => (
+                  <option key={p.id} value={p.id}>
+                    {(p.users as any)?.name || 'Unknown'} ({p.partner_id})
+                  </option>
                 ))}
               </select>
             </div>
 
             <div className="flex flex-col gap-3">
               <button onClick={handleReferLead} className="w-full px-4 py-3 bg-indigo-600 text-white rounded-lg text-sm font-bold hover:bg-indigo-700">
-                Confirm Referral
+                Link Partner
               </button>
               <button onClick={() => setIsReferModalOpen(false)} className="w-full px-4 py-2 mt-2 border border-gray-300 rounded-lg text-sm font-bold text-gray-700 hover:bg-gray-50">
                 Cancel

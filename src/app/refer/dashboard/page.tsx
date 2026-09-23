@@ -107,7 +107,7 @@ export default function ReferralDashboard() {
         .from('referral_tracking')
         .select(`
           kanban_status,
-          leads!lead_id (
+          leads (
             id,
             name,
             lead_type,
@@ -121,14 +121,19 @@ export default function ReferralDashboard() {
 
       if (trackingError) {
         console.error('Error fetching referrals:', trackingError);
+        toast.error('Failed to load referrals data.');
       } else if (trackingData) {
+        console.log('Tracking Data found:', trackingData.length);
         // Map tracking data to a flat lead structure for the UI
         const leadsData = trackingData
           .filter(t => t.leads)
-          .map(t => ({
-            ...t.leads,
-            referral_tracking: [{ kanban_status: t.kanban_status }]
-          }));
+          .map(t => {
+            const leadObj = t.leads as any;
+            return {
+              ...leadObj,
+              referral_tracking: [{ kanban_status: t.kanban_status }]
+            };
+          });
         
         setReferrals(leadsData);
         

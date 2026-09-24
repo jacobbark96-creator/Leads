@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import toast from 'react-hot-toast';
-import { Search, User, Phone, Mail, Building, Calendar, CheckCircle, ArrowRight, Link2Off, Trash2 } from 'lucide-react';
+import { Search, User, Phone, Mail, Building, Calendar, CheckCircle, ArrowRight, Link2Off, Trash2, ExternalLink, ChevronDown, ChevronUp } from 'lucide-react';
 
 export function ReferredLeadsTab() {
   const [leads, setLeads] = useState<any[]>([]);
@@ -36,7 +36,7 @@ export function ReferredLeadsTab() {
           created_at,
           dealt_with_at,
           leads (
-            id, name, phone, email, lead_type, status
+            id, name, phone, email, lead_type, status, csv_data
           ),
           partners (
             partner_id,
@@ -118,70 +118,117 @@ export function ReferredLeadsTab() {
   const newReferrals = filteredLeads.filter(l => l.kanban_status === 'NEW');
   const dealtWith = filteredLeads.filter(l => l.kanban_status === 'DEALT_WITH');
 
-  const LeadCard = ({ item }: { item: any }) => (
-    <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-3 relative group">
-      <div className="flex justify-between items-start mb-2 pr-6">
-        <h4 className="font-bold text-gray-900">{item.leads?.name}</h4>
-        <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
-          {item.leads?.lead_type}
-        </span>
-      </div>
-      
-      {/* Unlink Button */}
-      <button
-        onClick={() => handleUnlinkReferral(item.id, item.lead_id)}
-        className="absolute top-4 right-4 text-gray-400 hover:text-red-600 transition-colors"
-        title="Unlink Referral Partner"
-      >
-        <Link2Off className="w-4 h-4" />
-      </button>
-      <div className="space-y-1 mb-3">
-        {item.leads?.phone && <div className="text-xs text-gray-500 flex items-center gap-1"><Phone className="w-3 h-3"/> {item.leads.phone}</div>}
-        {item.leads?.email && <div className="text-xs text-gray-500 flex items-center gap-1"><Mail className="w-3 h-3"/> {item.leads.email}</div>}
-      </div>
-      
-      <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100 mb-3">
-        <div className="text-xs text-blue-800 font-medium mb-1">Partner Info</div>
-        <div className="text-xs text-gray-600 flex justify-between">
-          <span>{item.partners?.users?.name}</span>
-          <span className="font-mono">{item.partners?.partner_id}</span>
-        </div>
-      </div>
+  const LeadCard = ({ item }: { item: any }) => {
+    const [isExpanded, setIsExpanded] = useState(false);
+    const responses = Object.entries(item.questionnaire_responses || {});
+    const hasManyResponses = responses.length > 3;
+    const displayedResponses = isExpanded ? responses : responses.slice(0, 3);
 
-      {item.questionnaire_responses && Object.keys(item.questionnaire_responses).length > 0 && (
-        <div className="text-xs space-y-1 mb-3 border-t border-gray-100 pt-2">
-          <div className="font-semibold text-gray-700 mb-1">Responses:</div>
-          {Object.entries(item.questionnaire_responses).slice(0, 3).map(([q, a]: any, i) => (
-            <div key={i} className="flex justify-between gap-2">
-              <span className="text-gray-500 truncate" title={q}>{q}</span>
-              <span className="text-gray-900 font-medium whitespace-nowrap">{a}</span>
+    return (
+      <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm mb-3 relative group">
+        <div className="flex justify-between items-start mb-2 pr-12">
+          <h4 className="font-bold text-gray-900">{item.leads?.name}</h4>
+          <span className="text-[10px] font-bold uppercase tracking-wider bg-gray-100 text-gray-600 px-2 py-1 rounded-full">
+            {item.leads?.lead_type}
+          </span>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          <a 
+            href={`/sales-crm/lead-v2?id=${item.lead_id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-gray-400 hover:text-blue-600 transition-colors"
+            title="View Full Lead Details"
+          >
+            <ExternalLink className="w-4 h-4" />
+          </a>
+          <button
+            onClick={() => handleUnlinkReferral(item.id, item.lead_id)}
+            className="text-gray-400 hover:text-red-600 transition-colors"
+            title="Unlink Referral Partner"
+          >
+            <Link2Off className="w-4 h-4" />
+          </button>
+        </div>
+
+        <div className="space-y-1 mb-3">
+          {item.leads?.phone && <div className="text-xs text-gray-500 flex items-center gap-1"><Phone className="w-3 h-3"/> {item.leads.phone}</div>}
+          {item.leads?.email && <div className="text-xs text-gray-500 flex items-center gap-1"><Mail className="w-3 h-3"/> {item.leads.email}</div>}
+        </div>
+        
+        <div className="bg-blue-50/50 p-2 rounded-lg border border-blue-100 mb-3">
+          <div className="text-xs text-blue-800 font-medium mb-1 uppercase tracking-tighter text-[9px] font-black">Referral Partner</div>
+          <div className="text-xs text-gray-600 flex justify-between items-center">
+            <span className="font-bold text-blue-900">{item.partners?.users?.name}</span>
+            <span className="font-mono bg-blue-100/50 px-1.5 py-0.5 rounded text-[10px]">{item.partners?.partner_id}</span>
+          </div>
+        </div>
+
+        {responses.length > 0 && (
+          <div className="text-xs space-y-2 mb-3 border-t border-gray-100 pt-3">
+            <div className="font-black text-gray-800 flex justify-between items-center mb-1 text-[10px] uppercase tracking-wider">
+              <span>Questionnaire Responses:</span>
+              {hasManyResponses && (
+                <button 
+                  onClick={() => setIsExpanded(!isExpanded)}
+                  className="text-blue-600 hover:text-blue-700 font-black flex items-center gap-0.5 bg-blue-50 px-2 py-0.5 rounded-full transition-colors"
+                >
+                  {isExpanded ? 'LESS' : `VIEW ALL (${responses.length})`}
+                  {isExpanded ? <ChevronUp className="w-3 h-3" /> : <ChevronDown className="w-3 h-3" />}
+                </button>
+              )}
             </div>
-          ))}
-        </div>
-      )}
-
-      <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
-        <div className="text-xs text-gray-400">
-          {new Date(item.created_at).toLocaleDateString()}
-        </div>
-        {item.kanban_status === 'NEW' ? (
-          <button 
-            onClick={() => handleStatusChange(item.id, 'DEALT_WITH')}
-            className="text-xs bg-green-50 text-green-700 font-medium px-3 py-1.5 rounded-lg hover:bg-green-100 flex items-center gap-1"
-          >
-            Mark Dealt With <ArrowRight className="w-3 h-3" />
-          </button>
-        ) : (
-          <button 
-            onClick={() => handleStatusChange(item.id, 'NEW')}
-            className="text-xs text-gray-500 hover:text-gray-700 font-medium flex items-center gap-1"
-          >
-            Undo
-          </button>
+            <div className="space-y-2.5">
+              {displayedResponses.map(([q, a]: any, i) => (
+                <div key={i} className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+                  <div className="text-[9px] text-gray-400 font-black uppercase tracking-widest mb-1.5 leading-tight">{q}</div>
+                  <div className="text-gray-900 font-medium leading-relaxed break-words text-[11px]">{a}</div>
+                </div>
+              ))}
+            </div>
+          </div>
         )}
+
+        {/* Display additional CSV data if it exists and isn't in questionnaire */}
+        {item.leads?.csv_data && Object.keys(item.leads.csv_data).length > 0 && isExpanded && (
+          <div className="text-xs space-y-2 mb-3 border-t border-gray-100 pt-3">
+            <div className="font-black text-gray-800 mb-2 text-[10px] uppercase tracking-wider">Additional Data:</div>
+            <div className="grid grid-cols-1 gap-2">
+              {Object.entries(item.leads.csv_data).map(([key, value]: any, i) => (
+                <div key={i} className="bg-gray-50/50 p-2 rounded-lg border border-gray-100 flex flex-col gap-0.5">
+                  <div className="text-[8px] text-gray-400 font-black uppercase tracking-tighter">{key}</div>
+                  <div className="text-[10px] text-gray-700 break-words font-medium">{String(value)}</div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        <div className="flex items-center justify-between mt-4 pt-3 border-t border-gray-100">
+          <div className="text-[10px] text-gray-400 font-medium">
+            SUBMITTED: {new Date(item.created_at).toLocaleDateString()}
+          </div>
+          {item.kanban_status === 'NEW' ? (
+            <button 
+              onClick={() => handleStatusChange(item.id, 'DEALT_WITH')}
+              className="text-[10px] bg-green-600 text-white font-black px-3 py-1.5 rounded-xl hover:bg-green-700 flex items-center gap-1.5 transition-all shadow-sm active:scale-95 uppercase tracking-wider"
+            >
+              Mark Dealt With <ArrowRight className="w-3 h-3" />
+            </button>
+          ) : (
+            <button 
+              onClick={() => handleStatusChange(item.id, 'NEW')}
+              className="text-[10px] text-gray-400 hover:text-gray-600 font-black flex items-center gap-1 uppercase tracking-wider"
+            >
+              Undo
+            </button>
+          )}
+        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="h-[calc(100vh-140px)] flex flex-col">

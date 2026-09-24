@@ -48,9 +48,9 @@ export async function GET(req: Request) {
         const accessToken = await getAccessToken(user.google_refresh_token);
         
         // 2. Fetch recent messages (replies) from INBOX
-        // q=label:INBOX newer_than:1d (last 24 hours)
+        // q=label:INBOX newer_than:2d (last 48 hours to be safe)
         const listRes = await fetch(
-          `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=label:INBOX newer_than:1d&maxResults=20`,
+          `https://gmail.googleapis.com/gmail/v1/users/me/messages?q=label:INBOX newer_than:2d&maxResults=50`,
           { headers: { Authorization: `Bearer ${accessToken}` } }
         );
         
@@ -86,16 +86,18 @@ export async function GET(req: Request) {
           const subject = headers.find((h: any) => h.name === 'Subject')?.value || 'No Subject';
           
           // Extract email from "Name <email@example.com>"
-          const emailMatch = fromHeader.match(/<(.+)>|(\S+@\S+)/);
+          const emailMatch = fromHeader.match(/<(.+)>|([^<\s]+@[^>\s]+)/);
           const senderEmail = emailMatch ? (emailMatch[1] || emailMatch[2]) : fromHeader;
 
           if (!senderEmail) continue;
 
+          const cleanSenderEmail = senderEmail.toLowerCase().replace(/[<>]/g, '').trim();
+
           // 4. Match with Lead
           const { data: lead } = await supabaseAdmin
             .from('leads')
-            .select('id')
-            .eq('email', senderEmail.toLowerCase().trim())
+            .select('id, name, company')
+            .eq('email', cleanSenderEmail)
             .maybeSingle();
 
           if (lead) {
@@ -113,6 +115,20 @@ export async function GET(req: Request) {
 
             if (!insertError) {
                 totalSynced++;
+                
+                // 6. Create notification for the rep
+                await supabaseAdmin.from('notifications').insert({
+                  user_id: user.id,
+                  title: 'New Email Reply',
+                  content: `Received email from ${lead.name || lead.company || cleanSenderEmail}: ${subject}`,
+                  type: 'system',
+                  metadata: {
+                    type: 'gmail_reply',
+                    lead_id: lead.id,
+                    message_id: msg.id,
+                    sender: cleanSenderEmail
+                  }
+                });
             } else {
                 console.error('Error inserting synced note:', insertError);
             }

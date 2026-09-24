@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { MessageSquare, ArrowRight, Search, Users, User, Shield, ArrowLeft, MessageCircle } from 'lucide-react';
+import { MessageSquare, ArrowRight, Search, Users, User, Shield, ArrowLeft, MessageCircle, Mail } from 'lucide-react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { formatDistanceToNow } from 'date-fns';
@@ -10,6 +11,7 @@ import { SmsChatWindow } from '../../../../components/SmsChatWindow';
 
 export const UnifiedMessagesPanel = () => {
   const { profile } = useAuthStore();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState('ALL');
   const [conversations, setConversations] = useState<any[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
@@ -54,10 +56,24 @@ export const UnifiedMessagesPanel = () => {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      // 4. Fetch clients to map SMS names if needed
+      // 4. Fetch Email messages (from lead_notes with gmail_message_id)
+      const emailQuery = supabase
+        .from('lead_notes')
+        .select('*, leads(id, name, company, email)')
+        .eq('user_id', profile.id)
+        .not('gmail_message_id', 'is', null)
+        .order('created_at', { ascending: false })
+        .limit(50);
+
+      // 5. Fetch clients to map SMS names if needed
       const clientsQuery = supabase.from('clients').select('user_id, company_name');
 
-      const [internalRes, smsRes, clientsRes] = await Promise.all([internalQuery, smsQuery, clientsQuery]);
+      const [internalRes, smsRes, emailRes, clientsRes] = await Promise.all([
+        internalQuery, 
+        smsQuery, 
+        emailQuery,
+        clientsQuery
+      ]);
 
       const chatMap = new Map();
 
@@ -121,6 +137,27 @@ export const UnifiedMessagesPanel = () => {
         });
       }
 
+      // Process Email Messages
+      if (emailRes.data) {
+        emailRes.data.forEach(note => {
+          const chatId = note.leads?.email || note.lead_id;
+          const chatName = note.leads?.name || note.leads?.company || note.leads?.email || 'Email Lead';
+          
+          if (!chatMap.has(chatId)) {
+            chatMap.set(chatId, {
+              id: note.lead_id, // Link to lead ID for navigation
+              name: chatName,
+              type: 'EMAIL',
+              isGroup: false,
+              msg: note.content.split('\n')[0].replace('📥 Received Email: ', ''),
+              time: formatDistanceToNow(new Date(note.created_at), { addSuffix: true }).replace('about ', ''),
+              unread: 0, // Notes don't have is_read, but we could sync with notifications table if needed
+              created_at: note.created_at
+            });
+          }
+        });
+      }
+
       // Sort combined messages
       const sortedConversations = Array.from(chatMap.values()).sort((a, b) => 
         new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -145,10 +182,15 @@ export const UnifiedMessagesPanel = () => {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sms_messages' }, debouncedFetchConversations)
       .subscribe();
 
+    const channelEmails = supabase.channel('email-messages-panel')
+      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lead_notes' }, debouncedFetchConversations)
+      .subscribe();
+
     return () => {
       if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
       supabase.removeChannel(channelInternal);
       supabase.removeChannel(channelSms);
+      supabase.removeChannel(channelEmails);
     };
   }, [profile]);
 
@@ -181,7 +223,7 @@ export const UnifiedMessagesPanel = () => {
             </div>
 
             <div className="flex items-center gap-1.5 mb-2.5 bg-white/5 p-1 rounded-xl shrink-0">
-              {['ALL', 'DIRECT', 'GROUPS', 'TEAM', 'SMS'].map(tab => (
+              {['ALL', 'DIRECT', 'GROUPS', 'TEAM', 'SMS', 'EMAIL'].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -215,12 +257,24 @@ export const UnifiedMessagesPanel = () => {
                 filtered.map((chat) => (
                   <div 
                     key={chat.id} 
-                    onClick={() => setSelectedChat(chat)}
+                    onClick={() => {
+                      if (chat.type === 'EMAIL') {
+                        router.push(`/sales-crm/lead-v2?id=${chat.id}`);
+                      } else {
+                        setSelectedChat(chat);
+                      }
+                    }}
                     className="flex items-center gap-2.5 bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/10 p-2 rounded-2xl transition-all cursor-pointer group"
                   >
                     <div className="relative shrink-0">
-                      <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${chat.type === 'SMS' ? (chat.name.toLowerCase().startsWith('whatsapp:') ? 'from-[#00a884] to-[#00d4aa]' : 'from-green-600/80 to-green-800/80') : 'from-blue-600/80 to-blue-800/80'} flex items-center justify-center shadow-inner text-white font-bold text-[10px]`}>
-                        {chat.name.substring(0, 2).toUpperCase()}
+                      <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${
+                        chat.type === 'SMS' 
+                          ? (chat.name.toLowerCase().startsWith('whatsapp:') ? 'from-[#00a884] to-[#00d4aa]' : 'from-green-600/80 to-green-800/80') 
+                          : chat.type === 'EMAIL'
+                            ? 'from-amber-500/80 to-amber-700/80'
+                            : 'from-blue-600/80 to-blue-800/80'
+                      } flex items-center justify-center shadow-inner text-white font-bold text-[10px]`}>
+                        {chat.type === 'EMAIL' ? <Mail className="w-4 h-4 text-white" /> : chat.name.substring(0, 2).toUpperCase()}
                       </div>
                       {chat.unread > 0 && (
                         <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-blue-500 border-2 border-[#0a0f1c] flex items-center justify-center text-[8px] font-black text-white shadow-sm">

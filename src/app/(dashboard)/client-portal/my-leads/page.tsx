@@ -87,10 +87,11 @@ export default function MyLeadsKanban() {
         }
       }
 
+      const formattedIds = allClientIds.map(id => `"${id}"`).join(',');
       const { data: purchasesData, error: purchasesError } = await supabase
         .from('lead_purchases')
         .select('id, status, purchase_type, price_paid, sale_amount, purchased_at, has_concierge, concierge_status, concierge_dates, metadata, client_id, assigned_to_client_id, leads(*, buildings(*))')
-        .in('client_id', allClientIds)
+        .or(`client_id.in.(${formattedIds}),assigned_to_client_id.in.(${formattedIds})`)
         .neq('status', 'rejected')
         .order('purchased_at', { ascending: false });
 

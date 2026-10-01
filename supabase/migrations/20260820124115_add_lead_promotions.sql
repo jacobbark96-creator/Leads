@@ -1,0 +1,4 @@
+ALTER TABLE public.leads 
+ADD COLUMN IF NOT EXISTS promotion_type TEXT,
+ADD COLUMN IF NOT EXISTS promotion_price NUMERIC,
+ADD COLUMN IF NOT EXISTS promotion_end_date TIMESTAMPTZ;

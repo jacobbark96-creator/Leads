@@ -1,0 +1,547 @@
+const resendApiKey = process.env.RESEND_API_KEY;
+
+// Replace this with your actual verified sending domain (e.g., 'hello@openlead.co.uk' or 'onboarding@openlead.co.uk')
+export const defaultFromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@openlead.co.uk';
+
+const sendResendEmail = async (payload: any) => {
+  if (!resendApiKey || resendApiKey === 'your_resend_api_key') {
+    console.error('❌ Resend API key not configured or still using placeholder. Please update RESEND_API_KEY in your .env file.');
+    return { success: false, error: 'Resend API key missing or invalid' };
+  }
+  const response = await fetch('https://api.resend.com/emails', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${resendApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(payload),
+  });
+  const data = await response.json();
+  if (!response.ok) {
+    return { success: false, error: data };
+  }
+  return { success: true, data };
+};
+
+/**
+ * Sends a trial login email with credentials.
+ */
+export const sendTrialLoginEmail = async (email: string, username: string, password: string) => {
+  try {
+    const payload = {
+      from: `OpenLead CRM <${defaultFromEmail}>`,
+      to: email,
+      subject: 'Your OpenLead CRM Trial Logins',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <h2 style="color: #10b981;">Welcome to your OpenLead Trial!</h2>
+          <p>Here are your login credentials for the OpenLead CRM.</p>
+          <div style="background-color: #f3f4f6; padding: 15px; border-radius: 8px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0;"><strong>Login URL:</strong> <a href="https://openlead.co.uk/login">https://openlead.co.uk/login</a></p>
+            <p style="margin: 0 0 10px 0;"><strong>Username:</strong> ${username}</p>
+            <p style="margin: 0;"><strong>Password:</strong> ${password}</p>
+          </div>
+          <p>We recommend changing your password after your first login.</p>
+          <p>Best regards,<br>The OpenLead Team</p>
+        </div>
+      `
+    };
+    return await sendResendEmail(payload);
+  } catch (error) {
+    console.error('Error sending trial login email:', error);
+    return { success: false, error };
+  }
+};
+export const sendWelcomeEmail = async (email: string, name: string) => {
+  try {
+    return await sendResendEmail({
+      from: `Openlead <${defaultFromEmail}>`,
+      to: [email],
+      subject: 'Welcome to Openlead - You are fully onboarded!',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb;">Welcome to Openlead, ${name}! 🎉</h2>
+          <p style="color: #4b5563; line-height: 1.6;">
+            We are thrilled to inform you that your account has been fully reviewed and successfully onboarded. 
+            You now have full access to our exclusive, high-intent marketplace.
+          </p>
+          <p style="color: #4b5563; line-height: 1.6;">
+            <strong>Next Steps:</strong>
+          </p>
+          <ul style="color: #4b5563; line-height: 1.6;">
+            <li>Log in to your Client Dashboard</li>
+            <li>Review the exclusive leads available in your area</li>
+            <li>Contact your Personal Openlead Coach if you have any questions or need to set up child accounts for your team.</li>
+          </ul>
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Go to Dashboard
+            </a>
+          </div>
+          <hr style="border: none; border-top: 1px solid #eaeaea; margin: 30px 0;" />
+          <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+            © ${new Date().getFullYear()} Openlead. All rights reserved.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send welcome email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Sends an email when an advisor is assigned or changed
+ */
+export const sendAdvisorEmail = async (
+  email: string, 
+  clientName: string, 
+  advisor: { name: string, phone?: string, email?: string },
+  isNewAssignment: boolean
+) => {
+  const subject = isNewAssignment 
+    ? 'Welcome to Openlead - Meet your Personal Account Manager!' 
+    : 'Update: Your New Personal Account Manager at Openlead';
+
+  const introText = isNewAssignment
+    ? `We are thrilled to inform you that your account has been fully reviewed and successfully onboarded. You now have full access to our exclusive, high-intent marketplace.`
+    : `We are writing to let you know that your dedicated account manager at Openlead has been updated.`;
+
+  const managerIntro = isNewAssignment
+    ? `To help you get the most out of our platform, we have assigned you a dedicated Personal Account Manager.`
+    : `Your new Personal Account Manager is here to ensure you continue to get the absolute best out of our platform and leads.`;
+
+  try {
+    return await sendResendEmail({
+      from: `Openlead <${defaultFromEmail}>`,
+      to: [email],
+      subject: subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb;">${isNewAssignment ? `Welcome to Openlead, ${clientName}! 🎉` : `Account Update for ${clientName}`}</h2>
+          
+          <p style="color: #4b5563; line-height: 1.6;">
+            ${introText}
+          </p>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            ${managerIntro}
+          </p>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #1e293b;">Your Account Manager Details</h3>
+            <p style="margin: 5px 0; color: #334155;"><strong>Name:</strong> ${advisor.name}</p>
+            ${advisor.phone ? `<p style="margin: 5px 0; color: #334155;"><strong>Phone/WhatsApp:</strong> ${advisor.phone}</p>` : ''}
+            ${advisor.email ? `<p style="margin: 5px 0; color: #334155;"><strong>Email:</strong> ${advisor.email}</p>` : ''}
+            
+            <p style="margin-top: 15px; margin-bottom: 0; color: #475569; font-size: 14px;">
+              ${advisor.name} will be your primary point of contact for any questions, account adjustments, or lead feedback. 
+              ${advisor.phone ? `Feel free to reach out via WhatsApp at any time.` : `Feel free to reach out via email.`}
+            </p>
+          </div>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            <strong>Next Steps:</strong>
+          </p>
+          <ul style="color: #4b5563; line-height: 1.6;">
+            <li>Log in to your Client Dashboard</li>
+            <li>Review the exclusive leads available in your area</li>
+            <li>Reach out to ${advisor.name} if you need help adjusting your service areas or categories.</li>
+          </ul>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Go to Dashboard
+            </a>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #eaeaea; margin: 30px 0;" />
+          <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+            © ${new Date().getFullYear()} Openlead. All rights reserved.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send advisor email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Sends an email to the ADVISOR when a new client is assigned to them
+ */
+export const sendAdvisorNotificationEmail = async (
+  advisorEmail: string,
+  advisorName: string,
+  clientName: string,
+  clientEmail: string
+) => {
+  if (!advisorEmail) return { success: false, error: 'Advisor has no email' };
+
+  try {
+    return await sendResendEmail({
+      from: `Openlead Notifications <${defaultFromEmail}>`,
+      to: [advisorEmail],
+      subject: `New Client Assigned: ${clientName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb;">New Client Assignment 🎉</h2>
+          
+          <p style="color: #4b5563; line-height: 1.6;">
+            Hi ${advisorName},
+          </p>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            A new client has just been assigned to you on the Openlead platform. Please review their details and reach out to welcome them if necessary.
+          </p>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #1e293b;">Client Details</h3>
+            <p style="margin: 5px 0; color: #334155;"><strong>Client Name:</strong> ${clientName}</p>
+            <p style="margin: 5px 0; color: #334155;"><strong>Email:</strong> ${clientEmail}</p>
+          </div>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/intranet" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Log in to CRM
+            </a>
+          </div>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send advisor notification email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Sends an invitation email to a new child account.
+ */
+export const sendTeamInvitationEmail = async (
+  email: string, 
+  name: string, 
+  parentName: string,
+  password?: string
+) => {
+  try {
+    return await sendResendEmail({
+      from: `Openlead <${defaultFromEmail}>`,
+      to: [email],
+      subject: `You've been invited to Openlead by ${parentName}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb;">Hello ${name}! 👋</h2>
+          <p style="color: #4b5563; line-height: 1.6;">
+            <strong>${parentName}</strong> has invited you to join their team on <strong>Openlead</strong>.
+          </p>
+          
+          <p style="color: #4b5563; line-height: 1.6;">
+            Openlead is a premium marketplace for high-intent leads. As a team member, you'll be able to:
+          </p>
+          <ul style="color: #4b5563; line-height: 1.6;">
+            <li>Browse the marketplace for exclusive leads</li>
+            <li>Request lead purchases for your manager's approval</li>
+            <li>Manage your assigned leads in your personal dashboard</li>
+          </ul>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <p style="margin: 0; color: #334155;"><strong>Your Account:</strong> ${email}</p>
+            ${password ? `<p style="margin: 5px 0 0; color: #334155;"><strong>Temporary Password:</strong> <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${password}</code></p>` : ''}
+            <p style="margin: 10px 0 0; color: #64748b; font-size: 12px;">We recommend changing your password after your first login.</p>
+          </div>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://openlead.co.uk'}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block; box-shadow: 0 4px 6px -1px rgba(37, 99, 235, 0.2);">
+              Log in to your Dashboard
+            </a>
+          </div>
+
+          <p style="margin-top: 30px; color: #94a3b8; font-size: 12px; text-align: center;">
+            If you have any questions, feel free to reach out to our support team.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send team invitation email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Sends an email to a child account when their lead purchase request is rejected.
+ */
+export const sendLeadRejectionEmail = async (
+  email: string,
+  name: string,
+  leadLocation: string,
+  reason: string
+) => {
+  try {
+    return await sendResendEmail({
+      from: `Openlead <${defaultFromEmail}>`,
+      to: [email],
+      subject: `Lead Purchase Request Update`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #ef4444;">Purchase Request Update 🛑</h2>
+          <p style="color: #4b5563; line-height: 1.6;">
+            Hello ${name},
+          </p>
+          <p style="color: #4b5563; line-height: 1.6;">
+            Your request to purchase the lead in <strong>${leadLocation}</strong> has been reviewed by your manager and has been <strong>rejected</strong>.
+          </p>
+          
+          <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <p style="margin: 0; color: #991b1b; font-weight: bold;">Reason for Rejection:</p>
+            <p style="margin: 10px 0 0; color: #b91c1c; line-height: 1.6;">${reason}</p>
+          </div>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            This lead has been returned to the marketplace and is no longer in your pending requests.
+          </p>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://openlead.co.uk'}/marketplace" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+              Back to Marketplace
+            </a>
+          </div>
+
+          <p style="margin-top: 30px; color: #94a3b8; font-size: 12px; text-align: center;">
+            © ${new Date().getFullYear()} Openlead. All rights reserved.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send lead rejection email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Send Receipt Email (To be called from Stripe Webhook later)
+ */
+export const sendReceiptEmail = async (email: string, leadId: string, amount: number) => {
+  try {
+    await sendResendEmail({
+      from: `Openlead Billing <${defaultFromEmail}>`,
+      to: [email],
+      subject: `Your Receipt from Openlead - Lead #${leadId.split('-')[0]}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb;">Thank you for your purchase!</h2>
+          <p style="color: #4b5563; line-height: 1.6;">You have successfully purchased a lead from the Openlead marketplace.</p>
+          
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #1e293b; font-size: 16px;">Payment Breakdown</h3>
+            <table style="width: 100%; font-size: 14px; color: #4b5563;">
+              <tr>
+                <td style="padding: 5px 0;">Subtotal</td>
+                <td style="padding: 5px 0; text-align: right;">£${amount.toFixed(2)}</td>
+              </tr>
+              <tr>
+                <td style="padding: 5px 0;">VAT (0%)*</td>
+                <td style="padding: 5px 0; text-align: right;">£0.00</td>
+              </tr>
+              <tr style="font-weight: bold; color: #1e293b; font-size: 16px;">
+                <td style="padding: 10px 0; border-top: 1px solid #e2e8f0;">Total Paid</td>
+                <td style="padding: 10px 0; border-top: 1px solid #e2e8f0; text-align: right;">£${amount.toFixed(2)}</td>
+              </tr>
+            </table>
+            <p style="font-size: 10px; color: #94a3b8; margin-top: 15px; font-style: italic;">
+              * Not VAT registered. No VAT has been charged.
+            </p>
+          </div>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            You can view the full unredacted details of this lead in your Client Dashboard immediately.
+          </p>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL}/client-portal" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Go to Dashboard
+            </a>
+          </div>
+
+          <hr style="border: none; border-top: 1px solid #eaeaea; margin: 30px 0;" />
+          <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+            © ${new Date().getFullYear()} Openlead. All rights reserved.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err) {
+    console.error('Failed to send receipt email:', err);
+  }
+};
+
+/**
+ * Sends an email to Jake when a client requests SEO information or a strategy call.
+ */
+export const sendSEOInformationRequestEmail = async (
+  clientName: string,
+  clientEmail: string,
+  requestType: 'audit' | 'strategy',
+  roiData?: {
+    projectedMonthlyRevenue: string;
+    targetLeads: number;
+    avgJobValue: string;
+  }
+) => {
+  const subject = requestType === 'audit' 
+    ? `New SEO Audit Request: ${clientName}` 
+    : `New SEO Strategy Request: ${clientName}`;
+
+  const title = requestType === 'audit'
+    ? 'Free SEO Audit Requested'
+    : 'SEO Strategy Consultation Requested';
+
+  const intro = requestType === 'audit'
+    ? `A client has requested a free private SEO audit through the Openlead Dashboard.`
+    : `A client has used the ROI calculator and requested a custom SEO strategy consultation.`;
+
+  let roiHtml = '';
+  if (roiData) {
+    roiHtml = `
+      <div style="background-color: #f0f9ff; border: 1px solid #bae6fd; border-radius: 8px; padding: 20px; margin: 20px 0;">
+        <h3 style="margin-top: 0; color: #0369a1; font-size: 16px;">Calculated ROI Projection</h3>
+        <p style="margin: 5px 0; color: #0c4a6e;"><strong>Projected Monthly Revenue:</strong> ${roiData.projectedMonthlyRevenue}</p>
+        <p style="margin: 5px 0; color: #0c4a6e;"><strong>Target Leads:</strong> ${roiData.targetLeads}</p>
+        <p style="margin: 5px 0; color: #0c4a6e;"><strong>Avg Job Value:</strong> ${roiData.avgJobValue}</p>
+      </div>
+    `;
+  }
+
+  try {
+    return await sendResendEmail({
+      from: `Openlead SEO <${defaultFromEmail}>`,
+      to: ['jake.bedwell@kairostudio.co.uk'],
+      subject: subject,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb; margin-top: 0;">${title} 🚀</h2>
+          
+          <p style="color: #4b5563; line-height: 1.6;">
+            Hi Jake,
+          </p>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            ${intro}
+          </p>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #1e293b; font-size: 16px;">Client Contact Details</h3>
+            <p style="margin: 5px 0; color: #334155;"><strong>Name:</strong> ${clientName}</p>
+            <p style="margin: 5px 0; color: #334155;"><strong>Email:</strong> ${clientEmail}</p>
+          </div>
+
+          ${roiHtml}
+
+          <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; border-top: 1px solid #eaeaea; pt-20px;">
+            This request was generated automatically from the Openlead Client Portal.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send SEO request email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+export const sendCustomHtmlEmail = async (recipients: string[], subject: string, html: string) => {
+  try {
+    return await sendResendEmail({
+      from: `Openlead <${defaultFromEmail}>`,
+      to: [defaultFromEmail], // To the sender so recipients don't see each other
+      bcc: recipients,        // BCC all actual recipients
+      subject,
+      html,
+    });
+  } catch (err: any) {
+    console.error('Failed to send custom html email:', err);
+    return { success: false, error: err.message };
+  }
+};
+
+/**
+ * Add contact to Audience for Marketing Emails (e.g. weekly newsletters)
+ * Note: Requires you to create an Audience in Resend and grab the Audience ID
+ */
+export const addContactToMarketingAudience = async (email: string, firstName: string, lastName?: string) => {
+  const audienceId = process.env.RESEND_AUDIENCE_ID;
+  if (!audienceId || !resendApiKey) return;
+
+  try {
+    await fetch(`https://api.resend.com/audiences/${audienceId}/contacts`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email,
+        first_name: firstName,
+        last_name: lastName,
+        unsubscribed: false,
+      }),
+    });
+  } catch (err) {
+    console.error('Failed to add contact to marketing audience:', err);
+  }
+};
+
+/**
+ * Sends an email to support when a user purchases a lead with the concierge service.
+ */
+export const sendConciergeRequestEmail = async ({
+  clientEmail,
+  leadId,
+  leadLocation,
+  dates,
+}: {
+  clientEmail: string;
+  leadId: string;
+  leadLocation: string;
+  dates: string;
+}) => {
+  try {
+    return await sendResendEmail({
+      from: `Openlead Concierge <${defaultFromEmail}>`,
+      to: ['support@openlead.co.uk'],
+      subject: `New Concierge Request - Lead #${leadId.split('-')[0]}`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb; margin-top: 0;">New Concierge Request 🗓️</h2>
+          
+          <p style="color: #4b5563; line-height: 1.6;">
+            A client has purchased a lead with the Concierge Service add-on.
+          </p>
+
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #1e293b; font-size: 16px;">Request Details</h3>
+            <p style="margin: 5px 0; color: #334155;"><strong>Client Email:</strong> ${clientEmail}</p>
+            <p style="margin: 5px 0; color: #334155;"><strong>Lead ID:</strong> ${leadId}</p>
+            <p style="margin: 5px 0; color: #334155;"><strong>Location:</strong> ${leadLocation}</p>
+          </div>
+
+          <div style="background-color: #fffbeb; border: 1px solid #bae6fd; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <h3 style="margin-top: 0; color: #0369a1; font-size: 16px;">Requested Dates/Times</h3>
+            <p style="margin: 5px 0; color: #0c4a6e; white-space: pre-wrap;">${dates}</p>
+          </div>
+
+          <p style="color: #9ca3af; font-size: 12px; margin-top: 30px; border-top: 1px solid #eaeaea; pt-20px;">
+            This request was generated automatically from the Openlead Client Portal.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send concierge request email:', err);
+    return { success: false, error: err.message };
+  }
+};

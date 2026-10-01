@@ -1,0 +1,292 @@
+"use client";
+import React, { useEffect, useState } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { useAuthStore } from '../store/authStore';
+import { UserRole } from '../types';
+import { supabase } from '../lib/supabase';
+
+interface ProtectedRouteProps {
+  children: React.ReactNode;
+  allowedRoles?: UserRole[];
+}
+
+export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles }) => {
+  const { user, profile, loading, initialized } = useAuthStore();
+  const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
+  const [profileCheckLoading, setProfileCheckLoading] = useState(() => {
+    // If we already know they are not a client, skip the loading state
+    if (initialized && profile && profile.role !== 'client') return false;
+    return true;
+  });
+  const [isProfileComplete, setIsProfileComplete] = useState(true);
+
+  const [showRefreshButton, setShowRefreshButton] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+    const timer = setTimeout(() => {
+      setShowRefreshButton(true);
+    }, 5000); // Show refresh button after 5 seconds
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    const checkClientProfile = async () => {
+      // If we don't have a profile yet, we can't check completion
+      if (!profile) {
+        setProfileCheckLoading(false);
+        return;
+      }
+
+      if (profile.role !== 'client') {
+        setIsProfileComplete(true);
+        setProfileCheckLoading(false);
+        return;
+      }
+
+      let timeoutFired = false;
+      const timeoutId = setTimeout(() => {
+        timeoutFired = true;
+        console.warn("checkClientProfile timed out");
+        setIsProfileComplete(true);
+        setProfileCheckLoading(false);
+      }, 5000);
+
+      try {
+        const { data, error } = await supabase
+          .from('clients')
+          .select('is_profile_complete')
+          .eq('user_id', profile.id)
+          .single();
+          
+        if (timeoutFired) return;
+        clearTimeout(timeoutId);
+        
+        if (error) {
+          if (error.code === 'PGRST116') {
+            setIsProfileComplete(false);
+            setProfileCheckLoading(false);
+            return;
+          }
+          throw error;
+        }
+
+        if (data && !data.is_profile_complete) {
+          setIsProfileComplete(false);
+        } else {
+          setIsProfileComplete(true);
+        }
+      } catch (error) {
+        if (timeoutFired) return;
+        clearTimeout(timeoutId);
+        console.error("Error checking client profile completion:", error);
+        setIsProfileComplete(true);
+      }
+      
+      if (!timeoutFired) {
+        setProfileCheckLoading(false);
+      }
+    };
+
+    if (mounted && initialized && !loading) {
+      checkClientProfile();
+    }
+  }, [mounted, initialized, loading, profile?.id]);
+
+  useEffect(() => {
+    let fallbackTimeout: NodeJS.Timeout;
+    if (profileCheckLoading) {
+      fallbackTimeout = setTimeout(() => {
+        console.warn('ProtectedRoute profile check fallback timeout hit');
+        setProfileCheckLoading(false);
+      }, 8000);
+    }
+    return () => clearTimeout(fallbackTimeout);
+  }, [profileCheckLoading]);
+
+  const router = useRouter();
+
+  useEffect(() => {
+    if (mounted && initialized && !loading && !profileCheckLoading) {
+      if (!user || !profile) {
+        router.replace('/login');
+      } else if (profile.role === 'client' && profile.is_approved === false) {
+        router.replace('/pending-approval');
+      } else if (profile.role === 'client' && !isProfileComplete && pathname !== '/my-openlead') {
+        router.replace('/my-openlead');
+      } else if (['rep', 'growth_manager', 'Residential Rep', 'Residential Sales', 'Commercial Sales'].includes(profile.role)) {
+        const perms = profile.permissions || [];
+        const path = pathname || '';
+        let hasAccess = false;
+        
+        // Exact matching for specific tabs
+        if (path === '/staff' && (perms.includes('staff') || profile.role.includes('Sales') || profile.role === 'Residential Rep' || profile.role === 'rep')) hasAccess = true;
+        
+        // Map
+        if (path === '/contractor-crm/map' && perms.includes('map')) hasAccess = true;
+
+        // Sales CRM
+        if (profile.role === 'growth_manager') {
+          if (path === '/sales-crm/my-clients' || path === '/sales-crm/my-sales' || path.startsWith('/sales-crm/pipeline')) {
+            hasAccess = true;
+          } else if (path.startsWith('/sales-crm/lead')) {
+            hasAccess = true; // viewing a lead
+          } else if (path.startsWith('/sales-crm')) {
+            // Redirect growth manager to pipeline if they try to access other sales-crm paths
+            router.replace('/sales-crm/pipeline');
+            return;
+          }
+        } else if (profile.role.includes('Sales')) {
+          // Residential/Commercial Sales only see Pipeline and Calendar
+          if (path.startsWith('/sales-crm/pipeline') || path === '/sales-crm/calendar') {
+            hasAccess = true;
+          } else if (path.startsWith('/sales-crm/lead')) {
+            hasAccess = true; // viewing a lead
+          } else if (path.startsWith('/sales-crm')) {
+            router.replace('/sales-crm/pipeline');
+            return;
+          }
+        } else {
+          // Standard Rep or Residential Rep
+          if (path === '/sales-crm') {
+            if (perms.includes('sales-crm/fresh') || profile.role === 'Residential Rep') {
+              hasAccess = true;
+            } else if (perms.includes('sales-crm')) {
+              if (perms.includes('sales-crm/pipeline')) router.replace('/sales-crm/pipeline');
+              else if (perms.includes('sales-crm/qualified')) router.replace('/sales-crm/qualified');
+              else if (perms.includes('sales-crm/import')) router.replace('/sales-crm/import');
+              return;
+            }
+          }
+          if (path.startsWith('/sales-crm/pipeline') && (perms.includes('sales-crm/pipeline') || profile.role === 'Residential Rep')) hasAccess = true;
+          if (path.startsWith('/sales-crm/calendar') && (perms.includes('sales-crm/calendar') || profile.role === 'Residential Rep')) hasAccess = true;
+          if (path.startsWith('/sales-crm/qualified') && (perms.includes('sales-crm/qualified') || profile.role === 'Residential Rep')) hasAccess = true;
+          if (path.startsWith('/sales-crm/import') && (perms.includes('sales-crm/import') || profile.role === 'Residential Rep')) hasAccess = true;
+          if (path.startsWith('/sales-crm/lead') && (perms.includes('sales-crm') || profile.role === 'Residential Rep')) hasAccess = true; // viewing a lead
+        }
+
+        // Contractor CRM (Residential Sales/Commercial Sales don't have access)
+        if (!profile.role.includes('Sales')) {
+          if (path === '/contractor-crm') {
+            if (perms.includes('contractor-crm/potential')) {
+              hasAccess = true;
+            } else if (perms.includes('contractor-crm')) {
+              if (perms.includes('contractor-crm/onboarded')) router.replace('/contractor-crm/onboarded');
+              else if (perms.includes('contractor-crm/marketplace')) router.replace('/contractor-crm/marketplace');
+              else if (perms.includes('contractor-crm/import')) router.replace('/contractor-crm/import');
+              return;
+            }
+          }
+          if (path.startsWith('/contractor-crm/onboarded') && perms.includes('contractor-crm/onboarded')) hasAccess = true;
+          if (path.startsWith('/contractor-crm/marketplace') && perms.includes('contractor-crm/marketplace')) hasAccess = true;
+          if (path.startsWith('/contractor-crm/import') && perms.includes('contractor-crm/import')) hasAccess = true;
+          if (path.startsWith('/contractor-crm/contractor') && perms.includes('contractor-crm')) hasAccess = true; // viewing a contractor
+        }
+
+        // Admin CRM (Residential Sales/Commercial Sales don't have access)
+        if (!profile.role.includes('Sales')) {
+          if (path === '/admin-crm') {
+            if (perms.includes('admin-crm/users')) {
+              hasAccess = true;
+            } else if (perms.includes('admin-crm')) {
+              if (perms.includes('admin-crm/categories')) router.replace('/admin-crm/categories');
+              else if (perms.includes('admin-crm/discounts')) router.replace('/admin-crm/discounts');
+              else if (perms.includes('admin-crm/tracker')) router.replace('/admin-crm/tracker');
+              return;
+            }
+          }
+          if (path.startsWith('/admin-crm/categories') && perms.includes('admin-crm/categories')) hasAccess = true;
+          if (path.startsWith('/admin-crm/discounts') && perms.includes('admin-crm/discounts')) hasAccess = true;
+          if (path.startsWith('/admin-crm/tracker') && perms.includes('admin-crm/tracker')) hasAccess = true;
+        }
+
+        // Intranet
+        if (path === '/intranet') {
+          if (perms.includes('intranet/pricing') || perms.includes('intranet/leaderboard') || profile.role.includes('Sales') || profile.role === 'Residential Rep') {
+            hasAccess = true;
+          } else if (perms.includes('intranet')) {
+            if (perms.includes('intranet/commission')) router.replace('/intranet/commission');
+            else if (perms.includes('intranet/grants')) router.replace('/intranet/grants');
+            else if (perms.includes('intranet/tracker')) router.replace('/intranet/tracker');
+            else if (perms.includes('intranet/resources')) router.replace('/intranet/resources');
+            else if (perms.includes('intranet/careers')) router.replace('/intranet/careers');
+            return;
+          }
+        }
+        if (path.startsWith('/intranet/leaderboard') && (perms.includes('intranet/leaderboard') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/commission') && (perms.includes('intranet/commission') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/grants') && (perms.includes('intranet/grants') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/tracker') && (perms.includes('intranet/tracker') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/resources') && (perms.includes('intranet/resources') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/careers') && (perms.includes('intranet/careers') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        
+        if (!hasAccess && path !== '/staff' && path !== '/') {
+          if (profile.role === 'referral_partner') {
+            router.replace('/refer/dashboard');
+          } else {
+            router.replace('/staff');
+          }
+        }
+      } else if (allowedRoles && !allowedRoles.includes(profile.role)) {
+        // Redirect based on user's role if they try to access an unauthorized page
+        if (profile.role === 'client') {
+          router.replace('/my-openlead');
+        } else if (profile.role === 'referral_partner') {
+          router.replace('/refer/dashboard');
+        } else {
+          router.replace('/staff');
+        }
+      }
+    }
+  }, [mounted, initialized, loading, profileCheckLoading, user, profile, allowedRoles, pathname, router]);
+
+  // Show loading spinner only during initial initialization
+  if (!mounted || (!initialized && loading) || (initialized && loading && !profile) || profileCheckLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="flex flex-col items-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
+          <p className="text-gray-500 text-sm animate-pulse">Loading your dashboard...</p>
+          {showRefreshButton && (
+            <button 
+              onClick={() => {
+                if (window.confirm('Still loading? Would you like to reset your session and refresh?')) {
+                  localStorage.removeItem('auth-storage');
+                  window.location.reload();
+                } else {
+                  window.location.reload();
+                }
+              }}
+              className="mt-4 text-xs text-blue-500 underline"
+            >
+              Taking too long? Click to refresh
+            </button>
+          )}
+        </div>
+      </div>
+    );
+  }
+
+  // If we're initialized but have no user/profile, we're about to redirect
+  if (!user || !profile) {
+    return null; // Don't show spinner here to prevent flash before redirect
+  }
+
+  if (profile.role === 'client' && !isProfileComplete && pathname !== '/my-openlead') {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-500">Redirecting to profile setup...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (allowedRoles && !allowedRoles.includes(profile.role)) {
+    return null;
+  }
+
+  return <>{children}</>;
+};

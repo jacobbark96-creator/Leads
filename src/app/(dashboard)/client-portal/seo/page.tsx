@@ -1,0 +1,695 @@
+"use client";
+
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Search, Globe, TrendingUp, BarChart3, ArrowUpRight, Zap, Target, 
+  MousePointer2, Check, Star, ShieldCheck, FileText, MapPin, 
+  Link2, Sparkles, Award, Crown, Activity, Info, Facebook, Instagram, Youtube, Linkedin, Twitter
+} from 'lucide-react';
+import { motion, AnimatePresence, useInView } from 'framer-motion';
+import { useAuthStore } from '../../../../store/authStore';
+import { supabase } from '../../../../lib/supabase';
+import { SEOROICalculatorModal } from '../../../../components/SEOROICalculatorModal';
+
+export default function SEOPage() {
+  const { profile } = useAuthStore();
+  const [isSEOCustomer, setIsSEOCustomer] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [weeklyLeads, setWeeklyLeads] = useState(0);
+  const [monthlyLeads, setMonthlyLeads] = useState(0);
+  const [impressions, setImpressions] = useState(0);
+  const [isCalculatorOpen, setIsCalculatorOpen] = useState(false);
+
+  useEffect(() => {
+    if (profile?.id) {
+      import('@/lib/activityTracker').then(({ trackClientActivity }) => {
+        trackClientActivity(profile.id, 'page_view', { page: 'SEO Intelligence' });
+      });
+    }
+  }, [profile?.id]);
+
+  useEffect(() => {
+    const checkSEOStatus = async () => {
+      if (!profile?.id) return;
+      const { data } = await supabase.from('clients').select('is_seo_customer').eq('user_id', profile.id).single();
+      setIsSEOCustomer(data?.is_seo_customer || false);
+      setLoading(false);
+    };
+    // Deterministic random logic based on time periods
+    const EPOCH = new Date('2024-01-01T00:00:00Z').getTime();
+    const MS_PER_WEEK = 7 * 24 * 60 * 60 * 1000;
+    const now = new Date();
+    
+    const weeksSinceEpoch = Math.floor((now.getTime() - EPOCH) / MS_PER_WEEK);
+    const currentMonthKey = now.getFullYear() * 12 + now.getMonth();
+    
+    const seededRandom = (seed: number) => {
+      const x = Math.sin(seed) * 10000;
+      return x - Math.floor(x);
+    };
+
+    // Weekly leads change only when the week changes
+    setWeeklyLeads(Math.floor(seededRandom(weeksSinceEpoch * 1337) * (300 - 100 + 1)) + 100);
+    
+    // Monthly leads change only when the month changes
+    setMonthlyLeads(Math.floor(seededRandom(currentMonthKey * 9973) * (1100 - 900 + 1)) + 900);
+    
+    // Impressions start at 150k and grow by ~3,245 per week plus some variance
+    setImpressions(150000 + (weeksSinceEpoch * 3245) + Math.floor(seededRandom(weeksSinceEpoch * 42) * 2000));
+    checkSEOStatus();
+  }, [profile?.id]);
+
+  if (loading) {
+      return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="relative w-12 h-12">
+          <div className="absolute inset-0 rounded-full border-[3px] border-gray-100" />
+          <div className="absolute inset-0 rounded-full border-[3px] border-gray-900 border-t-transparent animate-spin" />
+        </div>
+      </div>
+    );
+  }
+
+  if (isSEOCustomer) {
+    return <SEODashboard />;
+  }
+
+  return (
+    <>
+      <SEOMarketing weeklyLeads={weeklyLeads} monthlyLeads={monthlyLeads} impressions={impressions} onOpenCalculator={() => setIsCalculatorOpen(true)} />
+      <SEOROICalculatorModal isOpen={isCalculatorOpen} onClose={() => setIsCalculatorOpen(false)} />
+    </>
+  );
+}
+
+// ----------------------------------------------------------------------
+// SEO DASHBOARD (For Active Customers)
+// ----------------------------------------------------------------------
+function SEODashboard() {
+  const perfStats = [
+    { label: 'Organic Traffic', value: '1,284', change: '+12.5%', icon: Globe, color: 'text-blue-500' },
+    { label: 'Avg. Position', value: '4.2', change: '-0.3', icon: Target, color: 'text-purple-500' },
+    { label: 'Keywords', value: '156', change: '+8', icon: Search, color: 'text-amber-500' },
+    { label: 'CTR', value: '3.8%', change: '+0.4%', icon: MousePointer2, color: 'text-emerald-500' },
+  ];
+
+  return (
+    <div className="max-w-7xl mx-auto space-y-6 pb-12 px-2 sm:px-4 overflow-x-hidden">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-gray-100">
+        <div className="space-y-1">
+          <div className="inline-flex items-center gap-1.5 px-2 py-0.5 bg-gray-100 text-gray-800 rounded-full text-[9px] font-bold uppercase tracking-[0.2em]">
+            <Activity className="w-3 h-3" />
+            Active Concierge Plan
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <button className="px-4 py-2 bg-white border border-gray-200 rounded-lg text-[10px] font-bold text-gray-700 hover:bg-gray-50 transition-all shadow-sm">
+            Download Report
+          </button>
+          <button className="px-4 py-2 bg-gray-900 text-white rounded-lg text-[10px] font-bold hover:bg-black transition-all shadow-md flex items-center gap-2">
+            <Zap className="w-3 h-3" />
+            Optimize
+          </button>
+        </div>
+      </div>
+
+      {/* Metrics Grid */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+        {perfStats.map((stat, index) => (
+          <motion.div
+            key={stat.label}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.05 }}
+            className="bg-white p-4 rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20 flex flex-col justify-between group hover:border-gray-200 transition-all"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-2 bg-gray-50 rounded-xl group-hover:scale-110 transition-transform">
+                <stat.icon className={`w-4 h-4 ${stat.color}`} />
+              </div>
+              <span className={`text-[9px] font-bold px-2 py-0.5 rounded-full ${
+                stat.change.startsWith('+') ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'
+              }`}>
+                {stat.change}
+              </span>
+            </div>
+            <div>
+              <div className="text-2xl font-black text-gray-900 tracking-tight">{stat.value}</div>
+              <div className="text-[9px] font-bold text-gray-400 uppercase tracking-widest mt-1">{stat.label}</div>
+            </div>
+          </motion.div>
+        ))}
+      </div>
+
+      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+        {/* Keywords Table */}
+        <div className="xl:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20 overflow-hidden flex flex-col">
+          <div className="px-5 py-4 border-b border-gray-50 flex items-center justify-between">
+            <h2 className="text-sm font-black text-gray-900 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-gray-400" />
+              High-Impact Keywords
+            </h2>
+            <button className="text-[9px] font-bold text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">View All</button>
+          </div>
+          <div className="overflow-x-auto flex-grow">
+            <table className="w-full text-left">
+              <thead>
+                <tr className="bg-gray-50/50">
+                  <th className="px-5 py-3 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Keyword</th>
+                  <th className="px-5 py-3 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Volume</th>
+                  <th className="px-5 py-3 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Position</th>
+                  <th className="px-5 py-3 text-[9px] font-bold text-gray-400 uppercase tracking-[0.2em]">Trend</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {[
+                  { word: 'contractor leads uk', volume: '2.4k', pos: '1', trend: 'up' },
+                  { word: 'exclusive construction leads', volume: '1.2k', pos: '3', trend: 'up' },
+                  { word: 'qualified renovation leads', volume: '850', pos: '5', trend: 'down' },
+                  { word: 'hiring local builders', volume: '620', pos: '2', trend: 'stable' },
+                ].map((kw, i) => (
+                  <tr key={i} className="hover:bg-gray-50/80 transition-colors group">
+                    <td className="px-5 py-3">
+                      <div className="flex items-center gap-2">
+                        <span className="text-xs font-bold text-gray-900">{kw.word}</span>
+                        <ArrowUpRight className="w-3 h-3 text-gray-300 opacity-0 group-hover:opacity-100 transition-all group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                      </div>
+                    </td>
+                    <td className="px-5 py-3 text-xs font-bold text-gray-500">{kw.volume}</td>
+                    <td className="px-5 py-3">
+                      <span className="inline-flex items-center justify-center w-6 h-6 rounded-lg bg-gray-900 text-white text-[10px] font-black shadow-sm">
+                        {kw.pos}
+                      </span>
+                    </td>
+                    <td className="px-5 py-3">
+                      <div className="h-1.5 w-12 bg-gray-100 rounded-full overflow-hidden">
+                        <div className={`h-full rounded-full ${kw.trend === 'up' ? 'bg-emerald-500' : kw.trend === 'down' ? 'bg-red-500' : 'bg-gray-400'}`} 
+                             style={{ width: kw.trend === 'up' ? '85%' : kw.trend === 'down' ? '30%' : '55%' }} />
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Side Panels */}
+        <div className="space-y-4">
+          {/* Elite Performance Card */}
+          <div className="bg-[#050505] p-5 rounded-2xl text-white relative overflow-hidden border border-white/10 shadow-lg shadow-gray-900/20">
+            <div className="absolute -right-8 -top-8 w-32 h-32 bg-blue-600/20 rounded-full blur-[30px]" />
+            <div className="absolute -left-8 -bottom-8 w-32 h-32 bg-cyan-600/10 rounded-full blur-[30px]" />
+            <div className="relative z-10">
+              <Crown className="w-5 h-5 mb-3 text-amber-400" />
+              <h3 className="text-sm font-black tracking-tight mb-1">Elite Performance</h3>
+              <p className="text-gray-400 text-[10px] leading-relaxed mb-4 font-medium">
+                Domain authority is <span className="text-white font-bold">DR 34</span>. You are outranking 82% of local competitors this month.
+              </p>
+              <button className="w-full py-2 bg-white text-gray-900 hover:bg-gray-100 rounded-lg text-[10px] font-black transition-all shadow-md">
+                View Competitors
+              </button>
+            </div>
+          </div>
+
+          {/* Queue Card */}
+          <div className="bg-white p-5 rounded-2xl border border-gray-100 shadow-lg shadow-gray-200/20">
+            <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-4 flex items-center gap-2">
+              <Activity className="w-3 h-3 text-emerald-500" />
+              Optimization Queue
+            </h3>
+            <div className="space-y-2">
+              {[
+                { task: 'Fix 4 meta descriptions', priority: 'High', color: 'red' },
+                { task: 'Optimize image alt tags', priority: 'Medium', color: 'amber' },
+                { task: 'Add 2 internal links', priority: 'Low', color: 'blue' },
+              ].map((t, i) => (
+                <div key={i} className="flex items-center justify-between p-3 bg-gray-50 rounded-xl border border-gray-100 hover:border-gray-200 transition-colors">
+                  <span className="text-[10px] font-bold text-gray-700">{t.task}</span>
+                  <span className={`text-[8px] font-black px-2 py-0.5 rounded-md uppercase tracking-wider ${
+                    t.color === 'red' ? 'bg-red-50 text-red-600' : t.color === 'amber' ? 'bg-amber-50 text-amber-600' : 'bg-blue-50 text-blue-600'
+                  }`}>
+                    {t.priority}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------
+// SEO MARKETING (For Non-Customers)
+// ----------------------------------------------------------------------
+
+const BrandCarousel = () => {
+  const brands = [
+    { name: "Google", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/2/2f/Google_2015_logo.svg", size: "h-8" },
+    { name: "Facebook", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/8/89/Facebook_Logo_%282019%29.svg", size: "h-8" },
+    { name: "Instagram", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/e/e7/Instagram_logo_2016.svg", size: "h-10" },
+    { name: "YouTube", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/b/b8/YouTube_Logo_2017.svg", size: "h-8" },
+    { name: "LinkedIn", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/0/01/LinkedIn_Logo.svg", size: "h-8" },
+    { name: "Solarpedia", isImage: true, src: "/solarpedia.png", size: "h-24 scale-[1.5]" },
+    { name: "Forbes", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/d/db/Forbes_logo.svg", size: "h-10", subtext: "additional one off cost" },
+    { name: "Esquire", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/2/25/Esquire_logo_%282017%29.svg", size: "h-8", subtext: "additional one off cost" },
+    { name: "The Telegraph", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/4/48/The_Telegraph_logo.svg", size: "h-8", subtext: "additional one off cost" },
+    { name: "Variety", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/c/ca/Variety_logo.svg", size: "h-10", subtext: "additional one off cost" },
+    { name: "Bing", isImage: true, src: "https://upload.wikimedia.org/wikipedia/commons/e/e8/Microsoft_Bing_logo.svg", size: "h-8" },
+    { name: "Local Citations", color: "text-gray-900", icon: <MapPin className="w-10 h-10" /> }
+  ];
+
+  return (
+    <div className="py-10 bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/30 overflow-hidden relative w-full mb-12 -mt-12 z-20">
+      <div className="text-center mb-8">
+        <h3 className="text-[10px] font-black text-gray-400 uppercase tracking-[0.3em]">Where your leads come from & where your brand is seen</h3>
+      </div>
+      
+      {/* Gradient Fades */}
+      <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-white to-transparent z-10" />
+      <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-white to-transparent z-10" />
+      
+      <motion.div 
+        animate={{ x: ["0%", "-50%"] }}
+        transition={{ repeat: Infinity, ease: "linear", duration: 30 }}
+        className="flex gap-24 w-max items-center px-8"
+      >
+        {[...brands, ...brands].map((brand, i) => (
+          <div key={i} className="flex flex-col items-center gap-1 opacity-50 hover:opacity-100 transition-opacity grayscale hover:grayscale-0 cursor-default hover:scale-110 duration-300">
+            {brand.isImage ? (
+              <img src={brand.src} alt={brand.name} className={`${brand.size} w-auto object-contain drop-shadow-sm`} />
+            ) : (
+              <div className={`flex items-center justify-center ${brand.color} drop-shadow-sm`}>
+                {brand.icon}
+              </div>
+            )}
+            {brand.subtext && (
+              <span className="text-[7px] font-black text-gray-400 uppercase tracking-tighter whitespace-nowrap">
+                {brand.subtext}
+              </span>
+            )}
+          </div>
+        ))}
+      </motion.div>
+    </div>
+  );
+};
+
+const LogoOpenlead = () => (
+  <div className="flex items-center gap-2">
+    <img 
+      src="/openlead-logo.png" 
+      alt="Openlead Logo" 
+      className="h-12 w-auto object-contain brightness-0 invert opacity-90"
+    />
+  </div>
+);
+
+const LogoKairo = () => (
+  <div className="flex items-center gap-2">
+    <img 
+      src="/kairo-logo.png" 
+      alt="Kairo Studio Logo" 
+      className="h-16 w-auto object-contain brightness-0 invert opacity-90 scale-125"
+    />
+  </div>
+);
+
+function SEOMarketing({ weeklyLeads, monthlyLeads, impressions, onOpenCalculator }: { weeklyLeads: number, monthlyLeads: number, impressions: number, onOpenCalculator: () => void }) {
+  const [reportRequested, setReportRequested] = useState(false);
+  const { profile } = useAuthStore();
+  
+  const handleRequestReport = async () => {
+    setReportRequested(true);
+    try {
+      await fetch('/api/seo/request-info', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          clientName: profile?.full_name || 'Client',
+          clientEmail: profile?.email || 'Unknown Email',
+          requestType: 'audit'
+        })
+      });
+    } catch (err) {
+      console.error('Failed to send SEO audit request:', err);
+    }
+  };
+  
+  const facts = [
+    {
+      stat: "93%",
+      title: "of online experiences begin with a search engine.",
+      desc: "If you aren't ranking, your competitors are taking your customers."
+    },
+    {
+      stat: "14.6%",
+      title: "close rate for SEO leads.",
+      desc: "Compared to just 1.7% for outbound marketing like print or cold calling."
+    },
+    {
+      stat: "78%",
+      title: "of local mobile searches result in a purchase.",
+      desc: "Local SEO puts you directly in front of high-intent buyers in your area."
+    },
+    {
+      stat: "54.4%",
+      title: "of all clicks go to the top 3 Google results.",
+      desc: "Ranking on page 2 means you're effectively invisible to 99% of searchers."
+    }
+  ];
+
+  return (
+    <div className="w-full bg-gray-50/50 min-h-screen -mt-4 pt-4 overflow-x-hidden">
+      {/* Floating ROI Calculator Button */}
+      <button onClick={onOpenCalculator} className="fixed bottom-8 right-8 z-50 group">
+        <div className="absolute -inset-2 bg-gradient-to-r from-blue-600 via-cyan-400 to-blue-600 rounded-full blur-lg opacity-40 group-hover:opacity-100 transition duration-700 animate-shimmer" style={{ backgroundSize: '200% auto' }} />
+        <div className="relative px-8 py-5 bg-[#050505] text-white rounded-full font-black text-sm shadow-2xl flex items-center gap-4 border border-white/10 group-hover:-translate-y-1 transition-transform duration-500 overflow-hidden">
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay pointer-events-none" />
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          
+          <div className="w-10 h-10 rounded-full bg-blue-500/20 border border-blue-500/30 flex items-center justify-center shadow-[0_0_20px_rgba(59,130,246,0.4)] relative z-10">
+            <TrendingUp className="w-5 h-5 text-blue-400 group-hover:scale-110 transition-transform duration-500" />
+          </div>
+          <span className="bg-clip-text text-transparent bg-gradient-to-r from-white to-gray-300 tracking-wide relative z-10 text-base">
+            Calculate SEO ROI
+          </span>
+          <div className="w-8 h-8 rounded-full bg-white/5 border border-white/10 flex items-center justify-center relative z-10 group-hover:bg-white/10 transition-colors">
+             <ArrowUpRight className="w-4 h-4 text-gray-400 group-hover:text-white group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-500" />
+          </div>
+        </div>
+      </button>
+
+      <div className="max-w-5xl mx-auto space-y-8 pb-24 px-4">
+        
+        {/* HERO SECTION (Dark Premium) */}
+        <div className="relative bg-[#050505] rounded-[2.5rem] p-8 md:p-12 overflow-hidden shadow-2xl">
+          {/* Glowing Background Orbs */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full pointer-events-none">
+             <div className="absolute top-[-20%] left-[10%] w-[50%] h-[60%] bg-blue-600/20 blur-[100px] rounded-full mix-blend-screen" />
+             <div className="absolute bottom-[-20%] right-[10%] w-[50%] h-[60%] bg-cyan-600/10 blur-[100px] rounded-full mix-blend-screen" />
+          </div>
+
+          <div className="relative z-10 flex flex-col items-center text-center">
+            
+            {/* Logos */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mb-8">
+              <LogoOpenlead />
+              <span className="text-gray-600 text-xl font-light">×</span>
+              <LogoKairo />
+            </div>
+
+            <h1 className="text-3xl md:text-5xl font-black tracking-tighter mb-6 max-w-3xl leading-[1.1]">
+              <span className="inline-block relative">
+                <motion.span 
+                  animate={{ backgroundPosition: ["0% center", "200% center"] }}
+                  transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                  className="text-transparent bg-clip-text inline-block" 
+                  style={{ 
+                    backgroundImage: 'linear-gradient(110deg, #a1a1aa 20%, #ffffff 40%, #ffffff 60%, #a1a1aa 80%)', 
+                    backgroundSize: '200% auto', 
+                    WebkitBackgroundClip: 'text', 
+                    WebkitTextFillColor: 'transparent' 
+                  }}>
+                  Dominate Search.
+                </motion.span>
+              </span><br/>
+              <span className="inline-block relative">
+                <motion.span 
+                  animate={{ backgroundPosition: ["0% center", "200% center"] }}
+                  transition={{ repeat: Infinity, duration: 4, ease: "linear", delay: 2 }}
+                  className="text-transparent bg-clip-text inline-block" 
+                  style={{ 
+                    backgroundImage: 'linear-gradient(110deg, #3b82f6 20%, #ffffff 40%, #ffffff 60%, #06b6d4 80%)', 
+                    backgroundSize: '200% auto', 
+                    WebkitBackgroundClip: 'text', 
+                    WebkitTextFillColor: 'transparent' 
+                  }}>
+                  Automate Growth.
+                </motion.span>
+              </span>
+            </h1>
+
+            <p className="text-base md:text-lg text-gray-400 max-w-xl font-medium leading-relaxed mb-8">
+              Enterprise-grade search engine optimization, delivered directly to your Openlead Dashboard. Stop hunting for leads—engineer a system where they hunt for you.
+            </p>
+
+            <div className="flex flex-wrap justify-center gap-3">
+               <Badge icon={Globe} text="Technical Audits" colorClass="text-emerald-400" borderClass="border-emerald-500/20" bgClass="bg-emerald-500/10" />
+               <Badge icon={FileText} text="Content Strategy" colorClass="text-purple-400" borderClass="border-purple-500/20" bgClass="bg-purple-500/10" />
+               <Badge icon={MapPin} text="Local Citations" colorClass="text-amber-400" borderClass="border-amber-500/20" bgClass="bg-amber-500/10" />
+               <Badge icon={Link2} text="Link Building" colorClass="text-cyan-400" borderClass="border-cyan-500/20" bgClass="bg-cyan-500/10" />
+            </div>
+          </div>
+        </div>
+
+        {/* BRAND / LEAD SOURCE CAROUSEL */}
+        <BrandCarousel />
+
+        {/* METRICS & TRUST SECTION */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 relative z-20 px-2 mt-8">
+          <CounterCard title="Leads / Week" value={weeklyLeads} desc="Active network capture" />
+          <CounterCard title="SEO Growth / Mo" value={monthlyLeads} desc="Organic acquisition" />
+          <CounterCard title="Impressions" value={impressions} desc="Kairo Search & Ads" />
+          
+          {/* Solarpedia Card Premium */}
+          <a 
+            href="https://solarpedia.co.uk" 
+            target="_blank" 
+            rel="noopener noreferrer"
+            className="lg:col-span-3 bg-white rounded-3xl p-5 lg:p-6 border border-gray-100 shadow-xl shadow-gray-200/50 flex flex-col lg:flex-row items-center justify-between gap-6 relative overflow-hidden group hover:border-amber-300 transition-all duration-500 cursor-pointer"
+          >
+            <div className="absolute inset-0 bg-gradient-to-r from-amber-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+            <div className="absolute right-0 bottom-0 w-64 h-64 bg-amber-200/30 blur-[80px] pointer-events-none group-hover:bg-amber-300/40 transition-colors duration-700" />
+            
+            <div className="flex flex-col md:flex-row items-center gap-8 relative z-10 w-full">
+               <div className="flex-shrink-0 w-48 h-24 flex items-center justify-center p-2">
+                 <img 
+                   src="/solarpedia.png" 
+                   alt="Solarpedia Logo" 
+                   className="h-full w-full object-contain drop-shadow-sm scale-[2]"
+                 />
+               </div>
+               <div className="flex-1 text-center md:text-left">
+                 <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full bg-amber-50 border border-amber-100 text-[10px] font-black uppercase tracking-[0.2em] text-amber-600 mb-4">
+                   <Award className="w-3.5 h-3.5" /> Official Partner
+                 </div>
+                 <h3 className="text-2xl font-black text-gray-900 tracking-tight flex items-center justify-center md:justify-start gap-3 mb-2">
+                   Featured Installer Status
+                   <span className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center group-hover:bg-amber-500 group-hover:text-white text-amber-500 transition-colors duration-500">
+                     <ArrowUpRight className="w-4 h-4" />
+                   </span>
+                 </h3>
+                 <p className="text-sm text-gray-500 font-medium leading-relaxed max-w-2xl">
+                    Included in Growth & Authority plans. Instantly elevate your brand's authority and gain direct exposure to <strong className="text-gray-900">50,000+</strong> high-intent monthly visitors on the UK's free independent solar advisory.
+                  </p>
+               </div>
+            </div>
+          </a>
+        </div>
+
+        {/* DID YOU KNOW MARQUEE */}
+        <div className="py-4 relative overflow-hidden my-4">
+          <div className="absolute left-0 top-0 w-32 h-full bg-gradient-to-r from-gray-50/50 to-transparent z-10" />
+          <div className="absolute right-0 top-0 w-32 h-full bg-gradient-to-l from-gray-50/50 to-transparent z-10" />
+
+          <motion.div 
+            animate={{ x: ["0%", "-50%"] }}
+            transition={{ repeat: Infinity, ease: "linear", duration: 40 }}
+            className="flex gap-20 w-max px-6"
+          >
+            {[...facts, ...facts].map((fact, i) => (
+              <div key={i} className="flex items-center gap-6 group">
+                <div className="text-[2.5rem] md:text-[4rem] font-black tracking-tighter text-transparent bg-clip-text bg-gradient-to-br from-blue-600 to-cyan-300 leading-none drop-shadow-sm group-hover:scale-105 transition-transform duration-500">
+                  {fact.stat}
+                </div>
+                <div className="max-w-[260px]">
+                  <div className="text-base md:text-lg font-black text-gray-900 leading-tight mb-1 tracking-tight">{fact.title}</div>
+                  <div className="text-xs text-gray-500 font-medium leading-relaxed">{fact.desc}</div>
+                </div>
+              </div>
+            ))}
+          </motion.div>
+        </div>
+
+        {/* 15% OFF "BLACK CARD" SECTION */}
+        <div className="bg-[#050505] rounded-[2rem] p-1 relative overflow-hidden group shadow-2xl shadow-blue-900/20">
+          <div className="absolute inset-0 bg-gradient-to-r from-blue-500/40 via-cyan-400/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20 mix-blend-overlay" />
+          
+          <div className="bg-[#0A0A0A] rounded-[1.8rem] p-5 lg:p-8 relative z-10 flex flex-col lg:flex-row items-center justify-between gap-8 border border-white/5">
+             <div className="max-w-lg text-center lg:text-left">
+               <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-400 text-[9px] font-black uppercase tracking-[0.2em] mb-4">
+                 <Crown className="w-3 h-3" /> Lifetime Privilege
+               </div>
+               <h2 className="text-2xl lg:text-4xl font-black text-white tracking-tight mb-3 leading-[1.1]">
+                 15% Off Every <br/><span className="text-transparent bg-clip-text bg-gradient-to-r from-gray-400 to-gray-600">Marketplace Lead.</span>
+               </h2>
+               <p className="text-gray-400 text-xs lg:text-sm leading-relaxed font-medium">
+                 As a concierge SEO client, you unlock an automatic, permanent 15% discount across the entire Openlead marketplace. Scale your organic traffic while acquiring immediate leads at a fraction of the cost.
+               </p>
+             </div>
+             
+             <div className="relative flex-shrink-0 w-full lg:w-auto flex justify-center">
+               <div className="absolute inset-0 bg-blue-500/30 blur-[40px] rounded-full" />
+               <div className="w-48 h-64 bg-gradient-to-br from-gray-800 to-black rounded-2xl border border-white/10 shadow-xl relative overflow-hidden flex flex-col items-center justify-center">
+                  <motion.div 
+                    animate={{ backgroundPosition: ["200% 0", "-200% 0"] }}
+                    transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                    className="absolute inset-0 bg-[linear-gradient(110deg,transparent_25%,rgba(255,255,255,0.1)_50%,transparent_75%)] bg-[length:200%_100%]" 
+                  />
+                  <div className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-b from-white to-gray-500 tracking-tighter mb-1 relative z-10">15%</div>
+                  <div className="text-[8px] font-black text-gray-400 uppercase tracking-[0.4em] relative z-10">Discount Rate</div>
+               </div>
+             </div>
+          </div>
+        </div>
+
+        {/* PRICING SECTION */}
+        <div className="pt-8">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 items-stretch">
+            <PricingCard 
+              title="Starter" 
+              desc="Perfect for local market entry."
+              features={['Keyword research', 'Technical audit', '4 Articles/mo', 'GBP Optimisation', 'Local citations', 'Monthly reporting']}
+              isPopular={false}
+              theme="light"
+            />
+            <PricingCard 
+              title="Growth" 
+              desc="Aggressive scaling for established businesses."
+              features={['New Website', '8 Articles/mo', 'Location landing pages', 'Schema markup', 'Conversion optimisation', 'AI content strategy', 'Solarpedia Featured']}
+              isPopular={true}
+              theme="dark"
+            />
+            <PricingCard 
+              title="Authority" 
+              desc="Unrivalled dominance and digital PR."
+              features={['New Website', '16+ Articles/mo', 'Digital PR', 'Link acquisition', 'Topic clusters', 'Dedicated manager', 'Solarpedia Featured']}
+              isPopular={false}
+              theme="light"
+            />
+          </div>
+        </div>
+
+        {/* FREE REPORT CTA */}
+        <div className="max-w-3xl mx-auto text-center pb-16 pt-10 relative z-10">
+          {!reportRequested ? (
+            <motion.div initial={{ opacity: 0, y: 20 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }}>
+              <div className="w-20 h-20 bg-white rounded-3xl border border-gray-100 shadow-xl shadow-gray-200/50 flex items-center justify-center mx-auto mb-6 transform -rotate-6">
+                <Search className="w-8 h-8 text-blue-600 transform rotate-6" />
+              </div>
+              <h2 className="text-3xl font-black text-gray-900 tracking-tight mb-4">Request Your Free Private Audit</h2>
+              <p className="text-base text-gray-500 mb-8 max-w-xl mx-auto font-medium">
+                Find out exactly what's holding your website back from the first page of Google with a comprehensive, no-obligation technical review.
+              </p>
+              <button 
+                onClick={handleRequestReport}
+                className="px-8 py-4 bg-gray-900 text-white rounded-xl text-sm font-black hover:bg-black transition-all shadow-xl shadow-gray-900/20 hover:-translate-y-1 flex items-center gap-2 mx-auto group"
+              >
+                <FileText className="w-4 h-4 group-hover:scale-110 transition-transform" />
+                Get your free SEO report now
+              </button>
+            </motion.div>
+          ) : (
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="bg-white p-10 rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/50"
+            >
+              <div className="w-16 h-16 bg-emerald-50 rounded-full flex items-center justify-center mx-auto mb-5">
+                <Check className="w-8 h-8 text-emerald-500" />
+              </div>
+              <h3 className="text-2xl font-black text-gray-900 tracking-tight mb-3">Request Received</h3>
+              <p className="text-base text-gray-500 font-medium max-w-sm mx-auto">Thank you. One of our concierge specialists will be in touch shortly with your comprehensive SEO report.</p>
+            </motion.div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ----------------------------------------------------------------------
+// REUSABLE COMPONENTS
+// ----------------------------------------------------------------------
+
+const Badge = ({ icon: Icon, text, colorClass = "text-blue-400", borderClass = "border-blue-500/20", bgClass = "bg-blue-500/10" }: { icon: any, text: string, colorClass?: string, borderClass?: string, bgClass?: string }) => (
+  <div className={`flex items-center gap-2 px-4 py-2 ${bgClass} border ${borderClass} rounded-xl text-xs font-bold text-gray-200 backdrop-blur-md shadow-lg shadow-black/20 group hover:-translate-y-0.5 transition-transform cursor-default`}>
+    <Icon className={`w-4 h-4 ${colorClass} group-hover:scale-110 transition-transform`} />
+    <span className="tracking-wide">{text}</span>
+  </div>
+);
+
+const CounterCard = ({ title, value, desc }: { title: string, value: number, desc: string }) => {
+  const [displayValue, setDisplayValue] = useState(0);
+
+  useEffect(() => {
+    // Only run the animation if we have a value
+    if (value <= 0) return;
+
+    let startTimestamp: number | null = null;
+    const duration = 2000; // 2 seconds animation
+
+    const step = (timestamp: number) => {
+      if (!startTimestamp) startTimestamp = timestamp;
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      
+      // Easing function: easeOutQuart
+      const easeProgress = 1 - Math.pow(1 - progress, 4);
+      
+      setDisplayValue(Math.floor(easeProgress * value));
+
+      if (progress < 1) {
+        window.requestAnimationFrame(step);
+      } else {
+        setDisplayValue(value); // Ensure it ends exactly on the value
+      }
+    };
+
+    window.requestAnimationFrame(step);
+  }, [value]);
+
+  return (
+    <div className="bg-[#050505] rounded-[2rem] p-8 border border-white/10 shadow-2xl flex flex-col justify-center items-center text-center group hover:-translate-y-1 transition-transform duration-300 relative overflow-hidden">
+      <div className="absolute inset-0 bg-gradient-to-br from-gray-800/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="text-4xl font-black text-white tracking-tighter mb-2 group-hover:text-blue-400 transition-colors relative z-10">
+        {displayValue.toLocaleString()}
+      </div>
+      <div className="text-[10px] font-black text-gray-500 uppercase tracking-[0.2em] mb-3 relative z-10">{title}</div>
+      <div className="w-8 h-px bg-gray-800 mb-3 relative z-10" />
+      <div className="text-[11px] text-gray-400 font-bold italic relative z-10">{desc}</div>
+    </div>
+  );
+};
+
+const PricingCard = ({ title, desc, features, isPopular, theme }: any) => {
+  const isDark = theme === 'dark';
+  return (
+    <div className={`p-5 lg:p-6 rounded-[2rem] lg:rounded-[3rem] flex flex-col relative overflow-hidden transition-transform duration-300 hover:-translate-y-2 ${
+      isDark 
+        ? 'bg-[#050505] border border-blue-500/30 shadow-2xl shadow-blue-900/20 text-white z-10' 
+        : 'bg-white border border-gray-100 shadow-xl shadow-gray-200/30 text-gray-900'
+    }`}>
+      {isDark && <div className="absolute top-0 right-0 w-64 h-64 bg-blue-600/10 blur-[80px] rounded-full pointer-events-none" />}
+      
+      <div className="relative z-10 flex flex-col h-full">
+        {isPopular && <div className="inline-block self-start px-3 py-1 mb-6 rounded-full bg-blue-500/10 border border-blue-500/20 text-[10px] font-black text-blue-400 uppercase tracking-[0.2em]">Most Popular</div>}
+        <h3 className="text-2xl font-black tracking-tight mb-3">{title}</h3>
+        <p className={`text-sm font-medium mb-10 ${isDark ? 'text-gray-400' : 'text-gray-500'}`}>{desc}</p>
+        
+        <div className="space-y-4 flex-grow">
+          {features.map((f: string) => (
+            <div key={f} className="flex items-start gap-3 text-sm font-bold">
+              <Check className={`w-4 h-4 flex-shrink-0 mt-0.5 ${isDark ? 'text-blue-400' : 'text-gray-400'}`} />
+              <span className={isDark ? 'text-gray-300' : 'text-gray-700'}>{f}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};

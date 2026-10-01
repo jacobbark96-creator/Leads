@@ -1,0 +1,14 @@
+◇ injected env (20) from .env // tip: ⌘ multiple files { path: ['.env.local', '.env'] }
+--- intranet_resources logs ---
+No webhook logs found.
+
+--- Recent lead_notes ---
+[2026-08-03T08:12:31.252653+00:00] System: 📞 Call by Aidialler: No Answer (0 seconds)
+[2026-08-03T08:11:34.66437+00:00] System: Pack Calling Disposition: AI Call Summary: The call was not connected as a voicemail or carrier message was detected.
+[2026-08-03T07:35:06.004247+00:00] System: 📞 Call by Aidialler: Failed (0 seconds)
+[2026-07-31T10:43:10.245184+00:00] System: 📞 Call by Aidialler: Failed (0 seconds)
+[2026-07-30T13:06:03.971113+00:00] Jalwa Wedding Decor: ✉️ Received SMS: Salaam,
+
+I hope you are well, I apologise for missing your call, have had limited access to my phone and emails. I have only just been able to catch up on my messages.Please let me know how I may assist you, and I am sorry for any inconvenience caused.
+Best regards, Akbar Monal
+

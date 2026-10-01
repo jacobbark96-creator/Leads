@@ -1,0 +1,1 @@
+ALTER TABLE users ADD COLUMN IF NOT EXISTS has_active_dd BOOLEAN DEFAULT false;

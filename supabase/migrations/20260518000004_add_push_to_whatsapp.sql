@@ -1,0 +1,1 @@
+ALTER TABLE leads ADD COLUMN IF NOT EXISTS push_to_whatsapp BOOLEAN DEFAULT true;

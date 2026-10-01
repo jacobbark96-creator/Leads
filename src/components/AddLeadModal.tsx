@@ -1,0 +1,807 @@
+import React, { useState, useEffect } from 'react';
+import { supabase } from '@/lib/supabase';
+import { X, Sparkles, AlertCircle, CheckCircle2, MapPin, CheckCircle, Info, ExternalLink } from 'lucide-react';
+import toast from 'react-hot-toast';
+import { useAuthStore } from '@/store/authStore';
+import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+import { useRouter } from 'next/navigation';
+
+const libraries: "places"[] = ['places'];
+
+interface AddLeadModalProps {
+  isOpen: boolean;
+  onClose: () => void;
+  onLeadAdded: (lead?: any) => void;
+  isContractor?: boolean;
+  editData?: {
+    id: string;
+    name: string;
+    phone: string;
+    email: string | null;
+    company: string | null;
+    location?: string | null;
+    other_contacts?: string | null;
+    other_contact_numbers?: string | null;
+  } | null;
+}
+
+export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onLeadAdded, isContractor = false, editData = null }) => {
+  const router = useRouter();
+  const { profile } = useAuthStore();
+  const [loading, setLoading] = useState(false);
+  const [aiMode, setAiMode] = useState(false);
+  const [profileMode, setProfileMode] = useState(false);
+  const [clientsWithoutContractor, setClientsWithoutContractor] = useState<any[]>([]);
+  const [loadingClients, setLoadingClients] = useState(false);
+  const [aiText, setAiText] = useState('');
+  const [formData, setFormData] = useState({
+    name: '',
+    phone: '',
+    email: '',
+    company: '',
+    location: '',
+    other_contacts: '',
+    other_contact_numbers: '',
+    gm_pipeline_status: 'Callbacks',
+    lead_type: profile?.role?.includes('Residential') ? 'residential' : 'commercial' as 'residential' | 'commercial',
+    division_id: profile?.division_id || '',
+    latitude: null as number | null,
+    longitude: null as number | null,
+  });
+
+  const { isLoaded } = useLoadScript({
+    googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '',
+    libraries,
+  });
+
+  const [autocomplete, setAutocomplete] = useState<google.maps.places.Autocomplete | null>(null);
+  const onLoadAutocomplete = (autoC: google.maps.places.Autocomplete) => setAutocomplete(autoC);
+
+  const onPlaceChanged = () => {
+    if (autocomplete !== null) {
+      const place = autocomplete.getPlace();
+      if (place) {
+        const lat = place.geometry?.location?.lat() || null;
+        const lng = place.geometry?.location?.lng() || null;
+        
+        let finalAddress = place.formatted_address || place.name || '';
+        if (place.name && place.formatted_address && !place.formatted_address.includes(place.name)) {
+          finalAddress = `${place.name}, ${place.formatted_address}`;
+        }
+
+        setFormData(prev => ({ 
+          ...prev, 
+          location: finalAddress || prev.location,
+          latitude: lat,
+          longitude: lng
+        }));
+      }
+    }
+  };
+
+  const [duplicates, setDuplicates] = useState<{ leads: any[], contractors: any[] }>({ leads: [], contractors: [] });
+  const [checkingDuplicates, setCheckingDuplicates] = useState(false);
+  const [divisions, setDivisions] = useState<any[]>([]);
+
+  useEffect(() => {
+    const fetchDivisions = async () => {
+      const { data } = await supabase.from('divisions').select('*').order('name');
+      setDivisions(data || []);
+    };
+    fetchDivisions();
+  }, []);
+
+  useEffect(() => {
+    const checkDuplicates = async () => {
+      if (!formData.phone && !formData.email) {
+        setDuplicates({ leads: [], contractors: [] });
+        return;
+      }
+
+      setCheckingDuplicates(true);
+      try {
+        const phone = formData.phone.trim();
+        const email = formData.email.trim();
+
+        let leadQuery = supabase.from('leads').select('id, name, company, status');
+        let contractorQuery = supabase.from('contractors').select('id, name, company, company_name, contact_name, status');
+
+        const filters = [];
+        if (phone) filters.push(`phone.eq.${phone}`);
+        if (email) filters.push(`email.eq.${email}`);
+
+        if (filters.length > 0) {
+          const filterStr = filters.join(',');
+          leadQuery = leadQuery.or(filterStr);
+          contractorQuery = contractorQuery.or(filterStr);
+        }
+
+        const [leadsRes, contractorsRes] = await Promise.all([leadQuery, contractorQuery]);
+
+        setDuplicates({
+          leads: (leadsRes.data || []).filter(l => l.id !== editData?.id),
+          contractors: (contractorsRes.data || []).filter(c => c.id !== editData?.id)
+        });
+      } catch (e) {
+        console.error('Error checking duplicates:', e);
+      } finally {
+        setCheckingDuplicates(false);
+      }
+    };
+
+    const timer = setTimeout(checkDuplicates, 500);
+    return () => clearTimeout(timer);
+  }, [formData.phone, formData.email, editData]);
+  useEffect(() => {
+    if (isOpen && editData) {
+      setFormData({
+        name: editData.name || '',
+        phone: editData.phone || '',
+        email: editData.email || '',
+        company: editData.company || '',
+        location: editData.location || '',
+        other_contacts: editData.other_contacts || '',
+        other_contact_numbers: editData.other_contact_numbers || '',
+        gm_pipeline_status: (editData as any).gm_pipeline_status || 'Callbacks',
+        lead_type: (editData as any).lead_type || 'commercial',
+        division_id: (editData as any).division_id || '',
+        latitude: (editData as any).latitude || null,
+        longitude: (editData as any).longitude || null,
+      });
+    } else if (isOpen) {
+      setFormData({
+        name: '',
+        phone: '',
+        email: '',
+        company: '',
+        location: '',
+        other_contacts: '',
+        other_contact_numbers: '',
+        gm_pipeline_status: 'Callbacks',
+        lead_type: profile?.role?.includes('Residential') ? 'residential' : 'commercial' as 'residential' | 'commercial',
+        division_id: profile?.division_id || '',
+        latitude: null,
+        longitude: null,
+      });
+      setAiMode(false);
+      setProfileMode(false);
+      setDuplicates({ leads: [], contractors: [] });
+    }
+  }, [isOpen, editData]);
+
+  useEffect(() => {
+    if (isOpen && profileMode) {
+      fetchClientsWithoutContractor();
+    }
+  }, [isOpen, profileMode]);
+
+  const fetchClientsWithoutContractor = async () => {
+    setLoadingClients(true);
+    try {
+      // Fetch all clients
+      const { data: clients } = await supabase.from('clients').select('*');
+      // Fetch all contractors to see which client_ids are used
+      const { data: contractors } = await supabase.from('contractors').select('client_id');
+      
+      const usedClientIds = new Set(contractors?.map(c => c.client_id).filter(Boolean));
+      const available = clients?.filter(c => !usedClientIds.has(c.id)) || [];
+      
+      const { data: users } = await supabase.from('users').select('id, email');
+      const emailMap = new Map(users?.map(u => [u.id, u.email]));
+      
+      const enriched = available.map(c => ({
+        ...c,
+        email: emailMap.get(c.user_id) || ''
+      }));
+      
+      setClientsWithoutContractor(enriched);
+    } catch (e) {
+      console.error(e);
+    } finally {
+      setLoadingClients(false);
+    }
+  };
+
+  const handleAddFromProfile = async (client: any) => {
+    if (!window.confirm(`Are you sure you want to create a contractor profile for ${client.company_name || client.contact_name}?`)) {
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const insertPayload = {
+        name: client.contact_name || client.company_name || 'Unknown',
+        contact_name: client.contact_name || 'Unknown',
+        company_name: client.company_name || null,
+        company: client.company_name || null,
+        phone: client.phone || '',
+        email: client.email || null,
+        location: client.address || null,
+        other_contacts: client.other_contacts || null,
+        other_contact_numbers: client.other_contact_numbers || null,
+        client_id: client.id,
+        status: 'onboarded'
+      };
+
+      const { data, error } = await supabase
+        .from('contractors')
+        .insert([insertPayload])
+        .select()
+        .single();
+
+      if (error) throw error;
+      toast.success('Contractor added from profile successfully');
+      onLeadAdded(data);
+      onClose();
+    } catch (e: any) {
+      toast.error('Failed to add contractor: ' + e.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!formData.name || !formData.phone) {
+      toast.error('Name and phone are required');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const table = isContractor ? 'contractors' : 'leads';
+      
+      if (editData) {
+        const updatePayload: any = {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email || null,
+          company: formData.company || null,
+          location: formData.location || null,
+          latitude: formData.latitude || null,
+          longitude: formData.longitude || null,
+          other_contacts: formData.other_contacts || null,
+          other_contact_numbers: formData.other_contact_numbers || null,
+          lead_type: formData.lead_type,
+          division_id: formData.division_id || null,
+        };
+
+        if (profile?.role === 'growth_manager' && !isContractor) {
+          updatePayload.gm_pipeline_status = formData.gm_pipeline_status;
+        }
+        
+        if (isContractor) {
+          updatePayload.contact_name = formData.name;
+          updatePayload.company_name = formData.company || null;
+          
+          // Sync with clients table if this contractor is onboarded
+          const { data: existingContractor } = await supabase
+            .from('contractors')
+            .select('client_id')
+            .eq('id', editData.id)
+            .single();
+            
+          if (existingContractor?.client_id) {
+             await supabase.from('clients').update({
+               contact_name: formData.name,
+               company_name: formData.company || null,
+               address: formData.location || null,
+               other_contacts: formData.other_contacts || null,
+               other_contact_numbers: formData.other_contact_numbers || null,
+               phone: formData.phone
+             }).eq('id', existingContractor.client_id);
+          }
+        }
+
+        const { error } = await supabase
+          .from(table)
+          .update(updatePayload)
+          .eq('id', editData.id);
+
+        if (error) throw error;
+        toast.success(`${isContractor ? 'Contractor' : 'Lead'} updated successfully`);
+        onLeadAdded({ ...editData, ...updatePayload });
+        onClose();
+      } else {
+        const status = isContractor ? 'fresh' : 'fresh';
+        const insertPayload: any = {
+          name: formData.name,
+          phone: formData.phone,
+          email: formData.email || null,
+          company: formData.company || null,
+          location: formData.location || null,
+          latitude: formData.latitude || null,
+          longitude: formData.longitude || null,
+          other_contacts: formData.other_contacts || null,
+          other_contact_numbers: formData.other_contact_numbers || null,
+          status: status,
+          lead_type: formData.lead_type,
+          division_id: formData.division_id || null,
+          ...(isContractor ? {} : { is_in_pack: true })
+        };
+
+        if (profile?.role === 'growth_manager' && !isContractor) {
+          insertPayload.gm_pipeline_status = formData.gm_pipeline_status;
+          insertPayload.is_private = true;
+          insertPayload.assigned_to = profile.id;
+        }
+
+        if (isContractor) {
+          insertPayload.contact_name = formData.name;
+          insertPayload.company_name = formData.company || null;
+        }
+
+        const { data, error } = await supabase
+          .from(table)
+          .insert([insertPayload])
+          .select()
+          .single();
+
+        if (error) throw error;
+
+        toast.success(`${isContractor ? 'Contractor' : 'Lead'} added successfully`);
+        
+        // Reset form before closing to prevent stale state on next open
+        setFormData({
+          name: '',
+          phone: '',
+          email: '',
+          company: '',
+          location: '',
+          other_contacts: '',
+          other_contact_numbers: '',
+          gm_pipeline_status: 'Callbacks',
+          lead_type: 'commercial',
+          division_id: '',
+          latitude: null,
+          longitude: null,
+        });
+        
+        onLeadAdded(data);
+        onClose();
+      }
+    } catch (error: any) {
+      toast.error('Failed to add: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAiParse = async () => {
+    if (!aiText.trim()) {
+      toast.error('Please paste a write-up first');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const res = await fetch('/api/parse-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: aiText }),
+      });
+
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || 'Failed to parse text');
+
+      const parsed = json.data;
+
+      // Automatically create the lead in the DB so it can be qualified
+      const insertPayload: any = {
+        name: parsed.name || 'Unknown',
+        company: parsed.company || null,
+        phone: parsed.phone || '00000000000',
+        email: parsed.email || null,
+        location: parsed.location || null,
+        job_title: parsed.job_title || null,
+        status: 'fresh',
+        is_in_pack: true,
+        // Also save the extracted qualification data
+        timeframe: parsed.timeframe || null,
+        availability: parsed.timeframe || null,
+        monthly_spend: parsed.monthly_spend ? Number(parsed.monthly_spend.replace(/[^0-9.]/g, '')) : null,
+        property_ownership: parsed.property_ownership || null,
+        electrical_supply: parsed.electrical_supply || null,
+        solar_location: parsed.solar_location || null,
+        roof_material: parsed.roof_material || null,
+        roof_condition: parsed.roof_condition || null,
+        cover_skylights: parsed.cover_skylights || false,
+        ground_mount: parsed.ground_mount || false,
+        payment_options: parsed.payment_options || null,
+        qualification_notes: parsed.qualification_notes || null,
+        lead_type: formData.lead_type,
+        division_id: formData.division_id || null,
+      };
+
+      if (profile?.role === 'growth_manager') {
+        insertPayload.gm_pipeline_status = 'Callbacks';
+        insertPayload.is_private = true;
+        insertPayload.assigned_to = profile.id;
+      }
+
+      const { data, error } = await supabase
+        .from('leads')
+        .insert([insertPayload])
+        .select()
+        .single();
+
+      if (error) throw error;
+
+      toast.success('Lead extracted successfully');
+      
+      setAiText('');
+      setAiMode(false);
+      onLeadAdded(data);
+      onClose();
+    } catch (error: any) {
+      toast.error('AI Parsing failed: ' + error.message);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+      <div className="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+        <div className="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true" onClick={onClose}></div>
+
+        <span className="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+
+        <div className="inline-block align-bottom bg-white rounded-lg text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full">
+          <div className="bg-white px-4 pt-5 pb-4 sm:p-6 sm:pb-4">
+            <div className="flex justify-between items-center mb-5">
+              <h3 className="text-lg leading-6 font-medium text-gray-900" id="modal-title">
+                {editData ? `Edit ${isContractor ? 'Contractor' : 'Lead'}` : `Add New ${isContractor ? 'Contractor' : 'Lead'}`}
+              </h3>
+              <div className="flex items-center gap-3">
+                {!isContractor && !editData && (
+                  <button 
+                    onClick={() => {
+                      setAiMode(!aiMode);
+                      setProfileMode(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${aiMode ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'}`}
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    {aiMode ? 'Manual Entry' : 'Qualified Lead Write-up'}
+                  </button>
+                )}
+                {isContractor && !editData && (
+                  <button
+                    onClick={() => {
+                      setProfileMode(!profileMode);
+                      setAiMode(false);
+                    }}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold rounded-md transition-colors ${
+                      profileMode 
+                        ? 'bg-blue-100 text-blue-700' 
+                        : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                    }`}
+                  >
+                    {profileMode ? 'Manual Entry' : 'Add from Profile'}
+                  </button>
+                )}
+                <button onClick={onClose} className="text-gray-400 hover:text-gray-500">
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+            </div>
+            
+            {profileMode ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500">Select an existing Admin CRM client to automatically create their contractor profile.</p>
+                
+                {loadingClients ? (
+                  <div className="flex justify-center py-8">
+                    <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                  </div>
+                ) : clientsWithoutContractor.length === 0 ? (
+                  <div className="text-center py-8 text-gray-500 bg-gray-50 rounded-lg border border-gray-200">
+                    No available clients found. All clients already have a contractor profile.
+                  </div>
+                ) : (
+                  <div className="max-h-80 overflow-y-auto border border-gray-200 rounded-lg divide-y divide-gray-200">
+                    {clientsWithoutContractor.map(client => (
+                      <div key={client.id} className="p-4 hover:bg-gray-50 flex items-center justify-between">
+                        <div>
+                          <p className="font-medium text-gray-900">{client.company_name || client.contact_name}</p>
+                          <p className="text-sm text-gray-500">{client.email || 'No email'}</p>
+                        </div>
+                        <button
+                          onClick={() => handleAddFromProfile(client)}
+                          disabled={loading}
+                          className="px-3 py-1.5 text-sm font-medium text-white bg-blue-600 hover:bg-blue-700 rounded-md disabled:opacity-50"
+                        >
+                          Add
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            ) : aiMode ? (
+              <div className="space-y-4">
+                <p className="text-sm text-gray-500">Paste your unformatted lead write-up here, and our AI will automatically extract all details and prepare it for qualification.</p>
+                <textarea
+                  value={aiText}
+                  onChange={(e) => setAiText(e.target.value)}
+                  placeholder="Paste write-up here...&#10;e.g. Confirmed address: Fox Hill...&#10;Monthly energy spend: £350 monthly..."
+                  className="w-full h-64 p-4 border border-gray-300 rounded-lg text-sm bg-gray-50 focus:bg-white focus:ring-2 focus:ring-purple-500 focus:border-purple-500 placeholder-gray-400"
+                />
+              </div>
+            ) : (
+              <form id="add-lead-form" onSubmit={handleSubmit} className="space-y-4">
+                {/* Duplicate Alert */}
+                {(duplicates.leads.length > 0 || duplicates.contractors.length > 0) && (
+                  <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 space-y-2">
+                    <div className="flex items-center gap-2 text-amber-800 font-bold text-xs uppercase tracking-wider">
+                      <AlertCircle className="w-4 h-4" />
+                      Potential Duplicate Found
+                    </div>
+                    <div className="space-y-1 text-sm text-amber-700">
+                      {duplicates.leads.map(l => (
+                        <div 
+                          key={l.id} 
+                          onClick={() => {
+                            onClose();
+                            router.push(`/sales-crm/lead-v2?id=${l.id}`);
+                          }}
+                          className="flex items-center justify-between bg-white/50 p-1.5 rounded border border-amber-100 cursor-pointer hover:bg-white hover:border-amber-300 hover:shadow-sm transition-all group"
+                        >
+                          <span className="flex items-center gap-2">
+                            Lead: <strong className="group-hover:text-blue-600 transition-colors">{l.company || l.name}</strong> 
+                            <span className="text-[10px] text-gray-500 font-normal">({l.status})</span>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold bg-amber-200 px-1.5 py-0.5 rounded uppercase tracking-wider">CRM</span>
+                            <ExternalLink className="w-3 h-3 text-amber-400 group-hover:text-blue-500" />
+                          </div>
+                        </div>
+                      ))}
+                      {duplicates.contractors.map(c => (
+                        <div 
+                          key={c.id} 
+                          onClick={() => {
+                            onClose();
+                            router.push(`/contractor-crm/contractor-v2?id=${c.id}`);
+                          }}
+                          className="flex items-center justify-between bg-white/50 p-1.5 rounded border border-amber-100 cursor-pointer hover:bg-white hover:border-amber-300 hover:shadow-sm transition-all group"
+                        >
+                          <span className="flex items-center gap-2">
+                            Contractor: <strong className="group-hover:text-blue-600 transition-colors">{c.company_name || c.company || c.name || c.contact_name}</strong>
+                            <span className="text-[10px] text-gray-500 font-normal">({c.status})</span>
+                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[10px] font-bold bg-emerald-200 text-emerald-800 px-1.5 py-0.5 rounded uppercase tracking-wider">ONBOARDED</span>
+                            <ExternalLink className="w-3 h-3 text-amber-400 group-hover:text-blue-500" />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* No Duplicate Found Indicator */}
+                {(formData.phone || formData.email) && !checkingDuplicates && duplicates.leads.length === 0 && duplicates.contractors.length === 0 && (
+                  <div className="flex items-center gap-1.5 text-[10px] text-emerald-600 font-bold uppercase tracking-wider pl-1">
+                    <CheckCircle2 className="w-3 h-3" />
+                    No duplicates found
+                  </div>
+                )}
+
+              <div>
+                <label htmlFor="name" className="block text-sm font-medium text-gray-700">Full Name *</label>
+                <input
+                  type="text"
+                  name="name"
+                  id="name"
+                  value={formData.name}
+                  onChange={(e) => setFormData({...formData, name: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+              
+              <div>
+                <label htmlFor="phone" className="block text-sm font-medium text-gray-700">Phone Number *</label>
+                <input
+                  type="text"
+                  name="phone"
+                  id="phone"
+                  value={formData.phone}
+                  onChange={(e) => setFormData({...formData, phone: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="email" className="block text-sm font-medium text-gray-700">Email Address</label>
+                <input
+                  type="text"
+                  name="email"
+                  id="email"
+                  value={formData.email}
+                  onChange={(e) => setFormData({...formData, email: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="company" className="block text-sm font-medium text-gray-700">Company</label>
+                <input
+                  type="text"
+                  name="company"
+                  id="company"
+                  value={formData.company}
+                  onChange={(e) => setFormData({...formData, company: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div className="relative">
+                <label htmlFor="location" className="block text-sm font-medium text-gray-700">Address / Location</label>
+                <div className="relative mt-1">
+                  {isLoaded ? (
+                    <Autocomplete
+                      onLoad={onLoadAutocomplete}
+                      onPlaceChanged={onPlaceChanged}
+                      options={{
+                        types: [],
+                        componentRestrictions: { country: "gb" },
+                        fields: ['formatted_address', 'geometry', 'name']
+                      }}
+                    >
+                      <input
+                        type="text"
+                        name="location"
+                        id="location"
+                        value={formData.location}
+                        onChange={(e) => setFormData({...formData, location: e.target.value})}
+                        className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-10 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                        placeholder="Search address..."
+                      />
+                    </Autocomplete>
+                  ) : (
+                    <input
+                      type="text"
+                      name="location"
+                      id="location"
+                      value={formData.location}
+                      onChange={(e) => setFormData({...formData, location: e.target.value})}
+                      className="block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 pr-10 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    />
+                  )}
+                  <div className="absolute inset-y-0 right-0 pr-3 flex items-center pointer-events-none">
+                    {formData.latitude && formData.longitude ? (
+                      <div title="Location coordinates found">
+                        <CheckCircle className="h-4 w-4 text-green-500" />
+                      </div>
+                    ) : (formData.location) ? (
+                      <div title="Coordinates missing - lead will not show on map">
+                        <Info className="h-4 w-4 text-amber-500" />
+                      </div>
+                    ) : (
+                      <MapPin className="h-4 w-4 text-gray-400" />
+                    )}
+                  </div>
+                </div>
+              </div>
+
+              <div>
+                <label htmlFor="other_contacts" className="block text-sm font-medium text-gray-700">Additional Contact Name</label>
+                <input
+                  type="text"
+                  name="other_contacts"
+                  id="other_contacts"
+                  value={formData.other_contacts}
+                  onChange={(e) => setFormData({...formData, other_contacts: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              <div>
+                <label htmlFor="other_contact_numbers" className="block text-sm font-medium text-gray-700">Additional Phone Number</label>
+                <input
+                  type="text"
+                  name="other_contact_numbers"
+                  id="other_contact_numbers"
+                  value={formData.other_contact_numbers}
+                  onChange={(e) => setFormData({...formData, other_contact_numbers: e.target.value})}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                />
+              </div>
+
+              {!isContractor && (
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label htmlFor="lead_type" className="block text-sm font-medium text-gray-700">Lead Type</label>
+                    <select
+                      id="lead_type"
+                      value={formData.lead_type}
+                      onChange={(e) => setFormData({...formData, lead_type: e.target.value as any})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                      <option value="commercial">Commercial</option>
+                      <option value="residential">Residential</option>
+                    </select>
+                  </div>
+                  <div>
+                    <label htmlFor="division_id" className="block text-sm font-medium text-gray-700">Division</label>
+                    <select
+                      id="division_id"
+                      value={formData.division_id}
+                      onChange={(e) => setFormData({...formData, division_id: e.target.value})}
+                      className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm"
+                    >
+                      <option value="">No Division</option>
+                      {divisions.map(d => (
+                        <option key={d.id} value={d.id}>{d.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {profile?.role === 'growth_manager' && !isContractor && (
+                <div className="bg-blue-50 p-3 rounded-lg border border-blue-100">
+                  <label htmlFor="gm_status" className="block text-xs font-bold text-blue-800 uppercase tracking-wider mb-1.5">Growth Manager Pipeline Category</label>
+                  <select
+                    id="gm_status"
+                    value={formData.gm_pipeline_status}
+                    onChange={(e) => setFormData({...formData, gm_pipeline_status: e.target.value})}
+                    className="block w-full border border-blue-200 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-blue-500 focus:border-blue-500 sm:text-sm bg-white"
+                  >
+                    <option value="Callbacks">Callbacks</option>
+                    <option value="To Sign">To Sign</option>
+                    <option value="Signed Up">Signed Up</option>
+                  </select>
+                  <p className="mt-1.5 text-[10px] text-blue-600 font-medium italic">* This lead will be private to you and super admins.</p>
+                </div>
+              )}
+
+              <div className="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse">
+                <button
+                type="submit"
+                disabled={loading}
+                className="w-full inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-blue-600 text-base font-medium text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+              >
+                {loading ? 'Saving...' : editData ? 'Save Changes' : `Add ${isContractor ? 'Contractor' : 'Lead'}`}
+              </button>
+                <button
+                  type="button"
+                  onClick={onClose}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            </form>
+            )}
+            
+            {aiMode && (
+              <div className="mt-5 sm:mt-6 sm:flex sm:flex-row-reverse">
+                <button
+                  type="button"
+                  onClick={handleAiParse}
+                  disabled={loading || !aiText.trim()}
+                  className="w-full inline-flex justify-center items-center gap-2 rounded-md border border-transparent shadow-sm px-4 py-2 bg-purple-600 text-base font-medium text-white hover:bg-purple-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-500 sm:ml-3 sm:w-auto sm:text-sm disabled:opacity-50"
+                >
+                  {loading ? <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div> : <Sparkles className="w-4 h-4" />}
+                  {loading ? 'Extracting...' : 'Extract & Qualify'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAiMode(false)}
+                  className="mt-3 w-full inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 sm:mt-0 sm:ml-3 sm:w-auto sm:text-sm"
+                >
+                  Cancel
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};

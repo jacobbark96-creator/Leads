@@ -4,6 +4,8 @@ import { Loader2, Search, X, CheckSquare, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
+import { formatDistanceToNow } from 'date-fns';
+
 interface PackLeadsModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -38,7 +40,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
         
         const notes = Array.isArray(m.leads.lead_notes) ? m.leads.lead_notes : [];
         const sortedNotes = [...notes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        const lastInteraction = sortedNotes.length > 0 ? sortedNotes[0].content : null;
+        const lastInteraction = sortedNotes.length > 0 ? sortedNotes[0].created_at : null;
         
         return {
           ...m.leads,
@@ -156,7 +158,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                   <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-32">
                     Disposition
                   </th>
-                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-64">
+                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-48">
                     Last Interaction
                   </th>
                   <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-96">
@@ -204,8 +206,8 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                         </span>
                       ) : '-'}
                     </td>
-                    <td className="px-4 py-1.5 text-xs text-gray-500 truncate max-w-[250px]" title={lead.lastInteraction}>
-                      {lead.lastInteraction || '-'}
+                    <td className="px-4 py-1.5 text-xs text-gray-500 truncate max-w-[150px]" title={lead.lastInteraction ? new Date(lead.lastInteraction).toLocaleString() : ''}>
+                      {lead.lastInteraction ? `${formatDistanceToNow(new Date(lead.lastInteraction))} ago` : '-'}
                     </td>
                     <td className="px-4 py-1.5 text-xs text-gray-500 truncate max-w-[350px]" title={lead.location}>
                       {lead.location || '-'}

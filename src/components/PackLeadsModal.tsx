@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Loader2, Search, X, CheckSquare, ExternalLink } from 'lucide-react';
+import { Loader2, Search, X, CheckSquare, ExternalLink, Download, Ban, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
 
@@ -82,6 +82,82 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
     setSelectedLeadIds(newSet);
   };
 
+  const handleDownloadAndRemove = async () => {
+    if (selectedLeadIds.size === 0) return;
+    if (!window.confirm(`Download and remove ${selectedLeadIds.size} leads from this pack?`)) return;
+
+    try {
+      // 1. Generate CSV
+      const selectedLeads = leads.filter(l => selectedLeadIds.has(l.id));
+      const headers = ['Lead Name', 'Contact Name', 'Contact Number', 'Address', 'Disposition', 'Last Interaction'];
+      const csvRows = selectedLeads.map(l => {
+        const company = (l.company || l.name || '').replace(/"/g, '""');
+        const name = (l.name || '').replace(/"/g, '""');
+        const phone = (l.phone || '').replace(/"/g, '""');
+        const location = (l.location || '').replace(/"/g, '""');
+        const disposition = (l.disposition || '').replace(/"/g, '""');
+        const lastInteraction = l.lastInteraction ? new Date(l.lastInteraction).toLocaleString() : '';
+        return `"${company}","${name}","${phone}","${location}","${disposition}","${lastInteraction}"`;
+      });
+      const csvContent = [headers.join(','), ...csvRows].join('\n');
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${pack.name}_selected_leads.csv`;
+      a.click();
+      window.URL.revokeObjectURL(url);
+
+      // 2. Remove from pack
+      const { error } = await supabase
+        .from('lead_pack_memberships')
+        .delete()
+        .eq('lead_pack_id', pack.id)
+        .in('lead_id', Array.from(selectedLeadIds));
+
+      if (error) throw error;
+      toast.success('Leads downloaded and removed from pack');
+      setSelectedLeadIds(new Set());
+      fetchLeads();
+    } catch (err: any) {
+      toast.error('Failed to remove leads: ' + err.message);
+    }
+  };
+
+  const handleDNC = async () => {
+    if (selectedLeadIds.size === 0) return;
+    if (!window.confirm(`Mark ${selectedLeadIds.size} leads as DNC and remove them from the pack?`)) return;
+
+    try {
+      const leadIds = Array.from(selectedLeadIds);
+      
+      // 1. Update leads table to dnc
+      const { error: leadsError } = await supabase
+        .from('leads')
+        .update({ status: 'dnc' })
+        .in('id', leadIds);
+      if (leadsError) throw leadsError;
+
+      // 2. Remove from pack (hard constraint)
+      const { error: packError } = await supabase
+        .from('lead_pack_memberships')
+        .delete()
+        .eq('lead_pack_id', pack.id)
+        .in('lead_id', leadIds);
+      if (packError) throw packError;
+
+      toast.success('Leads marked as DNC and removed from pack');
+      setSelectedLeadIds(new Set());
+      fetchLeads();
+    } catch (err: any) {
+      toast.error('Failed to mark leads as DNC: ' + err.message);
+    }
+  };
+
+  const handleSmartView = () => {
+    toast('SmartView coming soon!', { icon: '✨' });
+  };
+
   if (!isOpen) return null;
 
   return (
@@ -115,11 +191,32 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
           </div>
           <div className="flex items-center gap-3">
             {selectedLeadIds.size > 0 && (
-              <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">
-                {selectedLeadIds.size} selected
-              </span>
+              <>
+                <span className="text-sm font-medium text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg">
+                  {selectedLeadIds.size} selected
+                </span>
+                <div className="flex items-center gap-2 border-l border-gray-200 pl-3">
+                  <button
+                    onClick={handleDownloadAndRemove}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-colors shadow-sm"
+                  >
+                    <Download className="w-3.5 h-3.5" /> Download & Remove
+                  </button>
+                  <button
+                    onClick={handleDNC}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 transition-colors shadow-sm"
+                  >
+                    <Ban className="w-3.5 h-3.5" /> DNC
+                  </button>
+                  <button
+                    onClick={handleSmartView}
+                    className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-600 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors shadow-sm"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" /> SmartView
+                  </button>
+                </div>
+              </>
             )}
-            {/* Action buttons for selected leads could go here in the future */}
           </div>
         </div>
 

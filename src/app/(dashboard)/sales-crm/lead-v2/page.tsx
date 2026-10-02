@@ -820,13 +820,27 @@ function LeadDetailsV2Content() {
         if (sv && mounted) setPackInfo(sv.lead_packs);
 
         const queueStr = localStorage.getItem('smartViewQueue');
-        if (queueStr) {
+        const queueTimeStr = localStorage.getItem('smartViewQueueTime');
+        
+        if (queueStr && queueTimeStr) {
           const queue = JSON.parse(queueStr);
           
           if (!id) {
             // Initial load of smart view, take first lead from queue
             if (queue.length > 0 && mounted) {
-              router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${queue[0]}`);
+              const { data: nextData } = await supabase.rpc('reserve_next_lead_from_smartview_queue', {
+                p_smart_view_id: smartViewId,
+                p_lead_ids: queue,
+                p_rep_id: profile.id,
+                p_queue_time: new Date(parseInt(queueTimeStr)).toISOString()
+              });
+
+              if (nextData && nextData.length > 0 && mounted) {
+                router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${nextData[0].lead_id}`);
+              } else {
+                toast.error('No available leads in this SmartView queue!');
+                if (mounted) setLoading(false);
+              }
             } else {
               toast.error('No leads available in this SmartView queue!');
               if (mounted) setLoading(false);
@@ -2309,7 +2323,32 @@ function LeadDetailsV2Content() {
       return;
     }
     
-    if (nextLeadId) {
+    if (smartViewId) {
+        const queueStr = localStorage.getItem('smartViewQueue');
+        const queueTimeStr = localStorage.getItem('smartViewQueueTime');
+        
+        if (queueStr && queueTimeStr) {
+          const queue = JSON.parse(queueStr);
+          const currentIndex = queue.indexOf(id);
+          const remainingQueue = currentIndex !== -1 ? queue.slice(currentIndex + 1) : queue;
+          
+          if (remainingQueue.length > 0) {
+            const { data: nextData } = await supabase.rpc('reserve_next_lead_from_smartview_queue', {
+              p_smart_view_id: smartViewId,
+              p_lead_ids: remainingQueue,
+              p_rep_id: profile?.id,
+              p_queue_time: new Date(parseInt(queueTimeStr)).toISOString()
+            });
+
+            if (nextData && nextData.length > 0) {
+              router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${nextData[0].lead_id}&tab=${tab}`);
+            } else {
+              toast.success('SmartView completed! No more available leads.');
+              router.push(`/sales-crm/smart-views/${smartViewId}`);
+            }
+          }
+        }
+    } else if (nextLeadId) {
       router.push(`/sales-crm/lead-v2?id=${nextLeadId}&tab=${tab}`);
     }
   };
@@ -2335,11 +2374,35 @@ function LeadDetailsV2Content() {
 
       // Fetch next lead
       if (smartViewId) {
-        if (nextLeadId) {
-          router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${nextLeadId}`);
-        } else {
-          toast.success('SmartView completed! No more leads available.');
-          router.push(`/sales-crm/smart-views/${smartViewId}`);
+        const queueStr = localStorage.getItem('smartViewQueue');
+        const queueTimeStr = localStorage.getItem('smartViewQueueTime');
+        
+        if (queueStr && queueTimeStr) {
+          const queue = JSON.parse(queueStr);
+          const currentIndex = queue.indexOf(id);
+          const remainingQueue = currentIndex !== -1 ? queue.slice(currentIndex + 1) : queue;
+          
+          if (remainingQueue.length > 0) {
+            const { data: nextData, error: nextError } = await supabase.rpc('reserve_next_lead_from_smartview_queue', {
+              p_smart_view_id: smartViewId,
+              p_lead_ids: remainingQueue,
+              p_rep_id: profile.id,
+              p_queue_time: new Date(parseInt(queueTimeStr)).toISOString()
+            });
+
+            if (nextError) {
+              toast.error('Error getting next lead: ' + nextError.message);
+              setLoading(false);
+            } else if (nextData && nextData.length > 0) {
+              router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${nextData[0].lead_id}`);
+            } else {
+              toast.success('SmartView completed! No more available leads.');
+              router.push(`/sales-crm/smart-views/${smartViewId}`);
+            }
+          } else {
+            toast.success('SmartView completed! No more leads available.');
+            router.push(`/sales-crm/smart-views/${smartViewId}`);
+          }
         }
       } else {
         const { data: nextData, error: nextError } = await supabase.rpc('reserve_next_lead_in_pack', { 
@@ -2498,7 +2561,7 @@ function LeadDetailsV2Content() {
               )}
             </div>
             <div className="flex flex-wrap items-center gap-3 md:gap-4 w-full md:w-auto">
-              {packId && (profile?.role === 'super_admin' || profile?.role === 'rep' || profile?.role === 'admin' || profile?.permissions?.includes('can_autodial')) && (
+              {(packId || smartViewId) && (profile?.role === 'super_admin' || profile?.role === 'rep' || profile?.role === 'admin' || profile?.permissions?.includes('can_autodial')) && (
                 <button
                   onClick={() => setIsAutoDialEnabled(!isAutoDialEnabled)}
                   className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-2 transition-colors shadow-sm ${isAutoDialEnabled ? 'bg-amber-100 text-amber-700 hover:bg-amber-200 border border-amber-200' : 'bg-emerald-100 text-emerald-700 hover:bg-emerald-200 border border-emerald-200'}`}
@@ -2510,7 +2573,7 @@ function LeadDetailsV2Content() {
                   )}
                 </button>
               )}
-              {packId && (
+              {(packId || smartViewId) && (
                 <div className="flex items-center gap-1.5 md:gap-2 bg-white px-2 py-1 rounded-xl border border-gray-200 shadow-sm overflow-x-auto no-scrollbar max-w-full">
                   <span className="text-[9px] md:text-[10px] font-bold text-gray-400 uppercase tracking-wider mr-1 shrink-0">Log:</span>
                   <button

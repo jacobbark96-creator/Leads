@@ -26,12 +26,24 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
       setLoading(true);
       const { data, error } = await supabase
         .from('lead_pack_memberships')
-        .select('lead_id, leads (id, company, name, location, phone)')
+        .select('lead_id, disposition, leads (id, company, name, location, phone, lead_notes (content, created_at))')
         .eq('lead_pack_id', pack.id);
 
       if (error) throw error;
       
-      const mappedLeads = data?.map((m: any) => m.leads).filter(Boolean) || [];
+      const mappedLeads = data?.map((m: any) => {
+        if (!m.leads) return null;
+        
+        const notes = Array.isArray(m.leads.lead_notes) ? m.leads.lead_notes : [];
+        const sortedNotes = [...notes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const lastInteraction = sortedNotes.length > 0 ? sortedNotes[0].content : null;
+        
+        return {
+          ...m.leads,
+          disposition: m.disposition,
+          lastInteraction
+        };
+      }).filter(Boolean) || [];
       setLeads(mappedLeads);
     } catch (err: any) {
       toast.error('Failed to load leads: ' + err.message);
@@ -44,7 +56,8 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
     (l.company?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (l.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (l.location?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (l.phone?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    (l.phone?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (l.disposition?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -138,6 +151,12 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                   <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-32">
                     Contact Number
                   </th>
+                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-32">
+                    Disposition
+                  </th>
+                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-64">
+                    Last Interaction
+                  </th>
                   <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-96">
                     Address
                   </th>
@@ -162,6 +181,23 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                     </td>
                     <td className="px-4 py-1.5 text-xs font-medium text-gray-600 truncate max-w-[120px]" title={lead.phone}>
                       {lead.phone || '-'}
+                    </td>
+                    <td className="px-4 py-1.5 text-xs font-medium text-gray-600 truncate max-w-[120px]" title={lead.disposition}>
+                      {lead.disposition ? (
+                        <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider ${
+                          lead.disposition.toLowerCase() === 'uncalled' ? 'bg-gray-100 text-gray-600' :
+                          lead.disposition.toLowerCase() === 'contacted' ? 'bg-purple-100 text-purple-700' :
+                          lead.disposition.toLowerCase() === 'voicemail' ? 'bg-blue-100 text-blue-700' :
+                          lead.disposition.toLowerCase() === 'not viable' ? 'bg-red-100 text-red-700' :
+                          lead.disposition.toLowerCase() === 'call back' ? 'bg-yellow-100 text-yellow-700' :
+                          'bg-gray-100 text-gray-600'
+                        }`}>
+                          {lead.disposition}
+                        </span>
+                      ) : '-'}
+                    </td>
+                    <td className="px-4 py-1.5 text-xs text-gray-500 truncate max-w-[250px]" title={lead.lastInteraction}>
+                      {lead.lastInteraction || '-'}
                     </td>
                     <td className="px-4 py-1.5 text-xs text-gray-500 truncate max-w-[350px]" title={lead.location}>
                       {lead.location || '-'}

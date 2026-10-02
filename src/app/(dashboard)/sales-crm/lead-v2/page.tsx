@@ -1631,8 +1631,15 @@ function LeadDetailsV2Content() {
       end.setDate(end.getDate() + 7); // Check next 7 days
 
       const res = await fetch(`/api/google/calendar/events?userId=${userId}&timeMin=${start.toISOString()}&timeMax=${end.toISOString()}`);
-      if (!res.ok) throw new Error('Failed to fetch events');
-      const events = await res.json();
+      
+      let events = [];
+      if (res.ok) {
+        events = await res.json();
+      } else {
+        // If 400 (NOT_CONNECTED), silently ignore calendar events and just show all slots as available
+        // If it's a 500, we might want to log it, but we still shouldn't break the UI
+        console.warn('Google Calendar fetch failed or user not connected. Falling back to all slots available.');
+      }
 
       // Generate slots: 9 AM to 6 PM, 1 hour each, 15 min buffer
       const slots: Date[] = [];

@@ -130,8 +130,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         if (profile.role === 'growth_manager') {
           if (path === '/sales-crm/my-clients' || path === '/sales-crm/my-sales' || path.startsWith('/sales-crm/pipeline')) {
             hasAccess = true;
-          } else if (path.startsWith('/sales-crm/lead')) {
-            hasAccess = true; // viewing a lead
+          } else if (path.startsWith('/sales-crm/lead') || path.startsWith('/sales-crm/smart-views')) {
+            hasAccess = true; // viewing a lead or smart view
           } else if (path.startsWith('/sales-crm')) {
             // Redirect growth manager to pipeline if they try to access other sales-crm paths
             router.replace('/sales-crm/pipeline');
@@ -141,8 +141,8 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           // Residential/Commercial Sales only see Pipeline and Calendar
           if (path.startsWith('/sales-crm/pipeline') || path === '/sales-crm/calendar') {
             hasAccess = true;
-          } else if (path.startsWith('/sales-crm/lead')) {
-            hasAccess = true; // viewing a lead
+          } else if (path.startsWith('/sales-crm/lead') || path.startsWith('/sales-crm/smart-views')) {
+            hasAccess = true; // viewing a lead or smart view
           } else if (path.startsWith('/sales-crm')) {
             router.replace('/sales-crm/pipeline');
             return;
@@ -164,6 +164,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           if (path.startsWith('/sales-crm/qualified') && (perms.includes('sales-crm/qualified') || profile.role === 'Residential Rep')) hasAccess = true;
           if (path.startsWith('/sales-crm/import') && (perms.includes('sales-crm/import') || profile.role === 'Residential Rep')) hasAccess = true;
           if (path.startsWith('/sales-crm/lead') && (perms.includes('sales-crm') || profile.role === 'Residential Rep')) hasAccess = true; // viewing a lead
+          if (path.startsWith('/sales-crm/smart-views') && (perms.includes('sales-crm') || profile.role === 'Residential Rep')) hasAccess = true; // viewing a smart view
         }
 
         // Contractor CRM (Residential Sales/Commercial Sales don't have access)

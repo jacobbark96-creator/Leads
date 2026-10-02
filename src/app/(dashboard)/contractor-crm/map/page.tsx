@@ -369,7 +369,7 @@ export default function MapTab() {
                 onClick={() => setShowContractors(!showContractors)}
                 className={`w-full flex items-center gap-3 p-2 rounded-lg transition-colors ${showContractors ? 'text-gray-900 bg-gray-50/50 hover:bg-gray-100' : 'text-gray-400 opacity-60 hover:bg-gray-50'}`}
               >
-                <Star className={`w-5 h-5 flex-shrink-0 ${showContractors ? 'fill-yellow-400 text-yellow-400' : 'fill-gray-300 text-gray-300'}`} />
+                <Star className={`w-5 h-5 flex-shrink-0 ${showContractors ? 'fill-blue-500 text-blue-500' : 'fill-gray-300 text-gray-300'}`} />
                 <span className="text-sm font-medium opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap">Contractors</span>
               </button>
               <button 
@@ -457,7 +457,7 @@ export default function MapTab() {
                     <Marker
                       position={{ lat: Number(mapArea.lat), lng: Number(mapArea.lng) }}
                       title={client.company_name || client.contact_name || 'Contractor'}
-                      icon={createStarIcon(color)}
+                      icon={createStarIcon('#3B82F6')}
                       onClick={() => {
                         setSelectedClient(client);
                         setSelectedLead(null);

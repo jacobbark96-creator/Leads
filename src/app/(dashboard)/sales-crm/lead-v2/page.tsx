@@ -699,7 +699,7 @@ function LeadDetailsV2Content() {
 
   useEffect(() => {
     const calculateSystemSize = () => {
-      const estKw = calculateEstimatedSystemSize(editForm.roof_size, editForm.monthly_spend, editForm.unit_rate);
+      const estKw = calculateEstimatedSystemSize(editForm.roof_size, editForm.monthly_spend, editForm.unit_rate, editForm.est_ann_consumption);
       if (estKw && estKw > 0) {
          setEditForm(prev => {
             if (prev.est_system_size === `${estKw.toFixed(1)} kW`) return prev;
@@ -3365,7 +3365,7 @@ function LeadDetailsV2Content() {
                   (() => {
                     const systemSizeKwp = buildingEnrichment?.max_array_panels_count
                       ? (buildingEnrichment.max_array_panels_count * 0.4)
-                      : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate)
+                      : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption)
                         || ((lead as any).est_system_size ? parseFloat((lead as any).est_system_size) : null);
                         
                     const indicativeValue = calculateIndicativeSystemValue(systemSizeKwp);

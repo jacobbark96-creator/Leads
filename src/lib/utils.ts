@@ -110,7 +110,8 @@ export function getVagueLocation(lat: number | null | undefined, lng: number | n
 export function calculateEstimatedSystemSize(
   roofAreaSqmRaw: any,
   monthlySpendRaw: any,
-  unitRateRaw?: any
+  unitRateRaw?: any,
+  annualConsumptionRaw?: any
 ): number | null {
   // Clean strings (remove commas, currency symbols, spaces)
   const parseClean = (val: any) => {
@@ -122,6 +123,7 @@ export function calculateEstimatedSystemSize(
 
   const roofAreaSqm = parseClean(roofAreaSqmRaw);
   const monthlySpend = parseClean(monthlySpendRaw);
+  const annualConsumption = parseClean(annualConsumptionRaw);
   let unitRate = parseClean(unitRateRaw);
 
   // If unit rate is provided in pence (e.g., 24 instead of 0.24), convert it to pounds
@@ -134,7 +136,7 @@ export function calculateEstimatedSystemSize(
     unitRate = 0.24;
   }
 
-  if (!roofAreaSqm && !monthlySpend) return null;
+  if (!roofAreaSqm && !monthlySpend && !annualConsumption) return null;
 
   let sizeByRoof: number | null = null;
   let sizeBySpend: number | null = null;
@@ -149,11 +151,10 @@ export function calculateEstimatedSystemSize(
     sizeByRoof = (realMaxPanels * 550) / 1000;
   }
 
-  if (monthlySpend) {
-    // Calculation 2: Based on monthly spend
-    // (monthly spend / unit rate) * 12 = KWh per annum
+  if (annualConsumption || monthlySpend) {
+    // Calculation 2: Based on consumption/spend
     // KWh per annum / 950 = KWp system size
-    const annualKwh = (monthlySpend / unitRate) * 12;
+    const annualKwh = annualConsumption || ((monthlySpend! / unitRate) * 12);
     sizeBySpend = annualKwh / 950;
   }
 

@@ -24,6 +24,9 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
   const [smartViewName, setSmartViewName] = useState('');
   const [isCreatingSmartView, setIsCreatingSmartView] = useState(false);
   const [showSmartViewPrompt, setShowSmartViewPrompt] = useState(false);
+  const [smartViewMode, setSmartViewMode] = useState<'new' | 'existing'>('new');
+  const [existingSmartViews, setExistingSmartViews] = useState<any[]>([]);
+  const [selectedExistingSmartViewId, setSelectedExistingSmartViewId] = useState('');
   const { profile } = useAuthStore();
 
   useEffect(() => {
@@ -205,31 +208,40 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
   };
 
   const handleSmartView = async () => {
-    if (!smartViewName.trim()) {
+    if (smartViewMode === 'new' && !smartViewName.trim()) {
       toast.error('Please enter a name for your SmartView');
+      return;
+    }
+    
+    if (smartViewMode === 'existing' && !selectedExistingSmartViewId) {
+      toast.error('Please select an existing SmartView');
       return;
     }
     
     try {
       setIsCreatingSmartView(true);
+      let targetSmartViewId = selectedExistingSmartViewId;
       
-      // 1. Create the SmartView
-      const { data: smartView, error: svError } = await supabase
-        .from('smart_views')
-        .insert({
-          user_id: profile?.id,
-          name: smartViewName.trim(),
-          pack_id: pack.id
-        })
-        .select()
-        .single();
-        
-      if (svError) throw svError;
+      if (smartViewMode === 'new') {
+        // 1. Create the SmartView
+        const { data: smartView, error: svError } = await supabase
+          .from('smart_views')
+          .insert({
+            user_id: profile?.id,
+            name: smartViewName.trim(),
+            pack_id: pack.id
+          })
+          .select()
+          .single();
+          
+        if (svError) throw svError;
+        targetSmartViewId = smartView.id;
+      }
       
       // 2. Add the items
       const selectedLeads = allLeads.filter(l => selectedLeadIds.has(l.id));
       const itemsToInsert = selectedLeads.map(l => ({
-        smart_view_id: smartView.id,
+        smart_view_id: targetSmartViewId,
         lead_id: l.id,
         membership_id: l.membership_id
       }));
@@ -238,19 +250,22 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
         .from('smart_view_items')
         .insert(itemsToInsert);
         
-      if (itemsError) throw itemsError;
+      // Handle unique constraint violations gracefully (if lead is already in the smart view)
+      if (itemsError && !itemsError.message.includes('duplicate key')) {
+        throw itemsError;
+      }
       
-      toast.success('SmartView created successfully!');
+      toast.success(`Leads added to SmartView successfully!`);
       setShowSmartViewPrompt(false);
       setSmartViewName('');
       setSelectedLeadIds(new Set());
       
-      // Navigate to the new SmartView page
-      router.push(`/sales-crm/smart-views/${smartView.id}`);
+      // Navigate to the SmartView page
+      router.push(`/sales-crm/smart-views/${targetSmartViewId}`);
       onClose();
       
     } catch (err: any) {
-      toast.error('Failed to create SmartView: ' + err.message);
+      toast.error('Failed to process SmartView: ' + err.message);
     } finally {
       setIsCreatingSmartView(false);
     }
@@ -310,7 +325,22 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                     <Ban className="w-3.5 h-3.5" /> DNC
                   </button>
                   <button
-                    onClick={() => setShowSmartViewPrompt(true)}
+                    onClick={async () => {
+                      if (profile?.id) {
+                        const { data } = await supabase
+                          .from('smart_views')
+                          .select('*')
+                          .eq('user_id', profile.id)
+                          .order('created_at', { ascending: false });
+                        if (data) {
+                          setExistingSmartViews(data);
+                          if (data.length > 0) {
+                            setSelectedExistingSmartViewId(data[0].id);
+                          }
+                        }
+                      }
+                      setShowSmartViewPrompt(true);
+                    }}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-600 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors shadow-sm"
                   >
                     <Sparkles className="w-3.5 h-3.5" /> SmartView
@@ -439,18 +469,57 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
             </div>
             <div className="p-5">
               <p className="text-sm text-gray-600 mb-4">
-                You are creating a new SmartView with <span className="font-bold text-purple-600">{selectedLeadIds.size}</span> selected leads from <span className="font-semibold text-gray-800">{pack.name}</span>.
+                You are adding <span className="font-bold text-purple-600">{selectedLeadIds.size}</span> selected leads from <span className="font-semibold text-gray-800">{pack.name}</span> to a SmartView.
               </p>
-              <label className="block text-sm font-semibold text-gray-700 mb-1.5">SmartView Name</label>
-              <input
-                type="text"
-                autoFocus
-                placeholder="e.g., Follow up list, High priority..."
-                value={smartViewName}
-                onChange={(e) => setSmartViewName(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSmartView()}
-                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-sm"
-              />
+              
+              <div className="flex gap-2 mb-4 bg-gray-100 p-1 rounded-lg">
+                <button
+                  onClick={() => setSmartViewMode('new')}
+                  className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-colors ${smartViewMode === 'new' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Create New
+                </button>
+                <button
+                  onClick={() => setSmartViewMode('existing')}
+                  className={`flex-1 text-sm font-medium py-1.5 rounded-md transition-colors ${smartViewMode === 'existing' ? 'bg-white shadow text-gray-900' : 'text-gray-500 hover:text-gray-700'}`}
+                >
+                  Add to Existing
+                </button>
+              </div>
+
+              {smartViewMode === 'new' ? (
+                <>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">SmartView Name</label>
+                  <input
+                    type="text"
+                    autoFocus
+                    placeholder="e.g., Follow up list, High priority..."
+                    value={smartViewName}
+                    onChange={(e) => setSmartViewName(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleSmartView()}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-sm"
+                  />
+                </>
+              ) : (
+                <>
+                  <label className="block text-sm font-semibold text-gray-700 mb-1.5">Select SmartView</label>
+                  {existingSmartViews.length > 0 ? (
+                    <select
+                      value={selectedExistingSmartViewId}
+                      onChange={(e) => setSelectedExistingSmartViewId(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-sm"
+                    >
+                      {existingSmartViews.map(sv => (
+                        <option key={sv.id} value={sv.id}>{sv.name}</option>
+                      ))}
+                    </select>
+                  ) : (
+                    <div className="text-sm text-gray-500 italic p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      You haven't created any SmartViews yet.
+                    </div>
+                  )}
+                </>
+              )}
             </div>
             <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
               <button
@@ -461,11 +530,11 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
               </button>
               <button
                 onClick={handleSmartView}
-                disabled={isCreatingSmartView || !smartViewName.trim()}
+                disabled={isCreatingSmartView || (smartViewMode === 'new' && !smartViewName.trim()) || (smartViewMode === 'existing' && !selectedExistingSmartViewId)}
                 className="px-4 py-2 text-sm font-bold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
               >
                 {isCreatingSmartView ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
-                Create & View
+                {smartViewMode === 'new' ? 'Create & View' : 'Add & View'}
               </button>
             </div>
           </div>

@@ -39,7 +39,7 @@ export default function BdPipelinePage() {
         .not('bd_pipeline_status', 'is', null)
         .eq('assigned_to', profile.id);
 
-      if (activeDivisionId) {
+      if (activeDivisionId && activeDivisionId !== 'all') {
         query = query.eq('division_id', activeDivisionId);
       }
 

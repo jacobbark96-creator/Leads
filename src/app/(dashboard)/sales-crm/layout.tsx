@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home, Archive, ChevronLeft, Calendar, Briefcase } from 'lucide-react';
+import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home, Archive, ChevronLeft, Calendar, Briefcase, Sparkles } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
@@ -34,8 +34,9 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
     setMobileMenuOpen(false);
   }, [pathname]);
   
-  // Lead Packs
+  // Lead Packs & SmartViews
   const [leadPacks, setLeadPacks] = useState<any[]>([]);
+  const [smartViews, setSmartViews] = useState<any[]>([]);
   const { activeDivisionId } = useDivisionStore();
   const [activeDivisionName, setActiveDivisionName] = useState<string>('');
 
@@ -75,6 +76,19 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
         setLeadPacks(data.filter(p => p.name !== 'Business Development'));
       } else if (error) {
         console.error('Error fetching lead packs:', error);
+      }
+
+      // Fetch SmartViews for this user
+      const { data: svData, error: svError } = await supabase
+        .from('smart_views')
+        .select('*, smart_view_items(count)')
+        .eq('user_id', profile.id)
+        .order('created_at', { ascending: false });
+        
+      if (svData) {
+        setSmartViews(svData);
+      } else if (svError) {
+        console.error('Error fetching smart views:', svError);
       }
     };
     
@@ -292,6 +306,33 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
                     </div>
                   )}
                 </div>
+
+                {/* SmartViews Section */}
+                {smartViews.length > 0 && (
+                  <div className="mt-6">
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Smart Views</h3>
+                      <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{smartViews.length}</span>
+                    </div>
+                    <div className="space-y-0.5">
+                      {smartViews.map(sv => (
+                        <Link
+                          key={sv.id}
+                          href={`/sales-crm/smart-views/${sv.id}`}
+                          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-900 transition-colors group"
+                        >
+                          <div className="w-6 h-6 rounded shadow-inner flex items-center justify-center text-white shrink-0 bg-purple-600">
+                            <Sparkles className="w-3.5 h-3.5" />
+                          </div>
+                          <div className="flex flex-col min-w-0 flex-1">
+                            <span className="truncate group-hover:text-purple-700 transition-colors leading-tight">{sv.name}</span>
+                            <span className="text-[10px] text-gray-400 font-normal">{sv.smart_view_items?.[0]?.count || 0} leads</span>
+                          </div>
+                        </Link>
+                      ))}
+                    </div>
+                  </div>
+                )}
               </div>
             )}
           </nav>

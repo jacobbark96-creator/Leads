@@ -158,39 +158,47 @@ export default function SmartViewDetails() {
         <table className="w-full text-left border-collapse">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
-              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Lead</th>
-              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Contact</th>
-              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Status / Disposition</th>
-              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider text-center">Dials</th>
-              <th className="px-6 py-3 text-xs font-bold text-gray-500 uppercase tracking-wider">Last Interaction</th>
+              <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Lead</th>
+              <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Contact</th>
+              <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phone</th>
+              <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Address</th>
+              <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Status / Disposition</th>
+              <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-center">Dials</th>
+              <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Last Interaction</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {leads.map(lead => (
               <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors">
-                <td className="px-6 py-4">
-                  <div className="font-bold text-gray-900">{lead.company || lead.name}</div>
-                  <div className="text-xs text-gray-500 truncate max-w-[200px] mt-0.5">{lead.location}</div>
+                <td className="px-3 py-1.5">
+                  <div className="text-xs font-bold text-gray-900 truncate max-w-[150px]">{lead.company || lead.name}</div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="text-sm font-medium text-gray-900">{lead.name}</div>
-                  <div className="text-xs text-gray-500 mt-0.5">{lead.phone || 'No phone'}</div>
+                <td className="px-3 py-1.5">
+                  <div className="text-xs font-medium text-gray-900 truncate max-w-[120px]">{lead.name}</div>
                 </td>
-                <td className="px-6 py-4">
-                  <div className="flex items-center gap-2">
-                    <span className={`w-2 h-2 rounded-full ${lead.status === 'uncalled' ? 'bg-blue-500' : 'bg-green-500'}`} />
-                    <span className="text-sm font-semibold text-gray-700 capitalize">{lead.status}</span>
+                <td className="px-3 py-1.5">
+                  <div className="text-xs text-gray-600 truncate max-w-[100px]">{lead.phone || '-'}</div>
+                </td>
+                <td className="px-3 py-1.5">
+                  <div className="text-xs text-gray-500 truncate max-w-[200px]">{lead.location || '-'}</div>
+                </td>
+                <td className="px-3 py-1.5">
+                  <div className="flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className={`w-1.5 h-1.5 rounded-full ${lead.status === 'uncalled' ? 'bg-blue-500' : 'bg-green-500'}`} />
+                      <span className="text-[10px] font-semibold text-gray-700 capitalize">{lead.status}</span>
+                    </div>
+                    {lead.disposition && (
+                      <span className="text-[10px] text-gray-500 font-medium truncate max-w-[120px]">{lead.disposition}</span>
+                    )}
                   </div>
-                  {lead.disposition && (
-                    <div className="text-xs text-gray-500 mt-1 font-medium">{lead.disposition}</div>
-                  )}
                 </td>
-                <td className="px-6 py-4 text-center">
-                  <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-gray-100 text-xs font-bold text-gray-700">
+                <td className="px-3 py-1.5 text-center">
+                  <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-gray-100 text-[10px] font-bold text-gray-700">
                     {lead.dialsCount}
                   </span>
                 </td>
-                <td className="px-6 py-4 text-sm text-gray-500">
+                <td className="px-3 py-1.5 text-[10px] text-gray-500">
                   {lead.lastInteraction ? `${formatDistanceToNow(new Date(lead.lastInteraction))} ago` : '-'}
                 </td>
               </tr>

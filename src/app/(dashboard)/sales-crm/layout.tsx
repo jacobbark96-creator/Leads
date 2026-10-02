@@ -78,18 +78,24 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
         console.error('Error fetching lead packs:', error);
       }
 
-      // Fetch SmartViews for this user
-      const { data: svData, error: svError } = await supabase
+      // Fetch SmartViews owned by user
+      const { data: svOwned } = await supabase
         .from('smart_views')
         .select('*, smart_view_items(count)')
         .eq('user_id', profile.id)
         .order('created_at', { ascending: false });
         
-      if (svData) {
-        setSmartViews(svData);
-      } else if (svError) {
-        console.error('Error fetching smart views:', svError);
-      }
+      // Fetch SmartViews shared with user
+      const { data: svSharedData } = await supabase
+        .from('smart_view_shares')
+        .select('smart_views(*, smart_view_items(count))')
+        .eq('user_id', profile.id);
+        
+      const svShared = svSharedData ? svSharedData.map((s: any) => s.smart_views).filter(Boolean) : [];
+      
+      const allSvs = [...(svOwned || []), ...svShared].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+      
+      setSmartViews(allSvs);
     };
     
     fetchPacks();

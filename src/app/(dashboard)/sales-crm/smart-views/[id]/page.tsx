@@ -5,7 +5,7 @@ export const runtime = 'edge';
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
-import { Loader2, Sparkles, Phone, ChevronLeft, Calendar, Filter, ArrowUpDown, Trash2, CheckSquare, Save } from 'lucide-react';
+import { Loader2, Sparkles, Phone, ChevronLeft, Calendar, Filter, ArrowUpDown, Trash2, CheckSquare, Save, Share2, X } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -28,6 +28,14 @@ export default function SmartViewDetails() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [showSaveAsNew, setShowSaveAsNew] = useState(false);
   const [newViewName, setNewViewName] = useState('');
+  
+  // Sharing
+  const [showShareModal, setShowShareModal] = useState(false);
+  const [reps, setReps] = useState<any[]>([]);
+  const [selectedRepId, setSelectedRepId] = useState('');
+  const [isSharing, setIsSharing] = useState(false);
+
+  const isCreator = profile?.id === smartView?.user_id;
 
   useEffect(() => {
     if (id && profile) {
@@ -224,6 +232,48 @@ export default function SmartViewDetails() {
     }
   };
 
+  const handleShare = async () => {
+    if (!selectedRepId) {
+      toast.error('Please select a rep to share with');
+      return;
+    }
+    try {
+      setIsSharing(true);
+      const { error } = await supabase
+        .from('smart_view_shares')
+        .insert({
+          smart_view_id: id,
+          user_id: selectedRepId
+        });
+        
+      if (error && !error.message.includes('duplicate key')) throw error;
+      
+      toast.success('SmartView shared successfully!');
+      setShowShareModal(false);
+      setSelectedRepId('');
+    } catch (err: any) {
+      toast.error('Failed to share SmartView: ' + err.message);
+    } finally {
+      setIsSharing(false);
+    }
+  };
+
+  const fetchReps = async () => {
+    try {
+      const { data, error } = await supabase.rpc('get_staff_users');
+      if (error) throw error;
+      setReps(data || []);
+    } catch (err) {
+      console.error('Error fetching reps:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (showShareModal && reps.length === 0) {
+      fetchReps();
+    }
+  }, [showShareModal]);
+
   const startDialing = (startId?: string) => {
     if (filteredAndSortedLeads.length === 0) {
       toast.error('No leads available to dial!');
@@ -324,26 +374,37 @@ export default function SmartViewDetails() {
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              onClick={handleUpdateCurrent}
-              disabled={isUpdating}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
-            >
-              <Save className="w-4 h-4" />
-              Update Current View
-            </button>
-            <button
-              onClick={() => setShowSaveAsNew(true)}
-              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
-            >
-              <Sparkles className="w-4 h-4" />
-              Save as New
-            </button>
+            {isCreator && (
+              <>
+                <button
+                  onClick={() => setShowShareModal(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 rounded-lg hover:bg-blue-100 transition-colors"
+                >
+                  <Share2 className="w-4 h-4" />
+                  Share
+                </button>
+                <button
+                  onClick={handleUpdateCurrent}
+                  disabled={isUpdating}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+                >
+                  <Save className="w-4 h-4" />
+                  Update Current View
+                </button>
+                <button
+                  onClick={() => setShowSaveAsNew(true)}
+                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+                >
+                  <Sparkles className="w-4 h-4" />
+                  Save as New
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Selected Actions */}
-        {selectedIds.size > 0 && (
+        {selectedIds.size > 0 && isCreator && (
           <div className="mt-4 p-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between animate-in slide-in-from-top-2">
             <span className="text-sm font-medium text-purple-900">
               {selectedIds.size} leads selected
@@ -365,12 +426,14 @@ export default function SmartViewDetails() {
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
               <th className="px-3 py-2 w-10">
-                <input
-                  type="checkbox"
-                  checked={selectedIds.size === filteredAndSortedLeads.length && filteredAndSortedLeads.length > 0}
-                  onChange={toggleAll}
-                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                />
+                {isCreator && (
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.size === filteredAndSortedLeads.length && filteredAndSortedLeads.length > 0}
+                    onChange={toggleAll}
+                    className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  />
+                )}
               </th>
               <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Lead</th>
               <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Contact</th>
@@ -385,12 +448,14 @@ export default function SmartViewDetails() {
             {filteredAndSortedLeads.map(lead => (
               <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors">
                 <td className="px-3 py-1.5">
-                  <input
-                    type="checkbox"
-                    checked={selectedIds.has(lead.id)}
-                    onChange={() => toggleSelection(lead.id)}
-                    className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
-                  />
+                  {isCreator && (
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(lead.id)}
+                      onChange={() => toggleSelection(lead.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                    />
+                  )}
                 </td>
                 <td className="px-3 py-1.5">
                   <div className="text-xs font-bold text-gray-900 truncate max-w-[150px]">{lead.company || lead.name}</div>
@@ -468,6 +533,54 @@ export default function SmartViewDetails() {
               >
                 {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
                 Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Share Modal */}
+      {showShareModal && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Share2 className="w-5 h-5 text-blue-600" />
+                Share SmartView
+              </h3>
+              <button onClick={() => setShowShareModal(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              <p className="text-sm text-gray-600 mb-4">
+                Select a user to share <span className="font-semibold text-gray-800">{smartView.name}</span> with. They will be able to dial the leads but cannot edit the list.
+              </p>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">Select Rep</label>
+              <select
+                value={selectedRepId}
+                onChange={(e) => setSelectedRepId(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all text-sm"
+              >
+                <option value="">-- Choose a user --</option>
+                {reps.filter(r => r.id !== profile?.id).map(rep => (
+                  <option key={rep.id} value={rep.id}>{rep.name} ({rep.role})</option>
+                ))}
+              </select>
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setShowShareModal(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleShare}
+                disabled={isSharing || !selectedRepId}
+                className="px-4 py-2 text-sm font-bold text-white bg-blue-600 rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isSharing ? <Loader2 className="w-4 h-4 animate-spin" /> : <Share2 className="w-4 h-4" />}
+                Share
               </button>
             </div>
           </div>

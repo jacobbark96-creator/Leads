@@ -803,25 +803,40 @@ function LeadDetailsV2Content() {
     let mounted = true;
     const initPack = async () => {
       if (smartViewId && profile?.id) {
-        // Handle SmartView dialing
+        // Handle SmartView dialing via localStorage queue
         const { data: sv } = await supabase.from('smart_views').select('*, lead_packs(*)').eq('id', smartViewId).maybeSingle();
         if (sv && mounted) setPackInfo(sv.lead_packs);
 
-        if (!id) {
-          const { data, error } = await supabase.rpc('reserve_next_lead_in_smartview', { p_smart_view_id: smartViewId, p_rep_id: profile.id });
-          if (error) {
-            toast.error('Error getting next lead from SmartView: ' + error.message);
-            if (mounted) setLoading(false);
-          } else if (data) {
-            if (mounted) router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${data.lead_id}`);
+        const queueStr = localStorage.getItem('smartViewQueue');
+        if (queueStr) {
+          const queue = JSON.parse(queueStr);
+          
+          if (!id) {
+            // Initial load of smart view, take first lead from queue
+            if (queue.length > 0 && mounted) {
+              router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${queue[0]}`);
+            } else {
+              toast.error('No leads available in this SmartView queue!');
+              if (mounted) setLoading(false);
+            }
           } else {
-            toast.error('No leads available in this SmartView!');
-            if (mounted) setLoading(false);
+            // We have an ID, figure out next and prev from queue
+            const currentIndex = queue.indexOf(id);
+            if (currentIndex !== -1) {
+              if (currentIndex > 0 && mounted) setPrevLeadId(queue[currentIndex - 1]);
+              if (currentIndex < queue.length - 1 && mounted) setNextLeadId(queue[currentIndex + 1]);
+            }
+            
+            // Check membership based on SmartView item to get status
+            const { data: svItem } = await supabase.from('smart_view_items').select('*, lead_pack_memberships(*)').eq('smart_view_id', smartViewId).eq('lead_id', id).maybeSingle();
+            if (svItem && svItem.lead_pack_memberships && mounted) setPackMembership(svItem.lead_pack_memberships);
           }
         } else {
-          // Check membership based on SmartView item
-          const { data: svItem } = await supabase.from('smart_view_items').select('*, lead_pack_memberships(*)').eq('smart_view_id', smartViewId).eq('lead_id', id).maybeSingle();
-          if (svItem && svItem.lead_pack_memberships && mounted) setPackMembership(svItem.lead_pack_memberships);
+          // Fallback if no queue found
+          if (!id) {
+            toast.error('SmartView queue not found. Please start from the SmartView details page.');
+            router.push(`/sales-crm/smart-views/${smartViewId}`);
+          }
         }
       } else if (packId && profile?.id) {
         // Fetch pack info
@@ -2307,15 +2322,8 @@ function LeadDetailsV2Content() {
 
       // Fetch next lead
       if (smartViewId) {
-        const { data: nextData, error: nextError } = await supabase.rpc('reserve_next_lead_in_smartview', { 
-          p_smart_view_id: smartViewId, 
-          p_rep_id: profile.id 
-        });
-
-        if (nextError) throw nextError;
-
-        if (nextData && nextData.lead_id) {
-          router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${nextData.lead_id}`);
+        if (nextLeadId) {
+          router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${nextLeadId}`);
         } else {
           toast.success('SmartView completed! No more leads available.');
           router.push(`/sales-crm/smart-views/${smartViewId}`);

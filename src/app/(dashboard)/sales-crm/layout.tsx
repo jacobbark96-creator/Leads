@@ -276,9 +276,36 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
               );
             })}
 
+            {/* SmartViews Section */}
+            {!isOpenEnergyResidential && smartViews.length > 0 && (
+              <div className="pt-6 pb-2 px-3">
+                <div className="flex items-center justify-between mb-2">
+                  <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Smart Views</h3>
+                  <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{smartViews.length}</span>
+                </div>
+                <div className="space-y-0.5">
+                  {smartViews.map(sv => (
+                    <Link
+                      key={sv.id}
+                      href={`/sales-crm/smart-views/${sv.id}`}
+                      className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-900 transition-colors group"
+                    >
+                      <div className="w-6 h-6 rounded shadow-inner flex items-center justify-center text-white shrink-0 bg-purple-600">
+                        <Sparkles className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="flex flex-col min-w-0 flex-1">
+                        <span className="truncate group-hover:text-purple-700 transition-colors leading-tight">{sv.name}</span>
+                        <span className="text-[10px] text-gray-400 font-normal">{sv.smart_view_items?.[0]?.count || 0} leads</span>
+                      </div>
+                    </Link>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Lead Packs Section */}
             {!isOpenEnergyResidential && (
-              <div className="pt-6 pb-2 px-3">
+              <div className={`pb-2 px-3 ${smartViews.length === 0 ? 'pt-6' : 'pt-2'}`}>
                 <div className="flex items-center justify-between mb-2">
                   <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Lead Packs</h3>
                   <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{leadPacks.length}</span>
@@ -306,33 +333,6 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
                     </div>
                   )}
                 </div>
-
-                {/* SmartViews Section */}
-                {smartViews.length > 0 && (
-                  <div className="mt-6">
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Smart Views</h3>
-                      <span className="text-[10px] font-bold text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded-full">{smartViews.length}</span>
-                    </div>
-                    <div className="space-y-0.5">
-                      {smartViews.map(sv => (
-                        <Link
-                          key={sv.id}
-                          href={`/sales-crm/smart-views/${sv.id}`}
-                          className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-[13px] font-medium text-gray-600 hover:bg-purple-50 hover:text-purple-900 transition-colors group"
-                        >
-                          <div className="w-6 h-6 rounded shadow-inner flex items-center justify-center text-white shrink-0 bg-purple-600">
-                            <Sparkles className="w-3.5 h-3.5" />
-                          </div>
-                          <div className="flex flex-col min-w-0 flex-1">
-                            <span className="truncate group-hover:text-purple-700 transition-colors leading-tight">{sv.name}</span>
-                            <span className="text-[10px] text-gray-400 font-normal">{sv.smart_view_items?.[0]?.count || 0} leads</span>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             )}
           </nav>

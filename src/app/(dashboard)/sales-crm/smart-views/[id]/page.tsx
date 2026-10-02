@@ -5,7 +5,7 @@ export const runtime = 'edge';
 import React, { useEffect, useState } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
-import { Loader2, Sparkles, Phone, ChevronLeft, Calendar } from 'lucide-react';
+import { Loader2, Sparkles, Phone, ChevronLeft, Calendar, Filter, ArrowUpDown, Trash2, CheckSquare, Save } from 'lucide-react';
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import toast from 'react-hot-toast';
@@ -18,6 +18,16 @@ export default function SmartViewDetails() {
   const [smartView, setSmartView] = useState<any>(null);
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Filters & Sorting
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('default');
+  
+  // Selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [showSaveAsNew, setShowSaveAsNew] = useState(false);
+  const [newViewName, setNewViewName] = useState('');
 
   useEffect(() => {
     if (id && profile) {
@@ -89,18 +99,144 @@ export default function SmartViewDetails() {
     }
   };
 
-  const startDialing = () => {
-    // Find the first uncalled lead
-    const nextUncalled = leads.find(l => 
-      l.status === 'uncalled' && 
-      (!l.reserved_until || new Date(l.reserved_until) < new Date())
-    );
+  const filteredAndSortedLeads = [...leads]
+    .filter(l => {
+      if (statusFilter === 'all') return true;
+      return l.status === statusFilter || l.disposition === statusFilter;
+    })
+    .sort((a, b) => {
+      if (sortBy === 'dials-desc') return (b.dialsCount || 0) - (a.dialsCount || 0);
+      if (sortBy === 'dials-asc') return (a.dialsCount || 0) - (b.dialsCount || 0);
+      if (sortBy === 'interaction-desc') return new Date(b.lastInteraction || 0).getTime() - new Date(a.lastInteraction || 0).getTime();
+      if (sortBy === 'interaction-asc') return new Date(a.lastInteraction || 0).getTime() - new Date(b.lastInteraction || 0).getTime();
+      return 0; // default (created_at desc usually handled by DB, or just original order)
+    });
 
-    if (nextUncalled) {
-      router.push(`/sales-crm/lead-v2?smartview=${id}`);
+  const uniqueStatuses = Array.from(new Set(leads.map(l => l.status).concat(leads.map(l => l.disposition)))).filter(Boolean);
+
+  const toggleSelection = (leadId: string) => {
+    const newSet = new Set(selectedIds);
+    if (newSet.has(leadId)) newSet.delete(leadId);
+    else newSet.add(leadId);
+    setSelectedIds(newSet);
+  };
+
+  const toggleAll = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.checked) {
+      setSelectedIds(new Set(filteredAndSortedLeads.map(l => l.id)));
     } else {
-      toast.error('No more uncalled leads available in this SmartView!');
+      setSelectedIds(new Set());
     }
+  };
+
+  const handleRemoveSelected = async () => {
+    if (!window.confirm(`Are you sure you want to remove ${selectedIds.size} leads from this SmartView?`)) return;
+    try {
+      setIsUpdating(true);
+      const membershipIdsToRemove = leads.filter(l => selectedIds.has(l.id)).map(l => l.membership_id);
+      
+      const { error } = await supabase
+        .from('smart_view_items')
+        .delete()
+        .eq('smart_view_id', id)
+        .in('membership_id', membershipIdsToRemove);
+
+      if (error) throw error;
+      
+      setLeads(prev => prev.filter(l => !selectedIds.has(l.id)));
+      setSelectedIds(new Set());
+      toast.success('Leads removed from SmartView');
+    } catch (err: any) {
+      toast.error('Failed to remove leads: ' + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleUpdateCurrent = async () => {
+    if (!window.confirm('This will update the SmartView to only contain the currently filtered/sorted leads. Continue?')) return;
+    try {
+      setIsUpdating(true);
+      const keepMembershipIds = filteredAndSortedLeads.map(l => l.membership_id);
+      
+      // Delete any items in this smart view that are not in the keep list
+      const { error } = await supabase
+        .from('smart_view_items')
+        .delete()
+        .eq('smart_view_id', id)
+        .not('membership_id', 'in', `(${keepMembershipIds.join(',')})`);
+
+      if (error) throw error;
+      
+      setLeads(filteredAndSortedLeads);
+      toast.success('SmartView updated to current filters');
+    } catch (err: any) {
+      toast.error('Failed to update SmartView: ' + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const handleSaveAsNew = async () => {
+    if (!newViewName.trim()) {
+      toast.error('Please enter a name for the new SmartView');
+      return;
+    }
+    try {
+      setIsUpdating(true);
+      // 1. Create the SmartView
+      const { data: newSv, error: svError } = await supabase
+        .from('smart_views')
+        .insert({
+          user_id: profile?.id,
+          name: newViewName.trim(),
+          pack_id: smartView.pack_id
+        })
+        .select()
+        .single();
+        
+      if (svError) throw svError;
+      
+      // 2. Add the items
+      const itemsToInsert = filteredAndSortedLeads.map(l => ({
+        smart_view_id: newSv.id,
+        lead_id: l.id,
+        membership_id: l.membership_id
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('smart_view_items')
+        .insert(itemsToInsert);
+        
+      if (itemsError) throw itemsError;
+      
+      toast.success('New SmartView created successfully!');
+      setShowSaveAsNew(false);
+      setNewViewName('');
+      
+      // Navigate to the new SmartView page
+      router.push(`/sales-crm/smart-views/${newSv.id}`);
+      
+    } catch (err: any) {
+      toast.error('Failed to create SmartView: ' + err.message);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const startDialing = (startId?: string) => {
+    if (filteredAndSortedLeads.length === 0) {
+      toast.error('No leads available to dial!');
+      return;
+    }
+    
+    // Store the exact queue order in localStorage so the dialer knows what to follow
+    const queue = filteredAndSortedLeads.map(l => l.id);
+    localStorage.setItem('smartViewQueue', JSON.stringify(queue));
+    
+    // Start from the specific lead if provided, otherwise the first one
+    const targetId = startId || queue[0];
+    router.push(`/sales-crm/lead-v2?smartview=${id}&id=${targetId}`);
   };
 
   if (loading) {
@@ -141,11 +277,11 @@ export default function SmartViewDetails() {
         </div>
         <div className="flex items-center gap-3">
           <div className="text-sm text-gray-600 mr-2">
-            <span className="font-bold text-gray-900">{uncalledCount}</span> uncalled leads remaining
+            <span className="font-bold text-gray-900">{filteredAndSortedLeads.length}</span> leads in view
           </div>
           <button
-            onClick={startDialing}
-            disabled={uncalledCount === 0}
+            onClick={() => startDialing()}
+            disabled={filteredAndSortedLeads.length === 0}
             className="flex items-center gap-2 px-5 py-2.5 bg-purple-600 text-white rounded-xl text-sm font-bold hover:bg-purple-700 transition-all shadow-lg shadow-purple-200 disabled:opacity-50 disabled:shadow-none"
           >
             <Phone className="w-4 h-4" />
@@ -154,10 +290,88 @@ export default function SmartViewDetails() {
         </div>
       </div>
 
+      {/* Filters and Actions Bar */}
+      <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-4">
+        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start sm:items-center">
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex items-center gap-2">
+              <Filter className="w-4 h-4 text-gray-400" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+              >
+                <option value="all">All Statuses</option>
+                {uniqueStatuses.map(status => (
+                  <option key={status} value={status}>{status}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-center gap-2">
+              <ArrowUpDown className="w-4 h-4 text-gray-400" />
+              <select
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+                className="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none"
+              >
+                <option value="default">Default Sort</option>
+                <option value="dials-desc">Dials (High to Low)</option>
+                <option value="dials-asc">Dials (Low to High)</option>
+                <option value="interaction-desc">Last Interaction (Newest)</option>
+                <option value="interaction-asc">Last Interaction (Oldest)</option>
+              </select>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <button
+              onClick={handleUpdateCurrent}
+              disabled={isUpdating}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors"
+            >
+              <Save className="w-4 h-4" />
+              Update Current View
+            </button>
+            <button
+              onClick={() => setShowSaveAsNew(true)}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-purple-700 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors"
+            >
+              <Sparkles className="w-4 h-4" />
+              Save as New
+            </button>
+          </div>
+        </div>
+
+        {/* Selected Actions */}
+        {selectedIds.size > 0 && (
+          <div className="mt-4 p-3 bg-purple-50 border border-purple-100 rounded-lg flex items-center justify-between animate-in slide-in-from-top-2">
+            <span className="text-sm font-medium text-purple-900">
+              {selectedIds.size} leads selected
+            </span>
+            <button
+              onClick={handleRemoveSelected}
+              disabled={isUpdating}
+              className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 transition-colors"
+            >
+              <Trash2 className="w-4 h-4" />
+              Remove Selected
+            </button>
+          </div>
+        )}
+      </div>
+
       <div className="bg-white rounded-xl shadow-sm border border-gray-200 overflow-hidden">
         <table className="w-full text-left border-collapse">
           <thead className="bg-gray-50 border-b border-gray-200">
             <tr>
+              <th className="px-3 py-2 w-10">
+                <input
+                  type="checkbox"
+                  checked={selectedIds.size === filteredAndSortedLeads.length && filteredAndSortedLeads.length > 0}
+                  onChange={toggleAll}
+                  className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                />
+              </th>
               <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Lead</th>
               <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Contact</th>
               <th className="px-3 py-2 text-[10px] font-bold text-gray-500 uppercase tracking-wider">Phone</th>
@@ -168,8 +382,16 @@ export default function SmartViewDetails() {
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {leads.map(lead => (
+            {filteredAndSortedLeads.map(lead => (
               <tr key={lead.id} className="hover:bg-gray-50/50 transition-colors">
+                <td className="px-3 py-1.5">
+                  <input
+                    type="checkbox"
+                    checked={selectedIds.has(lead.id)}
+                    onChange={() => toggleSelection(lead.id)}
+                    className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500"
+                  />
+                </td>
                 <td className="px-3 py-1.5">
                   <div className="text-xs font-bold text-gray-900 truncate max-w-[150px]">{lead.company || lead.name}</div>
                 </td>
@@ -206,6 +428,51 @@ export default function SmartViewDetails() {
           </tbody>
         </table>
       </div>
+
+      {/* Save As New Prompt */}
+      {showSaveAsNew && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                Save as New SmartView
+              </h3>
+            </div>
+            <div className="p-5">
+              <p className="text-sm text-gray-600 mb-4">
+                You are creating a new SmartView with <span className="font-bold text-purple-600">{filteredAndSortedLeads.length}</span> filtered leads.
+              </p>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">SmartView Name</label>
+              <input
+                type="text"
+                autoFocus
+                placeholder="e.g., Hot leads follow up..."
+                value={newViewName}
+                onChange={(e) => setNewViewName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSaveAsNew()}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-sm"
+              />
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setShowSaveAsNew(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSaveAsNew}
+                disabled={isUpdating || !newViewName.trim()}
+                className="px-4 py-2 text-sm font-bold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isUpdating ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                Save
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

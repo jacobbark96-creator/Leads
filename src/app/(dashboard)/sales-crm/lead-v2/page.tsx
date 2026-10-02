@@ -2355,7 +2355,7 @@ function LeadDetailsV2Content() {
   goToNextLeadRef.current = goToNextLead;
 
   const handlePackDisposition = async (disposition: string) => {
-    if (!packId || !packMembership || !profile?.id) return;
+    if ((!packId && !smartViewId) || !packMembership || !profile?.id) return;
     try {
       setLoading(true);
       // Save disposition

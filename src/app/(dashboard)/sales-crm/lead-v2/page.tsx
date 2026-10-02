@@ -413,6 +413,18 @@ const EditPrimaryContactModal = ({ isOpen, onClose, onSave, form, setForm }: any
               placeholder="example.com"
             />
           </div>
+          <div className="flex items-center gap-2 mt-4 bg-gray-50 p-3 rounded-xl border border-gray-100">
+            <input
+              type="checkbox"
+              id="marked_as_sold"
+              checked={form.marked_as_sold || false}
+              onChange={(e) => setForm({...form, marked_as_sold: e.target.checked})}
+              className="w-4 h-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+            />
+            <label htmlFor="marked_as_sold" className="text-sm font-semibold text-gray-700">
+              Show in "Recently Sold" Carousel
+            </label>
+          </div>
           <button
             onClick={onSave}
             className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 mt-2"
@@ -1340,7 +1352,8 @@ function LeadDetailsV2Content() {
             phone: updatePayload.phone,
             secondary_phone: updatePayload.secondary_phone,
             linkedin_url: updatePayload.linkedin_url,
-            domain: updatePayload.domain
+            domain: updatePayload.domain,
+            marked_as_sold: updatePayload.marked_as_sold
           })
         .eq('id', lead.id);
 

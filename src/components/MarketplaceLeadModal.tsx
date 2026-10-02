@@ -40,7 +40,7 @@ const SavingsCarousel = ({ lead }: { lead: any }) => {
     return () => clearInterval(interval);
   }, []);
 
-  const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+  const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption);
   const estGen = estSize ? estSize * 850 : 0;
   let rate = lead.unit_rate ? Number(lead.unit_rate) : 0.24;
   if (rate > 1) rate = rate / 100;
@@ -343,8 +343,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         </div>
                       </div>
                       <span className="text-sm font-bold text-gray-900">
-                        {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
-                          ? `${(calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)! * 850).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh`
+                        {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption) 
+                          ? `${(calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption)! * 850).toLocaleString('en-GB', { maximumFractionDigits: 0 })} kWh`
                           : <MissingValue />}
                       </span>
                     </div>
@@ -359,7 +359,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         </div>
                         <span className="text-sm font-bold text-gray-900">
                           {(() => {
-                            const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+                            const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption);
                             if (sysSize && lead.monthly_spend) {
                               let rate = lead.unit_rate ? Number(lead.unit_rate) : 0.24;
                               if (rate > 1) rate = rate / 100;
@@ -381,8 +381,8 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       </div>
                     </div>
                     <span className="text-lg font-black text-gray-900">
-                      {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate) 
-                        ? `${calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate)?.toFixed(1)} kWp`
+                      {calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption) 
+                        ? `${calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption)?.toFixed(1)} kWp`
                         : <MissingValue />}
                     </span>
                   </div>
@@ -523,7 +523,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         {(() => {
                           const systemSizeKwp = activeBuilding?.max_array_panels_count
                             ? (activeBuilding.max_array_panels_count * 0.4)
-                            : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate)
+                            : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption)
                               || ((lead as any).est_system_size ? parseFloat((lead as any).est_system_size) : null);
                               
                           const indicativeValue = calculateIndicativeSystemValue(systemSizeKwp);
@@ -753,7 +753,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                   boxBgClass = "bg-amber-50 border-amber-200";
                 }
 
-                const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+                const sysSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption);
                 const minSize = clientPrefs?.min_system_size_kw ? Number(clientPrefs.min_system_size_kw) : 0;
                 const isSizeMatch = minSize === 0 || (sysSize !== null && sysSize >= minSize);
 

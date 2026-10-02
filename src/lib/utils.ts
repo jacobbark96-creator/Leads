@@ -214,7 +214,7 @@ export function calculateMatchScoreDetails(lead: any, installerPrefs: any) {
   // Within minimum kWp = 10, below but within 20% = 6, outwith = 4
   let sizeScore = 7;
   if (installerPrefs.min_system_size_kw) {
-    const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+    const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption);
     if (estSize) {
       const minSize = Number(installerPrefs.min_system_size_kw);
       if (estSize >= minSize) {

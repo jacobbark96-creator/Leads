@@ -26,7 +26,7 @@ const SavingsCarousel = ({ lead }: { lead: any }) => {
     return () => clearInterval(interval);
   }, []);
 
-  const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+  const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption);
   const estGen = estSize ? estSize * 850 : 0;
   let rate = lead.unit_rate ? Number(lead.unit_rate) : 0.24;
   if (rate > 1) rate = rate / 100;
@@ -478,7 +478,7 @@ export const PurchasedLeadModal: React.FC<PurchasedLeadModalProps> = ({ isOpen, 
                         {(() => {
                           const systemSizeKwp = activeBuilding?.max_array_panels_count
                             ? (activeBuilding.max_array_panels_count * 0.4)
-                            : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate)
+                            : calculateEstimatedSystemSize(lead.roof_size || (lead as any).roof_size_sqm, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption)
                               || ((lead as any).est_system_size ? parseFloat((lead as any).est_system_size) : null);
                               
                           const indicativeValue = calculateIndicativeSystemValue(systemSizeKwp);

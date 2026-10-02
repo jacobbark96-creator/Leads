@@ -110,7 +110,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
 
   useEffect(() => {
     const calculateSystemSize = () => {
-      const estKw = calculateEstimatedSystemSize(formData.roof_size, formData.monthly_spend, formData.unit_rate);
+      const estKw = calculateEstimatedSystemSize(formData.roof_size, formData.monthly_spend, formData.unit_rate, formData.est_ann_consumption);
       setFormData(prev => ({ ...prev, est_system_size: estKw && estKw > 0 ? `${estKw.toFixed(1)} kW` : '' }));
     };
 

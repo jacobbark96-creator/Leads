@@ -560,8 +560,8 @@ export default function ClientDashboard() {
   const topLeads = [...leads]
     .filter(l => !['archive', 'rejected'].includes(l.purchase_status))
     .sort((a, b) => {
-       const estA = calculateIndicativeSystemValue(calculateEstimatedSystemSize(a.roof_size, a.monthly_spend, a.unit_rate));
-       const estB = calculateIndicativeSystemValue(calculateEstimatedSystemSize(b.roof_size, b.monthly_spend, b.unit_rate));
+       const estA = calculateIndicativeSystemValue(calculateEstimatedSystemSize(a.roof_size, a.monthly_spend, a.unit_rate, a.est_ann_consumption));
+       const estB = calculateIndicativeSystemValue(calculateEstimatedSystemSize(b.roof_size, b.monthly_spend, b.unit_rate, b.est_ann_consumption));
        const valA = a.sale_amount ? a.sale_amount : (estA?.central || 0);
        const valB = b.sale_amount ? b.sale_amount : (estB?.central || 0);
        return valB - valA;
@@ -929,7 +929,7 @@ export default function ClientDashboard() {
           </h3>
           <div className="space-y-2 flex-1">
             {topLeads.map((lead, i) => {
-              const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+              const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption);
               const estVal = calculateIndicativeSystemValue(estSize);
               return (
               <div key={lead.id} className="flex items-center gap-2.5 justify-between group cursor-pointer bg-gray-50 border border-gray-200 hover:border-[#0066FF] hover:shadow-sm hover:bg-[#F8FAFC] rounded-lg p-2.5 transition-all" onClick={() => handleLeadClick(lead as any)}>

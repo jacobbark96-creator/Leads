@@ -577,7 +577,7 @@ export default function MarketplacePage() {
                   );
                 })()}
                 {(() => {
-                  const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate);
+                  const estSize = calculateEstimatedSystemSize(lead.roof_size, lead.monthly_spend, lead.unit_rate, lead.est_ann_consumption);
                   if (estSize && estSize > 0) {
                     return (
                       <div className="absolute bottom-3 right-3 bg-gray-900/80 backdrop-blur-sm text-white text-[10px] font-bold px-2.5 py-1 rounded-md shadow-sm border border-gray-700/50 flex items-center gap-1">

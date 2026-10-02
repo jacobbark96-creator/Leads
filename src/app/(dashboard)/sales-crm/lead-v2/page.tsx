@@ -438,6 +438,7 @@ function LeadDetailsV2Content() {
   const id = searchParams.get('id');
   const tab = searchParams.get('tab') || 'unqualified';
   const packId = searchParams.get('pack');
+  const smartViewId = searchParams.get('smartview');
 
   const [lead, setLead] = useState<Lead | null>(null);
   const [leadPurchase, setLeadPurchase] = useState<any>(null);
@@ -801,7 +802,28 @@ function LeadDetailsV2Content() {
   useEffect(() => {
     let mounted = true;
     const initPack = async () => {
-      if (packId && profile?.id) {
+      if (smartViewId && profile?.id) {
+        // Handle SmartView dialing
+        const { data: sv } = await supabase.from('smart_views').select('*, lead_packs(*)').eq('id', smartViewId).maybeSingle();
+        if (sv && mounted) setPackInfo(sv.lead_packs);
+
+        if (!id) {
+          const { data, error } = await supabase.rpc('reserve_next_lead_in_smartview', { p_smart_view_id: smartViewId, p_rep_id: profile.id });
+          if (error) {
+            toast.error('Error getting next lead from SmartView: ' + error.message);
+            if (mounted) setLoading(false);
+          } else if (data) {
+            if (mounted) router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${data.lead_id}`);
+          } else {
+            toast.error('No leads available in this SmartView!');
+            if (mounted) setLoading(false);
+          }
+        } else {
+          // Check membership based on SmartView item
+          const { data: svItem } = await supabase.from('smart_view_items').select('*, lead_pack_memberships(*)').eq('smart_view_id', smartViewId).eq('lead_id', id).maybeSingle();
+          if (svItem && svItem.lead_pack_memberships && mounted) setPackMembership(svItem.lead_pack_memberships);
+        }
+      } else if (packId && profile?.id) {
         // Fetch pack info
       const { data: pack } = await supabase.from('lead_packs').select('*').eq('id', packId).maybeSingle();
       if (pack && mounted) setPackInfo(pack);
@@ -827,7 +849,7 @@ function LeadDetailsV2Content() {
     };
     initPack();
     return () => { mounted = false; };
-  }, [packId, id, profile?.id, router]);
+  }, [packId, smartViewId, id, profile?.id, router]);
 
   // Heartbeat to keep the lead reserved if the rep takes a long time on the call
   useEffect(() => {
@@ -2284,18 +2306,34 @@ function LeadDetailsV2Content() {
       toast.success('Lead completed. Loading next...');
 
       // Fetch next lead
-      const { data: nextData, error: nextError } = await supabase.rpc('reserve_next_lead_in_pack', { 
-        p_lead_pack_id: packId, 
-        p_rep_id: profile.id 
-      });
+      if (smartViewId) {
+        const { data: nextData, error: nextError } = await supabase.rpc('reserve_next_lead_in_smartview', { 
+          p_smart_view_id: smartViewId, 
+          p_rep_id: profile.id 
+        });
 
-      if (nextError) throw nextError;
+        if (nextError) throw nextError;
 
-      if (nextData && nextData.lead_id) {
-        router.replace(`/sales-crm/lead-v2?pack=${packId}&id=${nextData.lead_id}`);
+        if (nextData && nextData.lead_id) {
+          router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${nextData.lead_id}`);
+        } else {
+          toast.success('SmartView completed! No more leads available.');
+          router.push(`/sales-crm/smart-views/${smartViewId}`);
+        }
       } else {
-        toast.success('Pack completed! No more leads available.');
-        router.push('/sales-crm');
+        const { data: nextData, error: nextError } = await supabase.rpc('reserve_next_lead_in_pack', { 
+          p_lead_pack_id: packId, 
+          p_rep_id: profile.id 
+        });
+
+        if (nextError) throw nextError;
+
+        if (nextData && nextData.lead_id) {
+          router.replace(`/sales-crm/lead-v2?pack=${packId}&id=${nextData.lead_id}`);
+        } else {
+          toast.success('Pack completed! No more leads available.');
+          router.push('/sales-crm');
+        }
       }
     } catch (err: any) {
       toast.error('Error: ' + err.message);
@@ -2306,7 +2344,13 @@ function LeadDetailsV2Content() {
 
   const goToPrevLead = () => {
     if (prevLeadId) {
-      router.push(`/sales-crm/lead-v2?id=${prevLeadId}&tab=${tab}`);
+      if (smartViewId) {
+        router.push(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${prevLeadId}&tab=${tab}`);
+      } else if (packId) {
+        router.push(`/sales-crm/lead-v2?pack=${packId}&id=${prevLeadId}&tab=${tab}`);
+      } else {
+        router.push(`/sales-crm/lead-v2?id=${prevLeadId}&tab=${tab}`);
+      }
     }
   };
 

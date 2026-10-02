@@ -3,6 +3,7 @@ import { supabase } from '@/lib/supabase';
 import { Loader2, Search, X, CheckSquare, ExternalLink, Download, Ban, Sparkles } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useRouter } from 'next/navigation';
+import { useAuthStore } from '@/store/authStore';
 
 import { formatDistanceToNow } from 'date-fns';
 
@@ -20,6 +21,10 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
   const [displayLimit, setDisplayLimit] = useState(1000);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
+  const [smartViewName, setSmartViewName] = useState('');
+  const [isCreatingSmartView, setIsCreatingSmartView] = useState(false);
+  const [showSmartViewPrompt, setShowSmartViewPrompt] = useState(false);
+  const { profile } = useAuthStore();
 
   useEffect(() => {
     if (isOpen && pack) {
@@ -42,7 +47,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
       while (hasMore) {
         const { data, error } = await supabase
           .from('lead_pack_memberships')
-          .select('lead_id, disposition, leads (id, company, name, location, phone, lead_notes (content, created_at))')
+          .select('id, lead_id, disposition, leads (id, company, name, location, phone, lead_notes (content, created_at))')
           .eq('lead_pack_id', pack.id)
           .range(page * 1000, (page + 1) * 1000 - 1);
 
@@ -61,6 +66,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
 
           return {
             ...m.leads,
+            membership_id: m.id,
             disposition: m.disposition,
             lastInteraction,
             dialsCount
@@ -198,8 +204,56 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
     }
   };
 
-  const handleSmartView = () => {
-    toast('SmartView coming soon!', { icon: '✨' });
+  const handleSmartView = async () => {
+    if (!smartViewName.trim()) {
+      toast.error('Please enter a name for your SmartView');
+      return;
+    }
+    
+    try {
+      setIsCreatingSmartView(true);
+      
+      // 1. Create the SmartView
+      const { data: smartView, error: svError } = await supabase
+        .from('smart_views')
+        .insert({
+          user_id: profile?.id,
+          name: smartViewName.trim(),
+          pack_id: pack.id
+        })
+        .select()
+        .single();
+        
+      if (svError) throw svError;
+      
+      // 2. Add the items
+      const selectedLeads = allLeads.filter(l => selectedLeadIds.has(l.id));
+      const itemsToInsert = selectedLeads.map(l => ({
+        smart_view_id: smartView.id,
+        lead_id: l.id,
+        membership_id: l.membership_id
+      }));
+      
+      const { error: itemsError } = await supabase
+        .from('smart_view_items')
+        .insert(itemsToInsert);
+        
+      if (itemsError) throw itemsError;
+      
+      toast.success('SmartView created successfully!');
+      setShowSmartViewPrompt(false);
+      setSmartViewName('');
+      setSelectedLeadIds(new Set());
+      
+      // Navigate to the new SmartView page
+      router.push(`/sales-crm/smart-views/${smartView.id}`);
+      onClose();
+      
+    } catch (err: any) {
+      toast.error('Failed to create SmartView: ' + err.message);
+    } finally {
+      setIsCreatingSmartView(false);
+    }
   };
 
   if (!isOpen) return null;
@@ -256,7 +310,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                     <Ban className="w-3.5 h-3.5" /> DNC
                   </button>
                   <button
-                    onClick={handleSmartView}
+                    onClick={() => setShowSmartViewPrompt(true)}
                     className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-purple-600 bg-purple-50 border border-purple-200 rounded-lg hover:bg-purple-100 transition-colors shadow-sm"
                   >
                     <Sparkles className="w-3.5 h-3.5" /> SmartView
@@ -369,6 +423,54 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
           )}
         </div>
       </div>
+
+      {/* SmartView Prompt Modal */}
+      {showSmartViewPrompt && (
+        <div className="fixed inset-0 bg-gray-900/60 backdrop-blur-sm flex items-center justify-center z-[60] p-4">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-sm overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-5 border-b border-gray-100 flex items-center justify-between">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <Sparkles className="w-5 h-5 text-purple-600" />
+                Create SmartView
+              </h3>
+              <button onClick={() => setShowSmartViewPrompt(false)} className="text-gray-400 hover:text-gray-600 transition-colors">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-5">
+              <p className="text-sm text-gray-600 mb-4">
+                You are creating a new SmartView with <span className="font-bold text-purple-600">{selectedLeadIds.size}</span> selected leads from <span className="font-semibold text-gray-800">{pack.name}</span>.
+              </p>
+              <label className="block text-sm font-semibold text-gray-700 mb-1.5">SmartView Name</label>
+              <input
+                type="text"
+                autoFocus
+                placeholder="e.g., Follow up list, High priority..."
+                value={smartViewName}
+                onChange={(e) => setSmartViewName(e.target.value)}
+                onKeyDown={(e) => e.key === 'Enter' && handleSmartView()}
+                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-sm"
+              />
+            </div>
+            <div className="p-4 bg-gray-50 border-t border-gray-100 flex justify-end gap-3">
+              <button
+                onClick={() => setShowSmartViewPrompt(false)}
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleSmartView}
+                disabled={isCreatingSmartView || !smartViewName.trim()}
+                className="px-4 py-2 text-sm font-bold text-white bg-purple-600 rounded-lg hover:bg-purple-700 transition-colors disabled:opacity-50 flex items-center gap-2"
+              >
+                {isCreatingSmartView ? <Loader2 className="w-4 h-4 animate-spin" /> : <Sparkles className="w-4 h-4" />}
+                Create & View
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

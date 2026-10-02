@@ -6,6 +6,8 @@ import toast from 'react-hot-toast';
 import { Database, Plus, Edit, Upload, MoreVertical, Trash2, Users, LayoutDashboard, Target, RefreshCw, Bot } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 
+import { PackLeadsModal } from '@/components/PackLeadsModal';
+
 interface LeadPack {
   id: string;
   name: string;
@@ -31,6 +33,7 @@ export default function LeadPacksPage() {
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState<LeadPack | null>(null);
   const [showUploadModal, setShowUploadModal] = useState<string | null>(null); // Pack ID
+  const [selectedPackForLeads, setSelectedPackForLeads] = useState<LeadPack | null>(null);
   const [autodialingPack, setAutodialingPack] = useState<string | null>(null);
   const [isFixingNumbers, setIsFixingNumbers] = useState(false);
   const { profile } = useAuthStore();
@@ -416,7 +419,12 @@ export default function LeadPacksPage() {
                   {pack.icon ? <span className="text-xl">{pack.icon}</span> : <Target className="w-5 h-5" />}
                 </div>
                 <div>
-                  <h3 className="font-bold text-gray-900 text-lg leading-tight">{pack.name}</h3>
+                  <h3 
+                    className="font-bold text-gray-900 text-lg leading-tight cursor-pointer hover:text-blue-600 transition-colors"
+                    onClick={() => setSelectedPackForLeads(pack)}
+                  >
+                    {pack.name}
+                  </h3>
                   <p className="text-xs text-gray-500 mt-1 line-clamp-1">{pack.description || 'No description'}</p>
                 </div>
               </div>
@@ -870,6 +878,14 @@ export default function LeadPacksPage() {
             </div>
           </div>
         </div>
+      )}
+
+      {selectedPackForLeads && (
+        <PackLeadsModal
+          isOpen={!!selectedPackForLeads}
+          onClose={() => setSelectedPackForLeads(null)}
+          pack={selectedPackForLeads}
+        />
       )}
     </div>
   );

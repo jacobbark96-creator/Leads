@@ -12,6 +12,7 @@ interface PipelineBoardProps {
 
 const COLUMNS = [
   { id: 'call back', label: 'Callback', color: 'blue', icon: PhoneCall },
+  { id: 'potential', label: 'Potential', color: 'indigo', icon: UserCheck },
   { id: 'qualified', label: 'Qualified', color: 'green', icon: CheckCircle },
   { id: 'marketed', label: 'Marketed', color: 'purple', icon: Megaphone },
   { id: 'awaiting_sales', label: 'Sent to Sales', color: 'orange', icon: Briefcase },
@@ -49,6 +50,9 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
         (l.purchase_count || 0) === 0
       );
     }
+    if (status === 'potential') {
+      return leads.filter(l => l.status === 'potential' && (l.purchase_count || 0) === 0);
+    }
     if (status === 'marketed') {
       return leads.filter(l => 
         (l.status === 'marketplace' || (l.status === 'qualified' && !!l.is_marketed)) && 
@@ -74,6 +78,7 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
   const getColumnColorClass = (color: string) => {
     switch (color) {
       case 'blue': return 'bg-blue-50 border-blue-200 text-blue-800';
+      case 'indigo': return 'bg-indigo-50 border-indigo-200 text-indigo-800';
       case 'green': return 'bg-green-50 border-green-200 text-green-800';
       case 'purple': return 'bg-purple-50 border-purple-200 text-purple-800';
       case 'orange': return 'bg-orange-50 border-orange-200 text-orange-800';
@@ -87,6 +92,7 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
   const getHeaderColorClass = (color: string) => {
     switch (color) {
       case 'blue': return 'bg-blue-100 text-blue-900 border-blue-200';
+      case 'indigo': return 'bg-indigo-100 text-indigo-900 border-indigo-200';
       case 'green': return 'bg-green-100 text-green-900 border-green-200';
       case 'purple': return 'bg-purple-100 text-purple-900 border-purple-200';
       case 'orange': return 'bg-orange-100 text-orange-900 border-orange-200';
@@ -145,6 +151,7 @@ function PipelineCard({ lead, color }: { lead: any, color: string }) {
   const getBorderColor = () => {
     switch (color) {
       case 'blue': return 'border-blue-200 hover:border-blue-300';
+      case 'indigo': return 'border-indigo-200 hover:border-indigo-300';
       case 'green': return 'border-green-200 hover:border-green-300';
       case 'purple': return 'border-purple-200 hover:border-purple-300';
       case 'orange': return 'border-orange-200 hover:border-orange-300';

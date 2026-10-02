@@ -2445,6 +2445,12 @@ function LeadDetailsV2Content() {
                     Call Back
                   </button>
                   <button
+                    onClick={() => handlePackDisposition('Potential')}
+                    className="px-2 md:px-2.5 py-1 rounded-lg font-bold text-[10px] md:text-[11px] bg-indigo-50 text-indigo-700 hover:bg-indigo-100 transition-colors shrink-0"
+                  >
+                    Potential
+                  </button>
+                  <button
                     onClick={() => handlePackDisposition('DNC')}
                     className="px-2 md:px-2.5 py-1 rounded-lg font-bold text-[10px] md:text-[11px] bg-red-50 text-red-700 hover:bg-red-100 transition-colors shrink-0"
                   >
@@ -2647,6 +2653,7 @@ function LeadDetailsV2Content() {
                     lead.status === 'qualified' ? 'bg-blue-100 text-blue-700' :
                     lead.status === 'fresh' ? 'bg-green-100 text-green-700' :
                     lead.status === 'dnc' ? 'bg-red-100 text-red-700' :
+                    lead.status === 'potential' ? 'bg-indigo-100 text-indigo-700' :
                     'bg-gray-100 text-gray-700'
                   }`}>{lead.status}</span>
                 )}
@@ -3037,6 +3044,7 @@ function LeadDetailsV2Content() {
                         <option value="qualified">Qualified</option>
                         <option value="rest">Rest</option>
                         <option value="long-term">Long-Term</option>
+                        <option value="potential">Potential</option>
                         <option value="dnc">DNC</option>
                         <option value="call back">Call Back</option>
                       </select>

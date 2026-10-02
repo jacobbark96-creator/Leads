@@ -14,55 +14,93 @@ interface PackLeadsModalProps {
 
 export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
   const router = useRouter();
-  const [leads, setLeads] = useState<any[]>([]);
+  const [allLeads, setAllLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFetchingAll, setIsFetchingAll] = useState(false);
+  const [displayLimit, setDisplayLimit] = useState(1000);
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedLeadIds, setSelectedLeadIds] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     if (isOpen && pack) {
-      fetchLeads();
+      setAllLeads([]);
+      setDisplayLimit(1000);
+      setSearchTerm('');
+      setSelectedLeadIds(new Set());
+      fetchAllLeads();
     }
   }, [isOpen, pack]);
 
-  const fetchLeads = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('lead_pack_memberships')
-        .select('lead_id, disposition, leads (id, company, name, location, phone, lead_notes (content, created_at))')
-        .eq('lead_pack_id', pack.id);
+  const fetchAllLeads = async () => {
+    setLoading(true);
+    setIsFetchingAll(true);
+    let accumulated: any[] = [];
+    let page = 0;
+    let hasMore = true;
 
-      if (error) throw error;
-      
-      const mappedLeads = data?.map((m: any) => {
-        if (!m.leads) return null;
+    try {
+      while (hasMore) {
+        const { data, error } = await supabase
+          .from('lead_pack_memberships')
+          .select('lead_id, disposition, leads (id, company, name, location, phone, lead_notes (content, created_at))')
+          .eq('lead_pack_id', pack.id)
+          .range(page * 1000, (page + 1) * 1000 - 1);
+
+        if (error) throw error;
+
+        const mappedLeads = data?.map((m: any) => {
+          if (!m.leads) return null;
+
+          const notes = Array.isArray(m.leads.lead_notes) ? m.leads.lead_notes : [];
+          const sortedNotes = [...notes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+          const lastInteraction = sortedNotes.length > 0 ? sortedNotes[0].created_at : null;
+
+          return {
+            ...m.leads,
+            disposition: m.disposition,
+            lastInteraction
+          };
+        }).filter(Boolean) || [];
         
-        const notes = Array.isArray(m.leads.lead_notes) ? m.leads.lead_notes : [];
-        const sortedNotes = [...notes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-        const lastInteraction = sortedNotes.length > 0 ? sortedNotes[0].created_at : null;
+        accumulated = [...accumulated, ...mappedLeads];
+        setAllLeads([...accumulated]);
         
-        return {
-          ...m.leads,
-          disposition: m.disposition,
-          lastInteraction
-        };
-      }).filter(Boolean) || [];
-      setLeads(mappedLeads);
+        if (page === 0) {
+          setLoading(false);
+        }
+
+        if (!data || data.length < 1000) {
+          hasMore = false;
+        } else {
+          page++;
+        }
+      }
     } catch (err: any) {
       toast.error('Failed to load leads: ' + err.message);
-    } finally {
       setLoading(false);
+    } finally {
+      setIsFetchingAll(false);
     }
   };
 
-  const filteredLeads = leads.filter(l => 
+  const filteredLeads = allLeads.filter(l =>
     (l.company?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (l.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (l.location?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (l.phone?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (l.disposition?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
+
+  const displayedLeads = filteredLeads.slice(0, displayLimit);
+
+  const handleScroll = (e: React.UIEvent<HTMLDivElement>) => {
+    const { scrollTop, clientHeight, scrollHeight } = e.currentTarget;
+    if (scrollHeight - scrollTop <= clientHeight + 100) {
+      if (displayLimit < filteredLeads.length) {
+        setDisplayLimit(prev => prev + 1000);
+      }
+    }
+  };
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.checked) {
@@ -88,7 +126,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
 
     try {
       // 1. Generate CSV
-      const selectedLeads = leads.filter(l => selectedLeadIds.has(l.id));
+      const selectedLeads = allLeads.filter(l => selectedLeadIds.has(l.id));
       const headers = ['Lead Name', 'Contact Name', 'Contact Number', 'Address', 'Disposition', 'Last Interaction'];
       const csvRows = selectedLeads.map(l => {
         const company = (l.company || l.name || '').replace(/"/g, '""');
@@ -118,7 +156,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
       if (error) throw error;
       toast.success('Leads downloaded and removed from pack');
       setSelectedLeadIds(new Set());
-      fetchLeads();
+      fetchAllLeads();
     } catch (err: any) {
       toast.error('Failed to remove leads: ' + err.message);
     }
@@ -148,7 +186,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
 
       toast.success('Leads marked as DNC and removed from pack');
       setSelectedLeadIds(new Set());
-      fetchLeads();
+      fetchAllLeads();
     } catch (err: any) {
       toast.error('Failed to mark leads as DNC: ' + err.message);
     }
@@ -170,7 +208,10 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
               <span className="text-xl">{pack.icon || '📦'}</span>
               {pack.name} Leads
             </h3>
-            <p className="text-xs text-gray-500 mt-1">{leads.length} total leads in this pack</p>
+            <p className="text-xs text-gray-500 mt-1">
+              {allLeads.length} total leads in this pack
+              {isFetchingAll && <span className="ml-2 text-blue-500 animate-pulse">Loading remaining leads...</span>}
+            </p>
           </div>
           <button onClick={onClose} className="text-gray-400 hover:text-gray-600 p-2 hover:bg-gray-200 rounded-lg transition-colors">
             <X className="w-5 h-5" />
@@ -221,7 +262,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
         </div>
 
         {/* Table Content */}
-        <div className="flex-1 overflow-auto bg-gray-50 relative">
+        <div className="flex-1 overflow-auto bg-gray-50 relative" onScroll={handleScroll}>
           {loading ? (
             <div className="absolute inset-0 flex items-center justify-center">
               <Loader2 className="w-8 h-8 animate-spin text-blue-600" />
@@ -264,7 +305,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-gray-100">
-                {filteredLeads.map((lead) => (
+                {displayedLeads.map((lead) => (
                   <tr key={lead.id} className="hover:bg-blue-50/50 transition-colors group">
                     <td className="px-4 py-1.5 text-center">
                       <input

@@ -179,7 +179,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                     </td>
                     <td className="px-4 py-1.5 text-xs font-bold truncate max-w-[250px]" title={lead.company || lead.name}>
                       <button
-                        onClick={() => router.push(`/sales-crm/lead-v2?id=${lead.id}`)}
+                        onClick={() => router.push(`/sales-crm/lead-v2?pack=${pack.id}&id=${lead.id}`)}
                         className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 w-full text-left"
                       >
                         <span className="truncate">{lead.company || lead.name || '-'}</span>

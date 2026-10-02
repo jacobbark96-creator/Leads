@@ -26,7 +26,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
       setLoading(true);
       const { data, error } = await supabase
         .from('lead_pack_memberships')
-        .select('lead_id, leads (id, company, name, location)')
+        .select('lead_id, leads (id, company, name, location, phone)')
         .eq('lead_pack_id', pack.id);
 
       if (error) throw error;
@@ -43,7 +43,8 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
   const filteredLeads = leads.filter(l => 
     (l.company?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
     (l.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
-    (l.location?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    (l.location?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+    (l.phone?.toLowerCase() || '').includes(searchTerm.toLowerCase())
   );
 
   const handleSelectAll = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -128,11 +129,14 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                       onChange={handleSelectAll}
                     />
                   </th>
-                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-32">
                     Lead Name
                   </th>
                   <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
                     Contact Name
+                  </th>
+                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200">
+                    Contact Number
                   </th>
                   <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-64">
                     Address
@@ -150,11 +154,14 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                         onChange={() => handleSelectLead(lead.id)}
                       />
                     </td>
-                    <td className="px-4 py-1.5 text-xs font-bold text-gray-900 truncate max-w-[200px]" title={lead.company || lead.name}>
+                    <td className="px-4 py-1.5 text-xs font-bold text-gray-900 truncate max-w-[128px]" title={lead.company || lead.name}>
                       {lead.company || lead.name || '-'}
                     </td>
                     <td className="px-4 py-1.5 text-xs font-medium text-gray-600 truncate max-w-[150px]" title={lead.name}>
                       {lead.name || '-'}
+                    </td>
+                    <td className="px-4 py-1.5 text-xs font-medium text-gray-600 truncate" title={lead.phone}>
+                      {lead.phone || '-'}
                     </td>
                     <td className="px-4 py-1.5 text-xs text-gray-500 truncate max-w-[250px]" title={lead.location}>
                       {lead.location || '-'}

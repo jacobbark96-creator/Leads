@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
-import { Loader2, Search, X, CheckSquare } from 'lucide-react';
+import { Loader2, Search, X, CheckSquare, ExternalLink } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useRouter } from 'next/navigation';
 
 interface PackLeadsModalProps {
   isOpen: boolean;
@@ -10,6 +11,7 @@ interface PackLeadsModalProps {
 }
 
 export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
+  const router = useRouter();
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -173,8 +175,14 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                         onChange={() => handleSelectLead(lead.id)}
                       />
                     </td>
-                    <td className="px-4 py-1.5 text-xs font-bold text-gray-900 truncate max-w-[250px]" title={lead.company || lead.name}>
-                      {lead.company || lead.name || '-'}
+                    <td className="px-4 py-1.5 text-xs font-bold truncate max-w-[250px]" title={lead.company || lead.name}>
+                      <button 
+                        onClick={() => router.push(`/admin-crm/leads/${lead.id}`)}
+                        className="text-blue-600 hover:text-blue-800 hover:underline flex items-center gap-1 w-full text-left"
+                      >
+                        <span className="truncate">{lead.company || lead.name || '-'}</span>
+                        <ExternalLink className="w-3 h-3 shrink-0 opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </button>
                     </td>
                     <td className="px-4 py-1.5 text-xs font-medium text-gray-600 truncate max-w-[120px]" title={lead.name}>
                       {lead.name || '-'}

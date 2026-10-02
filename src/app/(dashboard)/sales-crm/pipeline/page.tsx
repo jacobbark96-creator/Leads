@@ -82,7 +82,7 @@ export default function PipelinePage() {
         query = query.eq('assigned_to', profile.id);
       } else {
         const statuses = [
-          'call back', 'qualified', 'marketplace', 'awaiting_sales', 'sold', 
+          'call back', 'qualified', 'potential', 'marketplace', 'awaiting_sales', 'sold', 
           'fresh', 'no answer', 'voicemail', 'skipped'
         ];
         

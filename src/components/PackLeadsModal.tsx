@@ -54,11 +54,18 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
           const notes = Array.isArray(m.leads.lead_notes) ? m.leads.lead_notes : [];
           const sortedNotes = [...notes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
           const lastInteraction = sortedNotes.length > 0 ? sortedNotes[0].created_at : null;
+          
+          const dialsCount = notes.filter((n: any) => 
+            n.content?.includes('📞 Call') || 
+            n.content?.includes('Pack Calling Disposition') ||
+            n.content?.includes('Outbound call')
+          ).length;
 
           return {
             ...m.leads,
             disposition: m.disposition,
-            lastInteraction
+            lastInteraction,
+            dialsCount
           };
         }).filter(Boolean) || [];
         
@@ -127,15 +134,16 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
     try {
       // 1. Generate CSV
       const selectedLeads = allLeads.filter(l => selectedLeadIds.has(l.id));
-      const headers = ['Lead Name', 'Contact Name', 'Contact Number', 'Address', 'Disposition', 'Last Interaction'];
+      const headers = ['Lead Name', 'Contact Name', 'Contact Number', 'Address', 'Disposition', 'Dials', 'Last Interaction'];
       const csvRows = selectedLeads.map(l => {
         const company = (l.company || l.name || '').replace(/"/g, '""');
         const name = (l.name || '').replace(/"/g, '""');
         const phone = (l.phone || '').replace(/"/g, '""');
         const location = (l.location || '').replace(/"/g, '""');
         const disposition = (l.disposition || '').replace(/"/g, '""');
+        const dials = l.dialsCount || 0;
         const lastInteraction = l.lastInteraction ? new Date(l.lastInteraction).toLocaleString() : '';
-        return `"${company}","${name}","${phone}","${location}","${disposition}","${lastInteraction}"`;
+        return `"${company}","${name}","${phone}","${location}","${disposition}","${dials}","${lastInteraction}"`;
       });
       const csvContent = [headers.join(','), ...csvRows].join('\n');
       const blob = new Blob([csvContent], { type: 'text/csv' });
@@ -296,6 +304,9 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                   <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-32">
                     Disposition
                   </th>
+                  <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-24 text-center">
+                    Dials
+                  </th>
                   <th className="px-4 py-2 text-xs font-semibold text-gray-500 uppercase tracking-wider border-b border-gray-200 w-48">
                     Last Interaction
                   </th>
@@ -343,6 +354,9 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
                           {lead.disposition}
                         </span>
                       ) : '-'}
+                    </td>
+                    <td className="px-4 py-1.5 text-xs font-bold text-gray-700 text-center w-24">
+                      {lead.dialsCount || 0}
                     </td>
                     <td className="px-4 py-1.5 text-xs text-gray-500 truncate max-w-[150px]" title={lead.lastInteraction ? new Date(lead.lastInteraction).toLocaleString() : ''}>
                       {lead.lastInteraction ? `${formatDistanceToNow(new Date(lead.lastInteraction))} ago` : '-'}

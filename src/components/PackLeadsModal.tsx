@@ -56,9 +56,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
           const lastInteraction = sortedNotes.length > 0 ? sortedNotes[0].created_at : null;
           
           const dialsCount = notes.filter((n: any) => 
-            n.content?.includes('📞 Call') || 
-            n.content?.includes('Pack Calling Disposition') ||
-            n.content?.includes('Outbound call')
+            n.content?.includes('📞 Call')
           ).length;
 
           return {

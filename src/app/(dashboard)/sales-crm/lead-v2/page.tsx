@@ -471,6 +471,7 @@ function LeadDetailsV2Content() {
   const [isCalendarModalOpen, setIsCalendarModalOpen] = useState(false);
   const [isMagicLinkModalOpen, setIsMagicLinkModalOpen] = useState(false);
   const [isReferModalOpen, setIsReferModalOpen] = useState(false);
+  const [isReferDropdownOpen, setIsReferDropdownOpen] = useState(false);
   const [partners, setPartners] = useState<any[]>([]);
   const [selectedPartnerId, setSelectedPartnerId] = useState<string>('');
   const [referDivisionId, setReferDivisionId] = useState('');
@@ -547,6 +548,27 @@ function LeadDetailsV2Content() {
   const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
 
   const [isMarketConfirmOpen, setIsMarketConfirmOpen] = useState(false);
+  const handleReferToBD = async () => {
+    if (!lead || !profile) return;
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({
+          bd_pipeline_status: 'Fresh',
+          assigned_to: profile.id
+        })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+      
+      setLead({ ...lead, bd_pipeline_status: 'Fresh', assigned_to: profile.id });
+      setIsReferDropdownOpen(false);
+      toast.success('Lead moved to your BD pipeline');
+    } catch (err: any) {
+      toast.error('Failed to move to BD: ' + err.message);
+    }
+  };
+
   const handleReferLead = async () => {
     if (!selectedPartnerId) {
       toast.error('Please select a referral partner.');
@@ -2503,14 +2525,34 @@ function LeadDetailsV2Content() {
                     )}
                   </div>
                 )}
-                {!lead.company && (
+                <div className="relative">
                   <button 
-                    onClick={() => setIsReferModalOpen(true)}
-                    className="flex-1 md:flex-none bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition-colors whitespace-nowrap"
+                    onClick={() => setIsReferDropdownOpen(!isReferDropdownOpen)}
+                    className="flex-1 md:flex-none bg-indigo-600 text-white px-3 py-1.5 rounded-lg text-sm font-bold shadow-sm hover:bg-indigo-700 transition-colors whitespace-nowrap flex items-center gap-1"
                   >
                     Refer
+                    <svg className={`w-4 h-4 transition-transform ${isReferDropdownOpen ? 'rotate-180' : ''}`} fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" /></svg>
                   </button>
-                )}
+                  
+                  {isReferDropdownOpen && (
+                    <div className="absolute top-full mt-1 left-0 w-48 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
+                      {!lead.company && (
+                        <button 
+                          onClick={() => { setIsReferModalOpen(true); setIsReferDropdownOpen(false); }}
+                          className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 font-medium"
+                        >
+                          Refer to Residential
+                        </button>
+                      )}
+                      <button 
+                        onClick={handleReferToBD}
+                        className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 font-medium"
+                      >
+                        Refer to BD
+                      </button>
+                    </div>
+                  )}
+                </div>
                 {(lead.is_marketed || lead.status === 'marketplace' || lead.status === 'awaiting_sales' || (lead.status === 'qualified' && divisions?.find(d => d.id === lead.division_id)?.name?.toLowerCase()?.includes('residential'))) && (
                   <button 
                     onClick={() => setIsWriteupOpen(true)}

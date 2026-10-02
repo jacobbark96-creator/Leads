@@ -403,6 +403,16 @@ const EditPrimaryContactModal = ({ isOpen, onClose, onSave, form, setForm }: any
               placeholder="https://linkedin.com/in/..."
             />
           </div>
+          <div>
+            <label className="block text-xs font-bold text-gray-500 uppercase mb-1">Domain</label>
+            <input 
+              type="text" 
+              value={form.domain || ''} 
+              onChange={(e) => setForm({...form, domain: e.target.value})}
+              className="w-full border border-gray-300 px-3 py-2 rounded-xl focus:ring-blue-500 focus:border-blue-500 shadow-sm"
+              placeholder="example.com"
+            />
+          </div>
           <button
             onClick={onSave}
             className="w-full bg-blue-600 text-white font-bold py-3 rounded-xl hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 mt-2"
@@ -1270,7 +1280,8 @@ function LeadDetailsV2Content() {
             email: updatePayload.email,
             phone: updatePayload.phone,
             secondary_phone: updatePayload.secondary_phone,
-            linkedin_url: updatePayload.linkedin_url
+            linkedin_url: updatePayload.linkedin_url,
+            domain: updatePayload.domain
           })
         .eq('id', lead.id);
 
@@ -2549,8 +2560,17 @@ function LeadDetailsV2Content() {
                 </div>
               )}
               <h1 className="text-lg font-bold text-gray-900 tracking-tight leading-tight">{lead.company || lead.name}</h1>
-              {/* @ts-ignore */}
-              {lead.website && <a href={lead.website.startsWith('http') ? lead.website : `https://${lead.website}`} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline text-xs mt-1">{lead.website}</a>}
+              {lead.domain && (
+                <a 
+                  href={lead.domain.startsWith('http') ? lead.domain : `https://${lead.domain}`} 
+                  target="_blank" 
+                  rel="noopener noreferrer" 
+                  className="text-blue-600 hover:underline text-xs mt-1 max-w-[250px] truncate block"
+                  title={lead.domain}
+                >
+                  {lead.domain}
+                </a>
+              )}
               
               <div className="flex gap-2 mt-4 w-full">
                   {lead.linkedin_url && (

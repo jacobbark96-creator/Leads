@@ -79,6 +79,7 @@ export async function POST(request: NextRequest) {
         email: email,
         phone: record.phone || record.mobile || 'No Phone',
         secondary_phone: record.secondary_phone || null,
+        domain: record.website || null,
         status: uploadTarget,
         upload_name: uploadName,
         is_in_pack: !!leadPackId,

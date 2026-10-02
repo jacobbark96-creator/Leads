@@ -90,6 +90,7 @@ export interface Lead {
   phone: string;
   email: string | null;
   company: string | null;
+  domain?: string | null;
   status: string;
   purchase_date: string | null;
   booking_date: string | null;

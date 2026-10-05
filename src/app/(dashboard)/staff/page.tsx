@@ -376,7 +376,7 @@ export default function StaffPortal() {
                     <CallMonitoringPanel monitoringData={monitoringData} />
                   </div>
                   <div className="flex-[0.5] min-h-0 overflow-hidden">
-                    <LeadSourcesPanel />
+                    {profile?.role === 'super_admin' ? <GmailPanel /> : <LeadSourcesPanel />}
                   </div>
                 </>
               ) : (

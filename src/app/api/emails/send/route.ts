@@ -38,7 +38,7 @@ export async function POST(req: Request) {
 
     if (!user.google_refresh_token) {
       console.error('No google_refresh_token found for user:', userId);
-      return NextResponse.json({ error: 'Google account not connected. Please link your Gmail in the Staff Hub.' }, { status: 400 });
+      return NextResponse.json({ error: 'Google account not connected. Please link your Gmail in the Staff Hub.' }, { status: 200 });
     }
 
     console.log('Refresh token found, proceeding to refresh access token');

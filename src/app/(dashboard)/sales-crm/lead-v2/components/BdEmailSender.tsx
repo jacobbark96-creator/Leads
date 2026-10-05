@@ -47,8 +47,8 @@ export function BdEmailSender({ lead, user, onSendSuccess }: BdEmailSenderProps)
 
   const quillFormats = [
     'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet',
-    'link'
+    'list',
+    'link', 'image'
   ];
 
   const aliases = [
@@ -228,7 +228,7 @@ export function BdEmailSender({ lead, user, onSendSuccess }: BdEmailSenderProps)
       });
 
       const data = await response.json();
-      if (!response.ok) throw new Error(data.error || 'Failed to send email');
+      if (!response.ok || data.error) throw new Error(data.error || 'Failed to send email');
 
       // Update lead status based on template type
       if (selectedTemplateId) {

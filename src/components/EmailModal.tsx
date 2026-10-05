@@ -48,7 +48,7 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
 
   const quillFormats = [
     'bold', 'italic', 'underline', 'strike',
-    'list', 'bullet',
+    'list',
     'link', 'image'
   ];
 
@@ -166,7 +166,7 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
       });
 
       const result = await response.json();
-      if (!response.ok) throw new Error(result.error || 'Failed to send email');
+      if (!response.ok || result.error) throw new Error(result.error || 'Failed to send email');
 
       toast.success('Email sent successfully!');
       onClose();

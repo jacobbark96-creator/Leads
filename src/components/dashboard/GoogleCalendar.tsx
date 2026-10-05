@@ -87,10 +87,10 @@ export const GoogleCalendar = () => {
   const rowCount = Math.ceil(calendarDays.length / 5);
 
   const getEventsForDay = (day: Date) => {
-    return events.filter(event => {
+    return Array.isArray(events) ? events.filter(event => {
       const eventDate = event.start.dateTime ? parseISO(event.start.dateTime) : (event.start.date ? parseISO(event.start.date) : null);
       return eventDate && isSameDay(eventDate, day);
-    });
+    }) : [];
   };
 
   const selectedDayEvents = selectedDay ? getEventsForDay(selectedDay) : [];

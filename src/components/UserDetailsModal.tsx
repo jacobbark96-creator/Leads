@@ -1025,7 +1025,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                             onLoad={onLoadAutocomplete}
                             onPlaceChanged={onPlaceChanged}
                             options={{
-                              types: [],
+                               
                               componentRestrictions: { country: "gb" },
                               fields: ['formatted_address', 'name']
                             }}

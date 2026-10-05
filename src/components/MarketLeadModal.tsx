@@ -535,7 +535,7 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
                         onLoad={onLoadAutocomplete}
                         onPlaceChanged={onPlaceChanged}
                         options={{
-                          types: [],
+                           
                           componentRestrictions: { country: "gb" },
                           fields: ['formatted_address', 'geometry', 'name']
                         }}

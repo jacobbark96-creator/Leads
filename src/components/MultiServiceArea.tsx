@@ -124,7 +124,7 @@ export function MultiServiceArea({ areas, onChange, allowNational = true }: Mult
                 onLoad={onLoad} 
                 onPlaceChanged={onPlaceChanged}
                 options={{ 
-                  types: [],
+                   
                   componentRestrictions: { country: 'gb' } 
                 }}
               >

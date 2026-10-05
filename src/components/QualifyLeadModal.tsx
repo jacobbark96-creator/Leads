@@ -597,7 +597,7 @@ export const QualifyLeadModal: React.FC<QualifyLeadModalProps> = ({ isOpen, onCl
                           onLoad={onLoadAutocomplete}
                           onPlaceChanged={onPlaceChanged}
                           options={{
-                            types: [],
+                             
                             componentRestrictions: { country: "gb" },
                             fields: ['formatted_address', 'geometry', 'name']
                           }}

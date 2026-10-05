@@ -221,7 +221,7 @@ export const AddBdLeadModal: React.FC<AddBdLeadModalProps> = ({ isOpen, onClose,
                       onLoad={onLoadAutocomplete}
                       onPlaceChanged={onPlaceChanged}
                       options={{
-                        types: [],
+                         
                         componentRestrictions: { country: "gb" },
                         fields: ['formatted_address', 'geometry', 'name']
                       }}

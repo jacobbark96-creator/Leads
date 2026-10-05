@@ -288,7 +288,6 @@ const AddBuildingModal = ({ isOpen, onClose, onAdd, isLoaded, onLoadAutocomplete
                 onLoad={onLoadAutocomplete}
                 onPlaceChanged={onPlaceChanged}
                 options={{
-                  types: [],
                   componentRestrictions: { country: "gb" },
                   fields: ['formatted_address', 'geometry', 'name']
                 }}
@@ -960,7 +959,7 @@ function LeadDetailsV2Content() {
             const updatedNote = payload.new as LeadNote;
             setNotes(prev => prev.map(n => n.id === updatedNote.id ? updatedNote : n));
           } else if (payload.eventType === 'DELETE') {
-            setNotes(prev => prev.filter(n => n.id === payload.old.id));
+            setNotes(prev => Array.isArray(prev) ? prev.filter(n => n.id === payload.old.id) : prev);
           }
         })
         .subscribe();
@@ -2198,7 +2197,7 @@ function LeadDetailsV2Content() {
         .eq('id', fileId);
 
       if (error) throw error;
-      setFiles(prev => prev.filter(f => f.id !== fileId));
+      setFiles(prev => Array.isArray(prev) ? prev.filter(f => f.id !== fileId) : prev);
       toast.success('File deleted');
       router.refresh();
     } catch (error: any) {
@@ -3601,10 +3600,10 @@ function LeadDetailsV2Content() {
                 )}
                 <div className="flex flex-col md:flex-row gap-4 flex-1 min-h-0">
                   <div className="w-full md:w-[45%] h-48 md:h-full shrink-0 bg-gray-200 rounded-lg overflow-hidden relative group cursor-pointer">
-                  <img src={buildingEnrichment?.satellite_image_url || (lead.photos && lead.photos.length > 0 ? lead.photos[currentImageIndex] : "https://images.unsplash.com/photo-1613545325278-f24b0cae1224?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")} alt="Building Aerial" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
+                  <img src={buildingEnrichment?.satellite_image_url || (!buildingEnrichment && lead.photos && lead.photos.length > 0 ? lead.photos[currentImageIndex] : "https://images.unsplash.com/photo-1613545325278-f24b0cae1224?ixlib=rb-4.0.3&auto=format&fit=crop&w=1000&q=80")} alt="Building Aerial" className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105" />
                   
                   {/* Left/Right Controls */}
-                  {lead.photos && lead.photos.length > 1 && (
+                  {!buildingEnrichment && lead.photos && lead.photos.length > 1 && (
                     <>
                       <button 
                         onClick={(e) => { e.preventDefault(); e.stopPropagation(); setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : lead.photos!.length - 1)); }}
@@ -3627,7 +3626,7 @@ function LeadDetailsV2Content() {
                       <Plus className="w-4 h-4" />
                       <input type="file" accept="image/*" className="hidden" onChange={handleBuildingImageUpload} />
                     </label>
-                    {lead.photos && lead.photos.length > 0 && (
+                    {(buildingEnrichment ? buildingEnrichment.satellite_image_url : (lead.photos && lead.photos.length > 0)) && (
                       <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); handleBuildingImageDelete(); }} className="p-1.5 bg-white/90 backdrop-blur-sm rounded-md text-gray-700 hover:text-red-600 shadow-sm" title="Delete current photo">
                         <Trash2 className="w-4 h-4" />
                       </button>
@@ -3635,7 +3634,7 @@ function LeadDetailsV2Content() {
                   </div>
 
                   <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center pointer-events-none">
-                    <a href={`https://earth.google.com/web/search/${encodeURIComponent((editingCard === 'building' && editForm.location !== undefined ? editForm.location : lead.location) || '')}`} target="_blank" rel="noopener noreferrer" className="bg-white/90 text-gray-900 text-xs font-bold px-3 py-1.5 rounded-md shadow-sm flex items-center gap-1.5 pointer-events-auto hover:bg-white hover:text-blue-600 transition-colors">
+                    <a href={`https://earth.google.com/web/search/${encodeURIComponent((editingCard === 'building' && editForm.location !== undefined ? editForm.location : (buildingEnrichment ? buildingEnrichment.address : lead.location)) || '')}`} target="_blank" rel="noopener noreferrer" className="bg-white/90 text-gray-900 text-xs font-bold px-3 py-1.5 rounded-md shadow-sm flex items-center gap-1.5 pointer-events-auto hover:bg-white hover:text-blue-600 transition-colors">
                       <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
                       Google Earth View
                     </a>
@@ -3643,7 +3642,7 @@ function LeadDetailsV2Content() {
                   <div className="absolute top-2 right-2 bg-white/90 backdrop-blur-sm px-2 py-1 rounded-md text-xs font-bold text-gray-900 shadow-sm z-20">
                     High Suitability
                   </div>
-                  {lead.photos && lead.photos.length > 1 && (
+                  {!buildingEnrichment && lead.photos && lead.photos.length > 1 && (
                     <div className="absolute bottom-2 left-1/2 -translate-x-1/2 bg-black/50 text-white text-[10px] px-2 py-0.5 rounded-full z-20 font-medium">
                       {currentImageIndex + 1} / {lead.photos.length}
                     </div>
@@ -3659,7 +3658,6 @@ function LeadDetailsV2Content() {
                             onLoad={onLoadAutocomplete}
                             onPlaceChanged={onPlaceChanged}
                             options={{
-                              types: [],
                               componentRestrictions: { country: "gb" },
                               fields: ['formatted_address', 'geometry', 'name']
                             }}
@@ -3670,15 +3668,15 @@ function LeadDetailsV2Content() {
                           <input type="text" value={editForm.location || ''} onChange={e => setEditForm({...editForm, location: e.target.value})} className="border rounded px-1.5 py-0.5 pr-8 text-sm focus:ring-1 focus:ring-blue-500 w-full mt-1" />
                         )
                       ) : (
-                        <span className="text-gray-900 text-sm font-medium">{lead.location || 'N/A'}</span>
+                        <span className="text-gray-900 text-sm font-medium">{buildingEnrichment ? (buildingEnrichment.address || 'N/A') : (lead.location || 'N/A')}</span>
                       )}
                       
                       {/* Geocode Status Indicator */}
-                      {(editingCard === 'building' ? (editForm.latitude && editForm.longitude) : (lead.latitude && lead.longitude)) ? (
+                      {(editingCard === 'building' ? (editForm.latitude && editForm.longitude) : (buildingEnrichment ? (buildingEnrichment.latitude && buildingEnrichment.longitude) : (lead.latitude && lead.longitude))) ? (
                         <div className={`absolute ${editingCard === 'building' ? 'right-2 top-2.5' : '-right-6 top-0.5'}`} title="Location coordinates found - will show on map">
                           <CheckCircle className="h-3.5 w-3.5 text-green-500" />
                         </div>
-                      ) : (lead.location || (editingCard === 'building' && editForm.location)) && (
+                      ) : ((buildingEnrichment ? buildingEnrichment.address : lead.location) || (editingCard === 'building' && editForm.location)) && (
                         <div className={`absolute ${editingCard === 'building' ? 'right-2 top-2.5' : '-right-6 top-0.5'} group/geo`} title="Coordinates missing - lead will not show on map">
                           <div className="flex items-center gap-1.5">
                             {isGeocoding ? (
@@ -3734,7 +3732,7 @@ function LeadDetailsV2Content() {
                     {editingCard === 'building' ? (
                       <input type="text" value={(editForm as any).building_type || ''} onChange={e => setEditForm({...editForm, building_type: e.target.value} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium capitalize">{buildingEnrichment?.property_type || (lead as any).building_type || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium capitalize">{buildingEnrichment ? (buildingEnrichment.property_type || buildingEnrichment.building_type || 'N/A') : ((lead as any).building_type || 'N/A')}</span>
                     )}
                   </div>
                   <div className="flex flex-col">
@@ -3779,7 +3777,7 @@ function LeadDetailsV2Content() {
                     {editingCard === 'building' ? (
                       <input type="number" value={(editForm as any).est_ann_consumption || ''} onChange={e => setEditForm({...editForm, est_ann_consumption: Number(e.target.value)} as any)} className="border rounded px-1.5 py-0.5 text-sm focus:ring-1 focus:ring-blue-500 mt-1" />
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(lead as any).est_ann_consumption ? `${(lead as any).est_ann_consumption} kWh` : 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">{buildingEnrichment ? (buildingEnrichment.annual_consumption ? `${buildingEnrichment.annual_consumption} kWh` : 'N/A') : ((lead as any).est_ann_consumption ? `${(lead as any).est_ann_consumption} kWh` : 'N/A')}</span>
                     )}
                   </div>
                   <div className="flex flex-col">
@@ -3791,7 +3789,7 @@ function LeadDetailsV2Content() {
                         <option value="Three Phase">Three Phase</option>
                       </select>
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(lead as any).electrical_supply || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">{buildingEnrichment ? (buildingEnrichment.grid_connection || 'N/A') : ((lead as any).electrical_supply || 'N/A')}</span>
                     )}
                   </div>
                   <div className="flex flex-col">
@@ -3808,7 +3806,10 @@ function LeadDetailsV2Content() {
                       </select>
                     ) : (
                       <span className="text-gray-900 text-sm font-medium">
-                        {lead.cover_skylights === true ? 'Yes' : lead.cover_skylights === false ? 'No' : 'N/A'}
+                        {buildingEnrichment 
+                          ? ((buildingEnrichment as any).cover_skylights === true ? 'Yes' : (buildingEnrichment as any).cover_skylights === false ? 'No' : 'N/A')
+                          : (lead.cover_skylights === true ? 'Yes' : lead.cover_skylights === false ? 'No' : 'N/A')
+                        }
                       </span>
                     )}
                   </div>
@@ -3827,7 +3828,9 @@ function LeadDetailsV2Content() {
                         {isRoofTypeDropdownOpen && (
                           <div className="absolute bottom-full left-0 mb-1 w-full min-w-[180px] bg-white border border-gray-200 rounded-md shadow-lg z-[100] p-2 grid grid-cols-2 gap-2">
                             {['Pitched', 'Flat', 'Metal', 'Tile', 'Slate', 'Fiber Cement', 'Asbestos'].map(roof => {
-                              const currentTypes = ((editForm as any).roof_material || '').split(',').map((t: string) => t.trim()).filter(Boolean);
+                              const currentTypes = Array.isArray((editForm as any).roof_material) 
+                                ? (editForm as any).roof_material 
+                                : ((editForm as any).roof_material || '').split(',').map((t: string) => t.trim()).filter(Boolean);
                               return (
                                 <label key={roof} className="flex items-center gap-1.5 text-xs text-gray-700 cursor-pointer">
                                   <input 
@@ -3849,7 +3852,7 @@ function LeadDetailsV2Content() {
                         )}
                       </div>
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium mt-1">{(lead as any).roof_material || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium mt-1">{buildingEnrichment ? (buildingEnrichment.roof_type || 'N/A') : ((lead as any).roof_material || 'N/A')}</span>
                     )}
                   </div>
                   <div className="flex flex-col">
@@ -3864,7 +3867,7 @@ function LeadDetailsV2Content() {
                         <option value="Bad">Bad</option>
                       </select>
                     ) : (
-                      <span className="text-gray-900 text-sm font-medium">{(lead as any).roof_condition || 'N/A'}</span>
+                      <span className="text-gray-900 text-sm font-medium">{buildingEnrichment ? (buildingEnrichment.roof_condition || 'N/A') : ((lead as any).roof_condition || 'N/A')}</span>
                     )}
                   </div>
                   <div className="flex flex-col">
@@ -4025,7 +4028,7 @@ function LeadDetailsV2Content() {
                     <h3 className="text-sm font-semibold text-gray-900 mb-4 uppercase tracking-wider shrink-0">Team Notes</h3>
                     <div className="flex-1 flex flex-col min-h-0 bg-gray-50/50 rounded-lg border border-gray-100 overflow-hidden">
                       <div className="flex-1 p-4 overflow-y-auto flex flex-col gap-4 max-h-[500px]" ref={notesEndRef}>
-                        {notes.filter(n => !n.content.startsWith('📞') && !n.content.startsWith('✉️') && !n.content.startsWith('📅') && n.author_name !== 'System').map(note => (
+                        {Array.isArray(notes) ? notes.filter(n => !n.content.startsWith('📞') && !n.content.startsWith('✉️') && !n.content.startsWith('📅') && n.author_name !== 'System').map(note => (
                           <div key={note.id} className="flex gap-3">
                             <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold flex-shrink-0 ${note.is_pinned ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-600'}`}>
                               {getInitials(note.author_name)}
@@ -4045,7 +4048,7 @@ function LeadDetailsV2Content() {
                               </div>
                             </div>
                           </div>
-                        ))}
+                        )) : null}
                         
                         {typingUsers.length > 0 && (
                           <div className="flex gap-3 items-center">
@@ -4360,7 +4363,7 @@ function LeadDetailsV2Content() {
                       <li key={c.id} className="flex items-center gap-2 bg-white p-2 rounded border border-gray-100 shadow-sm cursor-pointer hover:bg-gray-50"
                           onClick={() => {
                             if (selectedContractors.includes(c.id)) {
-                              setSelectedContractors(selectedContractors.filter(id => id !== c.id));
+                              setSelectedContractors(Array.isArray(selectedContractors) ? selectedContractors.filter(id => id !== c.id) : []);
                             } else {
                               setSelectedContractors([...selectedContractors, c.id]);
                             }

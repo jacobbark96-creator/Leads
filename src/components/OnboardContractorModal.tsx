@@ -284,7 +284,7 @@ export const OnboardContractorModal: React.FC<OnboardContractorModalProps> = ({ 
                       onLoad={onLoadAutocomplete}
                       onPlaceChanged={onPlaceChanged}
                       options={{
-                        types: [],
+                         
                         componentRestrictions: { country: "gb" },
                         fields: ['formatted_address', 'geometry', 'name']
                       }}

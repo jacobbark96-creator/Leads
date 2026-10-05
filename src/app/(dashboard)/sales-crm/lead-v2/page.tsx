@@ -560,6 +560,13 @@ function LeadDetailsV2Content() {
   const [newBuildingCoords, setNewBuildingCoords] = useState<{ lat: number | null, lng: number | null }>({ lat: null, lng: null });
   const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
 
+  // When switching tabs, exit edit mode to prevent showing stale data from the previous tab
+  useEffect(() => {
+    if (editingCard === 'building') {
+      setEditingCard(null);
+    }
+  }, [activeBuildingIndex]);
+
   const [isMarketConfirmOpen, setIsMarketConfirmOpen] = useState(false);
   const handleReferToBD = async () => {
     if (!lead || !profile) return;
@@ -1329,23 +1336,31 @@ function LeadDetailsV2Content() {
     } else {
       // Enter edit mode
       setEditingCard(cardName);
-      if (cardName === 'building' && activeBuildingIndex > 0 && buildings.length >= activeBuildingIndex) {
-        // Populating edit form with non-primary building data
-        const b = buildings[activeBuildingIndex - 1];
-        setEditForm({
-          ...lead,
-          location: b.address,
-          building_type: b.building_type,
-          roof_material: b.roof_type,
-          roof_condition: b.roof_condition,
-          est_ann_consumption: b.annual_consumption,
-          electrical_supply: b.grid_connection,
-          solar_location: b.orientation,
-          roof_size: b.roof_area_estimate ? `${b.roof_area_estimate}` : null,
-          epc_rating: b.epc_rating,
-          marketplace_notes: b.marketplace_notes,
-          use_primary_notes: b.use_primary_notes
-        } as any);
+      if (cardName === 'building') {
+        if (activeBuildingIndex > 0 && buildings.length >= activeBuildingIndex) {
+          // Populating edit form with non-primary building data
+          const b = buildings[activeBuildingIndex - 1];
+          setEditForm({
+            ...lead,
+            location: b.address || '',
+            building_type: b.building_type,
+            roof_material: b.roof_type,
+            roof_condition: b.roof_condition,
+            est_ann_consumption: b.annual_consumption,
+            electrical_supply: b.grid_connection,
+            solar_location: b.orientation,
+            roof_size: b.roof_area_estimate ? `${b.roof_area_estimate}` : null,
+            epc_rating: b.epc_rating,
+            marketplace_notes: b.marketplace_notes,
+            use_primary_notes: b.use_primary_notes
+          } as any);
+        } else {
+          // Explicitly clear building-specific fields for the primary location if they aren't on the lead object
+          setEditForm({
+            ...(lead || {}),
+            location: lead?.location || ''
+          } as any);
+        }
       } else {
         setEditForm(lead || {});
       }
@@ -1731,11 +1746,19 @@ function LeadDetailsV2Content() {
       
       let events = [];
       if (res.ok) {
-        events = await res.json();
+        const data = await res.json();
+        if (data.error === 'NOT_CONNECTED') {
+          console.warn('Google Calendar user not connected. Falling back to all slots available.');
+          events = [];
+        } else if (Array.isArray(data)) {
+          events = data;
+        } else if (data.items) {
+          events = data.items;
+        } else {
+          events = data; // fallback
+        }
       } else {
-        // If 400 (NOT_CONNECTED), silently ignore calendar events and just show all slots as available
-        // If it's a 500, we might want to log it, but we still shouldn't break the UI
-        console.warn('Google Calendar fetch failed or user not connected. Falling back to all slots available.');
+        console.warn('Google Calendar fetch failed. Falling back to all slots available.');
       }
 
       // Generate slots: 9 AM to 6 PM, 1 hour each, 15 min buffer
@@ -1802,9 +1825,9 @@ function LeadDetailsV2Content() {
         })
       });
 
-      if (!eventRes.ok) {
-        const errData = await eventRes.json();
-        throw new Error(errData.error || 'Failed to create calendar event');
+      const errData = await eventRes.json();
+      if (!eventRes.ok || errData.error) {
+        throw new Error(errData.error || errData.message || 'Failed to create calendar event');
       }
 
       // 2. Update lead status and assignment
@@ -2296,6 +2319,7 @@ function LeadDetailsV2Content() {
       await fetchLeadAndNotes();
       
       setNewBuildingAddress('');
+      setNewBuildingCoords({ lat: null, lng: null });
       setIsAddBuildingModalOpen(false);
       setActiveBuildingIndex(buildings.length + 1); // Switch to the new building
       

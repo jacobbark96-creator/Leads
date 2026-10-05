@@ -161,14 +161,19 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
       a.click();
       window.URL.revokeObjectURL(url);
 
-      // 2. Remove from pack
-      const { error } = await supabase
-        .from('lead_pack_memberships')
-        .delete()
-        .eq('lead_pack_id', pack.id)
-        .in('lead_id', Array.from(selectedLeadIds));
+      // 2. Remove from pack in chunks to avoid URI Too Long errors
+      const leadIds = Array.from(selectedLeadIds);
+      const chunkSize = 100;
+      for (let i = 0; i < leadIds.length; i += chunkSize) {
+        const chunk = leadIds.slice(i, i + chunkSize);
+        const { error } = await supabase
+          .from('lead_pack_memberships')
+          .delete()
+          .eq('lead_pack_id', pack.id)
+          .in('lead_id', chunk);
+        if (error) throw error;
+      }
 
-      if (error) throw error;
       toast.success('Leads downloaded and removed from pack');
       setSelectedLeadIds(new Set());
       fetchAllLeads();
@@ -184,20 +189,25 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
     try {
       const leadIds = Array.from(selectedLeadIds);
       
-      // 1. Update leads table to dnc
-      const { error: leadsError } = await supabase
-        .from('leads')
-        .update({ status: 'dnc' })
-        .in('id', leadIds);
-      if (leadsError) throw leadsError;
+      // 1. Update leads table to dnc in chunks
+      const chunkSize = 100;
+      for (let i = 0; i < leadIds.length; i += chunkSize) {
+        const chunk = leadIds.slice(i, i + chunkSize);
+        
+        const { error: leadsError } = await supabase
+          .from('leads')
+          .update({ status: 'dnc' })
+          .in('id', chunk);
+        if (leadsError) throw leadsError;
 
-      // 2. Remove from pack (hard constraint)
-      const { error: packError } = await supabase
-        .from('lead_pack_memberships')
-        .delete()
-        .eq('lead_pack_id', pack.id)
-        .in('lead_id', leadIds);
-      if (packError) throw packError;
+        // 2. Remove from pack (hard constraint)
+        const { error: packError } = await supabase
+          .from('lead_pack_memberships')
+          .delete()
+          .eq('lead_pack_id', pack.id)
+          .in('lead_id', chunk);
+        if (packError) throw packError;
+      }
 
       toast.success('Leads marked as DNC and removed from pack');
       setSelectedLeadIds(new Set());
@@ -238,7 +248,7 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
         targetSmartViewId = smartView.id;
       }
       
-      // 2. Add the items
+      // 2. Add the items in chunks
       const selectedLeads = allLeads.filter(l => selectedLeadIds.has(l.id));
       const itemsToInsert = selectedLeads.map(l => ({
         smart_view_id: targetSmartViewId,
@@ -246,13 +256,17 @@ export function PackLeadsModal({ isOpen, onClose, pack }: PackLeadsModalProps) {
         membership_id: l.membership_id
       }));
       
-      const { error: itemsError } = await supabase
-        .from('smart_view_items')
-        .insert(itemsToInsert);
-        
-      // Handle unique constraint violations gracefully (if lead is already in the smart view)
-      if (itemsError && !itemsError.message.includes('duplicate key')) {
-        throw itemsError;
+      const chunkSize = 100;
+      for (let i = 0; i < itemsToInsert.length; i += chunkSize) {
+        const chunk = itemsToInsert.slice(i, i + chunkSize);
+        const { error: itemsError } = await supabase
+          .from('smart_view_items')
+          .insert(chunk);
+          
+        // Handle unique constraint violations gracefully (if lead is already in the smart view)
+        if (itemsError && !itemsError.message.includes('duplicate key')) {
+          throw itemsError;
+        }
       }
       
       toast.success(`Leads added to SmartView successfully!`);

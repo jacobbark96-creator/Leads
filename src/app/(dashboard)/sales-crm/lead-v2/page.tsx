@@ -3840,7 +3840,7 @@ function LeadDetailsV2Content() {
                                     onChange={(e) => {
                                       const updated = e.target.checked 
                                         ? [...currentTypes, roof] 
-                                        : currentTypes.filter((r: string) => r !== roof);
+                                        : Array.isArray(currentTypes) ? currentTypes.filter((r: string) => r !== roof) : [];
                                       setEditForm({...editForm, roof_material: updated.join(', ')} as any);
                                     }}
                                   />

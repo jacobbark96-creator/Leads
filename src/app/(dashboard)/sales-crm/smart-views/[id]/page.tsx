@@ -279,10 +279,11 @@ export default function SmartViewDetails() {
       toast.error('No leads available to dial!');
       return;
     }
-    
+
     // Store the exact queue order in localStorage so the dialer knows what to follow
     const queue = filteredAndSortedLeads.map(l => l.id);
     localStorage.setItem('smartViewQueue', JSON.stringify(queue));
+    localStorage.setItem('smartViewQueueTime', Date.now().toString());
     
     // Start from the specific lead if provided, otherwise the first one
     const targetId = startId || queue[0];

@@ -795,14 +795,14 @@ function LeadDetailsV2Content() {
           
           if (!userDidActivityRef.current) {
             // No activity -> mark as voicemail and move on
-            if (packId) {
+            if (packId || smartViewId) {
               handlePackDispositionRef.current('Voicemail');
             } else if (nextLeadId) {
               goToNextLeadRef.current();
             }
           } else {
             // Activity occurred -> move on (assuming they saved notes or something)
-            if (packId) {
+            if (packId || smartViewId) {
               handlePackDispositionRef.current('Call Back');
             } else if (nextLeadId) {
               goToNextLeadRef.current();
@@ -2417,7 +2417,7 @@ function LeadDetailsV2Content() {
               toast.error('Error getting next lead: ' + nextError.message);
               setLoading(false);
             } else if (nextData && nextData.length > 0) {
-              router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${nextData[0].lead_id}`);
+              router.replace(`/sales-crm/lead-v2?smartview=${smartViewId}&id=${nextData[0].lead_id}&tab=${tab}`);
             } else {
               toast.success('SmartView completed! No more available leads.');
               router.push(`/sales-crm/smart-views/${smartViewId}`);

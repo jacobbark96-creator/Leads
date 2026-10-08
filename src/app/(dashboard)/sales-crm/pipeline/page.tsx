@@ -89,12 +89,8 @@ export default function PipelinePage() {
         query = query.in('status', statuses);
         
         if (profile?.role !== 'super_admin' || selectedUser === 'me') {
-          // Staff should see leads assigned to them OR unassigned leads in their division
-          if (profile?.division_id) {
-            query = query.or(`assigned_to.eq.${profile.id},and(assigned_to.is.null,division_id.eq.${profile.division_id})`);
-          } else {
-            query = query.or(`assigned_to.eq.${profile?.id},assigned_to.is.null`);
-          }
+          // Staff should see ONLY leads assigned to them in their pipeline
+          query = query.eq('assigned_to', profile?.id);
         } else if (selectedUser !== 'all') {
           query = query.eq('assigned_to', selectedUser);
         }

@@ -6,7 +6,7 @@ import toast from 'react-hot-toast';
 import { 
   X, MapPin, User, Calendar, Home, CheckCircle, Zap, ShieldCheck, 
   ShoppingCart, Globe, Clock, Activity, FileText, LayoutGrid, Sun, Moon,
-  Battery, TrendingUp, ChevronRight, Check, Building, AlertCircle, Info, Phone, Mail
+  Battery, TrendingUp, ChevronRight, ChevronLeft, Check, Building, AlertCircle, Info, Phone, Mail
 } from 'lucide-react';
 import { extractTown, getVagueLocation, calculateMatchScore, calculateMatchScoreDetails, calculateEstimatedSystemSize, calculateIndicativeSystemValue } from '../lib/utils';
 import { trackLeadEvent } from '../utils/tracking';
@@ -69,6 +69,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
   const [hasBills, setHasBills] = useState<boolean>(false);
   const [showMagicLink, setShowMagicLink] = useState(false);
   const [activeBuildingIndex, setActiveBuildingIndex] = useState(0);
+  const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [buildings, setBuildings] = useState<any[]>(lead.buildings || []);
   const [existingRequest, setExistingRequest] = useState<any>(null);
   const [orgRequest, setOrgRequest] = useState<any>(null);
@@ -978,7 +979,7 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
               {/* IMAGE */}
                 <div 
                   className="bg-gray-100 rounded-xl overflow-hidden border border-gray-200 h-64 shrink-0 relative group cursor-pointer"
-                  onClick={() => setLightboxUrl(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url)}
+                  onClick={() => setLightboxUrl(activeBuildingIndex === 0 ? (lead.photos && lead.photos.length > 0 ? lead.photos[currentImageIndex] : undefined) : activeBuilding?.satellite_image_url)}
                 >
                   {lead.property_type && (
                     <div className="absolute top-3 left-3 z-10 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full border border-gray-200 shadow-sm">
@@ -988,10 +989,10 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                       </span>
                     </div>
                   )}
-                  {(activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url) ? (
+                  {(activeBuildingIndex === 0 ? (lead.photos && lead.photos.length > 0 ? lead.photos[currentImageIndex] : undefined) : activeBuilding?.satellite_image_url) ? (
                   <>
                     <img 
-                      src={activeBuildingIndex === 0 ? lead.photos?.[0] : activeBuilding?.satellite_image_url} 
+                      src={activeBuildingIndex === 0 ? lead.photos?.[currentImageIndex] : activeBuilding?.satellite_image_url} 
                       alt="Property" 
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       onError={(e) => {
@@ -999,11 +1000,47 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                         (e.target as HTMLImageElement).nextElementSibling?.classList.remove('hidden');
                       }}
                     />
+                    
+                    {/* Navigation Arrows for Multiple Images */}
+                    {activeBuildingIndex === 0 && lead.photos && lead.photos.length > 1 && (
+                      <>
+                        <button 
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            setCurrentImageIndex(prev => (prev > 0 ? prev - 1 : lead.photos!.length - 1)); 
+                          }}
+                          className="absolute left-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all z-20"
+                        >
+                          <ChevronLeft className="w-5 h-5" />
+                        </button>
+                        <button 
+                          onClick={(e) => { 
+                            e.preventDefault(); 
+                            e.stopPropagation(); 
+                            setCurrentImageIndex(prev => (prev < lead.photos!.length - 1 ? prev + 1 : 0)); 
+                          }}
+                          className="absolute right-2 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/40 hover:bg-black/60 text-white flex items-center justify-center backdrop-blur-sm opacity-0 group-hover:opacity-100 transition-all z-20"
+                        >
+                          <ChevronRight className="w-5 h-5" />
+                        </button>
+                      </>
+                    )}
+
                     <div className="absolute inset-0 bg-black/5 flex flex-col items-center justify-center hidden">
                       <Home className="w-8 h-8 text-gray-300 mb-2" />
                       <span className="text-xs font-medium text-gray-400">Image not available</span>
                     </div>
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
+                    
+                    {/* Image Counter */}
+                    {activeBuildingIndex === 0 && lead.photos && lead.photos.length > 1 && (
+                      <div className="absolute bottom-3 right-3 z-10 bg-black/60 backdrop-blur-sm px-2 py-1 rounded-md">
+                        <span className="text-[10px] font-bold text-white tracking-wide">
+                          {currentImageIndex + 1} / {lead.photos.length}
+                        </span>
+                      </div>
+                    )}
                   </>
                 ) : (
                   <div className="absolute inset-0 flex flex-col items-center justify-center">

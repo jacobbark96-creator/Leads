@@ -22,6 +22,7 @@ export default function SmartViewDetails() {
   // Filters & Sorting
   const [statusFilter, setStatusFilter] = useState('all');
   const [sortBy, setSortBy] = useState('default');
+  const [hideRecentDials, setHideRecentDials] = useState(false);
   
   // Selection
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -65,7 +66,8 @@ export default function SmartViewDetails() {
           lead_pack_memberships (
             status,
             disposition,
-            reserved_until
+            reserved_until,
+            last_called_at
           ),
           leads (
             id,
@@ -86,7 +88,12 @@ export default function SmartViewDetails() {
         const notes = Array.isArray(item.leads.lead_notes) ? item.leads.lead_notes : [];
         const sortedNotes = [...notes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
         const lastInteraction = sortedNotes.length > 0 ? sortedNotes[0].created_at : null;
-        const dialsCount = notes.filter((n: any) => n.content?.includes('📞 Call')).length;
+        
+        const dialNotes = notes.filter((n: any) => n.content?.includes('📞 Call'));
+        const sortedDials = [...dialNotes].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+        const lastDial = sortedDials.length > 0 ? sortedDials[0].created_at : (item.lead_pack_memberships?.last_called_at || null);
+        
+        const dialsCount = dialNotes.length;
 
         return {
           ...item.leads,
@@ -95,6 +102,7 @@ export default function SmartViewDetails() {
           disposition: item.lead_pack_memberships?.disposition,
           reserved_until: item.lead_pack_memberships?.reserved_until,
           lastInteraction,
+          lastDial,
           dialsCount
         };
       }).filter(Boolean);
@@ -109,15 +117,28 @@ export default function SmartViewDetails() {
 
   const filteredAndSortedLeads = [...leads]
     .filter(l => {
-      if (statusFilter === 'all') return true;
-      return l.status === statusFilter || l.disposition === statusFilter;
+      if (statusFilter !== 'all' && l.status !== statusFilter && l.disposition !== statusFilter) {
+        return false;
+      }
+      if (hideRecentDials && l.lastDial) {
+        const sevenDaysAgo = new Date();
+        sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+        if (new Date(l.lastDial) > sevenDaysAgo) {
+          return false;
+        }
+      }
+      return true;
     })
     .sort((a, b) => {
       if (sortBy === 'dials-desc') return (b.dialsCount || 0) - (a.dialsCount || 0);
       if (sortBy === 'dials-asc') return (a.dialsCount || 0) - (b.dialsCount || 0);
       if (sortBy === 'interaction-desc') return new Date(b.lastInteraction || 0).getTime() - new Date(a.lastInteraction || 0).getTime();
       if (sortBy === 'interaction-asc') return new Date(a.lastInteraction || 0).getTime() - new Date(b.lastInteraction || 0).getTime();
-      return 0; // default (created_at desc usually handled by DB, or just original order)
+      
+      // Default: Longest period since last dial first (uncalled leads first, then oldest dialed)
+      const timeA = a.lastDial ? new Date(a.lastDial).getTime() : 0;
+      const timeB = b.lastDial ? new Date(b.lastDial).getTime() : 0;
+      return timeA - timeB;
     });
 
   const uniqueStatuses = Array.from(new Set(leads.map(l => l.status).concat(leads.map(l => l.disposition)))).filter(Boolean);
@@ -372,6 +393,16 @@ export default function SmartViewDetails() {
                 <option value="interaction-asc">Last Interaction (Oldest)</option>
               </select>
             </div>
+            
+            <label className="flex items-center gap-2 text-sm text-gray-600 cursor-pointer ml-2">
+              <input
+                type="checkbox"
+                checked={hideRecentDials}
+                onChange={(e) => setHideRecentDials(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 text-purple-600 focus:ring-purple-500 cursor-pointer"
+              />
+              Hide called in last 7 days
+            </label>
           </div>
 
           <div className="flex items-center gap-2">

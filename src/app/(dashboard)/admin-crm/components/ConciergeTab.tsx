@@ -23,7 +23,7 @@ export const ConciergeTab = () => {
           has_concierge, 
           purchased_at,
           client_id,
-          client:clients (
+          client:client_id (
             user_id,
             users (name, email)
           ),

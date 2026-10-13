@@ -5,7 +5,7 @@ import { useAuthStore } from '../store/authStore';
 import { X, Upload, Trash2, MapPin, CheckCircle, Info, MessageCircle, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
-import { calculateEstimatedSystemSize } from '../lib/utils';
+import { calculateEstimatedSystemSize, extractTown } from '../lib/utils';
 
 const libraries: "places"[] = ['places'];
 
@@ -343,14 +343,23 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
       }
 
       // Generate the pitch message
+      const town = extractTown(formData.location);
       const estSize = formData.est_system_size ? `\n📐 System Size: ${formData.est_system_size}` : '';
       const roofSize = formData.roof_size ? `\n🏠 Roof Size: ${formData.roof_size} SqM` : '';
-      const message = `Hi! We have a new lead available in ${formData.location}:
+      const message = `Hi! We have a new lead available in ${town}:
 ${estSize}${roofSize}
 💰 Monthly Spend: £${formData.monthly_spend || 'Unknown'}
 📅 Timeframe: ${formData.timeframe || 'ASAP'}
 
 Reply YES if you're interested, or NO if not (and let us know why!).`;
+
+      const type = (formData as any).lead_type || 'Residential';
+      const system = formData.est_system_size || 'Solar PV';
+      const price = exclusivePrice || sharePrice || '185';
+      const notes = encodeURIComponent(formData.qualification_notes || (formData as any).notes || 'No specific details provided.');
+      const protocol = window.location.protocol;
+      const host = window.location.host;
+      const mediaUrl = `${protocol}//${host}/api/og/lead-writeup.png?town=${encodeURIComponent(town)}&type=${encodeURIComponent(type)}&system=${encodeURIComponent(system)}&price=${encodeURIComponent(price)}&notes=${notes}`;
 
       // Send via Twilio API
       await Promise.all(pitchRecords.map(record => 
@@ -359,7 +368,9 @@ Reply YES if you're interested, or NO if not (and let us know why!).`;
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             to: `whatsapp:${record.contractor_number}`,
-            body: message
+            body: message,
+            userId: profile?.id,
+            mediaUrl: mediaUrl
           })
         }).then(res => {
           if (!res.ok) throw new Error('Failed to send WhatsApp message to ' + record.contractor_number);

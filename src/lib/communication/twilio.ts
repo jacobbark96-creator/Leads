@@ -10,7 +10,7 @@ export class TwilioProvider implements CommunicationProvider {
   }
 
   async sendSMS(options: SMSOptions): Promise<SMSResponse> {
-    const { to, from, body, statusCallback, template, templateData } = options;
+    const { to, from, body, statusCallback, template, templateData, mediaUrl } = options;
 
     if (!this.accountSid || !this.authToken) {
       return { success: false, sid: '', error: 'Twilio credentials missing' };
@@ -41,6 +41,9 @@ export class TwilioProvider implements CommunicationProvider {
       }
     } else {
       params.append('Body', body);
+      if (mediaUrl) {
+        params.append('MediaUrl', mediaUrl);
+      }
     }
 
     try {

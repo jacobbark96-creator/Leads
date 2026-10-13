@@ -5,6 +5,7 @@ export interface SMSOptions {
   statusCallback?: string;
   template?: string;
   templateData?: any[];
+  mediaUrl?: string;
 }
 
 export interface SMSResponse {

@@ -6,7 +6,7 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(req: Request) {
   try {
-    const { to, body, userId, template, templateData, leadId } = await req.json();
+    const { to, body, userId, template, templateData, mediaUrl, leadId } = await req.json();
     if (!to || !body || !userId) {
       return NextResponse.json({ error: 'Missing parameters' }, { status: 400 });
     }
@@ -87,7 +87,8 @@ export async function POST(req: Request) {
       body,
       statusCallback: statusCallbackUrl,
       template,
-      templateData
+      templateData,
+      mediaUrl
     });
 
     if (!result.success) {

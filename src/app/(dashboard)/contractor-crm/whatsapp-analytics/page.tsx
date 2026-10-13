@@ -29,8 +29,7 @@ export default function WhatsAppAnalyticsPage() {
         .from('lead_pitches')
         .select(`
           *,
-          leads (id, name, company, location, category_id),
-          contractor:contractor_id (id, name, company_name)
+          leads (id, name, company, location, category_id)
         `)
         .order('created_at', { ascending: false });
 

@@ -359,7 +359,34 @@ Reply YES if you're interested, or NO if not (and let us know why!).`;
       const notes = encodeURIComponent(formData.qualification_notes || (formData as any).notes || 'No specific details provided.');
       const protocol = window.location.protocol;
       const host = window.location.host;
-      const mediaUrl = `${protocol}//${host}/api/og/lead-writeup.png?town=${encodeURIComponent(town)}&type=${encodeURIComponent(type)}&system=${encodeURIComponent(system)}&price=${encodeURIComponent(price)}&notes=${notes}`;
+      const ogUrl = `${protocol}//${host}/api/og/lead-writeup.png?town=${encodeURIComponent(town)}&type=${encodeURIComponent(type)}&system=${encodeURIComponent(system)}&price=${encodeURIComponent(price)}&notes=${notes}`;
+
+      let hostedMediaUrl = ogUrl;
+      try {
+        // Generate and upload the PNG so Twilio has a persistent, publicly hosted URL
+        const imgResponse = await fetch(ogUrl);
+        if (imgResponse.ok) {
+          const imgBlob = await imgResponse.blob();
+          const fileName = `writeup-${lead.id}-${Date.now()}.png`;
+          const { error: uploadError } = await supabase.storage
+            .from('lead-photos')
+            .upload(fileName, imgBlob, {
+              contentType: 'image/png',
+              cacheControl: '3600'
+            });
+          
+          if (!uploadError) {
+            const { data: publicUrlData } = supabase.storage
+              .from('lead-photos')
+              .getPublicUrl(fileName);
+            hostedMediaUrl = publicUrlData.publicUrl;
+          } else {
+            console.error('Storage upload error:', uploadError);
+          }
+        }
+      } catch (err) {
+        console.error('Failed to host writeup image:', err);
+      }
 
       // Send via Twilio API
       await Promise.all(pitchRecords.map(record => 
@@ -370,7 +397,7 @@ Reply YES if you're interested, or NO if not (and let us know why!).`;
             to: `whatsapp:${record.contractor_number}`,
             body: message,
             userId: profile?.id,
-            mediaUrl: mediaUrl
+            mediaUrl: hostedMediaUrl
           })
         }).then(res => {
           if (!res.ok) throw new Error('Failed to send WhatsApp message to ' + record.contractor_number);

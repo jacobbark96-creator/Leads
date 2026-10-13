@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { Lead, Category } from '../types';
 import { useAuthStore } from '../store/authStore';
-import { X, Upload, Trash2, MapPin, CheckCircle, Info } from 'lucide-react';
+import { X, Upload, Trash2, MapPin, CheckCircle, Info, MessageCircle, Search } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 import { calculateEstimatedSystemSize } from '../lib/utils';
@@ -246,6 +246,133 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
       setDivisions(data || []);
     } catch (error) {
       console.error('Failed to load divisions:', error);
+    }
+  };
+
+  const [isPitchModalOpen, setIsPitchModalOpen] = useState(false);
+  const [pitchLoading, setPitchLoading] = useState(false);
+  
+  const [suggestedContacts, setSuggestedContacts] = useState<{name: string, phone: string}[]>([]);
+  const [selectedPhones, setSelectedPhones] = useState<{name: string, phone: string}[]>([]);
+  const [contactSearch, setContactSearch] = useState('');
+
+  useEffect(() => {
+    if (isPitchModalOpen) {
+      const fetchContacts = async () => {
+        const { data: clients } = await supabase.from('clients').select('company_name, phone').not('phone', 'is', null);
+        const { data: messages } = await supabase.from('sms_messages').select('contact_number').like('contact_number', 'whatsapp:%').order('created_at', { ascending: false }).limit(100);
+
+        const contactsMap = new Map<string, string>();
+        
+        if (clients) {
+          clients.forEach(c => {
+            if (c.phone) {
+              const formatted = c.phone.replace(/[^\d+]/g, '');
+              contactsMap.set(formatted, c.company_name || c.phone);
+            }
+          });
+        }
+
+        if (messages) {
+          messages.forEach(m => {
+            const formatted = m.contact_number.replace('whatsapp:', '');
+            if (!contactsMap.has(formatted)) {
+              contactsMap.set(formatted, formatted);
+            }
+          });
+        }
+
+        const combined = Array.from(contactsMap.entries()).map(([phone, name]) => ({ phone, name }));
+        setSuggestedContacts(combined);
+      };
+      fetchContacts();
+    }
+  }, [isPitchModalOpen]);
+
+  const filteredContacts = suggestedContacts.filter(c => 
+    c.name.toLowerCase().includes(contactSearch.toLowerCase()) || 
+    c.phone.includes(contactSearch)
+  ).filter(c => !selectedPhones.find(s => s.phone === c.phone));
+
+  const addContact = (contact: {name: string, phone: string}) => {
+    setSelectedPhones([...selectedPhones, contact]);
+    setContactSearch('');
+  };
+
+  const addCustomContact = () => {
+    if (contactSearch.trim()) {
+      addContact({ name: contactSearch.trim(), phone: contactSearch.trim() });
+    }
+  };
+
+  const handlePitchSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (selectedPhones.length === 0) {
+      toast.error('Please select at least one installer to pitch to');
+      return;
+    }
+
+    try {
+      setPitchLoading(true);
+
+      // Ensure lead is marketed first
+      await supabase
+        .from('leads')
+        .update({ is_marketed: true })
+        .eq('id', lead.id);
+
+      const pitchRecords = selectedPhones.map(p => {
+        let formatted = p.phone.replace(/[^\d+]/g, '');
+        if (formatted.startsWith('0')) formatted = '+44' + formatted.substring(1);
+        else if (!formatted.startsWith('+')) formatted = '+' + formatted;
+        return {
+          lead_id: lead.id,
+          contractor_number: formatted,
+          status: 'pending'
+        };
+      });
+
+      // Create the pitch records
+      // NOTE: This requires the lead_pitches table to be created via the SQL editor first
+      const { error: pitchError } = await supabase
+        .from('lead_pitches')
+        .insert(pitchRecords);
+
+      if (pitchError) {
+        console.warn('Could not save pitch record, ensure lead_pitches table exists:', pitchError);
+      }
+
+      // Generate the pitch message
+      const estSize = formData.est_system_size ? `\n📐 System Size: ${formData.est_system_size}` : '';
+      const roofSize = formData.roof_size ? `\n🏠 Roof Size: ${formData.roof_size} SqM` : '';
+      const message = `Hi! We have a new lead available in ${formData.location}:
+${estSize}${roofSize}
+💰 Monthly Spend: £${formData.monthly_spend || 'Unknown'}
+📅 Timeframe: ${formData.timeframe || 'ASAP'}
+
+Reply YES if you're interested, or NO if not (and let us know why!).`;
+
+      // Send via Twilio API
+      await Promise.all(pitchRecords.map(record => 
+        fetch('/api/twilio/send-sms', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            to: `whatsapp:${record.contractor_number}`,
+            body: message
+          })
+        }).then(res => {
+          if (!res.ok) throw new Error('Failed to send WhatsApp message to ' + record.contractor_number);
+        })
+      ));
+
+      toast.success(`Pitch sent to ${selectedPhones.length} installer(s)!`);
+      setIsPitchModalOpen(false);
+      onClose();
+    } catch (error: any) {
+      toast.error('Failed to send pitch: ' + error.message);
+    } finally {
+      setPitchLoading(false);
     }
   };
 
@@ -920,25 +1047,127 @@ export const MarketLeadModal: React.FC<MarketLeadModalProps> = ({ isOpen, onClos
         </div>
 
         {/* Footer */}
-        <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-end gap-3 rounded-b-xl">
+        <div className="p-6 border-t border-gray-200 bg-gray-50 flex justify-between gap-3 rounded-b-xl">
           <button
             type="button"
-            onClick={onClose}
-            className="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            onClick={() => setIsPitchModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#00a884] hover:bg-[#00a884]/90"
           >
-            Cancel
+            <MessageCircle className="w-4 h-4" />
+            Pitch via WhatsApp
           </button>
-          <button
-            type="submit"
-            form="market-form"
-            disabled={loading || uploading}
-            className="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
-          >
-            {loading ? 'Saving...' : (lead.is_marketed ? 'Save Changes' : 'Publish to Marketplace')}
-          </button>
+          
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={onClose}
+              className="px-4 py-2 border border-gray-300 shadow-sm text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+            >
+              Cancel
+            </button>
+            <button
+              type="submit"
+              form="market-form"
+              disabled={loading || uploading}
+              className="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50"
+            >
+              {loading ? 'Saving...' : (lead.is_marketed ? 'Save Changes' : 'Publish to Marketplace')}
+            </button>
+          </div>
         </div>
 
       </div>
+
+      {/* Pitch Modal */}
+      {isPitchModalOpen && (
+        <div className="fixed inset-0 z-[60] bg-gray-500 bg-opacity-75 flex items-center justify-center p-4">
+          <div className="bg-white rounded-xl shadow-xl w-full max-w-md">
+            <div className="p-6 border-b border-gray-200 flex justify-between items-center">
+              <h3 className="text-lg font-bold text-gray-900 flex items-center gap-2">
+                <MessageCircle className="w-5 h-5 text-[#00a884]" />
+                Pitch Lead to Installer
+              </h3>
+              <button onClick={() => setIsPitchModalOpen(false)} className="text-gray-400 hover:text-gray-500">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handlePitchSubmit} className="p-6 space-y-4">
+              <div className="space-y-4">
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">Select Installers</label>
+                  
+                  {/* Selected Chips */}
+                  {selectedPhones.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mb-3">
+                      {selectedPhones.map((p, idx) => (
+                        <span key={idx} className="inline-flex items-center gap-1 bg-[#00a884]/10 text-[#00a884] px-2.5 py-1 rounded-full text-xs font-medium border border-[#00a884]/20">
+                          {p.name}
+                          <button type="button" onClick={() => setSelectedPhones(selectedPhones.filter((_, i) => i !== idx))} className="hover:text-red-500 ml-1">
+                            <X className="w-3 h-3" />
+                          </button>
+                        </span>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Search Input */}
+                  <div className="relative">
+                    <Search className="w-4 h-4 text-gray-400 absolute left-3 top-2.5" />
+                    <input
+                      type="text"
+                      value={contactSearch}
+                      onChange={(e) => setContactSearch(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          addCustomContact();
+                        }
+                      }}
+                      placeholder="Search contractors or type number and hit Enter..."
+                      className="block w-full pl-9 rounded-md border-gray-300 shadow-sm focus:border-[#00a884] focus:ring-[#00a884] sm:text-sm"
+                    />
+                  </div>
+
+                  {/* Dropdown */}
+                  {contactSearch && filteredContacts.length > 0 && (
+                    <div className="absolute z-10 mt-1 w-[calc(100%-3rem)] max-w-md bg-white shadow-xl max-h-48 rounded-md py-1 text-base ring-1 ring-black ring-opacity-5 overflow-auto sm:text-sm">
+                      {filteredContacts.map((c, idx) => (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => addContact(c)}
+                          className="w-full text-left px-4 py-2 hover:bg-gray-50 flex flex-col"
+                        >
+                          <span className="font-medium text-gray-900">{c.name}</span>
+                          {c.name !== c.phone && <span className="text-xs text-gray-500">{c.phone}</span>}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <p className="mt-2 text-xs text-gray-500">This will automatically mark the lead as marketed and send a WhatsApp message to all selected installers.</p>
+              </div>
+              <div className="flex justify-end gap-3 pt-4">
+                <button
+                  type="button"
+                  onClick={() => setIsPitchModalOpen(false)}
+                  className="px-4 py-2 border border-gray-300 text-sm font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={pitchLoading}
+                  className="px-4 py-2 border border-transparent shadow-sm text-sm font-medium rounded-md text-white bg-[#00a884] hover:bg-[#00a884]/90 disabled:opacity-50"
+                >
+                  {pitchLoading ? 'Sending...' : 'Send Pitch'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
     </div>
   );
 };

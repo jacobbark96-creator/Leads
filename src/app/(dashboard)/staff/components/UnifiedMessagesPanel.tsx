@@ -56,22 +56,12 @@ export const UnifiedMessagesPanel = () => {
         .order('created_at', { ascending: false })
         .limit(100);
 
-      // 4. Fetch Email messages (from lead_notes with gmail_message_id)
-      const emailQuery = supabase
-        .from('lead_notes')
-        .select('*, leads(id, name, company, email)')
-        .eq('user_id', profile.id)
-        .not('gmail_message_id', 'is', null)
-        .order('created_at', { ascending: false })
-        .limit(50);
-
-      // 5. Fetch clients to map SMS names if needed
+      // 4. Fetch clients to map SMS names if needed
       const clientsQuery = supabase.from('clients').select('user_id, company_name');
 
-      const [internalRes, smsRes, emailRes, clientsRes] = await Promise.all([
+      const [internalRes, smsRes, clientsRes] = await Promise.all([
         internalQuery, 
         smsQuery, 
-        emailQuery,
         clientsQuery
       ]);
 
@@ -85,13 +75,13 @@ export const UnifiedMessagesPanel = () => {
           if (msg.group_id) {
             chatId = msg.group_id;
             chatName = msg.group?.name || 'Group Chat';
-            chatType = 'GROUPS';
+            chatType = 'TEAM';
             isGroup = true;
           } else {
             const otherUser = msg.sender_id === profile.id ? msg.receiver : msg.sender;
             chatId = msg.sender_id === profile.id ? msg.receiver_id : msg.sender_id;
             chatName = otherUser?.name || 'User';
-            chatType = 'DIRECT';
+            chatType = 'TEAM';
             isGroup = false;
           }
 
@@ -119,12 +109,13 @@ export const UnifiedMessagesPanel = () => {
           
           // Try to get name from clients or just use number
           let chatName = chatId;
+          const isWhatsApp = chatId.toLowerCase().startsWith('whatsapp:');
           
           if (!chatMap.has(chatId)) {
             chatMap.set(chatId, {
               id: chatId,
               name: chatName,
-              type: 'SMS',
+              type: isWhatsApp ? 'WHATSAPP' : 'SMS',
               isGroup: false,
               msg: msg.body || 'Media message',
               time: formatDistanceToNow(new Date(msg.created_at), { addSuffix: true }).replace('about ', ''),
@@ -133,27 +124,6 @@ export const UnifiedMessagesPanel = () => {
             });
           } else if (msg.direction === 'inbound' && !msg.is_read) {
             chatMap.get(chatId).unread += 1;
-          }
-        });
-      }
-
-      // Process Email Messages
-      if (emailRes.data) {
-        emailRes.data.forEach(note => {
-          const chatId = note.leads?.email || note.lead_id;
-          const chatName = note.leads?.name || note.leads?.company || note.leads?.email || 'Email Lead';
-          
-          if (!chatMap.has(chatId)) {
-            chatMap.set(chatId, {
-              id: note.lead_id, // Link to lead ID for navigation
-              name: chatName,
-              type: 'EMAIL',
-              isGroup: false,
-              msg: note.content.split('\n')[0].replace('📥 Received Email: ', ''),
-              time: formatDistanceToNow(new Date(note.created_at), { addSuffix: true }).replace('about ', ''),
-              unread: 0, // Notes don't have is_read, but we could sync with notifications table if needed
-              created_at: note.created_at
-            });
           }
         });
       }
@@ -182,15 +152,10 @@ export const UnifiedMessagesPanel = () => {
       .on('postgres_changes', { event: 'UPDATE', schema: 'public', table: 'sms_messages' }, debouncedFetchConversations)
       .subscribe();
 
-    const channelEmails = supabase.channel('email-messages-panel')
-      .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'lead_notes' }, debouncedFetchConversations)
-      .subscribe();
-
     return () => {
       if (fetchTimeoutRef.current) clearTimeout(fetchTimeoutRef.current);
       supabase.removeChannel(channelInternal);
       supabase.removeChannel(channelSms);
-      supabase.removeChannel(channelEmails);
     };
   }, [profile]);
 
@@ -223,7 +188,7 @@ export const UnifiedMessagesPanel = () => {
             </div>
 
             <div className="flex items-center gap-1.5 mb-2.5 bg-white/5 p-1 rounded-xl shrink-0">
-              {['ALL', 'DIRECT', 'GROUPS', 'TEAM', 'SMS', 'EMAIL'].map(tab => (
+              {['ALL', 'TEAM', 'SMS', ...(profile?.whatsapp_enabled ? ['WHATSAPP'] : [])].map(tab => (
                 <button
                   key={tab}
                   onClick={() => setActiveTab(tab)}
@@ -248,7 +213,48 @@ export const UnifiedMessagesPanel = () => {
             </div>
 
             <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 pr-1">
-              {filtered.length === 0 ? (
+              {activeTab === 'WHATSAPP' && filtered.length === 0 ? (
+                <div className="h-full flex flex-col items-center justify-center gap-4 p-4">
+                  <div className="w-12 h-12 rounded-full bg-[#00a884]/20 flex items-center justify-center">
+                    <MessageCircle className="w-6 h-6 text-[#00a884]" />
+                  </div>
+                  <div className="text-center space-y-2">
+                    <h3 className="text-sm font-bold text-white">WhatsApp Business</h3>
+                    <p className="text-xs text-gray-400">Connect your WhatsApp Business account to message leads directly from the CRM.</p>
+                  </div>
+                  <div className="flex flex-col gap-2 w-full mt-2">
+                    <button 
+                      onClick={() => {
+                        const waNumber = prompt('Enter the phone number to WhatsApp (e.g., +447123456789):');
+                        if (waNumber) {
+                          let formatted = waNumber.replace(/[^\d+]/g, '');
+                          if (formatted.startsWith('0')) formatted = '+44' + formatted.substring(1);
+                          else if (!formatted.startsWith('+')) formatted = '+' + formatted;
+                          
+                          setSelectedChat({
+                            id: `whatsapp:${formatted}`,
+                            name: `whatsapp:${formatted}`,
+                            type: 'WHATSAPP'
+                          });
+                        }
+                      }}
+                      className="w-full bg-[#00a884] hover:bg-[#00a884]/90 text-white text-xs font-bold py-2 px-4 rounded-xl transition-colors shadow-sm"
+                    >
+                      Use Openlead WA
+                    </button>
+                    <button 
+                      onClick={() => {
+                        import('react-hot-toast').then(mod => {
+                          mod.default.success('Facebook Embedded Signup coming soon!');
+                        });
+                      }}
+                      className="w-full bg-white/10 hover:bg-white/20 text-white text-xs font-bold py-2 px-4 rounded-xl transition-colors border border-white/10"
+                    >
+                      Link your WA
+                    </button>
+                  </div>
+                </div>
+              ) : filtered.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center opacity-50">
                   <MessageSquare className="w-6 h-6 text-gray-500 mb-2" />
                   <span className="text-[10px] text-gray-500">No conversations</span>
@@ -257,24 +263,18 @@ export const UnifiedMessagesPanel = () => {
                 filtered.map((chat) => (
                   <div 
                     key={chat.id} 
-                    onClick={() => {
-                      if (chat.type === 'EMAIL') {
-                        router.push(`/sales-crm/lead-v2?id=${chat.id}`);
-                      } else {
-                        setSelectedChat(chat);
-                      }
-                    }}
+                    onClick={() => setSelectedChat(chat)}
                     className="flex items-center gap-2.5 bg-white/5 hover:bg-white/10 border border-transparent hover:border-white/10 p-2 rounded-2xl transition-all cursor-pointer group"
                   >
                     <div className="relative shrink-0">
                       <div className={`w-8 h-8 rounded-xl bg-gradient-to-br ${
-                        chat.type === 'SMS' 
-                          ? (chat.name.toLowerCase().startsWith('whatsapp:') ? 'from-[#00a884] to-[#00d4aa]' : 'from-green-600/80 to-green-800/80') 
-                          : chat.type === 'EMAIL'
-                            ? 'from-amber-500/80 to-amber-700/80'
+                        chat.type === 'WHATSAPP' 
+                          ? 'from-[#00a884] to-[#00d4aa]' 
+                          : chat.type === 'SMS'
+                            ? 'from-green-600/80 to-green-800/80'
                             : 'from-blue-600/80 to-blue-800/80'
                       } flex items-center justify-center shadow-inner text-white font-bold text-[10px]`}>
-                        {chat.type === 'EMAIL' ? <Mail className="w-4 h-4 text-white" /> : chat.name.substring(0, 2).toUpperCase()}
+                        {chat.name.substring(0, 2).toUpperCase()}
                       </div>
                       {chat.unread > 0 && (
                         <div className="absolute -top-1 -right-1 w-3.5 h-3.5 rounded-full bg-blue-500 border-2 border-[#0a0f1c] flex items-center justify-center text-[8px] font-black text-white shadow-sm">
@@ -317,7 +317,7 @@ export const UnifiedMessagesPanel = () => {
               </button>
             </div>
             <div className="flex-1 min-h-0 bg-[#0a0f1c]/40">
-              {selectedChat.type === 'SMS' ? (
+              {selectedChat.type === 'SMS' || selectedChat.type === 'WHATSAPP' ? (
                 <SmsChatWindow
                   contactNumber={selectedChat.id}
                   contactName={selectedChat.name}

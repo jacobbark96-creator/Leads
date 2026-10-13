@@ -27,6 +27,7 @@ export interface UserProfile {
   trade_limit_setting?: number;
   flex_terms_accepted_at?: string | null;
   allowed_child_accounts?: boolean;
+  whatsapp_enabled?: boolean;
   parent_id?: string | null;
   requires_password_change?: boolean;
   sales_target?: number | null;

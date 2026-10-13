@@ -29,6 +29,7 @@ export default function ContractorLayout({ children }: { children: React.ReactNo
     { name: 'Onboarded Contractors', path: '/contractor-crm/onboarded', icon: CheckCircle, id: 'contractor-crm/onboarded' },
     { name: 'Marketplace', path: '/contractor-crm/marketplace', icon: Store, id: 'contractor-crm/marketplace' },
     { name: 'Import Leads', path: '/contractor-crm/import', icon: Upload, id: 'contractor-crm/import' },
+    { name: 'WhatsApp Analytics', path: '/contractor-crm/whatsapp-analytics', icon: MessageSquare, id: 'contractor-crm/whatsapp-analytics' },
   ].filter(tab => profile?.role !== 'rep' || !tab.id || profile?.permissions?.includes(tab.id));
 
   if (pathname === '/contractor-crm/contractor-v2' || pathname === '/contractor-crm/map') {

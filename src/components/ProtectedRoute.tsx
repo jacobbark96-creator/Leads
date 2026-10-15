@@ -161,6 +161,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           }
           if (path.startsWith('/sales-crm/pipeline') && (perms.includes('sales-crm/pipeline') || profile.role === 'Residential Rep')) hasAccess = true;
           if (path.startsWith('/sales-crm/calendar') && (perms.includes('sales-crm/calendar') || profile.role === 'Residential Rep')) hasAccess = true;
+          if (path.startsWith('/sales-crm/bd') && (perms.includes('sales-crm/bd') || profile.role === 'Residential Rep')) hasAccess = true;
           if (path.startsWith('/sales-crm/qualified') && (perms.includes('sales-crm/qualified') || profile.role === 'Residential Rep')) hasAccess = true;
           if (path.startsWith('/sales-crm/import') && (perms.includes('sales-crm/import') || profile.role === 'Residential Rep')) hasAccess = true;
           if (path.startsWith('/sales-crm/lead') && (perms.includes('sales-crm') || profile.role === 'Residential Rep')) hasAccess = true; // viewing a lead

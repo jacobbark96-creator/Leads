@@ -1,8 +1,9 @@
 "use client";
 
 import React, { useEffect, useState } from 'react';
-import { Trophy, Medal, Star, Loader2, Calendar, Clock, BarChart2, ChevronDown } from 'lucide-react';
+import { Trophy, Medal, Star, Loader2, Calendar, Clock, BarChart2, ChevronDown, X } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
+import { useAuthStore } from '@/store/authStore';
 import { motion, AnimatePresence } from 'framer-motion';
 
 type Timeframe = 'daily' | 'monthly' | 'total';
@@ -13,12 +14,18 @@ interface RepScore {
   qualified: number;
   sold: number;
   score: number;
+  qualifiedLeads: any[];
+  soldLeads: any[];
 }
 
 export const LeaderboardIntranet = () => {
+  const { profile } = useAuthStore();
   const [leaderboard, setLeaderboard] = useState<RepScore[]>([]);
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState<Timeframe>('monthly');
+  const [selectedRep, setSelectedRep] = useState<RepScore | null>(null);
+
+  const isSuperAdmin = profile?.role === 'super_admin';
 
   const fetchLeaderboard = async () => {
     try {
@@ -34,18 +41,18 @@ export const LeaderboardIntranet = () => {
         startDate = startOfMonth.toISOString();
       }
 
-      // 1. Fetch ONLY reps and sales roles (excluding admins as requested)
+      // 1. Fetch ONLY reps and sales roles
       const { data: users, error: usersError } = await supabase
         .from('users')
         .select('id, name, role')
-        .in('role', ['rep', 'sales']);
+        .in('role', ['rep', 'sales', 'Residential Rep', 'Residential Sales', 'Commercial Sales']);
 
       if (usersError) throw usersError;
 
-      // 2. Fetch QUALIFIED activities in timeframe
+      // 2. Fetch UNIQUE QUALIFIED activities in timeframe
       let qualActivitiesQuery = supabase
         .from('activities')
-        .select('lead_id, leads(assigned_to)')
+        .select('lead_id, leads(id, name, company, assigned_to)')
         .eq('activity_type', 'qualified');
       
       if (startDate) {
@@ -54,11 +61,11 @@ export const LeaderboardIntranet = () => {
       
       const { data: qualActivities } = await qualActivitiesQuery;
 
-      // 3. Fetch SOLD leads in timeframe via lead_purchases
+      // 3. Fetch UNIQUE SOLD leads in timeframe via lead_purchases
       let salesQuery = supabase
         .from('lead_purchases')
-        .select('lead_id, purchased_at, leads!inner(assigned_to)')
-        .in('status', ['new', 'sat', 'won']);
+        .select('lead_id, purchased_at, leads!inner(id, name, company, assigned_to)')
+        .in('status', ['new', 'sat', 'won', 'sold']);
 
       if (startDate) {
         salesQuery = salesQuery.gte('purchased_at', startDate);
@@ -66,37 +73,37 @@ export const LeaderboardIntranet = () => {
 
       const { data: salesData } = await salesQuery;
 
-      const scores: Record<string, { qualified: number; sold: Set<string> }> = {};
+      const scores: Record<string, { qualified: Map<string, any>; sold: Map<string, any> }> = {};
       
       users?.forEach(u => {
-        scores[u.id] = { qualified: 0, sold: new Set() };
+        scores[u.id] = { qualified: new Map(), sold: new Map() };
       });
 
-      // Give 1pt for every lead qualified in timeframe to its assigned rep
+      // Track unique leads qualified in timeframe
       qualActivities?.forEach(act => {
-        const lead = act.leads;
-        const assignedTo = Array.isArray(lead) ? lead[0]?.assigned_to : (lead as any)?.assigned_to;
-        if (assignedTo && scores[assignedTo]) {
-          scores[assignedTo].qualified++;
+        const lead = Array.isArray(act.leads) ? act.leads[0] : act.leads;
+        if (lead && lead.assigned_to && scores[lead.assigned_to]) {
+          scores[lead.assigned_to].qualified.set(lead.id, lead);
         }
       });
 
-      // Give 4pt extra for every unique lead sold in timeframe to its assigned rep
+      // Track unique leads sold in timeframe
       salesData?.forEach(sale => {
-        const lead = sale.leads;
-        const assignedTo = Array.isArray(lead) ? lead[0]?.assigned_to : (lead as any)?.assigned_to;
-        if (assignedTo && scores[assignedTo]) {
-          scores[assignedTo].sold.add(sale.lead_id);
+        const lead = Array.isArray(sale.leads) ? sale.leads[0] : sale.leads;
+        if (lead && lead.assigned_to && scores[lead.assigned_to]) {
+          scores[lead.assigned_to].sold.set(lead.id, lead);
         }
       });
 
       const processedLeaderboard: RepScore[] = users?.map(u => ({
         id: u.id,
         name: u.name || 'Unknown',
-        qualified: scores[u.id].qualified,
+        qualified: scores[u.id].qualified.size,
         sold: scores[u.id].sold.size,
-        // Scoring logic: 1pt for qualified lead assignment, 4pt extra if sold (total 5)
-        score: (scores[u.id].qualified * 1) + (scores[u.id].sold.size * 4)
+        // Scoring logic: 1pt for unique qualified lead, 4pt extra if sold (total 5)
+        score: (scores[u.id].qualified.size * 1) + (scores[u.id].sold.size * 4),
+        qualifiedLeads: Array.from(scores[u.id].qualified.values()),
+        soldLeads: Array.from(scores[u.id].sold.values())
       })) || [];
 
       processedLeaderboard.sort((a, b) => {
@@ -224,7 +231,12 @@ export const LeaderboardIntranet = () => {
                   {rep.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="flex flex-col min-w-0">
-                  <h3 className="text-base font-bold text-gray-900 truncate">{rep.name}</h3>
+                  <h3 
+                    className={`text-base font-bold text-gray-900 truncate ${isSuperAdmin ? 'hover:text-blue-600 hover:underline cursor-pointer' : ''}`}
+                    onClick={() => isSuperAdmin && setSelectedRep(rep)}
+                  >
+                    {rep.name}
+                  </h3>
                   <div className="flex items-center gap-4 mt-1">
                     <span className="text-xs font-medium text-gray-500"><span className="text-emerald-600 font-bold">{rep.qualified}</span> Qualified</span>
                     <span className="text-xs font-medium text-gray-500"><span className="text-blue-600 font-bold">{rep.sold}</span> Sold</span>
@@ -253,6 +265,118 @@ export const LeaderboardIntranet = () => {
           </div>
         )}
       </div>
+
+      {/* Detail Modal for Super Admins */}
+      <AnimatePresence>
+        {selectedRep && (
+          <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-[#0a0f1c]/80 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 20 }}
+              className="bg-white rounded-[2.5rem] w-full max-w-4xl max-h-[85vh] overflow-hidden shadow-2xl border border-white/10 flex flex-col"
+            >
+              {/* Header */}
+              <div className="p-8 border-b border-gray-100 flex items-center justify-between shrink-0 bg-gray-50/50">
+                <div className="flex items-center gap-4">
+                  <div className="w-14 h-14 rounded-2xl bg-emerald-500 flex items-center justify-center text-white text-xl font-black shadow-lg shadow-emerald-500/20">
+                    {selectedRep.name.charAt(0).toUpperCase()}
+                  </div>
+                  <div>
+                    <h2 className="text-2xl font-black text-gray-900 tracking-tight">{selectedRep.name}</h2>
+                    <p className="text-sm text-gray-500 font-medium">Performance Breakdown • {timeframe.charAt(0).toUpperCase() + timeframe.slice(1)}</p>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => setSelectedRep(null)}
+                  className="p-3 rounded-2xl bg-white border border-gray-200 text-gray-400 hover:text-gray-900 hover:border-gray-300 transition-all shadow-sm"
+                >
+                  <X className="w-6 h-6" />
+                </button>
+              </div>
+
+              {/* Content */}
+              <div className="flex-1 overflow-y-auto p-8 custom-scrollbar">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  {/* Qualified Leads Column */}
+                  <div className="flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                        <Star className="w-5 h-5 text-emerald-500" />
+                        Qualified Leads
+                      </h3>
+                      <span className="bg-emerald-100 text-emerald-700 text-xs font-black px-2.5 py-1 rounded-full border border-emerald-200">
+                        {selectedRep.qualified}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {selectedRep.qualifiedLeads.length > 0 ? (
+                        selectedRep.qualifiedLeads.map((lead) => (
+                          <div key={lead.id} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:border-emerald-200 transition-all group">
+                            <div className="text-sm font-bold text-gray-900 group-hover:text-emerald-700 transition-colors truncate">
+                              {lead.company || lead.name}
+                            </div>
+                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
+                              ID: {lead.id.substring(0, 8)}...
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-10 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                          <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">No qualified leads</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Sold Leads Column */}
+                  <div className="flex flex-col">
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-black text-gray-900 flex items-center gap-2">
+                        <Trophy className="w-5 h-5 text-blue-500" />
+                        Sold Leads
+                      </h3>
+                      <span className="bg-blue-100 text-blue-700 text-xs font-black px-2.5 py-1 rounded-full border border-blue-200">
+                        {selectedRep.sold}
+                      </span>
+                    </div>
+                    
+                    <div className="space-y-3">
+                      {selectedRep.soldLeads.length > 0 ? (
+                        selectedRep.soldLeads.map((lead) => (
+                          <div key={lead.id} className="p-4 rounded-2xl bg-gray-50 border border-gray-100 hover:border-blue-200 transition-all group">
+                            <div className="text-sm font-bold text-gray-900 group-hover:text-blue-700 transition-colors truncate">
+                              {lead.company || lead.name}
+                            </div>
+                            <div className="text-[10px] text-gray-400 font-bold uppercase tracking-wider mt-1">
+                              ID: {lead.id.substring(0, 8)}...
+                            </div>
+                          </div>
+                        ))
+                      ) : (
+                        <div className="py-10 text-center bg-gray-50 rounded-2xl border border-dashed border-gray-200">
+                          <p className="text-xs text-gray-400 font-bold uppercase tracking-wider">No leads sold yet</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="p-6 border-t border-gray-100 bg-gray-50/50 flex justify-end shrink-0">
+                <button 
+                  onClick={() => setSelectedRep(null)}
+                  className="px-8 py-3 bg-[#0F172A] text-white rounded-2xl text-sm font-black hover:bg-gray-800 transition-all shadow-xl shadow-gray-900/20"
+                >
+                  Close View
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

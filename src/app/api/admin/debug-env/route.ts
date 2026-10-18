@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { defaultFromEmail } from '@/lib/resend';
 
+export const runtime = 'edge';
+
 export async function GET() {
   return NextResponse.json({
     hasResendKey: !!process.env.RESEND_API_KEY,

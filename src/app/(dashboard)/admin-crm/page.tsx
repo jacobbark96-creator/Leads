@@ -242,8 +242,10 @@ export default function UserManagement() {
 
       // Send login email via Resend
       const emailToUse = newUser.notificationEmail || newUser.email;
+      console.log(`Triggering onboarding email for ${newUser.email} to ${emailToUse}`);
+      
       try {
-        await fetch('/api/admin/send-login-email', {
+        const emailRes = await fetch('/api/admin/send-login-email', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -252,9 +254,17 @@ export default function UserManagement() {
             password: newUser.password
           })
         });
+        
+        if (!emailRes.ok) {
+          const errorData = await emailRes.json();
+          console.error('Onboarding email API returned error:', errorData);
+          toast.error('User created, but welcome email failed to send. Check console.');
+        } else {
+          console.log('Onboarding email request accepted');
+        }
       } catch (emailErr) {
-        console.error('Failed to send login email:', emailErr);
-        // Don't throw here as the user was created successfully
+        console.error('Failed to call onboarding email API:', emailErr);
+        toast.error('Network error while sending welcome email.');
       }
       
       toast.success('User created successfully. They will need to verify their email.');

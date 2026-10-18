@@ -1,5 +1,13 @@
 const resendApiKey = process.env.RESEND_API_KEY;
 
+if (typeof window === 'undefined') {
+  console.log('Resend Configuration:', {
+    hasKey: !!resendApiKey,
+    keyPrefix: resendApiKey ? resendApiKey.substring(0, 7) + '...' : 'none',
+    fromEmail: process.env.RESEND_FROM_EMAIL || 'onboarding@openlead.co.uk'
+  });
+}
+
 // Replace this with your actual verified sending domain (e.g., 'hello@openlead.co.uk' or 'onboarding@openlead.co.uk')
 export const defaultFromEmail = process.env.RESEND_FROM_EMAIL || 'onboarding@openlead.co.uk';
 
@@ -16,10 +24,20 @@ const sendResendEmail = async (payload: any) => {
     },
     body: JSON.stringify(payload),
   });
+  
   const data = await response.json();
+  
   if (!response.ok) {
+    console.error('❌ Resend API Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      data,
+      payload: { ...payload, html: '(omitted)' }
+    });
     return { success: false, error: data };
   }
+  
+  console.log('✅ Resend Email Sent:', data.id);
   return { success: true, data };
 };
 

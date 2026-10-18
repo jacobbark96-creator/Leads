@@ -10,21 +10,24 @@ const supabaseAdmin = createClient(
 
 export async function POST(req: Request) {
   try {
-    const { email, username, password } = await req.json();
+    const body = await req.json();
+    console.log('Incoming login email request:', { ...body, password: '***' });
+    const { email, username, password } = body;
 
     if (!email || !username || !password) {
+      console.error('Missing required fields in login email request');
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Optional: Verify that the requester is an admin/super_admin
-    // For now, we rely on this being an internal admin-only API
-    
+    console.log(`Attempting to send login email to: ${email}`);
     const result = await sendNewUserLoginEmail(email, username, password);
 
     if (!result.success) {
+      console.error('Resend API failed:', result.error);
       return NextResponse.json({ error: result.error }, { status: 500 });
     }
 
+    console.log('Login email sent successfully via Resend');
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error in send-login-email API:', error);

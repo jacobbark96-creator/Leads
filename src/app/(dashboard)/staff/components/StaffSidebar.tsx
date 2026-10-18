@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Database, Users, Map, BarChart2, MessageSquare, Phone, CheckSquare, Calendar, Settings, ChevronLeft, ChevronRight, LogOut, Search } from 'lucide-react';
+import { Home, Database, Users, Map, BarChart2, MessageSquare, Phone, CheckSquare, Calendar, Settings, ChevronLeft, ChevronRight, LogOut, Search, BookOpen } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 import { useRouter } from 'next/navigation';
 import { formatRole } from '@/lib/utils';
@@ -10,6 +10,7 @@ export const StaffSidebar = ({ profile }: { profile: any }) => {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const router = useRouter();
+  const isAdminAccount = profile?.role === 'admin';
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
@@ -21,10 +22,11 @@ export const StaffSidebar = ({ profile }: { profile: any }) => {
       title: 'MAIN',
       items: [
         { label: 'Home', href: '/staff', icon: Home },
+        { label: 'Intranet', href: '/intranet', icon: BookOpen, roles: ['super_admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
         { label: 'Leads', href: '/staff/leads', icon: Database, roles: ['super_admin'] },
-        { label: 'CRM', href: '/sales-crm', icon: Users },
+        { label: 'CRM', href: '/sales-crm', icon: Users, roles: ['super_admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
         { label: 'Sources', href: '/staff/sources', icon: BarChart2, roles: ['super_admin'] },
-        { label: 'Map', href: '/contractor-crm/map', icon: Map },
+        { label: 'Map', href: '/contractor-crm/map', icon: Map, roles: ['super_admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
         { label: 'Reports', href: '/admin-crm/tracker', icon: BarChart2, roles: ['super_admin'] },
       ]
     },
@@ -32,14 +34,14 @@ export const StaffSidebar = ({ profile }: { profile: any }) => {
       title: 'COMMUNICATION',
       items: [
         { label: 'Messages & Team', href: '/staff#messages', icon: MessageSquare },
-        { label: 'Call Monitoring', href: '/staff#call-monitoring', icon: Phone },
+        { label: 'Call Monitoring', href: '/staff#call-monitoring', icon: Phone, roles: ['super_admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
       ]
     },
     {
       title: 'WORKSPACE',
       items: [
         { label: 'Tasks', href: '/staff#tasks', icon: CheckSquare },
-        { label: 'Calendar', href: '/staff#calendar', icon: Calendar },
+        { label: 'Calendar', href: '/staff#calendar', icon: Calendar, roles: ['super_admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
       ]
     },
     {

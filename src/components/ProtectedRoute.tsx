@@ -115,19 +115,24 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
         router.replace('/pending-approval');
       } else if (profile.role === 'client' && !isProfileComplete && pathname !== '/my-openlead') {
         router.replace('/my-openlead');
-      } else if (['rep', 'growth_manager', 'Residential Rep', 'Residential Sales', 'Commercial Sales'].includes(profile.role)) {
+      } else if (['admin', 'rep', 'growth_manager', 'Residential Rep', 'Residential Sales', 'Commercial Sales'].includes(profile.role)) {
         const perms = profile.permissions || [];
         const path = pathname || '';
         let hasAccess = false;
-        
-        // Exact matching for specific tabs
-        if (path === '/staff' && (perms.includes('staff') || profile.role.includes('Sales') || profile.role === 'Residential Rep' || profile.role === 'rep')) hasAccess = true;
-        
-        // Map
-        if (path === '/contractor-crm/map' && perms.includes('map')) hasAccess = true;
 
-        // Sales CRM
-        if (profile.role === 'growth_manager') {
+        // Admin role: only has access to admin-crm
+        if (profile.role === 'admin') {
+          if (path === '/staff' || path === '/') {
+            hasAccess = true;
+          } else if (path.startsWith('/admin-crm')) {
+            hasAccess = true;
+          } else if (path.startsWith('/intranet/commission-calculator')) {
+            hasAccess = true;
+          } else {
+            router.replace('/staff');
+            return;
+          }
+        } else if (profile.role === 'growth_manager') {
           if (path === '/sales-crm/my-clients' || path === '/sales-crm/my-sales' || path.startsWith('/sales-crm/pipeline')) {
             hasAccess = true;
           } else if (path.startsWith('/sales-crm/lead') || path.startsWith('/sales-crm/smart-views')) {

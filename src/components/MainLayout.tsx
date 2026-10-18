@@ -208,6 +208,18 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         
         return repTabs;
       case 'admin':
+        return [
+          { name: 'Home', path: '/staff', icon: Home },
+          { 
+            name: 'CRM', 
+            path: '#',
+            icon: Database,
+            children: [
+              { name: 'Admin CRM', path: '/admin-crm', icon: Settings },
+            ]
+          },
+          { name: 'Intranet', path: '/intranet', icon: BookOpen },
+        ];
       case 'super_admin':
         return [
           { name: 'Home', path: '/staff', icon: Home },

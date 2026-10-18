@@ -17,12 +17,15 @@ import { ConciergeTab } from './components/ConciergeTab';
 import { TargetsTab } from './components/TargetsTab';
 import { SystemSettingsTab } from './components/SystemSettingsTab';
 import { TrialsTab } from './components/TrialsTab';
+import { CommissionSettingsTab } from './components/CommissionSettingsTab';
 
 export default function UserManagement() {
-  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'stats' | 'background' | 'trials' | 'press' | 'feedback' | 'divisions' | 'finance' | 'concierge' | 'targets' | 'settings'>('users');
+  const [activeTab, setActiveTab] = useState<'users' | 'client_monitoring' | 'stats' | 'background' | 'trials' | 'press' | 'feedback' | 'divisions' | 'finance' | 'concierge' | 'targets' | 'settings' | 'commission_settings'>('users');
   const [users, setUsers] = useState<UserProfile[]>([]);
   const [loading, setLoading] = useState(true);
   const { profile } = useAuthStore();
+  
+  const isJakeBedwell = profile?.name === 'Jake Bedwell' || profile?.email === 'Jake@openlead.co.uk';
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [roleFilter, setRoleFilter] = useState('all');
@@ -388,6 +391,14 @@ export default function UserManagement() {
         >
           <div className="flex items-center gap-2"><Activity className="w-4 h-4" /> Targets</div>
         </button>
+        {isJakeBedwell && (
+          <button
+            onClick={() => setActiveTab('commission_settings')}
+            className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'commission_settings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
+          >
+            <div className="flex items-center gap-2"><PoundSterling className="w-4 h-4" /> Commission</div>
+          </button>
+        )}
         {profile?.role === 'super_admin' && (
           <button
             onClick={() => setActiveTab('settings')}
@@ -790,6 +801,7 @@ export default function UserManagement() {
       {activeTab === 'finance' && <FinanceTab />}
       {activeTab === 'concierge' && <ConciergeTab />}
       {activeTab === 'targets' && <TargetsTab />}
+      {activeTab === 'commission_settings' && isJakeBedwell && <CommissionSettingsTab />}
       {activeTab === 'settings' && profile?.role === 'super_admin' && <SystemSettingsTab />}
       {activeTab === 'divisions' && profile?.role === 'super_admin' && <DivisionsTab />}
     </div>

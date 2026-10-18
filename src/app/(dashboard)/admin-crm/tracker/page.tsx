@@ -4,13 +4,17 @@ import { supabase } from '../../../../lib/supabase';
 import { Lead } from '../../../../types';
 import toast from 'react-hot-toast';
 import { format, startOfWeek, endOfWeek, subDays, addDays } from 'date-fns';
-import { TrendingUp, Calendar, DollarSign } from 'lucide-react';
+import { TrendingUp, Calendar, DollarSign, CheckCircle2 } from 'lucide-react';
 import Link from 'next/link';
+import { useAuthStore } from '../../../../store/authStore';
 
 export default function SalesTracker() {
   const [soldLeads, setSoldLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'week' | 'all'>('all');
+  const { profile } = useAuthStore();
+
+  const isJakeBedwell = profile?.name === 'Jake Bedwell' || profile?.email === 'Jake@openlead.co.uk';
 
   // Calculate current week's Tuesday to Monday
   const { startOfTrackingWeek, endOfTrackingWeek } = useMemo(() => {
@@ -61,6 +65,18 @@ export default function SalesTracker() {
     fetchSoldLeads();
   }, [startOfTrackingWeek, endOfTrackingWeek, filter]);
 
+  const handleToggleRebooking = async (leadId: string, currentVal: boolean) => {
+    if (!isJakeBedwell) return;
+    try {
+      const { error } = await supabase.from('leads').update({ is_rebooking: !currentVal }).eq('id', leadId);
+      if (error) throw error;
+      toast.success(`Lead marked as ${!currentVal ? 'Rebooking' : 'Normal'}`);
+      setSoldLeads(prev => prev.map(l => l.id === leadId ? { ...l, is_rebooking: !currentVal } : l));
+    } catch (error: any) {
+      toast.error('Failed to update rebooking status');
+    }
+  };
+
   const totalRevenue = soldLeads.reduce((sum: number, lead: any) => sum + (Number(lead.price) || 135), 0);
 
   if (loading) {
@@ -110,6 +126,9 @@ export default function SalesTracker() {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Client
                 </th>
+                <th scope="col" className="px-6 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  Rebooking
+                </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Amount
                 </th>
@@ -138,6 +157,27 @@ export default function SalesTracker() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
                       {lead.client_company || lead.client_name || <span className="text-gray-400 italic">Unknown Client</span>}
                     </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-center">
+                      {isJakeBedwell ? (
+                        <button
+                          onClick={() => handleToggleRebooking(lead.id, lead.is_rebooking)}
+                          className={`w-8 h-8 mx-auto rounded-full flex items-center justify-center transition-all ${
+                            lead.is_rebooking 
+                              ? 'bg-blue-600 text-white shadow-md' 
+                              : 'bg-white border border-gray-200 text-gray-300 hover:border-blue-300 hover:text-blue-400'
+                          }`}
+                          title="Toggle Rebooking"
+                        >
+                          <span className="text-[10px] font-black">R</span>
+                        </button>
+                      ) : (
+                        lead.is_rebooking && (
+                          <div className="w-8 h-8 mx-auto rounded-full bg-blue-100 text-blue-600 flex items-center justify-center border border-blue-200" title="Rebooking Lead">
+                            <span className="text-[10px] font-black">R</span>
+                          </div>
+                        )
+                      )}
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-right font-medium text-green-600">
                       £{lead.price ? Number(lead.price).toFixed(2) : '135.00'}
                     </td>
@@ -145,7 +185,7 @@ export default function SalesTracker() {
                 ))
               ) : (
                 <tr>
-                  <td colSpan={4} className="px-6 py-12 text-center text-gray-500">
+                  <td colSpan={5} className="px-6 py-12 text-center text-gray-500">
                     <TrendingUp className="mx-auto h-12 w-12 text-gray-300 mb-3" />
                     <p>No leads sold in this period yet.</p>
                   </td>

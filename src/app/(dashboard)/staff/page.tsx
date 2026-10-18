@@ -220,6 +220,7 @@ export default function StaffPortal() {
 
   if (!profile) return null;
 
+  const isAdminAccount = profile?.role === 'admin';
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
   const isRep = (profile?.role as string) === 'rep' || (profile?.role as string) === 'representative' || profile?.role === 'Residential Rep';
   const [kpiData, setKpiData] = useState<any[]>([]);
@@ -304,8 +305,8 @@ export default function StaffPortal() {
         <StaffHeader profile={profile} />
 
         <main className="flex-1 px-6 pb-4 max-w-[1600px] w-full mx-auto flex flex-col min-h-0 overflow-hidden">
-          {/* Top KPI Cards (Only for Admins/Super Admins) */}
-          {isAdmin && (
+          {/* Top KPI Cards (Only for Admins/Super Admins, but hide for new 'admin' role) */}
+          {isAdmin && !isAdminAccount && (
             <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-2 shrink-0 h-[50px]">
               <KpiCard 
                 title="New Leads" 
@@ -360,36 +361,44 @@ export default function StaffPortal() {
             
             {/* LEFT COLUMN: Tasks & Live Feed */}
             <div className="lg:col-span-4 flex flex-col gap-2 min-h-0">
-              <div className="flex-[0.35] min-h-0 overflow-hidden">
+              <div className={isAdminAccount ? "flex-1 min-h-0 overflow-hidden" : "flex-[0.35] min-h-0 overflow-hidden"}>
                 <TasksPanel />
               </div>
-              <div className="flex-[0.65] min-h-0 overflow-hidden">
-                {isRep ? <RepPerformanceCard monitoringData={monitoringData} /> : <LiveFeed />}
-              </div>
-            </div>
-
-            {/* CENTER COLUMN: Lead Analytics & Call Monitoring */}
-            <div className="lg:col-span-4 flex flex-col gap-2 min-h-0">
-              {!isRep ? (
-                <>
-                  <div className="flex-[0.5] min-h-0 overflow-hidden">
-                    <CallMonitoringPanel monitoringData={monitoringData} />
-                  </div>
-                  <div className="flex-[0.5] min-h-0 overflow-hidden">
-                    {profile?.role === 'super_admin' ? <GmailPanel /> : <LeadSourcesPanel />}
-                  </div>
-                </>
-              ) : (
-                <>
-                  <div className="flex-[0.5] min-h-0 overflow-hidden">
-                    <GmailPanel />
-                  </div>
-                  <div className="flex-[0.5] min-h-0 overflow-hidden">
-                    <RepMonitoringCard monitoringData={monitoringData} />
-                  </div>
-                </>
+              {!isAdminAccount && (
+                <div className="flex-[0.65] min-h-0 overflow-hidden">
+                  {isRep ? <RepPerformanceCard monitoringData={monitoringData} /> : <LiveFeed />}
+                </div>
               )}
             </div>
+
+            {/* CENTER COLUMN: Gmail Panel (Visible for admin role) */}
+            {isAdminAccount ? (
+              <div className="lg:col-span-4 flex flex-col min-h-0 overflow-hidden">
+                <GmailPanel />
+              </div>
+            ) : (
+              <div className="lg:col-span-4 flex flex-col gap-2 min-h-0">
+                {!isRep ? (
+                  <>
+                    <div className="flex-[0.5] min-h-0 overflow-hidden">
+                      <CallMonitoringPanel monitoringData={monitoringData} />
+                    </div>
+                    <div className="flex-[0.5] min-h-0 overflow-hidden">
+                      {profile?.role === 'super_admin' ? <GmailPanel /> : <LeadSourcesPanel />}
+                    </div>
+                  </>
+                ) : (
+                  <>
+                    <div className="flex-[0.5] min-h-0 overflow-hidden">
+                      <GmailPanel />
+                    </div>
+                    <div className="flex-[0.5] min-h-0 overflow-hidden">
+                      <RepMonitoringCard monitoringData={monitoringData} />
+                    </div>
+                  </>
+                )}
+              </div>
+            )}
 
             {/* RIGHT COLUMN: Unified Messages */}
             <div className="lg:col-span-4 flex flex-col min-h-0 overflow-hidden">

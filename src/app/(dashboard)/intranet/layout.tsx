@@ -28,7 +28,14 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
     { name: 'Tracker', path: '/intranet/tracker', icon: LineChart, id: 'intranet/tracker' },
     { name: 'Resources', path: '/intranet/resources', icon: Folder, id: 'intranet/resources' },
     { name: 'Careers', path: '/intranet/careers', icon: Briefcase, id: 'intranet/careers' },
-  ].filter(tab => !['rep', 'growth_manager'].includes(profile?.role || '') || profile?.permissions?.includes(tab.id));
+    { name: 'Calculator', path: '/intranet/commission-calculator', icon: LineChart, id: 'intranet/commission-calculator' },
+  ].filter(tab => {
+    // Calculator is only for admin/super_admin
+    if (tab.id === 'intranet/commission-calculator') {
+      return profile?.role === 'admin' || profile?.role === 'super_admin';
+    }
+    return !['rep', 'growth_manager'].includes(profile?.role || '') || profile?.permissions?.includes(tab.id);
+  });
 
   return (
     <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager']}>

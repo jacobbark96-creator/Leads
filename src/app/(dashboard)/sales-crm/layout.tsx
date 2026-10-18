@@ -113,7 +113,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
     { id: 'sales-crm/my-sales', name: 'My Sales', path: '/sales-crm/my-sales', icon: BarChart2 },
   ].filter(item => {
     if (isOpenEnergyResidential && item.id === 'sales-crm/fresh') return false;
-    
+
     const userRole = profile?.role as string;
 
     if (userRole === 'growth_manager') {

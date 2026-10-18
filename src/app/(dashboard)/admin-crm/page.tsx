@@ -536,7 +536,7 @@ export default function UserManagement() {
           </button>
         </div>
 
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex flex-col items-end gap-2 shrink-0">
           <div className="flex items-center gap-2">
             <AnimatePresence initial={false}>
               {isSearchExpanded && (
@@ -574,7 +574,7 @@ export default function UserManagement() {
           {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
             <button 
               onClick={() => setShowCreateModal(true)}
-              className="h-10 px-4 bg-white border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm whitespace-nowrap"
+              className="h-10 px-4 w-full bg-white border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm whitespace-nowrap"
             >
               <Plus className="w-5 h-5 mr-2" />
               <span className="text-[10px] font-bold uppercase tracking-wider">Create User</span>

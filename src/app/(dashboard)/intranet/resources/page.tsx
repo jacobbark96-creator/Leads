@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from 'react';
-import { FileText, Link as LinkIcon, Table, Plus, Search, ExternalLink } from 'lucide-react';
+import { FileText, Link as LinkIcon, Table, Plus, Search, ExternalLink, Trash2 } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import { useAuthStore } from '../../../../store/authStore';
 import { IntranetResource } from '../../../../types';
@@ -29,6 +29,27 @@ export default function ResourcesPage() {
       toast.error('Failed to load resources');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDelete = async (e: React.MouseEvent, id: string) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    if (!window.confirm('Are you sure you want to remove this resource?')) return;
+
+    try {
+      const { error } = await supabase
+        .from('intranet_resources')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success('Resource removed successfully');
+      fetchResources();
+    } catch (error) {
+      console.error('Error deleting resource:', error);
+      toast.error('Failed to remove resource');
     }
   };
 
@@ -141,6 +162,15 @@ export default function ResourcesPage() {
               
               <div className="mt-4 pt-4 border-t border-gray-100 flex items-center justify-between text-xs text-gray-400">
                 <span>Added {new Date(resource.created_at).toLocaleDateString()}</span>
+                {profile?.role === 'super_admin' && (
+                  <button
+                    onClick={(e) => handleDelete(e, resource.id)}
+                    className="p-1.5 text-gray-300 hover:text-red-500 hover:bg-red-50 rounded-lg transition-all"
+                    title="Remove Resource"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                )}
               </div>
             </a>
           ))}

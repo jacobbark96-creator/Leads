@@ -4,7 +4,8 @@ import { supabase } from '@/lib/supabase';
 import { UserProfile } from '@/types';
 import { useAuthStore } from '@/store/authStore';
 import toast from 'react-hot-toast';
-import { Plus, Edit, Trash2, Ban, Shield, Users, Briefcase, X, Activity, BarChart2, Database, Image as ImageIcon, FileText, Eye, MessageSquare, PoundSterling, Calendar, Settings, Share2 } from 'lucide-react';
+import { Plus, Edit, Trash2, Ban, Shield, Users, Briefcase, X, Activity, BarChart2, Database, Image as ImageIcon, FileText, Eye, MessageSquare, PoundSterling, Calendar, Settings, Share2, Search } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { UserDetailsModal } from '@/components/UserDetailsModal';
 import { ClientMonitoringTab } from './components/ClientMonitoringTab';
 import { StatsTab } from './components/StatsTab';
@@ -36,6 +37,8 @@ export default function UserManagement() {
   const [addingBalanceId, setAddingBalanceId] = useState<string | null>(null);
   const [balanceAmount, setBalanceAmount] = useState<string>('');
   const [divisions, setDivisions] = useState<any[]>([]);
+  const [isSearchExpanded, setIsSearchExpanded] = useState(false);
+  const [searchTerm, setSearchTerm] = useState('');
 
   const fetchDivisions = async () => {
     try {
@@ -334,12 +337,18 @@ export default function UserManagement() {
   const referrerCount = users.filter(u => u.role === 'referral_partner').length;
 
   const filteredUsers = users.filter(u => {
-    if (roleFilter === 'all') return true;
-    if (roleFilter === 'admin') return u.role === 'admin' || u.role === 'super_admin';
-    if (roleFilter === 'rep') return u.role === 'rep' || u.role === 'Residential Rep';
-    if (roleFilter === 'Residential Sales') return u.role === 'Residential Sales' || u.role === 'Commercial Sales';
-    if (roleFilter === 'referral_partner') return u.role === 'referral_partner';
-    return u.role === roleFilter;
+    const matchesRole = roleFilter === 'all' ? true : 
+                       roleFilter === 'admin' ? (u.role === 'admin' || u.role === 'super_admin') :
+                       roleFilter === 'rep' ? (u.role === 'rep' || u.role === 'Residential Rep') :
+                       roleFilter === 'Residential Sales' ? (u.role === 'Residential Sales' || u.role === 'Commercial Sales') :
+                       roleFilter === 'referral_partner' ? u.role === 'referral_partner' :
+                       u.role === roleFilter;
+    
+    const matchesSearch = searchTerm === '' ? true : 
+                         u.name?.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                         u.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    return matchesRole && matchesSearch;
   });
 
   return (
@@ -527,15 +536,51 @@ export default function UserManagement() {
           </button>
         </div>
 
-        {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
-          <button 
-            onClick={() => setShowCreateModal(true)}
-            className="md:w-48 bg-white border border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm shrink-0"
-          >
-            <Plus className="w-6 h-6 mb-1" />
-            <span className="text-xs font-bold uppercase tracking-wider">Create User</span>
-          </button>
-        )}
+        <div className="flex items-center gap-3 shrink-0">
+          <div className="flex items-center gap-2">
+            <AnimatePresence initial={false}>
+              {isSearchExpanded && (
+                <motion.div
+                  initial={{ width: 0, opacity: 0 }}
+                  animate={{ width: 240, opacity: 1 }}
+                  exit={{ width: 0, opacity: 0 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 30 }}
+                  className="relative overflow-hidden"
+                >
+                  <input
+                    autoFocus
+                    type="text"
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    placeholder="Search users by name or email..."
+                    className="w-full h-10 pl-9 pr-4 rounded-lg border border-gray-200 focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 text-sm transition-all shadow-sm"
+                  />
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                </motion.div>
+              )}
+            </AnimatePresence>
+            <button
+              onClick={() => {
+                setIsSearchExpanded(!isSearchExpanded);
+                if (isSearchExpanded) setSearchTerm('');
+              }}
+              className={`w-10 h-10 flex items-center justify-center rounded-lg transition-all ${isSearchExpanded ? 'bg-blue-50 text-blue-600 border border-blue-200' : 'bg-white border border-gray-200 text-gray-400 hover:text-blue-600 hover:border-blue-300 shadow-sm'}`}
+              title="Search Users"
+            >
+              {isSearchExpanded ? <X className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+            </button>
+          </div>
+
+          {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
+            <button 
+              onClick={() => setShowCreateModal(true)}
+              className="h-10 px-4 bg-white border border-dashed border-gray-300 rounded-lg flex items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm whitespace-nowrap"
+            >
+              <Plus className="w-5 h-5 mr-2" />
+              <span className="text-[10px] font-bold uppercase tracking-wider">Create User</span>
+            </button>
+          )}
+        </div>
       </div>
 
       {showCreateModal && (profile?.role === 'super_admin' || profile?.role === 'admin') && (

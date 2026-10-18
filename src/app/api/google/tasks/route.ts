@@ -64,13 +64,21 @@ export async function GET(req: Request) {
     console.log('Google Tasks: Fetching tasklists for user', userId);
     // 1. Get tasklists
     const listsRes = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { 
+        Authorization: `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
     });
     
     if (!listsRes.ok) {
+      const errorStatus = listsRes.status;
       const errorText = await listsRes.text();
-      console.error('Google Tasks: Failed to fetch tasklists', errorText);
-      throw new Error('Failed to fetch tasklists');
+      console.error('Google Tasks: Failed to fetch tasklists', { status: errorStatus, text: errorText });
+      return NextResponse.json({ 
+        error: 'Failed to fetch tasklists', 
+        status: errorStatus,
+        details: errorText 
+      }, { status: errorStatus === 401 ? 401 : 500 });
     }
     const listsData = await listsRes.json();
     console.log('Google Tasks: Found lists', listsData.items?.length || 0);
@@ -84,13 +92,21 @@ export async function GET(req: Request) {
     console.log('Google Tasks: Fetching tasks from list', defaultList.title, defaultList.id);
     // 2. Get tasks from the default list
     const tasksRes = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${defaultList.id}/tasks?showCompleted=false&showHidden=false`, {
-      headers: { Authorization: `Bearer ${accessToken}` }
+      headers: { 
+        Authorization: `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
     });
 
     if (!tasksRes.ok) {
+      const errorStatus = tasksRes.status;
       const errorText = await tasksRes.text();
-      console.error('Google Tasks: Failed to fetch tasks', errorText);
-      throw new Error('Failed to fetch tasks');
+      console.error('Google Tasks: Failed to fetch tasks', { status: errorStatus, text: errorText });
+      return NextResponse.json({ 
+        error: 'Failed to fetch tasks', 
+        status: errorStatus,
+        details: errorText 
+      }, { status: errorStatus === 401 ? 401 : 500 });
     }
     const tasksData = await tasksRes.json();
     console.log('Google Tasks: Found tasks', tasksData.items?.length || 0);

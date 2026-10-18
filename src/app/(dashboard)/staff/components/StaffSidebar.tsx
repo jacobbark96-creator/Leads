@@ -22,9 +22,14 @@ export const StaffSidebar = ({ profile }: { profile: any }) => {
       title: 'MAIN',
       items: [
         { label: 'Home', href: '/staff', icon: Home },
-        { label: 'Intranet', href: '/intranet', icon: BookOpen, roles: ['super_admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
+        { label: 'Intranet', href: '/intranet', icon: BookOpen, roles: ['super_admin', 'admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
         { label: 'Leads', href: '/staff/leads', icon: Database, roles: ['super_admin'] },
-        { label: 'CRM', href: '/sales-crm', icon: Users, roles: ['super_admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
+        { 
+          label: 'CRM', 
+          href: profile?.role === 'admin' ? '/admin-crm' : '/sales-crm', 
+          icon: Users, 
+          roles: ['super_admin', 'admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] 
+        },
         { label: 'Sources', href: '/staff/sources', icon: BarChart2, roles: ['super_admin'] },
         { label: 'Map', href: '/contractor-crm/map', icon: Map, roles: ['super_admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
         { label: 'Reports', href: '/admin-crm/tracker', icon: BarChart2, roles: ['super_admin'] },

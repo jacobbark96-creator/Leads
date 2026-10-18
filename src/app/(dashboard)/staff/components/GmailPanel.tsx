@@ -182,7 +182,7 @@ const GmailPanelContent = () => {
   };
 
   const login = useGoogleLogin({
-    scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.readonly',
+    scope: 'https://www.googleapis.com/auth/gmail.readonly https://www.googleapis.com/auth/gmail.send https://www.googleapis.com/auth/calendar.readonly https://www.googleapis.com/auth/tasks',
     flow: 'auth-code',
     prompt: 'consent select_account',
     // @ts-ignore

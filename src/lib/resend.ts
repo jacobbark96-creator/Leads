@@ -52,6 +52,48 @@ export const sendTrialLoginEmail = async (email: string, username: string, passw
     return { success: false, error };
   }
 };
+
+/**
+ * Sends login credentials to a new user.
+ */
+export const sendNewUserLoginEmail = async (email: string, username: string, password: string) => {
+  try {
+    const payload = {
+      from: `OpenLead Onboarding <${defaultFromEmail}>`,
+      to: email,
+      subject: 'Your OpenLead CRM Login Credentials',
+      html: `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #2563eb;">Welcome to OpenLead! 🚀</h2>
+          <p style="color: #4b5563; line-height: 1.6;">Your account has been created. Here are your login credentials to get started.</p>
+          
+          <div style="background-color: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0; color: #334155;"><strong>Login URL:</strong> <a href="https://openlead.co.uk/login" style="color: #2563eb;">https://openlead.co.uk/login</a></p>
+            <p style="margin: 0 0 10px 0; color: #334155;"><strong>Username:</strong> ${username}</p>
+            <p style="margin: 0; color: #334155;"><strong>Password:</strong> <code style="background: #e2e8f0; padding: 2px 6px; border-radius: 4px;">${password}</code></p>
+          </div>
+          
+          <p style="color: #4b5563; line-height: 1.6;">We recommend changing your password after your first login for security purposes.</p>
+          
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="https://openlead.co.uk/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+              Login to Dashboard
+            </a>
+          </div>
+          
+          <hr style="border: none; border-top: 1px solid #eaeaea; margin: 30px 0;" />
+          <p style="color: #9ca3af; font-size: 12px; text-align: center;">
+            © ${new Date().getFullYear()} OpenLead. All rights reserved.
+          </p>
+        </div>
+      `
+    };
+    return await sendResendEmail(payload);
+  } catch (error) {
+    console.error('Error sending new user login email:', error);
+    return { success: false, error };
+  }
+};
 export const sendWelcomeEmail = async (email: string, name: string) => {
   try {
     return await sendResendEmail({

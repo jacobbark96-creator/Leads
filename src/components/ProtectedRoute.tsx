@@ -210,7 +210,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
 
         // Intranet
         if (path === '/intranet') {
-          if (perms.includes('intranet/pricing') || perms.includes('intranet/leaderboard') || profile.role.includes('Sales') || profile.role === 'Residential Rep') {
+          if (perms.includes('intranet/pricing') || perms.includes('intranet/leaderboard') || profile.role.includes('Sales') || profile.role === 'Residential Rep' || profile.role === 'admin') {
             hasAccess = true;
           } else if (perms.includes('intranet')) {
             if (perms.includes('intranet/commission')) router.replace('/intranet/commission');

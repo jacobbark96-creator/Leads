@@ -29,7 +29,7 @@ export default function UserManagement() {
   const [isCreatingUser, setIsCreatingUser] = useState(false);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [roleFilter, setRoleFilter] = useState('all');
-  const [newUser, setNewUser] = useState({ email: '', name: '', role: 'client', password: '', division_id: '' });
+  const [newUser, setNewUser] = useState({ email: '', name: '', role: 'client', password: '', division_id: '', notificationEmail: '' });
   const [selectedUser, setSelectedUser] = useState<UserProfile | null>(null);
   const [impersonatingId, setImpersonatingId] = useState<string | null>(null);
   const [clientBalances, setClientBalances] = useState<Record<string, number>>({});
@@ -239,9 +239,26 @@ export default function UserManagement() {
         }
         throw error;
       }
+
+      // Send login email via Resend
+      const emailToUse = newUser.notificationEmail || newUser.email;
+      try {
+        await fetch('/api/admin/send-login-email', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: emailToUse,
+            username: newUser.email,
+            password: newUser.password
+          })
+        });
+      } catch (emailErr) {
+        console.error('Failed to send login email:', emailErr);
+        // Don't throw here as the user was created successfully
+      }
       
       toast.success('User created successfully. They will need to verify their email.');
-      setNewUser({ email: '', name: '', role: 'client', password: '', division_id: '' });
+      setNewUser({ email: '', name: '', role: 'client', password: '', division_id: '', notificationEmail: '' });
       setShowCreateModal(false);
       fetchUsers();
     } catch (error: any) {
@@ -531,6 +548,10 @@ export default function UserManagement() {
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                   <input type="email" required value={newUser.email} onChange={e => setNewUser({...newUser, email: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="john@example.com" />
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Recipient Email for Logins (Optional)</label>
+                  <input type="email" value={newUser.notificationEmail} onChange={e => setNewUser({...newUser, notificationEmail: e.target.value})} className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm" placeholder="leave blank to use login email" />
                 </div>
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Temporary Password</label>

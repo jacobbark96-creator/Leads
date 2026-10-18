@@ -16,11 +16,16 @@ export const TasksPanel = () => {
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
 
   const fetchGoogleTasks = async () => {
-    if (!isAdmin || !profile?.id) return;
+    if (!isAdmin || !profile?.id) {
+      console.log('TasksPanel: Not admin or no profile ID', { isAdmin, profileId: profile?.id });
+      return;
+    }
     try {
+      console.log('TasksPanel: Fetching Google Tasks for user', profile.id);
       const res = await fetch(`/api/google/tasks?userId=${profile.id}`);
       if (res.ok) {
         const data = await res.json();
+        console.log('TasksPanel: Google Tasks API response', data);
         if (data.connected) {
           setGoogleTasks(data.tasks.map((task: any) => ({
             time: task.due ? format(new Date(task.due), 'HH:mm') : 'All Day',
@@ -33,7 +38,11 @@ export const TasksPanel = () => {
             notes: task.notes
           })));
           setGoogleListId(data.listId);
+        } else {
+          console.log('TasksPanel: Google not connected or no token');
         }
+      } else {
+        console.error('TasksPanel: Google Tasks API error', res.status);
       }
     } catch (err) {
       console.error('Error fetching Google Tasks:', err);

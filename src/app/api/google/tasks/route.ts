@@ -52,29 +52,43 @@ export async function GET(req: Request) {
 
     const accessToken = await getAccessToken(userId);
     if (!accessToken) {
+      console.log('Google Tasks: No access token for user', userId);
       return NextResponse.json({ tasks: [], connected: false });
     }
 
+    console.log('Google Tasks: Fetching tasklists for user', userId);
     // 1. Get tasklists
     const listsRes = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
     
-    if (!listsRes.ok) throw new Error('Failed to fetch tasklists');
+    if (!listsRes.ok) {
+      const errorText = await listsRes.text();
+      console.error('Google Tasks: Failed to fetch tasklists', errorText);
+      throw new Error('Failed to fetch tasklists');
+    }
     const listsData = await listsRes.json();
+    console.log('Google Tasks: Found lists', listsData.items?.length || 0);
     const defaultList = listsData.items?.[0]; // Usually "My Tasks"
 
     if (!defaultList) {
+      console.log('Google Tasks: No task lists found');
       return NextResponse.json({ tasks: [], connected: true });
     }
 
+    console.log('Google Tasks: Fetching tasks from list', defaultList.title, defaultList.id);
     // 2. Get tasks from the default list
     const tasksRes = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${defaultList.id}/tasks?showCompleted=false&showHidden=false`, {
       headers: { Authorization: `Bearer ${accessToken}` }
     });
 
-    if (!tasksRes.ok) throw new Error('Failed to fetch tasks');
+    if (!tasksRes.ok) {
+      const errorText = await tasksRes.text();
+      console.error('Google Tasks: Failed to fetch tasks', errorText);
+      throw new Error('Failed to fetch tasks');
+    }
     const tasksData = await tasksRes.json();
+    console.log('Google Tasks: Found tasks', tasksData.items?.length || 0);
 
     return NextResponse.json({ 
       tasks: tasksData.items || [], 

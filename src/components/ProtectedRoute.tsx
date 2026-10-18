@@ -126,7 +126,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
             hasAccess = true;
           } else if (path.startsWith('/admin-crm')) {
             hasAccess = true;
-          } else if (path.startsWith('/intranet/commission-calculator')) {
+          } else if (path.startsWith('/intranet/commission-calculator') || path.startsWith('/intranet/tracker')) {
             hasAccess = true;
           } else {
             router.replace('/staff');

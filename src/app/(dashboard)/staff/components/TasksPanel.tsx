@@ -11,6 +11,7 @@ export const TasksPanel = () => {
   const [tasks, setTasks] = useState<any[]>([]);
   const [googleTasks, setGoogleTasks] = useState<any[]>([]);
   const [googleListId, setGoogleListId] = useState<string | null>(null);
+  const [googleError, setGoogleError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
 
   const isAdmin = profile?.role === 'admin' || profile?.role === 'super_admin';
@@ -21,13 +22,25 @@ export const TasksPanel = () => {
       return;
     }
     try {
+      setGoogleError(null);
       console.log('TasksPanel: Fetching Google Tasks for user', profile.id);
       const res = await fetch(`/api/google/tasks?userId=${profile.id}`);
+      const data = await res.json();
+      
       if (res.ok) {
-        const data = await res.json();
         console.log('TasksPanel: Google Tasks API response', data);
         if (data.connected) {
-          setGoogleTasks(data.tasks.map((task: any) => ({
+          // Filter tasks: due today OR no due date
+          const filteredTasks = (data.tasks || []).filter((task: any) => {
+            if (!task.due) return true; // No due date
+            
+            // Google Tasks 'due' is 'YYYY-MM-DDT00:00:00.000Z' (midnight UTC)
+            // We want to see if it's today in the user's local timezone.
+            const dueDate = new Date(task.due);
+            return isToday(dueDate);
+          });
+
+          setGoogleTasks(filteredTasks.map((task: any) => ({
             time: task.due ? format(new Date(task.due), 'HH:mm') : 'All Day',
             date: task.due ? format(new Date(task.due), 'dd/MM') : '',
             title: task.title,
@@ -42,10 +55,12 @@ export const TasksPanel = () => {
           console.log('TasksPanel: Google not connected or no token');
         }
       } else {
-        console.error('TasksPanel: Google Tasks API error', res.status);
+        console.error('TasksPanel: Google Tasks API error', data);
+        setGoogleError(data.details || data.error || 'Failed to fetch Google Tasks');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error fetching Google Tasks:', err);
+      setGoogleError(err.message || 'Failed to connect to Google Tasks');
     }
   };
 
@@ -187,6 +202,11 @@ export const TasksPanel = () => {
             </span>
           </h2>
         </div>
+        {googleError && (
+          <div className="text-[8px] text-red-400 font-medium truncate max-w-[100px]" title={googleError}>
+            Google Error
+          </div>
+        )}
       </div>
       
       {allTasks.length === 0 ? (

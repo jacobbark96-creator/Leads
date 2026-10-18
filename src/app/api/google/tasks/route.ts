@@ -20,13 +20,19 @@ async function getAccessToken(userId: string) {
   
   const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-  const { data: user } = await supabase
+  const { data: user, error: userError } = await supabase
     .from('users')
     .select('google_refresh_token')
     .eq('id', userId)
     .single();
 
+  if (userError) {
+    console.error('Google Tasks: Supabase error fetching user token', userError);
+    return null;
+  }
+
   if (!user?.google_refresh_token) {
+    console.log('Google Tasks: No refresh token found for user', userId);
     return null;
   }
 

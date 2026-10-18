@@ -31,8 +31,8 @@ export const StaffSidebar = ({ profile }: { profile: any }) => {
           roles: ['super_admin', 'admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] 
         },
         { label: 'Sources', href: '/staff/sources', icon: BarChart2, roles: ['super_admin'] },
-        { label: 'Map', href: '/contractor-crm/map', icon: Map, roles: ['super_admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
         { label: 'Reports', href: '/admin-crm/tracker', icon: BarChart2, roles: ['super_admin', 'admin'] },
+        { label: 'Map', href: '/contractor-crm/map', icon: Map, roles: ['super_admin', 'rep', 'Residential Rep', 'Residential Sales', 'Commercial Sales'] },
       ]
     },
     {

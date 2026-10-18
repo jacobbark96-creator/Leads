@@ -218,6 +218,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
               { name: 'Admin CRM', path: '/admin-crm', icon: Settings },
             ]
           },
+          { name: 'Reports', path: '/admin-crm/tracker', icon: BarChart2 },
           { name: 'Intranet', path: '/intranet', icon: BookOpen },
         ];
       case 'super_admin':

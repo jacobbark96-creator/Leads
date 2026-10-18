@@ -114,7 +114,7 @@ export default function CommissionsPage() {
           is_exclusive_sold,
           lead_purchases(
             client_id,
-            clients(
+            clients!client_id(
               users(email)
             )
           )

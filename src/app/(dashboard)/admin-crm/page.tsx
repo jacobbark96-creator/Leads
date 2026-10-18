@@ -416,7 +416,7 @@ export default function UserManagement() {
             <div className="flex items-center gap-2"><PoundSterling className="w-4 h-4" /> Commission</div>
           </button>
         )}
-        {profile?.role === 'super_admin' && (
+        {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
           <button
             onClick={() => setActiveTab('settings')}
             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'settings' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
@@ -424,7 +424,7 @@ export default function UserManagement() {
             <div className="flex items-center gap-2"><Settings className="w-4 h-4" /> System Settings</div>
           </button>
         )}
-        {profile?.role === 'super_admin' && (
+        {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
           <button
             onClick={() => setActiveTab('divisions')}
             className={`pb-3 text-sm font-medium border-b-2 transition-colors ${activeTab === 'divisions' ? 'border-blue-600 text-blue-600' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'}`}
@@ -517,7 +517,7 @@ export default function UserManagement() {
           </button>
         </div>
 
-        {profile?.role === 'super_admin' && (
+        {(profile?.role === 'super_admin' || profile?.role === 'admin') && (
           <button 
             onClick={() => setShowCreateModal(true)}
             className="md:w-48 bg-white border border-dashed border-gray-300 rounded-lg p-4 flex flex-col items-center justify-center text-gray-500 hover:text-blue-600 hover:border-blue-300 hover:bg-blue-50 transition-all shadow-sm shrink-0"
@@ -528,7 +528,7 @@ export default function UserManagement() {
         )}
       </div>
 
-      {showCreateModal && profile?.role === 'super_admin' && (
+      {showCreateModal && (profile?.role === 'super_admin' || profile?.role === 'admin') && (
         <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-xl shadow-2xl w-full max-w-2xl overflow-hidden animate-in zoom-in-95 duration-200">
             <div className="px-6 py-4 border-b border-gray-100 flex items-center justify-between bg-slate-50">
@@ -715,7 +715,7 @@ export default function UserManagement() {
                       >
                         <Edit className="w-4 h-4" />
                       </button>
-                      {profile?.role === 'super_admin' && user.id !== profile.id && (
+                      {(profile?.role === 'super_admin' || profile?.role === 'admin') && user.id !== profile.id && (
                         <>
                           <button
                             onClick={() => handleDeleteUser(user.id)}
@@ -823,8 +823,8 @@ export default function UserManagement() {
       {activeTab === 'concierge' && <ConciergeTab />}
       {activeTab === 'targets' && <TargetsTab />}
       {activeTab === 'commission_settings' && isJakeBedwell && <CommissionSettingsTab />}
-      {activeTab === 'settings' && profile?.role === 'super_admin' && <SystemSettingsTab />}
-      {activeTab === 'divisions' && profile?.role === 'super_admin' && <DivisionsTab />}
+      {activeTab === 'settings' && (profile?.role === 'super_admin' || profile?.role === 'admin') && <SystemSettingsTab />}
+      {activeTab === 'divisions' && (profile?.role === 'super_admin' || profile?.role === 'admin') && <DivisionsTab />}
     </div>
   );
 };

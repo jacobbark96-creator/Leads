@@ -8,7 +8,7 @@ import { Loader2, Briefcase, Phone, Users, CheckCircle, Mail, MapPin, UserPlus }
 import toast from 'react-hot-toast';
 import { PurchasedLeadModal } from '@/components/PurchasedLeadModal';
 import { StatusTransitionModal } from '@/components/StatusTransitionModal';
-import { Lead } from '@/types/database';
+import { Lead } from '@/types';
 
 export default function MyLeadsKanban() {
   const { profile } = useAuthStore();
@@ -93,6 +93,7 @@ export default function MyLeadsKanban() {
         .select('id, status, purchase_type, price_paid, sale_amount, purchased_at, has_concierge, concierge_status, concierge_dates, metadata, client_id, assigned_to_client_id, leads(*, buildings(*))')
         .or(`client_id.in.(${formattedIds}),assigned_to_client_id.in.(${formattedIds})`)
         .neq('status', 'rejected')
+        .neq('status', 'refunded')
         .order('purchased_at', { ascending: false });
 
       if (purchasesError) throw purchasesError;

@@ -28,14 +28,14 @@ export async function GET(req: NextRequest) {
     const { data: marketplaceSales } = await supabaseAdmin
       .from('lead_purchases')
       .select('id, purchased_at, price_paid, lead_id, user_id, status, leads(name, company, price, exclusive_price, share_price, purchase_date, is_marketed, is_exclusive_sold, clients(company_name, contact_name))')
-      .in('status', ['new', 'sat', 'won'])
+      .in('status', ['new', 'contacted', 'sat', 'proposal', 'won', 'archive', 'refunded'])
       .order('purchased_at', { ascending: false });
 
     // 2. Fetch Manual Sales
     const { data: manualSales } = await supabaseAdmin
       .from('leads')
       .select('id, name, company, price, exclusive_price, share_price, purchase_date, created_at, is_marketed, is_exclusive_sold, status, client_id, clients(company_name, contact_name)')
-      .or('marked_as_sold.eq.true,status.eq.sold');
+      .or('marked_as_sold.eq.true,status.in.(sold,refunded,won,proposal,sat,contacted,archive)');
 
     const combinedSales: any[] = [];
     const seenPurchaseIds = new Set();
@@ -53,7 +53,10 @@ export async function GET(req: NextRequest) {
         name: p.leads?.name,
         client_company: p.leads?.clients?.company_name,
         client_name: p.leads?.clients?.contact_name,
-        is_leadshare
+        is_leadshare,
+        status: p.status || 'new',
+        client_id: p.leads?.clients?.id || p.user_id,
+        is_marketplace: true
       });
       seenPurchaseIds.add(p.id);
       seenManualLeadIds.add(p.lead_id);
@@ -72,7 +75,10 @@ export async function GET(req: NextRequest) {
           name: l.name,
           client_company: l.clients?.company_name,
           client_name: l.clients?.contact_name,
-          is_leadshare
+          is_leadshare,
+          status: (l.status === 'sold' || !l.status) ? 'new' : l.status,
+          client_id: l.client_id,
+          is_marketplace: false
         });
       }
     });

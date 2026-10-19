@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
     // 1. Fetch Marketplace Sales
     const { data: marketplaceSales } = await supabaseAdmin
       .from('lead_purchases')
-      .select('id, purchased_at, price_paid, lead_id, user_id, status, leads(name, company, price, exclusive_price, share_price, purchase_date, is_marketed, is_exclusive_sold, clients(company_name, contact_name))')
+      .select('id, purchased_at, price_paid, lead_id, client_id, status, leads(name, company, price, exclusive_price, share_price, purchase_date, is_marketed, is_exclusive_sold, clients(company_name, contact_name))')
       .in('status', ['new', 'contacted', 'sat', 'proposal', 'won', 'archive', 'refunded'])
       .order('purchased_at', { ascending: false });
 
@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
         client_name: p.leads?.clients?.contact_name,
         is_leadshare,
         status: p.status || 'new',
-        client_id: p.leads?.clients?.id || p.user_id,
+        client_id: p.leads?.clients?.id || p.client_id,
         is_marketplace: true
       });
       seenPurchaseIds.add(p.id);
@@ -76,7 +76,7 @@ export async function GET(req: NextRequest) {
           client_company: l.clients?.company_name,
           client_name: l.clients?.contact_name,
           is_leadshare,
-          status: (l.status === 'sold' || !l.status) ? 'new' : l.status,
+          status: (l.status === 'sold' || !l.status) ? 'new' : (l.status || '').toLowerCase(),
           client_id: l.client_id,
           is_marketplace: false
         });

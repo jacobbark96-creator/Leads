@@ -58,7 +58,9 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
       setTo(lead?.email || '');
       
       // Default to secondary email if it's an OpenEnergy domain
-      if (profile?.secondary_email?.toLowerCase().includes('openenergyservices.co.uk')) {
+      if (defaultType === 'request_bills') {
+        setSenderEmail('bills@openenergyservices.co.uk');
+      } else if (profile?.secondary_email?.toLowerCase().includes('openenergyservices.co.uk')) {
         setSenderEmail(profile.secondary_email);
       } else {
         setSenderEmail(profile?.email || '');
@@ -204,21 +206,26 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 bg-gray-50 p-4 rounded-xl border border-gray-100">
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">From</label>
-              {profile?.secondary_email ? (
-                <div className="relative mt-1">
-                  <select
-                    value={senderEmail}
-                    onChange={(e) => setSenderEmail(e.target.value)}
-                    className="w-full appearance-none bg-transparent border-none p-0 text-sm text-gray-700 font-medium focus:ring-0 cursor-pointer"
-                  >
-                    <option value={profile.email}>{profile.email}</option>
-                    <option value={profile.secondary_email}>{profile.secondary_email}</option>
-                  </select>
-                  <ChevronDown className="w-3 h-3 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
-                </div>
-              ) : (
-                <div className="text-sm text-gray-700 font-medium truncate mt-1">{profile?.email || 'Your linked Gmail account'}</div>
-              )}
+              <div className="relative mt-1">
+                {defaultType === 'request_bills' ? (
+                  <div className="w-full bg-transparent border-none p-0 text-sm text-gray-700 font-medium">
+                    bills@openenergyservices.co.uk
+                  </div>
+                ) : (
+                  <>
+                    <select
+                      value={senderEmail}
+                      onChange={(e) => setSenderEmail(e.target.value)}
+                      className="w-full appearance-none bg-transparent border-none p-0 text-sm text-gray-700 font-medium focus:ring-0 cursor-pointer"
+                    >
+                      <option value={profile?.email}>{profile?.email}</option>
+                      {profile?.secondary_email && <option value={profile.secondary_email}>{profile.secondary_email}</option>}
+                      <option value="bills@openenergyservices.co.uk">bills@openenergyservices.co.uk</option>
+                    </select>
+                    <ChevronDown className="w-3 h-3 text-gray-400 absolute right-0 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  </>
+                )}
+              </div>
             </div>
             <div>
               <label className="block text-[10px] font-bold text-gray-400 uppercase tracking-wider mb-1">To</label>

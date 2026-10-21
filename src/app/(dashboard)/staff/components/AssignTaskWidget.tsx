@@ -3,6 +3,7 @@ import { motion, AnimatePresence, LayoutGroup } from 'framer-motion';
 import { supabase } from '@/lib/supabase';
 import { Check, X, Plus } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '@/store/authStore';
 
 export const AssignTaskWidget = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -46,6 +47,7 @@ export const AssignTaskWidget = () => {
 };
 
 const TaskModalContent = ({ onClose }: { onClose: () => void }) => {
+  const { profile } = useAuthStore();
   const [search, setSearch] = useState('');
   const [admins, setAdmins] = useState<any[]>([]);
   const [selectedAdmin, setSelectedAdmin] = useState<any>(null);
@@ -87,7 +89,7 @@ const TaskModalContent = ({ onClose }: { onClose: () => void }) => {
         body: JSON.stringify({
           userId: selectedAdmin.id,
           title: `Request: ${requestText.substring(0, 50)}${requestText.length > 50 ? '...' : ''}`,
-          notes: requestText
+          notes: `Requested by: ${profile?.name || 'Admin'}\n\n${requestText}`
         })
       });
 

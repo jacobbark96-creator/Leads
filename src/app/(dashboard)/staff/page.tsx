@@ -20,6 +20,7 @@ import { WhatsAppPlaceholder } from './components/WhatsAppPlaceholder';
 import { TeamMessages } from './components/TeamMessages';
 import { LiveFeed } from './components/LiveFeed';
 import { GmailPanel } from './components/GmailPanel';
+import { QuoteOfTheDayPanel } from './components/QuoteOfTheDayPanel';
 import { RepPerformanceCard } from './components/RepPerformanceCard';
 import { GMPerformanceCard } from './components/GMPerformanceCard';
 import { RepMonitoringCard } from './components/RepMonitoringCard';
@@ -371,7 +372,7 @@ export default function StaffPortal() {
               )}
             </div>
 
-            {/* CENTER COLUMN: Gmail Panel (Visible for admin role) */}
+            {/* CENTER COLUMN */}
             {isAdminAccount ? (
               <div className="lg:col-span-4 flex flex-col min-h-0 overflow-hidden">
                 <GmailPanel />
@@ -390,7 +391,7 @@ export default function StaffPortal() {
                 ) : (
                   <>
                     <div className="flex-[0.5] min-h-0 overflow-hidden">
-                      <GmailPanel />
+                      <QuoteOfTheDayPanel />
                     </div>
                     <div className="flex-[0.5] min-h-0 overflow-hidden">
                       <RepMonitoringCard monitoringData={monitoringData} />
@@ -401,10 +402,15 @@ export default function StaffPortal() {
             )}
 
             {/* RIGHT COLUMN: Unified Messages */}
-            <div className="lg:col-span-4 flex flex-col min-h-0 overflow-hidden">
-              <div className="flex-1 min-h-0 overflow-hidden">
+            <div className="lg:col-span-4 flex flex-col min-h-0 overflow-hidden gap-2">
+              <div className={isAdmin ? "flex-[0.75] min-h-0 overflow-hidden" : "flex-1 min-h-0 overflow-hidden"}>
                 <UnifiedMessagesPanel />
               </div>
+              {isAdmin && (
+                <div className="flex-[0.25] min-h-0 overflow-hidden">
+                  <QuoteOfTheDayPanel />
+                </div>
+              )}
             </div>
 
           </div>

@@ -38,10 +38,14 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Partners', path: '/admin-crm/partners', icon: Briefcase, id: 'admin-crm/partners' },
     { name: 'Openlead Max', path: '/admin-crm/openlead-max', icon: Sparkles, id: 'admin-crm/openlead-max' },
     { name: 'Recruitment', path: '/admin-crm/recruitment', icon: Briefcase, id: 'admin-crm/recruitment' },
+    { name: 'Motivation', path: '/admin-crm/motivation', icon: Sparkles, id: 'admin-crm/motivation', email: 'Jake@openlead.co.uk' },
   ].filter(tab => {
     // Role-based filtering for specific tabs
     if (tab.roles && !tab.roles.includes(profile?.role)) return false;
     
+    // Email-based filtering
+    if (tab.email && profile?.email?.toLowerCase() !== tab.email.toLowerCase()) return false;
+
     // Permission-based filtering for reps and growth managers
     if (['rep', 'growth_manager'].includes(profile?.role || '') && tab.id && !profile?.permissions?.includes(tab.id)) return false;
     

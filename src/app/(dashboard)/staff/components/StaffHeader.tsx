@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Search, Bell } from 'lucide-react';
 import { AdminNotifications } from '@/components/AdminNotifications';
 import { formatRole } from '@/lib/utils';
+import { AssignTaskWidget } from './AssignTaskWidget';
 
 export const StaffHeader = ({ profile }: { profile: any }) => {
   return (
@@ -36,16 +37,22 @@ export const StaffHeader = ({ profile }: { profile: any }) => {
 
         {/* Profile Summary */}
         <div className="flex items-center gap-3 pl-6 border-l border-white/10">
-          <div className="flex flex-col text-right hidden sm:flex">
-            <span className="text-sm font-bold text-white leading-tight">{profile?.name}</span>
-            <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">{formatRole(profile?.role)}</span>
-          </div>
-          {profile?.avatar_url ? (
-            <img src={profile.avatar_url} alt="Profile" className="w-10 h-10 rounded-xl object-cover shadow-lg border border-white/10" />
+          {(profile?.role === 'admin' || profile?.role === 'super_admin') ? (
+            <AssignTaskWidget />
           ) : (
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm shadow-lg border border-white/10">
-              {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
-            </div>
+            <>
+              <div className="flex flex-col text-right hidden sm:flex">
+                <span className="text-sm font-bold text-white leading-tight">{profile?.name}</span>
+                <span className="text-[10px] font-bold text-blue-400 uppercase tracking-widest">{formatRole(profile?.role)}</span>
+              </div>
+              {profile?.avatar_url ? (
+                <img src={profile.avatar_url} alt="Profile" className="w-10 h-10 rounded-xl object-cover shadow-lg border border-white/10" />
+              ) : (
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-sm shadow-lg border border-white/10">
+                  {profile?.name ? profile.name.charAt(0).toUpperCase() : 'U'}
+                </div>
+              )}
+            </>
           )}
         </div>
       </div>

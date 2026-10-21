@@ -132,6 +132,65 @@ export async function GET(req: Request) {
   }
 }
 
+export async function POST(req: Request) {
+  try {
+    const { userId, title, notes } = await req.json();
+
+    if (!userId || !title) {
+      return NextResponse.json({ error: 'userId and title are required' }, { status: 400 });
+    }
+
+    const accessToken = await getAccessToken(userId);
+    if (!accessToken) {
+      return NextResponse.json({ error: 'User is not connected to Google Tasks' }, { status: 400 });
+    }
+
+    // 1. Get tasklists to find the default list
+    const listsRes = await fetch('https://tasks.googleapis.com/tasks/v1/users/@me/lists', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Accept': 'application/json'
+      }
+    });
+
+    if (!listsRes.ok) {
+      throw new Error('Failed to fetch tasklists');
+    }
+    const listsData = await listsRes.json();
+    const defaultList = listsData.items?.[0];
+
+    if (!defaultList) {
+      return NextResponse.json({ error: 'No task lists found for user' }, { status: 400 });
+    }
+
+    // 2. Insert new task
+    const tasksRes = await fetch(`https://tasks.googleapis.com/tasks/v1/lists/${defaultList.id}/tasks`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify({
+        title,
+        notes
+      })
+    });
+
+    if (!tasksRes.ok) {
+      const errText = await tasksRes.text();
+      console.error('Google Tasks POST error:', errText);
+      throw new Error('Failed to create task');
+    }
+
+    const taskData = await tasksRes.json();
+    return NextResponse.json({ success: true, task: taskData });
+  } catch (error: any) {
+    console.error('Google Tasks POST error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+}
+
 export async function PATCH(req: Request) {
   try {
     const { userId, taskId, listId, completed } = await req.json();

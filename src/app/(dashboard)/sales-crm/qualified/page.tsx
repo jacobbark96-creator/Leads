@@ -222,7 +222,7 @@ function QualifiedLeadsContent() {
         }
       } else if (debouncedSearchQuery.trim()) {
         const search = `%${debouncedSearchQuery.trim()}%`;
-        query = query.or(`name.ilike.${search},company.ilike.${search},location.ilike.${search},roof_material.ilike.${search},roof_condition.ilike.${search},property_type.ilike.${search}`);
+        query = query.or(`name.ilike.${search},company.ilike.${search},location.ilike.${search},roof_material.ilike.${search},roof_condition.ilike.${search},building_type.ilike.${search}`);
       }
 
       if (['super_admin', 'admin'].includes(profile?.role || '')) {

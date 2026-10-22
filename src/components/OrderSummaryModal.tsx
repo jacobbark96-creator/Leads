@@ -21,8 +21,8 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
   const [isApplying, setIsApplying] = useState(false);
   const [purchaseType, setPurchaseType] = useState<'exclusive' | 'share'>('exclusive');
   const [useTradeAccount, setUseTradeAccount] = useState(false);
-  const [addConcierge, setAddConcierge] = useState(lead.has_concierge || false);
   const [conciergeDates, setConciergeDates] = useState(lead.concierge_dates ? lead.concierge_dates[0] : '');
+  const addConcierge = true; // Now mandatory
 
   if (!isOpen) return null;
 
@@ -209,56 +209,28 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                     </p>
                   </div>
 
-                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Add-ons</h3>
+                  <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Concierge Booking (Free Included)</h3>
 
                   <div className="mb-4">
-                    <label 
-                      onClick={() => setAddConcierge(!addConcierge)}
-                      className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${
-                        addConcierge 
-                          ? 'border-blue-600 bg-blue-50 shadow-md' 
-                          : 'border-gray-200 hover:border-blue-300 bg-white'
-                      }`}
-                    >
-                      <div className="flex items-center gap-3">
-                        <div className={`w-10 h-10 rounded-full flex items-center justify-center shrink-0 ${
-                          addConcierge ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-400'
-                        }`}>
-                          <Sparkles className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <p className="text-sm font-bold text-gray-900 leading-tight">Concierge Booking (<span className="line-through text-gray-400 mr-1">£15</span><span className="text-green-600">Free!</span>)</p>
-                          <p className="text-[10px] text-gray-500 font-medium leading-tight mt-1">
-                            We will contact the lead and book the site assessment for you at your preferred dates.
-                          </p>
-                        </div>
-                      </div>
-                      <div className={`w-5 h-5 shrink-0 rounded-full border-2 flex items-center justify-center transition-colors ${
-                        addConcierge ? 'border-blue-600 bg-blue-600' : 'border-gray-300'
-                      }`}>
-                        {addConcierge && <div className="w-2 h-2 rounded-full bg-white" />}
-                      </div>
-                    </label>
-
-                    {/* Concierge Dates Input */}
-                    {addConcierge && (
-                      <div className="mt-3 p-4 bg-blue-50 border border-blue-100 rounded-xl animate-in fade-in slide-in-from-top-2 duration-300">
-                        <label className="block text-sm font-bold text-gray-900 mb-2">
+                    <div className="p-4 bg-blue-50 border border-blue-100 rounded-xl">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Sparkles className="w-4 h-4 text-blue-600" />
+                        <label className="block text-sm font-bold text-gray-900">
                           Preferred Survey Dates & Times
                         </label>
-                        <p className="text-[10px] text-gray-600 mb-3">
-                          Please provide 3 dates and times that work for you. We will contact the lead and confirm one of these slots.
-                        </p>
-                        <textarea
-                          value={conciergeDates}
-                          onChange={(e) => setConciergeDates(e.target.value)}
-                          placeholder="e.g.&#10;1. Monday 14th Oct - Morning&#10;2. Tuesday 15th Oct - 2pm&#10;3. Thursday 17th Oct - Anytime"
-                          rows={4}
-                          className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
-                          required
-                        />
                       </div>
-                    )}
+                      <p className="text-[10px] text-gray-600 mb-3">
+                        We will contact the lead and book the site assessment for you. Please provide 3 dates and times that work for you. This is a mandatory step.
+                      </p>
+                      <textarea
+                        value={conciergeDates}
+                        onChange={(e) => setConciergeDates(e.target.value)}
+                        placeholder="e.g.&#10;1. Monday 14th Oct - Morning&#10;2. Tuesday 15th Oct - 2pm&#10;3. Thursday 17th Oct - Anytime"
+                        rows={4}
+                        className="w-full rounded-lg border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 text-sm"
+                        required
+                      />
+                    </div>
                   </div>
 
                   <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-3 pt-4 border-t border-gray-100">Payment Summary</h3>
@@ -393,24 +365,32 @@ export const OrderSummaryModal: React.FC<OrderSummaryModalProps> = ({ isOpen, on
                     * Not VAT registered. No VAT has been charged.
                   </p>
 
-                  <button
-                    type="button"
-                    disabled={addConcierge && !conciergeDates.trim()}
-                    onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge, conciergeDates)}
-                    className={`w-full flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
-                      profile?.parent_id
-                        ? 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
+                  <div className="relative group">
+                    <button
+                      type="button"
+                      disabled={addConcierge && !conciergeDates.trim()}
+                      onClick={() => onProceedToPay(creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge, conciergeDates)}
+                      className={`w-full flex items-center justify-center px-4 py-2.5 border border-transparent text-sm font-bold rounded-lg text-white shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                        profile?.parent_id
+                          ? 'bg-indigo-600 hover:bg-indigo-700 focus:ring-indigo-500'
+                          : useTradeAccount 
+                            ? 'bg-slate-900 hover:bg-slate-800 focus:ring-slate-500' 
+                            : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
+                      }`}
+                    >
+                      {profile?.parent_id 
+                        ? 'Request Purchase'
                         : useTradeAccount 
-                          ? 'bg-slate-900 hover:bg-slate-800 focus:ring-slate-500' 
-                          : 'bg-blue-600 hover:bg-blue-700 focus:ring-blue-500'
-                    }`}
-                  >
-                    {profile?.parent_id 
-                      ? 'Request Purchase'
-                      : useTradeAccount 
-                        ? 'Add to Flex Invoice' 
-                        : (totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay')}
-                  </button>
+                          ? 'Add to Flex Invoice' 
+                          : (totalToPay === 0 ? 'Pay with Credit' : 'Click to Pay')}
+                    </button>
+                    {addConcierge && !conciergeDates.trim() && (
+                      <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 hidden group-hover:block w-48 p-2 bg-gray-900 text-white text-[10px] font-medium text-center rounded-lg shadow-xl z-10 whitespace-normal">
+                        Please provide your preferred survey dates & times above to continue.
+                        <div className="absolute top-full left-1/2 -translate-x-1/2 border-[5px] border-transparent border-t-gray-900"></div>
+                      </div>
+                    )}
+                  </div>
                   <p className="text-[10px] text-center text-gray-500 mt-2.5 flex items-center justify-center gap-1">
                     {profile?.parent_id ? (
                       <>

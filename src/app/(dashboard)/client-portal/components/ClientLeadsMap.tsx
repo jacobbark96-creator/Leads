@@ -91,8 +91,8 @@ export default function ClientLeadsMap({ leads, onLeadClick }: ClientLeadsMapPro
         zoomControl={true}
       >
         <TileLayer
-          attribution='&copy; OpenStreetMap'
-          url="https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png"
+          attribution='&copy; Google Maps'
+          url="https://mt1.google.com/vt/lyrs=m&x={x}&y={y}&z={z}"
         />
         
         {mapLeads.map(lead => {

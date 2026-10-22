@@ -10,6 +10,20 @@
   img {
     image-rendering: -webkit-optimize-contrast;
   }
+
+  /* Quill preview typography reset */
+  .quill-preview p { margin-bottom: 1em; }
+  .quill-preview p:last-child { margin-bottom: 0; }
+  .quill-preview strong, .quill-preview b { font-weight: bold; }
+  .quill-preview em, .quill-preview i { font-style: italic; }
+  .quill-preview u { text-decoration: underline; }
+  .quill-preview s { text-decoration: line-through; }
+  .quill-preview ul { list-style-type: disc; padding-left: 1.5em; margin-bottom: 1em; }
+  .quill-preview ol { list-style-type: decimal; padding-left: 1.5em; margin-bottom: 1em; }
+  .quill-preview a { color: #2563eb; text-decoration: underline; }
+  .quill-preview h1 { font-size: 1.5em; font-weight: bold; margin-bottom: 0.5em; }
+  .quill-preview h2 { font-size: 1.25em; font-weight: bold; margin-bottom: 0.5em; }
+  .quill-preview blockquote { border-left: 4px solid #e5e7eb; padding-left: 1em; color: #6b7280; font-style: italic; margin-bottom: 1em; }
 }
 
 :root {

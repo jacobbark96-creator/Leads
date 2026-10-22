@@ -67,14 +67,10 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
       }
       
       if (!selectedTemplate) {
-        let initialBody = profile?.email_signature ? `<br/><br/>${profile.email_signature.replace(/\n/g, '<br/>')}` : '';
-        if (profile?.divisions?.logo_url) {
-          initialBody += `<br/><br/><img src="${profile.divisions.logo_url}" alt="Logo" style="max-height: 60px; width: auto; display: block; margin-top: 10px;" />`;
-        }
-        setBody(initialBody);
+        setBody('');
       }
     }
-  }, [isOpen, lead, profile?.email_signature]);
+  }, [isOpen, lead]);
 
   const fetchTemplates = async () => {
     try {
@@ -117,13 +113,6 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
       .replace(/{contact_name}/gi, firstName)
       .replace(/{Rep_Name}/gi, profile?.name || 'Your Representative');
 
-    if (profile?.email_signature) {
-      parsedBody += `<br/><br/>${profile.email_signature.replace(/\n/g, '<br/>')}`;
-      if (profile?.divisions?.logo_url) {
-        parsedBody += `<br/><br/><img src="${profile.divisions.logo_url}" alt="Logo" style="max-height: 60px; width: auto; display: block; margin-top: 10px;" />`;
-      }
-    }
-
     setSubject(parsedSubject);
     setBody(parsedBody);
   };
@@ -136,11 +125,7 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
       if (template) applyTemplate(template);
     } else {
       setSubject('');
-      let resetBody = profile?.email_signature ? `<br/><br/>${profile.email_signature.replace(/\n/g, '<br/>')}` : '';
-      if (profile?.divisions?.logo_url) {
-        resetBody += `<br/><br/><img src="${profile.divisions.logo_url}" alt="Logo" style="max-height: 60px; width: auto; display: block; margin-top: 10px;" />`;
-      }
-      setBody(resetBody);
+      setBody('');
     }
   };
 
@@ -312,9 +297,16 @@ export const EmailModal = ({ isOpen, onClose, lead, defaultType }: EmailModalPro
 
         {/* Footer */}
         <div className="px-6 py-4 bg-gray-50 border-t border-gray-100 flex items-center justify-between">
-          <div className="flex items-center gap-2 text-[10px] text-gray-400">
-            <FileText className="w-3.5 h-3.5" />
-            Interaction will be logged automatically
+          <div className="flex flex-col gap-0.5">
+            <div className="flex items-center gap-2 text-[10px] text-gray-400">
+              <FileText className="w-3.5 h-3.5" />
+              Interaction will be logged automatically
+            </div>
+            {profile?.email_signature && profile.email_signature !== '<p><br></p>' && (
+              <div className="flex items-center gap-2 text-[10px] text-blue-500 font-medium">
+                Your signature will be appended automatically
+              </div>
+            )}
           </div>
           <div className="flex items-center gap-3">
             <button 

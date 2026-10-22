@@ -303,7 +303,7 @@ export default function EmailsPage() {
                         </div>
                       ) : (
                         <div 
-                          className="text-sm text-gray-600 bg-gray-50/50 p-4 rounded-lg border border-gray-100 italic quill-preview"
+                          className="text-sm text-gray-800 bg-white p-4 rounded-lg border border-gray-200 quill-preview"
                           dangerouslySetInnerHTML={{ __html: template.body }}
                         />
                       )}

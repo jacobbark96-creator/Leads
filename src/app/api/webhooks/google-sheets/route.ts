@@ -29,7 +29,7 @@ export async function POST(req: Request) {
         name: name || 'Unknown',
         email: email || '',
         phone: phone || '',
-        company_name: company || '',
+        company: company || '',
         lead_source: source || 'Facebook',
         building_type: 'Residential', // Forces it into the Residential Kanban
         status: 'new' // Drops it into the "New" column

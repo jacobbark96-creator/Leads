@@ -13,6 +13,7 @@ import { AskMaxChat } from './AskMaxChat';
 import { supabase } from '../lib/supabase';
 import { FlexModal } from './FlexModal';
 import { formatRole } from '../lib/utils';
+import toast from 'react-hot-toast';
 
 export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   const { profile, signOut, refreshProfile } = useAuthStore();
@@ -67,6 +68,43 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           },
           () => {
             fetchPendingCount();
+          }
+        )
+        .subscribe();
+
+      return () => {
+        supabase.removeChannel(channel);
+      };
+    }
+  }, [profile]);
+
+  useEffect(() => {
+    // Global listener for Residential Leads
+    const isResiRep = profile?.role === 'Residential Rep' || profile?.role === 'Residential Sales';
+    const hasResiPermission = profile?.permissions?.includes('resi_notifications');
+
+    if (isResiRep || hasResiPermission) {
+      const channel = supabase.channel('global_residential_leads_updates')
+        .on(
+          'postgres_changes',
+          {
+            event: 'INSERT',
+            schema: 'public',
+            table: 'leads',
+            filter: `building_type=eq.Residential`
+          },
+          (payload) => {
+            if (!payload.new.assigned_to) {
+              toast.success('A new Residential lead is available!', {
+                icon: '🔔',
+                duration: 5000,
+                style: {
+                  borderRadius: '10px',
+                  background: '#333',
+                  color: '#fff',
+                },
+              });
+            }
           }
         )
         .subscribe();

@@ -40,7 +40,7 @@ export default function About() {
                   <TrendingUp className="w-6 h-6" />
                 </div>
                 <p className="text-4xl font-extrabold tracking-tight">1K+</p>
-                <p className="text-slate-400 font-medium text-sm uppercase tracking-wider">Leads Delivered</p>
+                <p className="text-slate-400 font-medium text-sm uppercase tracking-wider">Leads Qualified</p>
               </div>
             </div>
           </div>

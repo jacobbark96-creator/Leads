@@ -567,6 +567,28 @@ function LeadDetailsV2Content() {
   }, [activeBuildingIndex]);
 
   const [isMarketConfirmOpen, setIsMarketConfirmOpen] = useState(false);
+  const handleReferToResidential = async () => {
+    if (!lead || !profile) return;
+    try {
+      const { error } = await supabase
+        .from('leads')
+        .update({
+          building_type: 'Residential',
+          assigned_to: null,
+          bd_pipeline_status: null
+        })
+        .eq('id', lead.id);
+
+      if (error) throw error;
+
+      setLead({ ...lead, building_type: 'Residential', assigned_to: null, bd_pipeline_status: null });
+      setIsReferDropdownOpen(false);
+      toast.success('Lead referred to Residential (New Pool)');
+    } catch (err: any) {
+      toast.error('Failed to refer to Residential: ' + err.message);
+    }
+  };
+
   const handleReferToBD = async () => {
     if (!lead || !profile) return;
     try {
@@ -2688,8 +2710,8 @@ function LeadDetailsV2Content() {
                   {isReferDropdownOpen && (
                     <div className="absolute top-full mt-1 left-0 w-48 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-50">
                       {!lead.company && (
-                        <button 
-                          onClick={() => { setIsReferModalOpen(true); setIsReferDropdownOpen(false); }}
+                        <button
+                          onClick={handleReferToResidential}
                           className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50 hover:text-indigo-600 font-medium"
                         >
                           Refer to Residential

@@ -12,6 +12,7 @@ import { QualifyLeadModal } from '@/components/QualifyLeadModal';
 import { useAuthStore } from '@/store/authStore';
 import { GoogleCalendar } from '@/components/dashboard/GoogleCalendar';
 import { motion, AnimatePresence } from 'framer-motion';
+import ResidentialKanban from './components/ResidentialKanban';
 
 // Helper function to get initials for avatar
 const getInitials = (name: string) => {
@@ -36,6 +37,24 @@ import { useDivisionStore } from '@/store/divisionStore';
 function LeadProcessingContent() {
   const { profile } = useAuthStore();
   const { activeDivisionId } = useDivisionStore();
+  const [activeDivisionName, setActiveDivisionName] = useState<string>('');
+
+  useEffect(() => {
+    const fetchDivisionName = async () => {
+      if (profile?.role === 'super_admin' && activeDivisionId !== 'all') {
+        const { data } = await supabase.from('divisions').select('name').eq('id', activeDivisionId).single();
+        setActiveDivisionName(data?.name || '');
+      } else if (profile?.divisions?.name) {
+        setActiveDivisionName(profile.divisions.name);
+      } else {
+        setActiveDivisionName('');
+      }
+    };
+    fetchDivisionName();
+  }, [profile, activeDivisionId]);
+
+  const isResidentialView = profile?.role === 'Residential Sales' || (profile?.role === 'super_admin' && activeDivisionName?.toLowerCase() === 'open energy residential');
+
   const router = useRouter();
   const searchParams = useSearchParams();
 
@@ -332,6 +351,10 @@ function LeadProcessingContent() {
       setIsDeleting(false);
     }
   };
+
+  if (isResidentialView) {
+    return <ResidentialKanban />;
+  }
 
   return (
     <div className="font-sans text-gray-900 pb-12">

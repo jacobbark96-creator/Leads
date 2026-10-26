@@ -808,14 +808,15 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                         ]
                       },
                       { id: 'map', label: 'Map (Global)' },
-                      { 
-                        id: 'staff', 
+                      {
+                        id: 'staff',
                         label: 'Staff Hub (Dashboard)',
                         subTabs: [
                           { id: 'staff/performance', label: 'Performance Card' },
                           { id: 'staff/monitoring', label: 'Rep Monitoring' },
                           { id: 'staff/news', label: 'News Panel' },
-                          { id: 'staff/tasks', label: 'Tasks Panel' }
+                          { id: 'staff/tasks', label: 'Tasks Panel' },
+                          { id: 'resi_notifications', label: 'New Resi Notifications' }
                         ]
                       }
                     ].map(section => (

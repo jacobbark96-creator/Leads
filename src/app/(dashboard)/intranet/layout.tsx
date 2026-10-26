@@ -6,7 +6,7 @@ import {
   Home, Database, Map as MapIcon, BookOpen, 
   Bell, Mail, ChevronDown, DollarSign, Banknote, 
   Award, LineChart, Folder, ExternalLink, MessageSquare, FileText,
-  Briefcase
+  Briefcase, PhoneCall
 } from 'lucide-react';
 import { ProtectedRoute } from '../../../components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
@@ -27,6 +27,7 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
     { name: 'Grants Info', path: '/intranet/grants', icon: Award, id: 'intranet/grants' },
     { name: 'Tracker', path: '/intranet/tracker', icon: LineChart, id: 'intranet/tracker' },
     { name: 'Resources', path: '/intranet/resources', icon: Folder, id: 'intranet/resources' },
+    { name: 'Example Calls', path: '/intranet/example-calls', icon: PhoneCall, id: 'intranet/example-calls' },
     { name: 'Careers', path: '/intranet/careers', icon: Briefcase, id: 'intranet/careers' },
     { name: 'Calculator', path: '/intranet/commission-calculator', icon: LineChart, id: 'intranet/commission-calculator' },
   ].filter(tab => {

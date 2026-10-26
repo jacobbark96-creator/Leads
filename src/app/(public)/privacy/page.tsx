@@ -46,7 +46,7 @@ export default function PrivacyPolicy() {
             We only share information with your consent, to comply with laws, to provide you with services, to protect your rights, or to fulfill business obligations. Specifically, we may need to process your data or share your personal information in the following situations:
           </p>
           <ul>
-            <li><strong>Lead Generation:</strong> When a lead is purchased by a contractor, the specific contact information and address of the lead is shared exclusively with that contractor.</li>
+            <li><strong>Lead Generation:</strong> When a lead is purchased by a contractor, the specific contact information and address of the lead is provided exclusively to that contractor.</li>
             <li><strong>Service Providers:</strong> We may share your data with third-party vendors, service providers, contractors, or agents who perform services for us or on our behalf and require access to such information to do that work (e.g., payment processing via Stripe, communication via Twilio).</li>
           </ul>
 

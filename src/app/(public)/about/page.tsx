@@ -64,7 +64,7 @@ export default function About() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               {[
-                'Exclusive, never-shared leads',
+                '100% Exclusive leads',
                 'Real-time delivery to your CRM',
                 'Pay only for what you need',
                 'Take the guesswork out of quality'

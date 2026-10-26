@@ -33,7 +33,7 @@ export default function TermsOfService() {
           </p>
           <ul>
             <li><strong>Pay-As-You-Go:</strong> All leads are billed individually at the time of purchase unless utilizing account credits or agreed bulk-pricing arrangements.</li>
-            <li><strong>Exclusivity:</strong> Leads are sold on a strict exclusivity basis according to our stated marketplace policies (e.g., Exclusive leads are sold to only one contractor; Shared leads are sold to a maximum of 3 contractors).</li>
+            <li><strong>Exclusivity:</strong> Leads are sold on a strict exclusivity basis according to our stated marketplace policies (i.e., Exclusive leads are sold to only one contractor).</li>
             <li><strong>Refunds & Replacements:</strong> Refunds or lead replacements are handled on a case-by-case basis strictly if the provided contact information is definitively invalid or fraudulent, subject to verification by the Openlead QA team.</li>
           </ul>
 

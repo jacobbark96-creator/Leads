@@ -71,7 +71,7 @@ export default function Morals() {
             
             <h3 className="text-2xl font-bold mb-4 text-white">Absolute Transparency</h3>
             <p className="text-slate-400 leading-relaxed text-lg">
-              No hidden fees, no shared leads disguised as exclusive. You see exactly what you pay for and exactly what you get.
+              No hidden fees, no subscriptions disguised as exclusivity. You see exactly what you pay for and exactly what you get.
             </p>
           </div>
 

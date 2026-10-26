@@ -86,6 +86,7 @@ export interface Lead {
   id: string;
   client_id: string | null;
   category_id: string | null;
+  categories?: { name: string } | null;
   subcategory_id: string | null;
   name: string;
   phone: string;

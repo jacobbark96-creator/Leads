@@ -67,6 +67,8 @@ function QualifiedLeadsContent() {
   const [mainFilter, setMainFilter] = useState<'marketed' | 'qualified' | 'sold' | 'sales'>('qualified');
   const [isFilterDropdownOpen, setIsFilterDropdownOpen] = useState(false);
   const [leadToPause, setLeadToPause] = useState<Lead | null>(null);
+  const [leadToDuplicate, setLeadToDuplicate] = useState<Lead | null>(null);
+  const [isDuplicating, setIsDuplicating] = useState(false);
 
   const PAGE_SIZE = 25;
   const [debouncedSearchQuery, setDebouncedSearchQuery] = useState(searchQuery);
@@ -111,7 +113,7 @@ function QualifiedLeadsContent() {
 
       let query = supabase
         .from('leads')
-        .select('*, clients(company_name, contact_name)')
+        .select('*, clients(company_name, contact_name), categories!category_id(name)')
         .order('qualified_at', { ascending: false, nullsFirst: false })
         .range(pageNumber * PAGE_SIZE, (pageNumber + 1) * PAGE_SIZE);
 
@@ -327,6 +329,57 @@ function QualifiedLeadsContent() {
       newSelected.delete(id);
     }
     setSelectedLeads(newSelected);
+  };
+
+  const handleDuplicateAsbestos = async () => {
+    if (!leadToDuplicate) return;
+    try {
+      setIsDuplicating(true);
+      
+      // Get the asbestos category ID
+      const { data: categoryData } = await supabase
+        .from('categories')
+        .select('id')
+        .ilike('name', '%asbestos%')
+        .single();
+        
+      const asbestosCategoryId = categoryData?.id;
+
+      // Prepare duplicate lead data
+      const duplicateData: any = { ...leadToDuplicate };
+      delete duplicateData.id;
+      delete duplicateData.created_at;
+      delete duplicateData.clients;
+      delete duplicateData.categories;
+      
+      duplicateData.name = `${duplicateData.name} (ASBESTOS)`;
+      if (duplicateData.company) {
+        duplicateData.company = `${duplicateData.company} (ASBESTOS)`;
+      }
+      if (asbestosCategoryId) {
+        duplicateData.category_id = asbestosCategoryId;
+      }
+      
+      const { data: newLead, error } = await supabase
+        .from('leads')
+        .insert([duplicateData])
+        .select()
+        .single();
+        
+      if (error) throw error;
+      
+      toast.success('Lead duplicated successfully!');
+      
+      // Navigate to the new lead details page
+      window.location.href = `/sales-crm/lead-v2?id=${newLead.id}&tab=qualified`;
+      
+    } catch (error: any) {
+      toast.error('Failed to duplicate lead');
+      console.error(error);
+    } finally {
+      setIsDuplicating(false);
+      setLeadToDuplicate(null);
+    }
   };
 
   const handleDeleteSelected = async () => {
@@ -665,8 +718,8 @@ function QualifiedLeadsContent() {
                   </>
                 ) : (
                   <>
+                    <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Property</th>
                     <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Type</th>
-                    <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Location</th>
                     <th className="py-2.5 px-4 text-[10px] font-bold text-gray-500 uppercase tracking-wider text-left">Qualified</th>
                   </>
                 )}
@@ -684,9 +737,18 @@ function QualifiedLeadsContent() {
               ) : leads.length > 0 ? (
                 leads.map((lead) => {
                   const isSelected = selectedLeads.has(lead.id);
+                  const categoryName = lead.categories?.name?.toLowerCase() || '';
+                  const isSolar = categoryName.includes('solar');
+                  const isAsbestosCategory = categoryName.includes('asbestos');
+                  const hasAsbestosRoof = lead.roof_material?.toLowerCase().includes('asbestos');
+
+                  let iconColorClass = lead.building_type === 'Residential' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600';
+                  if (isSolar) iconColorClass = 'bg-orange-100 text-orange-600';
+                  else if (isAsbestosCategory) iconColorClass = 'bg-sky-100 text-sky-600';
+
                   return (
-                    <tr 
-                      key={lead.id} 
+                    <tr
+                      key={lead.id}
                       className={`transition-colors group hover:bg-gray-50/80 ${isSelected ? 'bg-blue-50/30' : 'bg-white'}`}
                     >
                       <td className="py-3 px-4 text-center">
@@ -699,11 +761,26 @@ function QualifiedLeadsContent() {
                           />
                         )}
                       </td>
-                      
+
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${lead.building_type === 'Residential' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
-                            {lead.building_type === 'Residential' ? <User className="w-3.5 h-3.5" /> : <Building className="w-3.5 h-3.5" />}
+                          <div className="relative">
+                            <div className={`w-6 h-6 rounded-md flex items-center justify-center shrink-0 ${iconColorClass}`}>
+                              {lead.building_type === 'Residential' ? <User className="w-3.5 h-3.5" /> : <Building className="w-3.5 h-3.5" />}
+                            </div>
+                            {hasAsbestosRoof && (
+                              <button 
+                                onClick={(e) => {
+                                  e.preventDefault();
+                                  e.stopPropagation();
+                                  setLeadToDuplicate(lead);
+                                }}
+                                title="Create Asbestos Lead"
+                                className="absolute -top-1.5 -right-1.5 w-4 h-4 bg-red-500 text-white text-[9px] font-black rounded-full flex items-center justify-center hover:bg-red-600 transition-colors shadow-sm"
+                              >
+                                A
+                              </button>
+                            )}
                           </div>
                           <div className="flex flex-col">
                             <a 
@@ -747,11 +824,19 @@ function QualifiedLeadsContent() {
                           </td>
                           
                           <td className="py-3 px-4">
-                            <div className="flex items-center gap-1 text-xs text-gray-600">
-                              <span className="truncate max-w-[130px]" title={lead.location || 'Unknown'}>
-                                {lead.location || 'Unknown'}
+                            {isSolar ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-orange-100 text-orange-800 border border-orange-200 uppercase tracking-wider">
+                                Solar
                               </span>
-                            </div>
+                            ) : isAsbestosCategory ? (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-sky-100 text-sky-800 border border-sky-200 uppercase tracking-wider">
+                                Asbestos
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center px-2 py-0.5 rounded text-[9px] font-bold bg-gray-100 text-gray-600 border border-gray-200 uppercase tracking-wider">
+                                {categoryName || 'Unknown'}
+                              </span>
+                            )}
                           </td>
                           
                           <td className="py-3 px-4">
@@ -1149,6 +1234,50 @@ function QualifiedLeadsContent() {
                 >
                   Cancel
                 </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Duplicate Asbestos Lead Modal */}
+      <AnimatePresence>
+        {leadToDuplicate && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gray-900/20 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="bg-white rounded-2xl shadow-xl w-full max-w-md overflow-hidden"
+            >
+              <div className="p-6">
+                <div className="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mb-4 mx-auto">
+                  <span className="text-red-600 font-black text-xl">A</span>
+                </div>
+                <h3 className="text-lg font-black text-center text-gray-900 mb-2">Create Asbestos Lead</h3>
+                <p className="text-sm text-gray-500 text-center mb-6">
+                  Are you sure you want to create an asbestos lead from <strong>{leadToDuplicate.company || leadToDuplicate.name}</strong>?
+                  This will create a completely new lead with "(ASBESTOS)" appended to the name.
+                </p>
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setLeadToDuplicate(null)}
+                    className="flex-1 px-4 py-2 text-sm font-bold text-gray-700 bg-gray-100 hover:bg-gray-200 rounded-xl transition-colors"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    onClick={handleDuplicateAsbestos}
+                    disabled={isDuplicating}
+                    className="flex-1 px-4 py-2 text-sm font-bold text-white bg-red-600 hover:bg-red-700 rounded-xl transition-colors flex justify-center items-center"
+                  >
+                    {isDuplicating ? (
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                    ) : (
+                      'Create Lead'
+                    )}
+                  </button>
+                </div>
               </div>
             </motion.div>
           </div>

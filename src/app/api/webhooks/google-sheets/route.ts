@@ -32,6 +32,7 @@ export async function POST(req: Request) {
         company: company || '',
         lead_source: source || 'Facebook',
         building_type: 'Residential', // Forces it into the Residential Kanban
+        division_id: 'c59d862c-8379-47f8-a6ed-adb64104a9b9', // Open Energy residential
         status: 'new' // Drops it into the "New" column
       })
       .select('id')

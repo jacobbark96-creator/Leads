@@ -1,0 +1,33 @@
+CREATE TABLE IF NOT EXISTS public.example_calls (
+    id UUID DEFAULT uuid_generate_v4() PRIMARY KEY,
+    created_at TIMESTAMPTZ DEFAULT NOW(),
+    name TEXT NOT NULL,
+    description TEXT,
+    rep_name TEXT NOT NULL,
+    audio_url TEXT NOT NULL,
+    uploaded_by UUID REFERENCES public.users(id)
+);
+
+ALTER TABLE public.example_calls ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Everyone can read example_calls" ON public.example_calls FOR SELECT USING (true);
+CREATE POLICY "Super admins can insert example_calls" ON public.example_calls FOR INSERT WITH CHECK (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role = 'super_admin')
+);
+CREATE POLICY "Super admins can delete example_calls" ON public.example_calls FOR DELETE USING (
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role = 'super_admin')
+);
+
+INSERT INTO storage.buckets (id, name, public) 
+VALUES ('example_calls', 'example_calls', true)
+ON CONFLICT (id) DO NOTHING;
+
+CREATE POLICY "Public Access" ON storage.objects FOR SELECT USING (bucket_id = 'example_calls');
+CREATE POLICY "Super admin upload" ON storage.objects FOR INSERT WITH CHECK (
+    bucket_id = 'example_calls' AND 
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role = 'super_admin')
+);
+CREATE POLICY "Super admin delete" ON storage.objects FOR DELETE USING (
+    bucket_id = 'example_calls' AND 
+    EXISTS (SELECT 1 FROM public.users WHERE users.id = auth.uid() AND users.role = 'super_admin')
+);

@@ -35,6 +35,10 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
     if (tab.id === 'intranet/commission-calculator') {
       return profile?.role === 'admin' || profile?.role === 'super_admin';
     }
+    // Example Calls is visible to everyone
+    if (tab.id === 'intranet/example-calls') {
+      return true;
+    }
     return !['rep', 'growth_manager'].includes(profile?.role || '') || profile?.permissions?.includes(tab.id);
   });
 

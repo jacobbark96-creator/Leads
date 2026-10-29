@@ -2211,6 +2211,69 @@ function LeadDetailsV2Content() {
     }
   };
 
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (!e.target.files || e.target.files.length === 0 || !lead || !profile) return;
+    const file = e.target.files[0];
+    
+    try {
+      setUploadingFile(true);
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${lead.id}/${Date.now()}_${Math.random().toString(36).substring(7)}.${fileExt}`;
+      
+      const { error: uploadError } = await supabase.storage
+        .from('lead_documents')
+        .upload(fileName, file);
+
+      if (uploadError) {
+        if (uploadError.message.includes('bucket not found')) {
+           toast.error('Storage bucket "lead_documents" is missing in Supabase.');
+           setUploadingFile(false);
+           return;
+        }
+        throw uploadError;
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('lead_documents')
+        .getPublicUrl(fileName);
+
+      const fileType = 'audio';
+
+      const { data: newFile, error: dbError } = await supabase
+        .from('files')
+        .insert([{
+          lead_id: lead.id,
+          uploader_id: profile.id,
+          file_name: file.name,
+          file_url: publicUrl,
+          file_type: fileType,
+          file_size: file.size
+        }])
+        .select()
+        .single();
+
+      if (dbError) throw dbError;
+
+      setFiles(prev => [newFile, ...prev]);
+      
+      // Also log it in notes
+      await supabase.from('lead_notes').insert([{
+        lead_id: lead.id,
+        user_id: profile.id,
+        author_name: profile.name,
+        content: `🎧 Uploaded a call recording: ${file.name}`
+      }]);
+      
+      toast.success('Audio file uploaded successfully');
+      router.refresh();
+    } catch (error: any) {
+      toast.error('Failed to upload audio: ' + error.message);
+    } finally {
+      setUploadingFile(false);
+      e.target.value = '';
+    }
+  };
+
   const deleteFile = async (fileId: string) => {
     try {
       const { error } = await supabase
@@ -3017,8 +3080,8 @@ function LeadDetailsV2Content() {
 
 
             {/* 4. FILES & DOCUMENTS CARD */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 h-auto md:flex-1">
-              <div className="flex items-center justify-between mb-4">
+            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex flex-col h-1/2 min-h-[200px]">
+              <div className="flex items-center justify-between mb-4 shrink-0">
                 <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">Files & Documents</h3>
                 <label className="text-blue-600 hover:text-blue-700 bg-blue-50 p-1 rounded-md transition-colors cursor-pointer relative">
                   <Plus className="w-3.5 h-3.5" />
@@ -3026,11 +3089,11 @@ function LeadDetailsV2Content() {
                   {uploadingFile && <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>}
                 </label>
               </div>
-              <div className="flex flex-col gap-3">
-                {files && files.length > 0 ? files.map(file => {
+              <div className="flex flex-col gap-3 overflow-y-auto min-h-0 custom-scrollbar pr-1">
+                {files && files.filter(f => f.file_type !== 'audio' && !f.file_name?.toLowerCase().match(/\.(mp3|wav|m4a|ogg)$/)).length > 0 ? files.filter(f => f.file_type !== 'audio' && !f.file_name?.toLowerCase().match(/\.(mp3|wav|m4a|ogg)$/)).map(file => {
                   const isPdf = file.file_type === 'pdf' || file.file_name?.toLowerCase().includes('.pdf');
                   return (
-                    <div key={file.id} className="flex items-center justify-between p-2 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors group">
+                    <div key={file.id} className="flex items-center justify-between p-2 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors group shrink-0">
                       <div className="flex items-center gap-2">
                         <div className={`w-8 h-8 rounded flex items-center justify-center relative overflow-hidden ${isPdf ? 'bg-red-50 text-red-600' : 'bg-blue-50 text-blue-600'}`}>
                           <svg className="w-4 h-4 group-hover:opacity-0 transition-opacity" fill="currentColor" viewBox="0 0 24 24">
@@ -3049,11 +3112,11 @@ function LeadDetailsV2Content() {
                           <span className="text-[10px] text-gray-500 truncate">{new Date(file.created_at).toLocaleDateString()}</span>
                         </div>
                       </div>
-                      <a href={file.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-xs font-medium px-2 py-1 rounded hover:bg-blue-50">View</a>
+                      <a href={file.file_url} target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:text-blue-800 text-xs font-medium px-2 py-1 rounded hover:bg-blue-50 shrink-0">View</a>
                     </div>
                   );
                 }) : (
-                  <div className="flex flex-col items-center justify-center py-6 border-2 border-dashed border-gray-100 rounded-xl">
+                  <div className="flex flex-col items-center justify-center py-6 border-2 border-dashed border-gray-100 rounded-xl shrink-0">
                     <p className="text-xs text-gray-400 mb-3">No files uploaded yet.</p>
                     <button 
                       onClick={() => {
@@ -3067,7 +3130,48 @@ function LeadDetailsV2Content() {
                   </div>
                 )}
               </div>
+            </div>
+
+            {/* 5. CALLS CARD */}
+            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex flex-col h-1/2 min-h-[200px]">
+              <div className="flex items-center justify-between mb-4 shrink-0">
+                <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">Calls</h3>
+                <label className="text-blue-600 hover:text-blue-700 bg-blue-50 p-1 rounded-md transition-colors cursor-pointer relative">
+                  <Plus className="w-3.5 h-3.5" />
+                  <input type="file" accept="audio/*" onChange={handleAudioUpload} disabled={uploadingFile} className="hidden" />
+                  {uploadingFile && <span className="absolute -top-1 -right-1 flex h-2 w-2"><span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span><span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span></span>}
+                </label>
               </div>
+              <div className="flex flex-col gap-3 overflow-y-auto min-h-0 custom-scrollbar pr-1">
+                {files && files.filter(f => f.file_type === 'audio' || f.file_name?.toLowerCase().match(/\.(mp3|wav|m4a|ogg)$/)).length > 0 ? files.filter(f => f.file_type === 'audio' || f.file_name?.toLowerCase().match(/\.(mp3|wav|m4a|ogg)$/)).map(file => {
+                  return (
+                    <div key={file.id} className="flex flex-col p-3 rounded-lg border border-gray-100 hover:bg-gray-50 transition-colors group shrink-0 gap-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2">
+                          <div className="w-8 h-8 rounded flex items-center justify-center relative overflow-hidden bg-emerald-50 text-emerald-600">
+                            <svg className="w-4 h-4 group-hover:opacity-0 transition-opacity" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z" />
+                            </svg>
+                            <button onClick={(e) => { e.preventDefault(); e.stopPropagation(); deleteFile(file.id); }} className="absolute inset-0 flex items-center justify-center opacity-0 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-red-100 text-red-600 hover:text-red-700 hover:bg-red-200 z-10" title="Delete call">
+                              <Trash2 className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <div className="flex flex-col min-w-0 max-w-[150px]">
+                            <span className="text-xs font-medium text-gray-900 truncate" title={file.file_name}>{file.file_name}</span>
+                            <span className="text-[10px] text-gray-500 truncate">{new Date(file.created_at).toLocaleDateString()}</span>
+                          </div>
+                        </div>
+                      </div>
+                      <audio controls src={file.file_url} className="w-full h-8" />
+                    </div>
+                  );
+                }) : (
+                  <div className="flex flex-col items-center justify-center py-6 border-2 border-dashed border-gray-100 rounded-xl shrink-0">
+                    <p className="text-xs text-gray-400 mb-3">No calls uploaded yet.</p>
+                  </div>
+                )}
+              </div>
+            </div>
             </aside>
           
           {/* CENTER CONTENT AREA */}

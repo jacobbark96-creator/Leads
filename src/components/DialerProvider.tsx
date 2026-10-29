@@ -570,7 +570,7 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
           destinationNumber: cleanNum,
           destination: cleanNum,
           callerName: profile?.name || 'OpenLead',
-          callerNumber: callerNumber,
+          callerNumber: callerNumber || profile?.telnyx_number || '',
           clientState: encodeURIComponent(JSON.stringify({ entityId, userName, entityType })),
           audio: true,
           video: false
@@ -642,10 +642,10 @@ export const DialerProvider: React.FC<{ children: React.ReactNode }> = ({ childr
       const call = await currentDevice.connect({
         params: {
           To: String(cleanNum || ''),
-          CallerId: String(callerNumber || ''),
+          CallerId: String(callerNumber || profile?.twilio_number || ''),
           EntityId: String(entityId || ''),
-          UserName: String(userName || profile.name || ''),
-          UserId: String(profile.id || ''),
+          UserName: String(userName || profile?.name || ''),
+          UserId: String(profile?.id || ''),
           EntityType: String(entityType || 'lead')
         }
       });

@@ -50,8 +50,8 @@ export default function ResidentialOverview() {
     try {
       const [{ data: leadsData }, { data: installersData }, { data: regionsData }] = await Promise.all([
         supabase.from('leads')
-          .select('*, installers(name), regions(name)')
-          .in('status', ['new', ...COLUMNS.map(c => c.id)])
+          .select('*, installers(name), regions(name), users!assigned_to(name)')
+          .in('status', ['new', 'potential', ...COLUMNS.map(c => c.id)])
           .eq('building_type', 'Residential')
           .eq('division_id', activeDivisionId),
         supabase.from('installers').select('*'),
@@ -218,7 +218,7 @@ export default function ResidentialOverview() {
       <div className="flex-1 overflow-x-auto overflow-y-hidden p-4">
         <div className="flex gap-3 h-full min-w-max">
           {COLUMNS.map(col => {
-            const colLeads = leads.filter(l => col.id === 'fresh' ? (l.status === 'fresh' || l.status === 'new') : l.status === col.id);
+            const colLeads = leads.filter(l => col.id === 'fresh' ? (l.status === 'fresh' || l.status === 'new' || l.status === 'potential') : l.status === col.id);
             return (
               <div 
                 key={col.id}
@@ -252,6 +252,17 @@ export default function ResidentialOverview() {
                       {lead.regions?.name && (
                         <div className="mt-1.5 inline-flex items-center px-1.5 py-0.5 rounded text-[9px] font-bold bg-blue-50 text-blue-700 uppercase tracking-wider">
                           {lead.regions.name}
+                        </div>
+                      )}
+                      
+                      {lead.users?.name && (
+                        <div className="mt-2 flex justify-end">
+                          <div 
+                            className="w-5 h-5 rounded-full bg-gray-100 text-gray-700 flex items-center justify-center text-[10px] font-bold border border-gray-200"
+                            title={`Assigned to ${lead.users.name}`}
+                          >
+                            {lead.users.name.charAt(0).toUpperCase()}
+                          </div>
                         </div>
                       )}
                     </div>

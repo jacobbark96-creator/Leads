@@ -38,8 +38,10 @@ export default function ResidentialOverview() {
   ];
 
   useEffect(() => {
-    fetchData();
-  }, [selectedRegion, selectedInstaller]);
+    if (activeDivisionId) {
+      fetchData();
+    }
+  }, [selectedRegion, selectedInstaller, activeDivisionId]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -48,7 +50,8 @@ export default function ResidentialOverview() {
         supabase.from('leads')
           .select('*, installers(name), regions(name)')
           .in('status', ['new', ...COLUMNS.map(c => c.id)])
-          .eq('building_type', 'Residential'),
+          .eq('building_type', 'Residential')
+          .eq('division_id', activeDivisionId),
         supabase.from('installers').select('*'),
         supabase.from('regions').select('*')
       ]);

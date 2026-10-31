@@ -60,10 +60,18 @@ export default function ResidentialOverview() {
 
       let filteredLeads = leadsData || [];
       if (selectedRegion !== 'all') {
-        filteredLeads = filteredLeads.filter(l => l.region_id === selectedRegion);
+        if (selectedRegion === 'none') {
+          filteredLeads = filteredLeads.filter(l => !l.region_id);
+        } else {
+          filteredLeads = filteredLeads.filter(l => l.region_id === selectedRegion);
+        }
       }
       if (selectedInstaller !== 'all') {
-        filteredLeads = filteredLeads.filter(l => l.installer_id === selectedInstaller);
+        if (selectedInstaller === 'none') {
+          filteredLeads = filteredLeads.filter(l => !l.installer_id);
+        } else {
+          filteredLeads = filteredLeads.filter(l => l.installer_id === selectedInstaller);
+        }
       }
 
       setLeads(filteredLeads);
@@ -168,6 +176,7 @@ export default function ResidentialOverview() {
               className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:ring-1 focus:ring-blue-500"
             >
               <option value="all">All Regions</option>
+              <option value="none">No Active Region</option>
               {regions.map(r => (
                 <option key={r.id} value={r.id}>{r.name}</option>
               ))}
@@ -178,6 +187,7 @@ export default function ResidentialOverview() {
               className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:ring-1 focus:ring-blue-500"
             >
               <option value="all">All Installers</option>
+              <option value="none">No Active Installer</option>
               {installers.map(i => (
                 <option key={i.id} value={i.id}>{i.name}</option>
               ))}

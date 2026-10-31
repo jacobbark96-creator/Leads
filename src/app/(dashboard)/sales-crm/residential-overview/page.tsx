@@ -236,7 +236,7 @@ export default function ResidentialOverview() {
                       key={lead.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, lead)}
-                      onClick={() => router.push(`/sales-crm/leads/${lead.id}`)}
+                      onClick={() => router.push(`/sales-crm/lead-v2?id=${lead.id}`)}
                       className="bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                     >
                       <div className="flex items-start justify-between mb-1.5">

@@ -52,7 +52,8 @@ export default function ResidentialOverview() {
         supabase.from('leads')
           .select('*, installers(name), regions(name), users!assigned_to(name)')
           .in('status', ['new', 'potential', ...COLUMNS.map(c => c.id)])
-          .eq('division_id', activeDivisionId),
+          .eq('division_id', activeDivisionId)
+          .neq('is_marketed', true), // Ensure we don't pull pure marketplace/commercial leads by mistake
         supabase.from('installers').select('*'),
         supabase.from('regions').select('*')
       ]);

@@ -45,7 +45,10 @@ export default function ResidentialOverview() {
     setLoading(true);
     try {
       const [{ data: leadsData }, { data: installersData }, { data: regionsData }] = await Promise.all([
-        supabase.from('leads').select('*, installers(name), regions(name)').in('status', COLUMNS.map(c => c.id)),
+        supabase.from('leads')
+          .select('*, installers(name), regions(name)')
+          .in('status', COLUMNS.map(c => c.id))
+          .eq('building_type', 'Residential'),
         supabase.from('installers').select('*'),
         supabase.from('regions').select('*')
       ]);

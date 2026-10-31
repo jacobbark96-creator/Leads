@@ -24,6 +24,9 @@ export default function ResidentialOverview() {
 
   // Modal
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalMode, setModalMode] = useState<'add' | 'edit'>('add');
+  const [editRegionId, setEditRegionId] = useState('');
+  
   const [newRegionName, setNewRegionName] = useState('');
   const [newInstallerName, setNewInstallerName] = useState('');
   const [postcodePrefixes, setPostcodePrefixes] = useState('');
@@ -44,6 +47,23 @@ export default function ResidentialOverview() {
       fetchData();
     }
   }, [selectedRegion, selectedInstaller, activeDivisionId]);
+
+  useEffect(() => {
+    if (modalMode === 'edit' && editRegionId) {
+      const r = regions.find(reg => reg.id === editRegionId);
+      if (r) {
+        setNewRegionName(r.name);
+        setPostcodePrefixes(r.postcode_prefixes?.join(', ') || '');
+        const i = installers.find(inst => inst.id === r.installer_id);
+        setNewInstallerName(i?.name || '');
+      }
+    } else if (modalMode === 'add') {
+      setNewRegionName('');
+      setNewInstallerName('');
+      setPostcodePrefixes('');
+      setEditRegionId('');
+    }
+  }, [modalMode, editRegionId, regions, installers]);
 
   const fetchData = async () => {
     setLoading(true);
@@ -108,41 +128,72 @@ export default function ResidentialOverview() {
     }
   };
 
-  const handleAddRegionInstaller = async () => {
+  const handleSaveRegionInstaller = async () => {
     if (!newRegionName || !newInstallerName || !postcodePrefixes) {
       toast.error('Please fill in all fields');
       return;
     }
+    
+    if (modalMode === 'edit' && !editRegionId) {
+      toast.error('Please select a region to edit');
+      return;
+    }
 
     try {
-      // 1. Create installer
-      const { data: installerData, error: instError } = await supabase
-        .from('installers')
-        .insert([{ name: newInstallerName }])
-        .select()
-        .single();
-        
-      if (instError) throw instError;
-
-      // 2. Create Region
       const prefixes = postcodePrefixes.split(',').map(p => p.trim().toUpperCase());
-      const { data: regionData, error: regError } = await supabase
-        .from('regions')
-        .insert([{ 
-          name: newRegionName, 
-          installer_id: installerData.id,
-          postcode_prefixes: prefixes
-        }])
-        .select()
-        .single();
+      
+      if (modalMode === 'add') {
+        // 1. Create installer
+        const { data: installerData, error: instError } = await supabase
+          .from('installers')
+          .insert([{ name: newInstallerName }])
+          .select()
+          .single();
+          
+        if (instError) throw instError;
 
-      if (regError) throw regError;
+        // 2. Create Region
+        const { error: regError } = await supabase
+          .from('regions')
+          .insert([{ 
+            name: newRegionName, 
+            installer_id: installerData.id,
+            postcode_prefixes: prefixes
+          }]);
 
-      toast.success('Region and Installer added successfully!');
+        if (regError) throw regError;
+        toast.success('Region and Installer added successfully!');
+      } else {
+        // Edit Mode
+        const region = regions.find(r => r.id === editRegionId);
+        if (!region) throw new Error('Region not found');
+        
+        // 1. Update installer
+        const { error: instError } = await supabase
+          .from('installers')
+          .update({ name: newInstallerName })
+          .eq('id', region.installer_id);
+          
+        if (instError) throw instError;
+        
+        // 2. Update region
+        const { error: regError } = await supabase
+          .from('regions')
+          .update({
+            name: newRegionName,
+            postcode_prefixes: prefixes
+          })
+          .eq('id', region.id);
+          
+        if (regError) throw regError;
+        toast.success('Region and Installer updated successfully!');
+      }
+
       setIsModalOpen(false);
       setNewRegionName('');
       setNewInstallerName('');
       setPostcodePrefixes('');
+      setEditRegionId('');
       fetchData();
     } catch (err: any) {
       toast.error('Error: ' + err.message);
@@ -196,7 +247,7 @@ export default function ResidentialOverview() {
               onClick={() => setIsModalOpen(true)}
               className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium shrink-0"
             >
-              <Plus className="w-3.5 h-3.5" /> Add Region/Installer
+              <Plus className="w-3.5 h-3.5" /> Manage Regions
             </button>
           </div>
         </div>
@@ -292,9 +343,41 @@ export default function ResidentialOverview() {
               exit={{ opacity: 0, scale: 0.95 }}
               className="bg-white rounded-xl shadow-xl w-full max-w-md p-6"
             >
-              <h2 className="text-xl font-bold mb-4">Add Region & Installer</h2>
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="text-xl font-bold">Manage Regions</h2>
+                <div className="flex bg-gray-100 p-1 rounded-lg">
+                  <button 
+                    onClick={() => setModalMode('add')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${modalMode === 'add' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+                  >
+                    Add New
+                  </button>
+                  <button 
+                    onClick={() => setModalMode('edit')}
+                    className={`px-3 py-1 text-xs font-medium rounded-md transition-colors ${modalMode === 'edit' ? 'bg-white shadow-sm text-gray-900' : 'text-gray-500'}`}
+                  >
+                    Edit Existing
+                  </button>
+                </div>
+              </div>
               
               <div className="space-y-4">
+                {modalMode === 'edit' && (
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 mb-1">Select Region to Edit</label>
+                    <select
+                      value={editRegionId}
+                      onChange={(e) => setEditRegionId(e.target.value)}
+                      className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                    >
+                      <option value="">-- Select a Region --</option>
+                      {regions.map(r => (
+                        <option key={r.id} value={r.id}>{r.name}</option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">Region Name</label>
                   <input
@@ -338,10 +421,10 @@ export default function ResidentialOverview() {
                   Cancel
                 </button>
                 <button 
-                  onClick={handleAddRegionInstaller}
+                  onClick={handleSaveRegionInstaller}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700"
                 >
-                  Save & Assign
+                  {modalMode === 'add' ? 'Save & Assign' : 'Update Region'}
                 </button>
               </div>
             </motion.div>

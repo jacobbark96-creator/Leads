@@ -7,8 +7,10 @@ import { useDivisionStore } from '@/store/divisionStore';
 import { Loader2, Plus, GripVertical, Building, MapPin, Phone, Mail } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 
 export default function ResidentialOverview() {
+  const router = useRouter();
   const { profile } = useAuthStore();
   const { activeDivisionId } = useDivisionStore();
   const [loading, setLoading] = useState(true);
@@ -234,7 +236,8 @@ export default function ResidentialOverview() {
                       key={lead.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, lead)}
-                      className="bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-grab active:cursor-grabbing group"
+                      onClick={() => router.push(`/sales-crm/leads/${lead.id}`)}
+                      className="bg-white p-2.5 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
                     >
                       <div className="flex items-start justify-between mb-1.5">
                         <h4 className="font-semibold text-xs text-gray-900 line-clamp-1 pr-2">{lead.name}</h4>

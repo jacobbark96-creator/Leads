@@ -35,3 +35,14 @@
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
 }
+
+html, body {
+  overscroll-behavior-y: none;
+  -webkit-overflow-scrolling: touch;
+  touch-action: pan-x pan-y;
+}
+
+/* Make sure mobile tap highlight is transparent for app feel */
+* {
+  -webkit-tap-highlight-color: transparent;
+}

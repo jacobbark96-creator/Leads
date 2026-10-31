@@ -58,12 +58,23 @@ export const metadata: Metadata = {
     shortcut: '/openlead-favicon.svg',
     apple: '/openlead-favicon.svg',
   },
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Openlead',
+  },
+  formatDetection: {
+    telephone: false,
+  },
 };
 
 export const viewport = {
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
+  userScalable: false,
+  viewportFit: 'cover',
 };
 
 export default function RootLayout({

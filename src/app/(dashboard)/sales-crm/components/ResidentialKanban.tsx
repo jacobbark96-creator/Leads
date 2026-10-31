@@ -154,9 +154,9 @@ export default function ResidentialKanban() {
         <p className="text-sm text-gray-500 mt-1">Drag new leads to your assigned column to claim them.</p>
       </div>
 
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden">
+      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 overflow-hidden min-h-[500px]">
         {/* NEW COLUMN */}
-        <div className="flex flex-col bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+        <div className="flex flex-col bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden shadow-sm h-full">
           <div className="p-4 border-b border-gray-200 bg-white flex items-center justify-between">
             <div className="flex items-center gap-2">
               <div className="w-2.5 h-2.5 rounded-full bg-blue-500" />
@@ -177,8 +177,8 @@ export default function ResidentialKanban() {
         </div>
 
         {/* ASSIGNED COLUMN */}
-        <div 
-          className="flex flex-col bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden shadow-sm"
+        <div
+          className="flex flex-col bg-gray-50 rounded-2xl border border-gray-200 overflow-hidden shadow-sm h-full"
           onDragOver={handleDragOver}
           onDrop={(e) => handleDrop(e, 'assigned')}
         >

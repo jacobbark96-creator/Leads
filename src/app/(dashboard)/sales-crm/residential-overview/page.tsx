@@ -30,6 +30,9 @@ export default function ResidentialOverview() {
   const [newRegionName, setNewRegionName] = useState('');
   const [newInstallerName, setNewInstallerName] = useState('');
   const [postcodePrefixes, setPostcodePrefixes] = useState('');
+  
+  const [logoFile, setLogoFile] = useState<File | null>(null);
+  const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
   const COLUMNS = [
     { id: 'fresh', title: 'Fresh' },
@@ -56,12 +59,16 @@ export default function ResidentialOverview() {
         setPostcodePrefixes(r.postcode_prefixes?.join(', ') || '');
         const i = installers.find(inst => inst.id === r.installer_id);
         setNewInstallerName(i?.name || '');
+        setLogoPreview(i?.logo_url || null);
+        setLogoFile(null);
       }
     } else if (modalMode === 'add') {
       setNewRegionName('');
       setNewInstallerName('');
       setPostcodePrefixes('');
       setEditRegionId('');
+      setLogoPreview(null);
+      setLogoFile(null);
     }
   }, [modalMode, editRegionId, regions, installers]);
 
@@ -144,12 +151,33 @@ export default function ResidentialOverview() {
       
       let savedRegionId = '';
       let savedInstallerId = '';
+      let finalLogoUrl = null;
+
+      if (logoFile) {
+        const fileExt = logoFile.name.split('.').pop();
+        const fileName = `${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+        const { error: uploadError } = await supabase.storage
+          .from('installer_logos')
+          .upload(fileName, logoFile);
+          
+        if (uploadError) throw uploadError;
+        
+        const { data: publicUrlData } = supabase.storage
+          .from('installer_logos')
+          .getPublicUrl(fileName);
+          
+        finalLogoUrl = publicUrlData.publicUrl;
+      } else if (modalMode === 'edit' && editRegionId) {
+        const r = regions.find(reg => reg.id === editRegionId);
+        const i = installers.find(inst => inst.id === r?.installer_id);
+        finalLogoUrl = i?.logo_url || null;
+      }
 
       if (modalMode === 'add') {
         // 1. Create installer
         const { data: installerData, error: instError } = await supabase
           .from('installers')
-          .insert([{ name: newInstallerName }])
+          .insert([{ name: newInstallerName, logo_url: finalLogoUrl }])
           .select()
           .single();
           
@@ -181,7 +209,7 @@ export default function ResidentialOverview() {
         // 1. Update installer
         const { error: instError } = await supabase
           .from('installers')
-          .update({ name: newInstallerName })
+          .update({ name: newInstallerName, logo_url: finalLogoUrl })
           .eq('id', region.installer_id);
           
         if (instError) throw instError;
@@ -249,6 +277,8 @@ export default function ResidentialOverview() {
       setNewInstallerName('');
       setPostcodePrefixes('');
       setEditRegionId('');
+      setLogoFile(null);
+      setLogoPreview(null);
       fetchData();
     } catch (err: any) {
       toast.error('Error: ' + err.message);
@@ -257,7 +287,7 @@ export default function ResidentialOverview() {
 
   // Stats
   const totalLeads = leads.length;
-  const qualifiedLeads = leads.filter(l => l.status !== 'new' && l.status !== 'fresh' && l.status !== 'declined').length;
+  const qualifiedLeads = leads.filter(l => l.status !== 'new' && l.status !== 'fresh' && l.status !== 'potential' && l.status !== 'declined').length;
   const pitchedLeads = leads.filter(l => ['pitched', 'sold', 'sent to installer'].includes(l.status)).length;
   const soldLeads = leads.filter(l => ['sold', 'sent to installer'].includes(l.status)).length;
 
@@ -265,17 +295,34 @@ export default function ResidentialOverview() {
   const pitchRate = qualifiedLeads ? Math.round((pitchedLeads / qualifiedLeads) * 100) : 0;
   const salesRate = pitchedLeads ? Math.round((soldLeads / pitchedLeads) * 100) : 0;
 
+  const activeRegion = selectedRegion !== 'all' && selectedRegion !== 'none' 
+    ? regions.find(r => r.id === selectedRegion) 
+    : null;
+
+  const activeInstaller = activeRegion 
+    ? installers.find(i => i.id === activeRegion.installer_id) 
+    : null;
+
+  const displayLogo = activeInstaller?.logo_url || '/openlead-logo.png';
+
+  useEffect(() => {
+    // Prevent body scroll to lock the page, so only the columns scroll
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.body.style.overflow = 'auto';
+    };
+  }, []);
+
   if (loading) return <div className="p-8 flex justify-center"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>;
 
   return (
-    <div className="flex-1 flex flex-col h-screen bg-[#F9FAFB] overflow-hidden">
+    <div className="absolute top-0 lg:top-[80px] bottom-0 left-0 lg:left-[220px] right-0 flex flex-col bg-[#F9FAFB] overflow-hidden z-0">
       <div className="px-4 py-3 shrink-0 border-b border-gray-200 bg-white">
-        <div className="flex items-center justify-between mb-3">
-          <div>
-            <h1 className="text-lg font-bold text-gray-900">Residential Overview</h1>
-            <p className="text-xs text-gray-500">Manage all residential operations and installer assignments</p>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-3">
+          <div className="flex items-center justify-between">
+            <img src={displayLogo} alt="Logo" className="h-8 sm:h-10 object-contain" />
           </div>
-          <div className="flex items-center gap-3">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 sm:gap-3">
             <select
               value={selectedRegion}
               onChange={(e) => setSelectedRegion(e.target.value)}
@@ -308,7 +355,7 @@ export default function ResidentialOverview() {
         </div>
 
         {/* Stats Row */}
-        <div className="grid grid-cols-4 gap-3 mb-3">
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-3">
           <div className="bg-white px-3 py-2 rounded-lg border border-gray-200 shadow-sm flex items-center justify-between">
             <p className="text-xs font-medium text-gray-500">Total Leads</p>
             <p className="text-lg font-bold text-gray-900">{totalLeads}</p>
@@ -329,8 +376,8 @@ export default function ResidentialOverview() {
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-4">
-        <div className="flex gap-3 h-full min-w-max">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 no-scrollbar snap-x snap-mandatory">
+        <div className="flex gap-3 h-full min-w-max pb-4">
           {COLUMNS.map(col => {
             const colLeads = leads.filter(l => col.id === 'fresh' ? (l.status === 'fresh' || l.status === 'new' || l.status === 'potential') : l.status === col.id);
             return (
@@ -338,7 +385,7 @@ export default function ResidentialOverview() {
                 key={col.id}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, col.id)}
-                className="w-36 flex flex-col h-full bg-gray-50/50 rounded-lg border border-gray-200 shrink-0"
+                className="w-72 sm:w-36 flex flex-col h-full bg-gray-50/50 rounded-lg border border-gray-200 shrink-0 snap-center sm:snap-align-none"
               >
                 <div className="p-2 border-b border-gray-200 flex items-center justify-between shrink-0 bg-gray-50/80 rounded-t-lg">
                   <h3 className="font-bold text-gray-700 text-[11px] uppercase tracking-wider">{col.title}</h3>
@@ -453,6 +500,27 @@ export default function ResidentialOverview() {
                     placeholder="e.g. John Doe Solar"
                     className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Installer Logo</label>
+                  <div className="flex items-center gap-3">
+                    {logoPreview && (
+                      <img src={logoPreview} alt="Preview" className="h-10 object-contain rounded border border-gray-200" />
+                    )}
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files?.[0];
+                        if (file) {
+                          setLogoFile(file);
+                          setLogoPreview(URL.createObjectURL(file));
+                        }
+                      }}
+                      className="text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100"
+                    />
+                  </div>
                 </div>
 
                 <div>

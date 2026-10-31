@@ -412,7 +412,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
 
         {/* Main Content Area */}
-        <div className="flex-1 lg:pl-[220px] flex flex-col min-h-screen relative">
+        <div className="flex-1 lg:pl-[220px] flex flex-col min-h-screen relative pt-16 lg:pt-0">
           {/* Desktop Header */}
           <header className={`hidden lg:flex items-center justify-between px-8 relative mt-4 mb-2`}>
             <div className={`flex flex-col`}>
@@ -496,7 +496,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </header>
 
-          <main className="flex-1 w-full mx-auto p-4 sm:p-6 lg:p-8 lg:pt-4 overflow-x-hidden">
+          <main className={`flex-1 w-full mx-auto relative ${pathname === '/sales-crm/residential-overview' ? 'p-0 overflow-hidden' : 'p-4 sm:p-6 lg:p-8 lg:pt-4 overflow-x-hidden'}`}>
             {children}
           </main>
         </div>
@@ -833,7 +833,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </nav>
 
-      <main className={`flex-1 w-full mx-auto ${pathname?.startsWith('/staff') ? 'px-0 pt-0 pb-0' : 'max-w-7xl px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-12'}`}>
+      <main className={`flex-1 w-full mx-auto relative ${pathname === '/sales-crm/residential-overview' ? 'px-0 pt-0 pb-0 overflow-hidden' : (pathname?.startsWith('/staff') ? 'px-0 pt-0 pb-0' : 'max-w-7xl px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-12')}`}>
         {children}
       </main>
 

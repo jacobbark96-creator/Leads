@@ -1,0 +1,16 @@
+{
+  "name": "Openlead CRM",
+  "short_name": "Openlead",
+  "description": "High-Converting Exclusive Leads for Contractors",
+  "start_url": "/login",
+  "display": "standalone",
+  "background_color": "#F8FAFC",
+  "theme_color": "#ffffff",
+  "icons": [
+    {
+      "src": "/openlead-logo.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ]
+}

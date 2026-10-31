@@ -160,12 +160,34 @@ export default function ResidentialOverview() {
             <h1 className="text-lg font-bold text-gray-900">Residential Overview</h1>
             <p className="text-xs text-gray-500">Manage all residential operations and installer assignments</p>
           </div>
-          <button
-            onClick={() => setIsModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium"
-          >
-            <Plus className="w-3.5 h-3.5" /> Add Region/Installer
-          </button>
+          <div className="flex items-center gap-3">
+            <select
+              value={selectedRegion}
+              onChange={(e) => setSelectedRegion(e.target.value)}
+              className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="all">All Regions</option>
+              {regions.map(r => (
+                <option key={r.id} value={r.id}>{r.name}</option>
+              ))}
+            </select>
+            <select
+              value={selectedInstaller}
+              onChange={(e) => setSelectedInstaller(e.target.value)}
+              className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:ring-1 focus:ring-blue-500"
+            >
+              <option value="all">All Installers</option>
+              {installers.map(i => (
+                <option key={i.id} value={i.id}>{i.name}</option>
+              ))}
+            </select>
+            <button
+              onClick={() => setIsModalOpen(true)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 text-white rounded-lg hover:bg-blue-700 text-xs font-medium shrink-0"
+            >
+              <Plus className="w-3.5 h-3.5" /> Add Region/Installer
+            </button>
+          </div>
         </div>
 
         {/* Stats Row */}
@@ -186,30 +208,6 @@ export default function ResidentialOverview() {
             <p className="text-xs font-medium text-gray-500">Sales Rate</p>
             <p className="text-lg font-bold text-emerald-600">{salesRate}%</p>
           </div>
-        </div>
-
-        {/* Filters */}
-        <div className="flex items-center gap-3">
-          <select
-            value={selectedRegion}
-            onChange={(e) => setSelectedRegion(e.target.value)}
-            className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="all">All Regions</option>
-            {regions.map(r => (
-              <option key={r.id} value={r.id}>{r.name}</option>
-            ))}
-          </select>
-          <select
-            value={selectedInstaller}
-            onChange={(e) => setSelectedInstaller(e.target.value)}
-            className="px-2 py-1 border border-gray-300 rounded text-xs bg-white focus:ring-1 focus:ring-blue-500"
-          >
-            <option value="all">All Installers</option>
-            {installers.map(i => (
-              <option key={i.id} value={i.id}>{i.name}</option>
-            ))}
-          </select>
         </div>
       </div>
 

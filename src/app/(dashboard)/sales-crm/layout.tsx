@@ -139,6 +139,10 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
     sidebarItems.push({ id: 'sales-crm/archive', name: 'Archive', path: '/sales-crm/archive', icon: Archive });
   }
 
+  if (isOpenEnergyResidential && (profile?.role === 'super_admin' || profile?.is_residential_admin)) {
+    sidebarItems.push({ id: 'sales-crm/residential-overview', name: 'Residential Overview', path: '/sales-crm/residential-overview', icon: LayoutDashboard });
+  }
+
   // If on lead-v2 or calling-workspace, render exactly what was there (bypassing layout)
   if (pathname === '/sales-crm/lead-v2' || pathname === '/sales-crm/calling-workspace') {
     return <ProtectedRoute allowedRoles={['sales', 'admin', 'super_admin', 'rep', 'growth_manager', 'Residential Rep', 'Residential Sales', 'Commercial Sales']}>{children}</ProtectedRoute>;

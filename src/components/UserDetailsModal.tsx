@@ -64,7 +64,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     internal_notes: '',
     is_partner_plus: false,
     allowed_child_accounts: user.allowed_child_accounts || false,
-    whatsapp_enabled: user.whatsapp_enabled || false
+    whatsapp_enabled: user.whatsapp_enabled || false,
+    is_residential_admin: user.is_residential_admin || false
   });
 
   const [newDirectPassword, setNewDirectPassword] = useState('');
@@ -334,7 +335,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           current_trade_usage: formData.current_trade_usage,
           trade_limit_setting: formData.trade_limit_setting,
           allowed_child_accounts: formData.allowed_child_accounts,
-          whatsapp_enabled: formData.whatsapp_enabled
+          whatsapp_enabled: formData.whatsapp_enabled,
+          is_residential_admin: formData.is_residential_admin
         })
         .eq('id', user.id);
 
@@ -648,6 +650,22 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                       <option value="super_admin">Super Admin</option>
                     </select>
                   </div>
+                  
+                  {(formData.role === 'admin' || formData.role === 'super_admin') && (
+                    <div className="mt-4 flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100">
+                      <div>
+                        <h4 className="text-sm font-bold text-gray-900">Residential Admin</h4>
+                        <p className="text-xs text-gray-500">Grant access to Residential Overview</p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setFormData({...formData, is_residential_admin: !formData.is_residential_admin})}
+                        className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2 ${formData.is_residential_admin ? 'bg-orange-600' : 'bg-gray-200'}`}
+                      >
+                        <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.is_residential_admin ? 'translate-x-5' : 'translate-x-0'}`} />
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 {formData.role === 'client' && (

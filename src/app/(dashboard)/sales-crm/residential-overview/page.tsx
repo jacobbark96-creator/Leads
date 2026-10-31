@@ -142,6 +142,9 @@ export default function ResidentialOverview() {
     try {
       const prefixes = postcodePrefixes.split(',').map(p => p.trim().toUpperCase());
       
+      let savedRegionId = '';
+      let savedInstallerId = '';
+
       if (modalMode === 'add') {
         // 1. Create installer
         const { data: installerData, error: instError } = await supabase
@@ -151,23 +154,30 @@ export default function ResidentialOverview() {
           .single();
           
         if (instError) throw instError;
+        savedInstallerId = installerData.id;
 
         // 2. Create Region
-        const { error: regError } = await supabase
+        const { data: regData, error: regError } = await supabase
           .from('regions')
           .insert([{ 
             name: newRegionName, 
             installer_id: installerData.id,
             postcode_prefixes: prefixes
-          }]);
+          }])
+          .select()
+          .single();
 
         if (regError) throw regError;
+        savedRegionId = regData.id;
         toast.success('Region and Installer added successfully!');
       } else {
         // Edit Mode
         const region = regions.find(r => r.id === editRegionId);
         if (!region) throw new Error('Region not found');
         
+        savedRegionId = region.id;
+        savedInstallerId = region.installer_id;
+
         // 1. Update installer
         const { error: instError } = await supabase
           .from('installers')
@@ -187,6 +197,51 @@ export default function ResidentialOverview() {
           
         if (regError) throw regError;
         toast.success('Region and Installer updated successfully!');
+      }
+
+      // 3. Auto-sort existing unassigned leads in this division
+      const { data: unassignedLeads } = await supabase
+        .from('leads')
+        .select('id, company, location')
+        .eq('division_id', activeDivisionId)
+        .is('region_id', null);
+
+      if (unassignedLeads && unassignedLeads.length > 0) {
+        let updatedCount = 0;
+        const updates = unassignedLeads.map(lead => {
+          const addressStr = `${lead.company || ''} ${lead.location || ''}`;
+          let isMatch = false;
+          const match = addressStr.match(/\b([A-Z]{1,2})\d/i);
+          
+          if (match) {
+            const prefix = match[1].toUpperCase();
+            if (prefixes.includes(prefix)) isMatch = true;
+          }
+          
+          if (!isMatch) {
+            for (const p of prefixes) {
+              const regex = new RegExp(`\\b${p}\\d`, 'i');
+              if (regex.test(addressStr)) {
+                isMatch = true;
+                break;
+              }
+            }
+          }
+
+          if (isMatch) {
+            updatedCount++;
+            return supabase.from('leads').update({
+              region_id: savedRegionId,
+              installer_id: savedInstallerId
+            }).eq('id', lead.id);
+          }
+          return null;
+        }).filter(Boolean);
+
+        if (updates.length > 0) {
+          await Promise.all(updates);
+          toast.success(`Auto-assigned ${updatedCount} existing leads to this region!`);
+        }
       }
 
       setIsModalOpen(false);

@@ -27,6 +27,7 @@ export default function ResidentialOverview() {
   const [postcodePrefixes, setPostcodePrefixes] = useState('');
 
   const COLUMNS = [
+    { id: 'new', title: 'New' },
     { id: 'fresh', title: 'Fresh' },
     { id: 'qualified', title: 'Qualified' },
     { id: 'designing', title: 'Designing' },
@@ -133,7 +134,7 @@ export default function ResidentialOverview() {
 
   // Stats
   const totalLeads = leads.length;
-  const qualifiedLeads = leads.filter(l => l.status !== 'fresh' && l.status !== 'declined').length;
+  const qualifiedLeads = leads.filter(l => l.status !== 'new' && l.status !== 'fresh' && l.status !== 'declined').length;
   const pitchedLeads = leads.filter(l => ['pitched', 'sold', 'sent to installer'].includes(l.status)).length;
   const soldLeads = leads.filter(l => ['sold', 'sent to installer'].includes(l.status)).length;
 

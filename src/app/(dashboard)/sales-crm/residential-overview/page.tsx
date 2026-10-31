@@ -219,7 +219,7 @@ export default function ResidentialOverview() {
                 key={col.id}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, col.id)}
-                className="w-56 flex flex-col h-full bg-gray-50/50 rounded-lg border border-gray-200 shrink-0"
+                className="w-36 flex flex-col h-full bg-gray-50/50 rounded-lg border border-gray-200 shrink-0"
               >
                 <div className="p-2 border-b border-gray-200 flex items-center justify-between shrink-0 bg-gray-50/80 rounded-t-lg">
                   <h3 className="font-bold text-gray-700 text-[11px] uppercase tracking-wider">{col.title}</h3>

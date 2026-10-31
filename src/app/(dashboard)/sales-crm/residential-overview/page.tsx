@@ -27,7 +27,6 @@ export default function ResidentialOverview() {
   const [postcodePrefixes, setPostcodePrefixes] = useState('');
 
   const COLUMNS = [
-    { id: 'new', title: 'New' },
     { id: 'fresh', title: 'Fresh' },
     { id: 'qualified', title: 'Qualified' },
     { id: 'designing', title: 'Designing' },
@@ -48,7 +47,7 @@ export default function ResidentialOverview() {
       const [{ data: leadsData }, { data: installersData }, { data: regionsData }] = await Promise.all([
         supabase.from('leads')
           .select('*, installers(name), regions(name)')
-          .in('status', COLUMNS.map(c => c.id))
+          .in('status', ['new', ...COLUMNS.map(c => c.id)])
           .eq('building_type', 'Residential'),
         supabase.from('installers').select('*'),
         supabase.from('regions').select('*')
@@ -84,7 +83,12 @@ export default function ResidentialOverview() {
     // Optimistic
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
 
-    const { error } = await supabase.from('leads').update({ status }).eq('id', leadId);
+    // If dragged to 'fresh', update as 'fresh' so it stays consistent, 
+    // or keep 'new' if we want it to remain unassigned for reps?
+    // Usually 'fresh' on overview = 'new' on reps side if it's unassigned.
+    const newStatus = status === 'fresh' ? 'new' : status;
+
+    const { error } = await supabase.from('leads').update({ status: newStatus }).eq('id', leadId);
     if (error) {
       toast.error('Failed to move lead');
       fetchData(); // revert
@@ -209,7 +213,7 @@ export default function ResidentialOverview() {
       <div className="flex-1 overflow-x-auto overflow-y-hidden p-4">
         <div className="flex gap-3 h-full min-w-max">
           {COLUMNS.map(col => {
-            const colLeads = leads.filter(l => l.status === col.id);
+            const colLeads = leads.filter(l => col.id === 'fresh' ? (l.status === 'fresh' || l.status === 'new') : l.status === col.id);
             return (
               <div 
                 key={col.id}

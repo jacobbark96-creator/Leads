@@ -1477,6 +1477,15 @@ function LeadDetailsV2Content() {
 
         if (buildingError) throw buildingError;
       } else {
+        // Intercept building_type change to Residential to fully remove from commercial packs
+        if (updatePayload.building_type && updatePayload.building_type.toLowerCase() === 'residential') {
+          updatePayload.division_id = 'c59d862c-8379-47f8-a6ed-adb64104a9b9'; // Open Energy residential
+          updatePayload.is_marketed = false; // Remove from marketplace packs
+          if (['marketplace', 'dead', 'Intro'].includes(lead.status)) {
+            updatePayload.status = 'new'; // Reset status so it appears in the Fresh column
+          }
+        }
+
         // Saving to primary lead record
         const { error } = await supabase
           .from('leads')

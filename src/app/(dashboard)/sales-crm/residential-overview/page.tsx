@@ -79,7 +79,7 @@ export default function ResidentialOverview() {
         supabase.from('leads')
           .select('*, installers(name), regions(name), users!assigned_to(name)')
           .in('status', ['new', 'potential', ...COLUMNS.map(c => c.id)])
-          .eq('division_id', activeDivisionId)
+          .or(`division_id.eq.${activeDivisionId},building_type.eq.Residential`)
           .neq('is_marketed', true), // Ensure we don't pull pure marketplace/commercial leads by mistake
         supabase.from('installers').select('*'),
         supabase.from('regions').select('*')
@@ -231,7 +231,7 @@ export default function ResidentialOverview() {
       const { data: unassignedLeads } = await supabase
         .from('leads')
         .select('id, company, location')
-        .eq('division_id', activeDivisionId)
+        .or(`division_id.eq.${activeDivisionId},building_type.eq.Residential`)
         .is('region_id', null);
 
       if (unassignedLeads && unassignedLeads.length > 0) {

@@ -339,6 +339,26 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
 
         if (error) throw error;
 
+        // Auto-assign region if Residential
+        if (table === 'leads' && (status === 'new' || status === 'fresh') && (formData.division_id === 'c59d862c-8379-47f8-a6ed-adb64104a9b9' || formData.lead_type === 'residential')) {
+          const addressStr = `${formData.company || ''} ${formData.location || ''}`;
+          const match = addressStr.match(/\b([A-Z]{1,2})\d/i);
+          if (match) {
+            const prefix = match[1].toUpperCase();
+            const { data: regions } = await supabase.from('regions').select('*');
+            if (regions) {
+              const matchedRegion = regions.find(r => r.postcode_prefixes?.includes(prefix));
+              if (matchedRegion) {
+                await supabase.from('leads').update({
+                  region_id: matchedRegion.id,
+                  installer_id: matchedRegion.installer_id,
+                  status: 'fresh'
+                }).eq('id', data.id);
+              }
+            }
+          }
+        }
+
         toast.success(`${isContractor ? 'Contractor' : 'Lead'} added successfully`);
         
         // Reset form before closing to prevent stale state on next open
@@ -426,6 +446,25 @@ export const AddLeadModal: React.FC<AddLeadModalProps> = ({ isOpen, onClose, onL
         .single();
 
       if (error) throw error;
+
+      // Auto-assign region if Residential
+      if ((insertPayload.division_id === 'c59d862c-8379-47f8-a6ed-adb64104a9b9' || insertPayload.building_type === 'Residential') && insertPayload.status === 'fresh') {
+        const addressStr = `${insertPayload.company || ''} ${insertPayload.location || ''}`;
+        const match = addressStr.match(/\b([A-Z]{1,2})\d/i);
+        if (match) {
+          const prefix = match[1].toUpperCase();
+          const { data: regions } = await supabase.from('regions').select('*');
+          if (regions) {
+            const matchedRegion = regions.find(r => r.postcode_prefixes?.includes(prefix));
+            if (matchedRegion) {
+              await supabase.from('leads').update({
+                region_id: matchedRegion.id,
+                installer_id: matchedRegion.installer_id
+              }).eq('id', data.id);
+            }
+          }
+        }
+      }
 
       toast.success('Lead extracted successfully');
       

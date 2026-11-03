@@ -171,7 +171,7 @@ export default function BrokerageOverview() {
                         isResidential ? 'border-l-blue-500' : 'border-l-purple-500'
                       }`}
                     >
-                      {(lead.bills_url || lead.files?.some((f: any) => f.file_type !== 'audio' && !f.file_name?.toLowerCase().match(/\.(mp3|wav|m4a|ogg)$/))) && (
+                      {lead.files?.some((f: any) => f.file_type !== 'audio' && !f.file_name?.toLowerCase().match(/\.(mp3|wav|m4a|ogg)$/)) && (
                         <div 
                           className="absolute -top-2 -right-2 w-5 h-5 bg-green-50 rounded-full flex items-center justify-center shadow-sm border-2 border-green-500 z-10" 
                           title="Bills attached"

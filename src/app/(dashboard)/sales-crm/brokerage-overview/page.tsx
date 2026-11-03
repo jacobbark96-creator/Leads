@@ -38,7 +38,7 @@ export default function BrokerageOverview() {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .select('*, users!assigned_to(name), files(id, file_type, file_name)')
+        .select('*, users!assigned_to(name), files(id, file_type, file_name), divisions(name)')
         .in('status', ['qualified', 'marketed', 'sold', 'sent to sales']);
 
       if (error) throw error;
@@ -56,6 +56,9 @@ export default function BrokerageOverview() {
     const leadId = e.dataTransfer.getData('leadId');
     if (!leadId) return;
 
+    const lead = leads.find(l => l.id === leadId);
+    const oldStatus = lead?.brokerage_status;
+
     // Optimistic update
     setLeads(prev => prev.map(l => l.id === leadId ? { ...l, brokerage_status: columnId } : l));
 
@@ -67,6 +70,15 @@ export default function BrokerageOverview() {
       
       if (error) {
         throw error;
+      }
+
+      // If moving to "Handed to CC" for the first time, trigger the webhook
+      if (columnId === 'handed to cc' && oldStatus !== 'handed to cc' && lead) {
+        fetch('/api/webhooks/outbound-cc', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(lead)
+        }).catch(err => console.error('Failed to send to Google Sheets', err));
       }
     } catch (err: any) {
       toast.error('Failed to update status');
@@ -145,12 +157,19 @@ export default function BrokerageOverview() {
                 </div>
 
                 <div className="flex-1 overflow-y-auto p-2 space-y-2 custom-scrollbar">
-                  {colLeads.map(lead => (
+                  {colLeads.map(lead => {
+                    const divisionName = lead.divisions?.name || '';
+                    const isResidential = divisionName.toLowerCase().includes('residential') || lead.division_id === 'c59d862c-8379-47f8-a6ed-adb64104a9b9';
+                    const crmLabel = isResidential ? 'Residential' : 'Commercial';
+
+                    return (
                     <div
                       key={lead.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, lead.id)}
-                      className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md hover:border-blue-300 transition-all group relative"
+                      className={`bg-white p-3 rounded-lg shadow-sm border border-gray-200 border-l-[4px] cursor-grab active:cursor-grabbing hover:shadow-md hover:border-blue-300 transition-all group relative ${
+                        isResidential ? 'border-l-blue-500' : 'border-l-purple-500'
+                      }`}
                     >
                       {(lead.bills_url || lead.files?.some((f: any) => f.file_type !== 'audio' && !f.file_name?.toLowerCase().match(/\.(mp3|wav|m4a|ogg)$/))) && (
                         <div 
@@ -162,11 +181,11 @@ export default function BrokerageOverview() {
                       )}
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-1.5">
-                          <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${lead.building_type === 'Residential' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
-                            {lead.building_type === 'Residential' ? <User className="w-3 h-3" /> : <Building className="w-3 h-3" />}
+                          <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${isResidential ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
+                            {isResidential ? <User className="w-3 h-3" /> : <Building className="w-3 h-3" />}
                           </div>
                           <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider">
-                            {lead.building_type}
+                            {crmLabel}
                           </span>
                         </div>
                         <a 
@@ -195,7 +214,7 @@ export default function BrokerageOverview() {
                         </div>
                       </div>
                     </div>
-                  ))}
+                  )})}
                   
                   {colLeads.length === 0 && (
                     <div className="h-24 flex items-center justify-center border-2 border-dashed border-gray-200 rounded-lg bg-gray-50/50">

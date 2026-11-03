@@ -38,7 +38,7 @@ export default function BrokerageOverview() {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .select('*, users!assigned_to(name), files(id, file_type, file_name), divisions(name)')
+        .select('*, users!assigned_to(name), files(id, file_type, file_name, file_url), divisions(name)')
         .in('status', ['qualified', 'marketed', 'sold', 'sent to sales']);
 
       if (error) throw error;

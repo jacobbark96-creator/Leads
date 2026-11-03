@@ -13,6 +13,10 @@ export async function POST(req: Request) {
     }
 
     // Format the payload to be sent to Google Sheets
+    const fileUrls = lead.files 
+      ? lead.files.filter((f: any) => f.file_url).map((f: any) => f.file_url)
+      : [];
+
     const payload = {
       date: new Date().toISOString(),
       leadId: lead.id,
@@ -22,7 +26,11 @@ export async function POST(req: Request) {
       phone: lead.phone || '',
       location: lead.location || '',
       rep: lead.users?.name || 'Unassigned',
-      property_type: lead.building_type || 'Unknown'
+      property_type: lead.building_type || 'Unknown',
+      roof_size: lead.roof_size || '',
+      property_ownership: lead.property_ownership || '',
+      lease_duration: lead.lease_duration || '',
+      file_urls: fileUrls
     };
 
     const response = await fetch(webhookUrl, {

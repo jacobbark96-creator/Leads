@@ -33,6 +33,8 @@ export async function POST(req: Request) {
       file_urls: fileUrls
     };
 
+    console.log('Sending payload to Google Sheets:', JSON.stringify(payload, null, 2));
+
     const response = await fetch(webhookUrl, {
       method: 'POST',
       headers: {

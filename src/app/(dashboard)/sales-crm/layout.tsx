@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home, Archive, ChevronLeft, Calendar, Briefcase, Sparkles } from 'lucide-react';
+import { Upload, Users, CheckCircle, UserPlus, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Home, Archive, ChevronLeft, Calendar, Briefcase, Sparkles, Building } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
@@ -137,6 +137,7 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
 
   if (profile?.role === 'super_admin') {
     sidebarItems.push({ id: 'sales-crm/archive', name: 'Archive', path: '/sales-crm/archive', icon: Archive });
+    sidebarItems.push({ id: 'sales-crm/brokerage-overview', name: 'Brokerage', path: '/sales-crm/brokerage-overview', icon: Building });
   }
 
   if (isOpenEnergyResidential && (profile?.role === 'super_admin' || profile?.is_residential_admin)) {

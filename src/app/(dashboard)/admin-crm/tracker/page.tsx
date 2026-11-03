@@ -9,6 +9,8 @@ import { useAuthStore } from '../../../../store/authStore';
 
 export default function SalesTracker() {
   const [soldLeads, setSoldLeads] = useState<any[]>([]);
+  const [installers, setInstallers] = useState<any[]>([]);
+  const [selectedInstaller, setSelectedInstaller] = useState<string>('all');
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<'week' | 'all'>('all');
   const { profile } = useAuthStore();
@@ -52,12 +54,20 @@ export default function SalesTracker() {
       if (!res.ok) throw new Error('Failed to fetch sales');
       const allSales = await res.json();
 
+      // Extract unique installers
+      const uniqueInstallers = Array.from(new Set(allSales.map((s: any) => s.installer_name).filter(Boolean))) as string[];
+      setInstallers(uniqueInstallers.sort());
+
       let filtered = allSales;
       if (filter === 'week') {
         filtered = allSales.filter((sale: any) => {
           const d = new Date(sale.purchase_date);
           return d >= startOfTrackingWeek && d <= endOfTrackingWeek;
         });
+      }
+      
+      if (selectedInstaller !== 'all') {
+        filtered = filtered.filter((sale: any) => sale.installer_name === selectedInstaller);
       }
       
       setSoldLeads(filtered);
@@ -70,7 +80,7 @@ export default function SalesTracker() {
 
   useEffect(() => {
     fetchSoldLeads();
-  }, [startOfTrackingWeek, endOfTrackingWeek, filter]);
+  }, [startOfTrackingWeek, endOfTrackingWeek, filter, selectedInstaller]);
 
   const handleToggleRebooking = async (e: React.MouseEvent, leadId: string, currentVal: boolean) => {
     e.stopPropagation();
@@ -181,7 +191,7 @@ export default function SalesTracker() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h2 className="text-2xl font-bold text-gray-900">Sales Tracker</h2>
-          <div className="flex items-center gap-2 mt-2">
+          <div className="flex items-center gap-2 mt-2 flex-wrap">
             <Calendar className="w-4 h-4 text-gray-500" />
             <select
               value={filter}
@@ -190,6 +200,17 @@ export default function SalesTracker() {
             >
               <option value="all">All Time Sales</option>
               <option value="week">This Week ({format(startOfTrackingWeek, 'MMM d')} - {format(endOfTrackingWeek, 'MMM d')})</option>
+            </select>
+
+            <select
+              value={selectedInstaller}
+              onChange={(e) => setSelectedInstaller(e.target.value)}
+              className="text-sm font-medium text-slate-700 bg-white px-3 py-1.5 rounded-lg border border-slate-200 shadow-sm focus:ring-blue-500 focus:border-blue-500 outline-none"
+            >
+              <option value="all">All Installers</option>
+              {installers.map((inst: any) => (
+                <option key={inst} value={inst}>{inst}</option>
+              ))}
             </select>
           </div>
         </div>

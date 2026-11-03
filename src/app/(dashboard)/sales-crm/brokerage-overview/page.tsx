@@ -19,7 +19,8 @@ export default function BrokerageOverview() {
     { id: 'qualified', title: 'Qualified' },
     { id: 'with bills', title: 'With Bills' },
     { id: 'handed to cc', title: 'Handed to CC' },
-    { id: 'closed', title: 'Closed' }
+    { id: 'closed', title: 'Closed' },
+    { id: 'not viable', title: 'Not Viable' }
   ];
 
   useEffect(() => {
@@ -37,7 +38,7 @@ export default function BrokerageOverview() {
     try {
       const { data, error } = await supabase
         .from('leads')
-        .select('*, users!assigned_to(name)')
+        .select('*, users!assigned_to(name), files(id, file_type, file_name)')
         .in('status', ['qualified', 'marketed', 'sold', 'sent to sales']);
 
       if (error) throw error;
@@ -113,13 +114,14 @@ export default function BrokerageOverview() {
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden custom-scrollbar p-4 flex gap-4 snap-x snap-mandatory">
-        {loading ? (
-          <div className="flex-1 flex items-center justify-center">
-            <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-          </div>
-        ) : (
-          COLUMNS.map(col => {
+      <div className="flex-1 overflow-hidden relative">
+        <div className="absolute inset-0 origin-top-left scale-[0.70] w-[142.8%] h-[142.8%] overflow-x-auto overflow-y-hidden custom-scrollbar p-4 flex gap-4 snap-x snap-mandatory">
+          {loading ? (
+            <div className="flex-1 flex items-center justify-center">
+              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+            </div>
+          ) : (
+            COLUMNS.map(col => {
             const colLeads = filteredLeads.filter(l => {
               const status = l.brokerage_status?.toLowerCase();
               if (col.id === 'qualified') {
@@ -133,7 +135,7 @@ export default function BrokerageOverview() {
                 key={col.id}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, col.id)}
-                className="w-[85vw] sm:w-72 flex flex-col h-full bg-gray-50/50 rounded-lg border border-gray-200 shrink-0 snap-center sm:snap-align-none"
+                className="w-[85vw] sm:w-64 flex flex-col h-full bg-gray-50/50 rounded-lg border border-gray-200 shrink-0 snap-center sm:snap-align-none"
               >
                 <div className="p-3 border-b border-gray-200 flex items-center justify-between shrink-0 bg-gray-50/80 rounded-t-lg">
                   <h3 className="font-bold text-gray-700 text-xs uppercase tracking-wider">{col.title}</h3>
@@ -148,8 +150,16 @@ export default function BrokerageOverview() {
                       key={lead.id}
                       draggable
                       onDragStart={(e) => handleDragStart(e, lead.id)}
-                      className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md hover:border-blue-300 transition-all group"
+                      className="bg-white p-3 rounded-lg shadow-sm border border-gray-200 cursor-grab active:cursor-grabbing hover:shadow-md hover:border-blue-300 transition-all group relative"
                     >
+                      {(lead.bills_url || lead.files?.some((f: any) => f.file_type !== 'audio' && !f.file_name?.toLowerCase().match(/\.(mp3|wav|m4a|ogg)$/))) && (
+                        <div 
+                          className="absolute -top-2 -right-2 w-5 h-5 bg-green-50 rounded-full flex items-center justify-center shadow-sm border-2 border-green-500 z-10" 
+                          title="Bills attached"
+                        >
+                          <span className="text-[10px] font-bold text-green-600 leading-none">B</span>
+                        </div>
+                      )}
                       <div className="flex items-start justify-between mb-2">
                         <div className="flex items-center gap-1.5">
                           <div className={`w-5 h-5 rounded flex items-center justify-center shrink-0 ${lead.building_type === 'Residential' ? 'bg-blue-100 text-blue-600' : 'bg-purple-100 text-purple-600'}`}>
@@ -197,6 +207,7 @@ export default function BrokerageOverview() {
             );
           })
         )}
+        </div>
       </div>
     </div>
   );

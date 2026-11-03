@@ -1070,6 +1070,7 @@ function LeadDetailsV2Content() {
         .from('lead_reminders')
         .select('*')
         .eq('lead_id', id)
+        .eq('is_completed', false)
         .order('reminder_at', { ascending: true });
         
       if (!error && data) {
@@ -1077,6 +1078,22 @@ function LeadDetailsV2Content() {
       }
     } catch (e) {
       console.error(e);
+    }
+  };
+
+  const handleCompleteTask = async (taskId: string) => {
+    try {
+      const { error } = await supabase
+        .from('lead_reminders')
+        .update({ is_completed: true, completed_at: new Date().toISOString() })
+        .eq('id', taskId);
+      
+      if (error) throw error;
+      
+      toast.success('Task completed');
+      setTasks(tasks.filter(t => t.id !== taskId));
+    } catch (error: any) {
+      toast.error('Failed to complete task: ' + error.message);
     }
   };
 
@@ -1288,6 +1305,12 @@ function LeadDetailsV2Content() {
         .eq('id', lead.id);
 
       if (error) throw error;
+
+      // Remove from smart views if status is one of the terminating ones
+      if (['dnc', 'not viable', 'qualified', 'dead', 'sold', 'refunded', 'archive'].includes(newStatus.toLowerCase())) {
+        await supabase.from('smart_view_items').delete().eq('lead_id', lead.id);
+      }
+
       setLead({ ...lead, status: newStatus });
       toast.success('Status updated');
     } catch (error: any) {
@@ -1493,6 +1516,11 @@ function LeadDetailsV2Content() {
           .eq('id', lead.id);
 
         if (error) throw error;
+        
+        // Remove from smart views if status is one of the terminating ones
+        if (updatePayload.status && ['dnc', 'not viable', 'qualified', 'dead', 'sold', 'refunded', 'archive'].includes(updatePayload.status.toLowerCase())) {
+          await supabase.from('smart_view_items').delete().eq('lead_id', lead.id);
+        }
       }
       
       // Add activity if status changed to qualified
@@ -2483,6 +2511,11 @@ function LeadDetailsV2Content() {
       });
       if (error) throw error;
       
+      // If the disposition is terminating, remove from all smart views
+      if (['dnc', 'not viable', 'qualified'].includes(disposition.toLowerCase())) {
+        await supabase.from('smart_view_items').delete().eq('lead_id', id);
+      }
+
       if (newNote) {
         await submitNote();
       }
@@ -4244,7 +4277,11 @@ function LeadDetailsV2Content() {
                 {tasks && tasks.length > 0 ? (
                   tasks.map(task => (
                     <div key={task.id} className="flex items-start gap-2">
-                      <input type="checkbox" className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500" />
+                      <input 
+                        type="checkbox" 
+                        className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                        onChange={() => handleCompleteTask(task.id)}
+                      />
                       <div className="flex flex-col">
                         <span className="text-xs font-medium text-gray-900">{task.content}</span>
                         <span className={`text-[10px] font-medium ${new Date(task.reminder_at) < new Date() ? 'text-red-500' : 'text-gray-500'}`}>

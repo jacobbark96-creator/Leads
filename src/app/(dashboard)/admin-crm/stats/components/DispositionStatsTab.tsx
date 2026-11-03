@@ -7,7 +7,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, 
   PieChart, Pie, Cell, Legend 
 } from 'recharts';
-import { Loader2, Phone, Target, XCircle, Sun, Ban, Mic } from 'lucide-react';
+import { Loader2, Phone, Target, XCircle, Sun, Ban, Mic, X } from 'lucide-react';
+import Link from 'next/link';
 
 const COLORS = ['#10B981', '#8B5CF6', '#F59E0B', '#6B7280', '#EF4444', '#3B82F6', '#EC4899'];
 
@@ -15,6 +16,7 @@ export function DispositionStatsTab() {
   const [loading, setLoading] = useState(true);
   const [timeframe, setTimeframe] = useState('this_month');
   const [stats, setStats] = useState<any>(null);
+  const [selectedDisposition, setSelectedDisposition] = useState<string | null>(null);
 
   useEffect(() => {
     fetchStats();
@@ -54,7 +56,9 @@ export function DispositionStatsTab() {
           disposition, 
           last_called_at,
           assigned_rep_id,
-          users:assigned_rep_id (name)
+          users:assigned_rep_id (name),
+          lead_id,
+          leads:lead_id (id, name, company)
         `)
         .not('disposition', 'is', null)
         .gte('last_called_at', start.toISOString())
@@ -123,7 +127,8 @@ export function DispositionStatsTab() {
         counts,
         pieData,
         graphData,
-        topReps
+        topReps,
+        memberships
       });
 
     } catch (error) {
@@ -172,7 +177,10 @@ export function DispositionStatsTab() {
           <span className="text-2xl font-bold text-gray-900">{stats?.totalCalls}</span>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-emerald-500">
+        <div 
+          onClick={() => setSelectedDisposition('Qualified')}
+          className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-emerald-500 cursor-pointer hover:bg-emerald-50 transition-colors"
+        >
           <div className="flex items-center gap-2 mb-2 text-emerald-600">
             <Target className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Qualified</span>
@@ -183,7 +191,10 @@ export function DispositionStatsTab() {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-purple-500">
+        <div 
+          onClick={() => setSelectedDisposition('Call Back')}
+          className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-purple-500 cursor-pointer hover:bg-purple-50 transition-colors"
+        >
           <div className="flex items-center gap-2 mb-2 text-purple-600">
             <Phone className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Call Back</span>
@@ -194,7 +205,10 @@ export function DispositionStatsTab() {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-amber-500">
+        <div 
+          onClick={() => setSelectedDisposition('Not viable')}
+          className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-amber-500 cursor-pointer hover:bg-amber-50 transition-colors"
+        >
           <div className="flex items-center gap-2 mb-2 text-amber-600">
             <XCircle className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Not viable</span>
@@ -205,7 +219,10 @@ export function DispositionStatsTab() {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-gray-400">
+        <div 
+          onClick={() => setSelectedDisposition('Has Solar')}
+          className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-gray-400 cursor-pointer hover:bg-gray-50 transition-colors"
+        >
           <div className="flex items-center gap-2 mb-2 text-gray-600">
             <Sun className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Has Solar</span>
@@ -216,7 +233,10 @@ export function DispositionStatsTab() {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-red-500">
+        <div 
+          onClick={() => setSelectedDisposition('DNC')}
+          className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-red-500 cursor-pointer hover:bg-red-50 transition-colors"
+        >
           <div className="flex items-center gap-2 mb-2 text-red-600">
             <Ban className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">DNC</span>
@@ -227,7 +247,10 @@ export function DispositionStatsTab() {
           </div>
         </div>
 
-        <div className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-blue-500">
+        <div 
+          onClick={() => setSelectedDisposition('Voicemail')}
+          className="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col border-l-4 border-l-blue-500 cursor-pointer hover:bg-blue-50 transition-colors"
+        >
           <div className="flex items-center gap-2 mb-2 text-blue-600">
             <Mic className="w-4 h-4" />
             <span className="text-xs font-bold uppercase tracking-wider">Voicemail</span>
@@ -340,6 +363,72 @@ export function DispositionStatsTab() {
           </table>
         </div>
       </div>
+
+      {/* Leads Modal */}
+      {selectedDisposition && (
+        <div className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm flex items-center justify-center z-[100] p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-xl shadow-2xl w-full max-w-4xl max-h-[85vh] flex flex-col overflow-hidden animate-in zoom-in-95 duration-200">
+            <div className="p-4 border-b border-gray-200 flex justify-between items-center bg-gray-50">
+              <div>
+                <h3 className="text-lg font-bold text-gray-900">Leads Marked as &quot;{selectedDisposition}&quot;</h3>
+                <p className="text-xs text-gray-500">
+                  {timeframe === 'this_month' ? 'This Month' : timeframe === 'last_month' ? 'Last Month' : timeframe === 'last_3_months' ? 'Last 3 Months' : 'This Year'}
+                </p>
+              </div>
+              <button 
+                onClick={() => setSelectedDisposition(null)}
+                className="text-gray-400 hover:text-gray-600 bg-white p-1 rounded-md shadow-sm border border-gray-200"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="overflow-y-auto flex-1 p-4">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="bg-gray-100">
+                    <th className="px-4 py-2 text-[10px] font-black text-gray-500 uppercase tracking-widest rounded-tl-lg">Lead</th>
+                    <th className="px-4 py-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">Representative</th>
+                    <th className="px-4 py-2 text-[10px] font-black text-gray-500 uppercase tracking-widest">Date Called</th>
+                    <th className="px-4 py-2 text-[10px] font-black text-gray-500 uppercase tracking-widest rounded-tr-lg text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {stats?.memberships
+                    ?.filter((m: any) => m.disposition === selectedDisposition)
+                    .sort((a: any, b: any) => new Date(b.last_called_at).getTime() - new Date(a.last_called_at).getTime())
+                    .map((m: any) => (
+                      <tr key={m.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3">
+                          <div className="font-bold text-gray-900 text-sm">{m.leads?.company || m.leads?.name || `Lead #${m.lead_id?.split('-')[0]}`}</div>
+                          {m.leads?.company && m.leads?.name && <div className="text-xs text-gray-500">{m.leads.name}</div>}
+                        </td>
+                        <td className="px-4 py-3 text-sm text-gray-600">{m.users?.name || 'Unknown Rep'}</td>
+                        <td className="px-4 py-3 text-sm text-gray-600">
+                          {m.last_called_at ? format(new Date(m.last_called_at), 'MMM d, yyyy HH:mm') : 'N/A'}
+                        </td>
+                        <td className="px-4 py-3 text-right">
+                          <Link 
+                            href={`/sales-crm/lead-v2?id=${m.lead_id}`}
+                            className="inline-flex items-center px-3 py-1.5 bg-blue-50 text-blue-600 text-xs font-bold rounded-lg hover:bg-blue-100 transition-colors"
+                          >
+                            View Lead
+                          </Link>
+                        </td>
+                      </tr>
+                    ))}
+                  {stats?.memberships?.filter((m: any) => m.disposition === selectedDisposition).length === 0 && (
+                    <tr>
+                      <td colSpan={4} className="px-4 py-8 text-center text-gray-500 text-sm italic">
+                        No leads found with this disposition.
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

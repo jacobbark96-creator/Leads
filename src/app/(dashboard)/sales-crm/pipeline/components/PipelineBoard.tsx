@@ -64,15 +64,15 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
     }
     if (status === 'sold') {
       return leads.filter(l => 
-        ((l.purchase_count || 0) > 0 || l.status === 'sold' || l.marked_as_sold) && 
-        !['sat', 'proposal'].includes(l.status)
+        ((l.purchase_count || 0) > 0 || ['sold', 'contacted', 'new'].includes(l.status) || l.marked_as_sold) && 
+        !['sat', 'proposal', 'won'].includes(l.status)
       );
     }
     if (status === 'awaiting_sales') {
       return leads.filter(l => l.status === 'awaiting_sales');
     }
     if (status === 'sat') {
-      return leads.filter(l => ['sat', 'proposal'].includes(l.status));
+      return leads.filter(l => ['sat', 'proposal', 'won'].includes(l.status));
     }
     return leads.filter(l => l.status === status && (l.purchase_count || 0) === 0);
   };

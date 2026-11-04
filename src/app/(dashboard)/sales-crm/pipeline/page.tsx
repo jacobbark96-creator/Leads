@@ -83,7 +83,7 @@ export default function PipelinePage() {
       } else {
         const statuses = [
           'call back', 'qualified', 'potential', 'marketplace', 'awaiting_sales', 'sold', 
-          'fresh', 'no answer', 'voicemail', 'skipped', 'sat', 'proposal'
+          'fresh', 'no answer', 'voicemail', 'skipped', 'sat', 'proposal', 'contacted', 'won'
         ];
         
         query = query.in('status', statuses);
@@ -231,7 +231,7 @@ export default function PipelinePage() {
   }
 
   const pipelineValue = visibleLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
-  const satLeadsInView = visibleLeads.filter(l => ['sat', 'proposal'].includes(l.status));
+  const satLeadsInView = visibleLeads.filter(l => ['sat', 'proposal', 'won'].includes(l.status));
   const soldValue = satLeadsInView.reduce((acc, l) => acc + (l.commission_value || 0), 0);
   
   const qualifiedAndSold = visibleLeads.filter(l => 

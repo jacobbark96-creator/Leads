@@ -17,6 +17,7 @@ const COLUMNS = [
   { id: 'marketed', label: 'Marketed', color: 'purple', icon: Megaphone },
   { id: 'awaiting_sales', label: 'Sent to Sales', color: 'orange', icon: Briefcase },
   { id: 'sold', label: 'Sold', color: 'yellow', icon: Trophy },
+  { id: 'sat', label: 'Sat', color: 'amber', icon: CheckCircle },
 ];
 
 const BD_COLUMNS = [
@@ -64,13 +65,15 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
     }
     if (status === 'sold') {
       return leads.filter(l => 
-        (l.purchase_count || 0) > 0 || 
-        l.status === 'sold' || 
-        l.marked_as_sold
+        (l.status === 'sold' || l.marked_as_sold) && 
+        l.status !== 'sat' && l.status !== 'proposal'
       );
     }
     if (status === 'awaiting_sales') {
       return leads.filter(l => l.status === 'awaiting_sales');
+    }
+    if (status === 'sat') {
+      return leads.filter(l => ['sat', 'proposal'].includes(l.status) || ((l.purchase_count || 0) > 0));
     }
     return leads.filter(l => l.status === status && (l.purchase_count || 0) === 0);
   };
@@ -82,6 +85,7 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
       case 'green': return 'bg-green-50 border-green-200 text-green-800';
       case 'purple': return 'bg-purple-50 border-purple-200 text-purple-800';
       case 'orange': return 'bg-orange-50 border-orange-200 text-orange-800';
+      case 'amber': return 'bg-amber-50 border-amber-200 text-amber-800';
       case 'yellow': return 'bg-yellow-50 border-yellow-200 text-yellow-800';
       case 'red': return 'bg-red-50 border-red-200 text-red-800';
       case 'gray': return 'bg-gray-50 border-gray-200 text-gray-800';
@@ -96,6 +100,7 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
       case 'green': return 'bg-green-100 text-green-900 border-green-200';
       case 'purple': return 'bg-purple-100 text-purple-900 border-purple-200';
       case 'orange': return 'bg-orange-100 text-orange-900 border-orange-200';
+      case 'amber': return 'bg-amber-100 text-amber-900 border-amber-200';
       case 'yellow': return 'bg-yellow-100 text-yellow-900 border-yellow-200';
       case 'red': return 'bg-red-100 text-red-900 border-red-200';
       case 'gray': return 'bg-gray-100 text-gray-900 border-gray-200';
@@ -104,14 +109,15 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
   };
 
   return (
-    <div className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar items-start snap-x snap-mandatory">
-      {columns.map(col => {
-        const columnLeads = getLeadsByStatus(col.id);
-        const columnValue = columnLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
-        const Icon = col.icon;
+    <div className="flex justify-center w-full overflow-hidden">
+      <div className="flex gap-2 pb-4 items-start w-[120%] origin-top-left scale-[0.83]">
+        {columns.map(col => {
+          const columnLeads = getLeadsByStatus(col.id);
+          const columnValue = columnLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
+          const Icon = col.icon;
 
-        return (
-          <div key={col.id} className={`flex-1 min-w-[280px] sm:min-w-[240px] md:min-w-[200px] rounded-xl border flex flex-col ${getColumnColorClass(col.color)} bg-opacity-40 max-h-[calc(100vh-250px)] snap-center`}>
+          return (
+            <div key={col.id} className={`flex-1 min-w-[200px] rounded-xl border flex flex-col ${getColumnColorClass(col.color)} bg-opacity-40 max-h-[calc(100vh-250px)]`}>
             {/* Column Header */}
             <div className={`p-2.5 border-b flex items-center justify-between rounded-t-xl ${getHeaderColorClass(col.color)}`}>
               <div className="flex items-center gap-2">
@@ -143,6 +149,7 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
           </div>
         );
       })}
+      </div>
     </div>
   );
 }
@@ -155,6 +162,7 @@ function PipelineCard({ lead, color }: { lead: any, color: string }) {
       case 'green': return 'border-green-200 hover:border-green-300';
       case 'purple': return 'border-purple-200 hover:border-purple-300';
       case 'orange': return 'border-orange-200 hover:border-orange-300';
+      case 'amber': return 'border-amber-200 hover:border-amber-300';
       case 'yellow': return 'border-yellow-200 hover:border-yellow-300';
       case 'red': return 'border-red-200 hover:border-red-300';
       case 'gray': return 'border-gray-200 hover:border-gray-300';

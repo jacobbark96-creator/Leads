@@ -83,7 +83,7 @@ export default function PipelinePage() {
       } else {
         const statuses = [
           'call back', 'qualified', 'potential', 'marketplace', 'awaiting_sales', 'sold', 
-          'fresh', 'no answer', 'voicemail', 'skipped'
+          'fresh', 'no answer', 'voicemail', 'skipped', 'sat', 'proposal'
         ];
         
         query = query.in('status', statuses);
@@ -231,18 +231,15 @@ export default function PipelinePage() {
   }
 
   const pipelineValue = visibleLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
-  const soldLeadsInView = visibleLeads.filter(l => 
-    (l.valid_purchase_count > 0) || 
-    ((l.status === 'sold' || l.marked_as_sold) && !l.has_test_purchase)
-  );
-  const soldValue = soldLeadsInView.reduce((acc, l) => acc + (l.commission_value || 0), 0);
+  const satLeadsInView = visibleLeads.filter(l => ['sat', 'proposal'].includes(l.status) || ((l.purchase_count || 0) > 0));
+  const soldValue = satLeadsInView.reduce((acc, l) => acc + (l.commission_value || 0), 0);
   
   const qualifiedAndSold = visibleLeads.filter(l => 
     (['qualified', 'sold'].includes(l.status) || (l.purchase_count || 0) > 0 || l.marked_as_sold) && 
     (l.valid_purchase_count > 0 || !l.has_test_purchase)
   );
   const conversionRate = qualifiedAndSold.length > 0 
-    ? ((soldLeadsInView.length / qualifiedAndSold.length) * 100).toFixed(1) 
+    ? ((satLeadsInView.length / qualifiedAndSold.length) * 100).toFixed(1) 
     : '0.0';
 
   const viewingRole = selectedUser === 'me' 
@@ -316,7 +313,7 @@ export default function PipelinePage() {
             <DollarSign className="w-3.5 h-3.5" />
           </div>
           <div>
-            <p className="text-[9px] font-medium text-gray-500 uppercase tracking-wider">Sold Value</p>
+            <p className="text-[9px] font-medium text-gray-500 uppercase tracking-wider">Sat Value</p>
             <p className="text-base font-bold text-gray-900">£{soldValue.toLocaleString()}</p>
           </div>
         </div>

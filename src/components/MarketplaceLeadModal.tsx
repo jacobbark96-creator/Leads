@@ -18,6 +18,8 @@ interface MarketplaceLeadModalProps {
   lead: Lead;
   onPurchase: () => void;
   isResidential?: boolean;
+  freeCreditsAvailable?: number;
+  onClaimFreeLead?: () => void;
 }
 
 const MissingValue = () => <span className="text-gray-300 font-normal italic">-</span>;
@@ -64,7 +66,7 @@ const SavingsCarousel = ({ lead }: { lead: any }) => {
   );
 };
 
-export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOpen, onClose, lead, onPurchase, isResidential = false }) => {
+export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOpen, onClose, lead, onPurchase, isResidential = false, freeCreditsAvailable = 0, onClaimFreeLead }) => {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [hasBills, setHasBills] = useState<boolean>(false);
   const [showMagicLink, setShowMagicLink] = useState(false);
@@ -232,6 +234,17 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <span>Already requested by organisation.</span>
                   </div>
                 </div>
+              ) : freeCreditsAvailable > 0 && (lead.exclusive_price || lead.price || 0) < 400 ? (
+                <button
+                  onClick={onClaimFreeLead}
+                  disabled={isLoadingRequest}
+                  className={`px-4 py-2 shadow-sm text-sm font-bold rounded-lg text-white flex items-center gap-2 transition-all active:scale-95 ${
+                    isLoadingRequest ? 'opacity-50 cursor-not-allowed bg-emerald-400' : 'bg-emerald-600 hover:bg-emerald-500 hover:shadow-emerald-200 hover:shadow-lg'
+                  }`}
+                >
+                  <Check className="w-4 h-4" />
+                  Claim Free Lead
+                </button>
               ) : (
                 <button
                   onClick={onPurchase}
@@ -307,7 +320,11 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <div className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="absolute -inset-full animate-[spin_4s_linear_infinite] opacity-20 bg-[conic-gradient(from_90deg_at_50%_50%,#10b981_0%,transparent_50%,#10b981_100%)] blur-xl"></div>
                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 relative z-10">Exclusive Price</span>
-                    {lead.csv_data?.promotion && lead.csv_data.promotion.price ? (
+                    {freeCreditsAvailable > 0 && (lead.exclusive_price || lead.price || 0) < 400 ? (
+                      <span className="text-4xl font-black text-emerald-600 relative z-10 drop-shadow-sm animate-pulse">
+                        FREE
+                      </span>
+                    ) : lead.csv_data?.promotion && lead.csv_data.promotion.price ? (
                       <div className="flex flex-col items-center relative z-10">
                         <span className="text-xs font-medium text-gray-400 line-through">£{lead.exclusive_price || lead.price || '135.00'}</span>
                         <span className="text-4xl font-black text-emerald-600 drop-shadow-sm">£{lead.csv_data.promotion.price}</span>

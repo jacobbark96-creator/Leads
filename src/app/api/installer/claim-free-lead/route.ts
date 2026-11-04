@@ -9,24 +9,24 @@ export async function POST(req: Request) {
     );
     
     const body = await req.json();
-    const { leadId, installerId } = body;
+    const { leadId, clientId } = body;
 
-    if (!leadId || !installerId) {
-      return NextResponse.json({ error: 'Missing leadId or installerId' }, { status: 400 });
+    if (!leadId || !clientId) {
+      return NextResponse.json({ error: 'Missing leadId or clientId' }, { status: 400 });
     }
 
-    // 1. Fetch Installer state
-    const { data: installer, error: installerError } = await supabaseAdmin
-      .from('installers')
+    // 1. Fetch Client state
+    const { data: client, error: clientError } = await supabaseAdmin
+      .from('clients')
       .select('free_credits_available')
-      .eq('id', installerId)
+      .eq('id', clientId)
       .single();
 
-    if (installerError || !installer) {
-      return NextResponse.json({ error: 'Installer not found' }, { status: 404 });
+    if (clientError || !client) {
+      return NextResponse.json({ error: 'Client not found' }, { status: 404 });
     }
 
-    if ((installer.free_credits_available || 0) <= 0) {
+    if ((client.free_credits_available || 0) <= 0) {
       return NextResponse.json({ error: 'No free credits available' }, { status: 403 });
     }
 
@@ -53,16 +53,16 @@ export async function POST(req: Request) {
     // 3. Process the claim
     // Decrement free credits
     await supabaseAdmin
-      .from('installers')
-      .update({ free_credits_available: installer.free_credits_available - 1 })
-      .eq('id', installerId);
+      .from('clients')
+      .update({ free_credits_available: client.free_credits_available - 1 })
+      .eq('id', clientId);
 
     // Mark lead as sold (0 price)
     const { error: updateError } = await supabaseAdmin
       .from('leads')
       .update({
         status: 'sold',
-        installer_id: installerId,
+        client_id: clientId,
         purchase_date: new Date().toISOString(),
         is_marketed: false,
         price: 0,

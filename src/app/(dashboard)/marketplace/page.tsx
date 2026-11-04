@@ -12,6 +12,7 @@ import { extractTown, getVagueLocation, calculateMatchScore, calculateEstimatedS
 import { trackLeadEvent } from '../../../utils/tracking';
 import { trackClientActivity } from '@/lib/activityTracker';
 import { RecentlySoldCarousel } from '../../../components/RecentlySoldCarousel';
+import { LoyaltyProgressBanner, LoyaltyClaimModal } from '../../../components/LoyaltyGamification';
 
 const PromotionBanner = ({ promotion }: { promotion: any }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -82,6 +83,7 @@ export default function MarketplacePage() {
   const [clientPrefs, setClientPrefs] = useState<any>(null);
   const [creditBalance, setCreditBalance] = useState<number>(0);
   const [sortBy, setSortBy] = useState<string>('newest');
+  const [showWelcomeModal, setShowWelcomeModal] = useState(false);
   const { profile, refreshProfile } = useAuthStore();
   const PAGE_SIZE = 24;
   const lastFetchKey = useRef<string>('');
@@ -147,13 +149,21 @@ export default function MarketplacePage() {
         
         const { data: clientData, error: clientError } = await supabase
           .from('clients')
-          .select('id, services_offered, credit_balance, property_type_preference, min_system_size_kw, preferred_roof_types, latitude, longitude, service_areas')
+          .select('id, services_offered, credit_balance, property_type_preference, min_system_size_kw, preferred_roof_types, latitude, longitude, service_areas, paid_leads_count, free_credits_available')
           .eq('user_id', profile.id)
           .single();
 
         if (clientError) throw new Error('Could not find client profile.');
         setCreditBalance(clientData.credit_balance || 0);
         setClientPrefs(clientData);
+
+        if (clientData.free_credits_available > 0) {
+          const hasSeenModal = sessionStorage.getItem('hasSeenLoyaltyModal');
+          if (!hasSeenModal) {
+            setShowWelcomeModal(true);
+            sessionStorage.setItem('hasSeenLoyaltyModal', 'true');
+          }
+        }
 
         // Use RPC to get leads within service area
         const res = await supabase.rpc('get_local_marketplace_leads', {
@@ -260,6 +270,34 @@ export default function MarketplacePage() {
     } finally {
       setLoading(false);
       setLoadingMore(false);
+    }
+  };
+
+  const handleClaimFreeLead = async (leadId: string) => {
+    if (!profile || profile.role !== 'client') return;
+    
+    try {
+      const res = await fetch('/api/installer/claim-free-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          leadId,
+          clientId: clientPrefs?.id
+        }),
+      });
+
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to claim free lead');
+
+      toast.success('Free lead claimed successfully! It is now in your pipeline.');
+      
+      // Update UI immediately
+      setLeads(prev => prev.filter(l => l.id !== leadId));
+      setSelectedLead(null);
+      setClientPrefs((prev: any) => prev ? { ...prev, free_credits_available: Math.max(0, prev.free_credits_available - 1) } : prev);
+
+    } catch (error: any) {
+      toast.error('Failed to claim free lead: ' + error.message);
     }
   };
 
@@ -515,6 +553,12 @@ export default function MarketplacePage() {
   return (
     <ProtectedRoute allowedRoles={['client', 'admin', 'super_admin']}>
       <div className="space-y-6">
+        {profile?.role === 'client' && clientPrefs && (
+          <LoyaltyProgressBanner 
+            paidLeadsCount={clientPrefs.paid_leads_count || 0}
+            freeCreditsAvailable={clientPrefs.free_credits_available || 0}
+          />
+        )}
         <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">Sort by:</span>
@@ -605,7 +649,9 @@ export default function MarketplacePage() {
                   </div>
                   <div className="text-right shrink-0">
                     <span className="block text-[10px] uppercase tracking-wider font-semibold text-gray-500">Price</span>
-                    {lead.csv_data?.promotion && lead.csv_data.promotion.price ? (
+                    {clientPrefs?.free_credits_available > 0 && (lead.exclusive_price || lead.price || 0) < 400 ? (
+                      <span className="text-base font-black text-emerald-600 leading-none px-2 py-1 bg-emerald-50 rounded border border-emerald-200 uppercase text-[10px] shadow-sm animate-pulse">FREE</span>
+                    ) : lead.csv_data?.promotion && lead.csv_data.promotion.price ? (
                       <div className="flex flex-col items-end">
                         <span className="text-xs font-medium text-gray-400 line-through">£{lead.exclusive_price || lead.price || '135.00'}</span>
                         <span className="text-base font-black text-green-600 leading-none">£{lead.csv_data.promotion.price}</span>
@@ -703,6 +749,8 @@ export default function MarketplacePage() {
           isOpen={!!selectedLead}
           onClose={() => setSelectedLead(null)}
           lead={selectedLead}
+          freeCreditsAvailable={clientPrefs?.free_credits_available || 0}
+          onClaimFreeLead={() => handleClaimFreeLead(selectedLead.id)}
           onPurchase={() => {
             if (profile?.id) trackLeadEvent(selectedLead.id, profile.id, 'order_summary');
             setLeadToPurchase(selectedLead);
@@ -720,6 +768,11 @@ export default function MarketplacePage() {
           onProceedToPay={(creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge, conciergeDates) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge, conciergeDates)}
         />
       )}
+      
+      <LoyaltyClaimModal 
+        isOpen={showWelcomeModal}
+        onClose={() => setShowWelcomeModal(false)}
+      />
     </ProtectedRoute>
   );
 }

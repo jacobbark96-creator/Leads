@@ -31,12 +31,22 @@ export async function POST(req: NextRequest) {
     }
 
     if (isMarketplace) {
-      const { error } = await supabaseAdmin
+      const { error, data: purchase } = await supabaseAdmin
         .from('lead_purchases')
         .update({ status: newStatus })
-        .eq('id', purchaseId);
+        .eq('id', purchaseId)
+        .select('lead_id')
+        .single();
 
       if (error) throw error;
+      
+      if (purchase?.lead_id) {
+        const dbStatus = newStatus === 'new' ? 'sold' : newStatus;
+        await supabaseAdmin
+          .from('leads')
+          .update({ status: dbStatus })
+          .eq('id', purchase.lead_id);
+      }
     } else {
       // Manual sale
       // Map 'new' (Purchased column) back to 'sold' for the leads table

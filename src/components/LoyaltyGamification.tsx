@@ -37,7 +37,7 @@ export const LoyaltyProgressBanner: React.FC<GamificationProps> = ({ paidLeadsCo
                 You have a FREE Lead available!
               </h2>
               <p className="text-emerald-700/80 font-medium text-sm mt-0.5">
-                Any lead under £400 is yours for £0. Look for the FREE badge below.
+                Choose any of the FREE leads below.
               </p>
             </div>
           </div>

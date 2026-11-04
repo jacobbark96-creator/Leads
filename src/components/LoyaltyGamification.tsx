@@ -52,7 +52,7 @@ export const LoyaltyProgressBanner: React.FC<GamificationProps> = ({ paidLeadsCo
             <Zap className="w-5 h-5 text-indigo-500" />
           </div>
           <div>
-            <h3 className="text-base font-bold text-gray-900">Installer Loyalty Loop</h3>
+            <h3 className="text-base font-bold text-gray-900">Our Thank You</h3>
             <p className="text-xs text-gray-500 font-medium">Buy 3 leads in 45 days to earn 1 free lead (up to £400 value).</p>
           </div>
         </div>
@@ -131,7 +131,7 @@ export const LoyaltyClaimModal: React.FC<{
             
             <h2 className="text-3xl font-black text-white mb-2 relative z-10 tracking-tight">Congratulations!</h2>
             <p className="text-emerald-50 font-medium relative z-10 text-sm">
-              You've completed your Loyalty Loop.
+              As a thank you for your business, you've unlocked a reward!
             </p>
           </div>
           

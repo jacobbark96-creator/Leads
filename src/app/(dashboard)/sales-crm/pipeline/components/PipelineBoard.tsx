@@ -109,7 +109,7 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
   };
 
   return (
-    <div className="flex justify-center w-full overflow-hidden h-[calc(100vh-180px)]">
+    <div className="flex w-full overflow-hidden h-[calc(100vh-180px)]">
       <div className="flex gap-2 pb-4 items-start w-[130%] origin-top-left scale-[0.76]">
         {columns.map(col => {
           const columnLeads = getLeadsByStatus(col.id);

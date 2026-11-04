@@ -15,7 +15,6 @@ const COLUMNS = [
   { id: 'potential', label: 'Potential', color: 'indigo', icon: UserCheck },
   { id: 'qualified', label: 'Qualified', color: 'green', icon: CheckCircle },
   { id: 'marketed', label: 'Marketed', color: 'purple', icon: Megaphone },
-  { id: 'awaiting_sales', label: 'Sent to Sales', color: 'orange', icon: Briefcase },
   { id: 'sold', label: 'Sold', color: 'yellow', icon: Trophy },
   { id: 'sat', label: 'Sat', color: 'amber', icon: CheckCircle },
 ];

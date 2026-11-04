@@ -552,7 +552,7 @@ export default function MarketplacePage() {
 
   return (
     <ProtectedRoute allowedRoles={['client', 'admin', 'super_admin']}>
-      <div className="space-y-6">
+      <div className="space-y-6 origin-top-left scale-[0.80] w-[125%] mb-[-20%]">
         {profile?.role === 'client' && clientPrefs && (
           <LoyaltyProgressBanner 
             paidLeadsCount={clientPrefs.paid_leads_count || 0}

@@ -231,7 +231,7 @@ export default function PipelinePage() {
   }
 
   const pipelineValue = visibleLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
-  const satLeadsInView = visibleLeads.filter(l => ['sat', 'proposal'].includes(l.status) || ((l.purchase_count || 0) > 0));
+  const satLeadsInView = visibleLeads.filter(l => ['sat', 'proposal'].includes(l.status));
   const soldValue = satLeadsInView.reduce((acc, l) => acc + (l.commission_value || 0), 0);
   
   const qualifiedAndSold = visibleLeads.filter(l => 

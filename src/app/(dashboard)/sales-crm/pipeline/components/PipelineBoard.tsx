@@ -109,15 +109,15 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
   };
 
   return (
-    <div className="flex justify-center w-full overflow-hidden">
-      <div className="flex gap-2 pb-4 items-start w-[120%] origin-top-left scale-[0.83]">
+    <div className="flex justify-center w-full overflow-hidden h-[calc(100vh-180px)]">
+      <div className="flex gap-2 pb-4 items-start w-[130%] origin-top-left scale-[0.76]">
         {columns.map(col => {
           const columnLeads = getLeadsByStatus(col.id);
           const columnValue = columnLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
           const Icon = col.icon;
 
           return (
-            <div key={col.id} className={`flex-1 min-w-[200px] rounded-xl border flex flex-col ${getColumnColorClass(col.color)} bg-opacity-40 max-h-[calc(100vh-250px)]`}>
+            <div key={col.id} className={`flex-1 min-w-[200px] rounded-xl border flex flex-col ${getColumnColorClass(col.color)} bg-opacity-40 max-h-[calc(100vh-140px)]`}>
             {/* Column Header */}
             <div className={`p-2.5 border-b flex items-center justify-between rounded-t-xl ${getHeaderColorClass(col.color)}`}>
               <div className="flex items-center gap-2">

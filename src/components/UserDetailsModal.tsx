@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserProfile, Division } from '../types';
-import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin, Briefcase, CreditCard, Zap, Users, MessageCircle } from 'lucide-react';
+import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin, Briefcase, CreditCard, Zap, Users, MessageCircle, Gift } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
 

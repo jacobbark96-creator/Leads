@@ -55,7 +55,7 @@ export default function SalesTracker() {
       const allSales = await res.json();
 
       // Extract unique installers
-      const uniqueInstallers = Array.from(new Set(allSales.map((s: any) => s.installer_name).filter(Boolean))) as string[];
+      const uniqueInstallers = Array.from(new Set(allSales.map((s: any) => s.client_company || s.client_name).filter(Boolean))) as string[];
       setInstallers(uniqueInstallers.sort());
 
       let filtered = allSales;
@@ -67,7 +67,7 @@ export default function SalesTracker() {
       }
       
       if (selectedInstaller !== 'all') {
-        filtered = filtered.filter((sale: any) => sale.installer_name === selectedInstaller);
+        filtered = filtered.filter((sale: any) => (sale.client_company || sale.client_name) === selectedInstaller);
       }
       
       setSoldLeads(filtered);

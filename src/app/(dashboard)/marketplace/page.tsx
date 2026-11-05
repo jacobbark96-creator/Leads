@@ -11,6 +11,7 @@ import { OrderSummaryModal } from '../../../components/OrderSummaryModal';
 import { extractTown, getVagueLocation, calculateMatchScore, calculateEstimatedSystemSize } from '../../../lib/utils';
 import { trackLeadEvent } from '../../../utils/tracking';
 import { trackClientActivity } from '@/lib/activityTracker';
+import { SubscriptionProgressBanner } from '../../../components/SubscriptionProgressBanner';
 import { RecentlySoldCarousel } from '../../../components/RecentlySoldCarousel';
 import { LoyaltyProgressBanner, LoyaltyClaimModal } from '../../../components/LoyaltyGamification';
 
@@ -149,7 +150,7 @@ export default function MarketplacePage() {
         
         const { data: clientData, error: clientError } = await supabase
           .from('clients')
-          .select('id, services_offered, credit_balance, property_type_preference, min_system_size_kw, preferred_roof_types, latitude, longitude, service_areas, paid_leads_count, free_credits_available')
+          .select('id, services_offered, credit_balance, property_type_preference, min_system_size_kw, preferred_roof_types, latitude, longitude, service_areas, paid_leads_count, free_credits_available, subscription_tier, subscription_credits')
           .eq('user_id', profile.id)
           .single();
 
@@ -374,6 +375,29 @@ export default function MarketplacePage() {
     }
   };
 
+  const handleClaimSubscriptionLead = async (leadId: string) => {
+    try {
+      setLoading(true);
+      const res = await fetch('/api/installer/claim-subscription-lead', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leadId, clientId: clientPrefs?.id }),
+      });
+      
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to claim subscription lead');
+      
+      toast.success('Subscription lead claimed successfully!');
+      setLeads(prev => prev.filter(l => l.id !== leadId));
+      setSelectedLead(null);
+      // Re-fetch client prefs to update credits
+      fetchMarketplaceLeads(0, true);
+    } catch (error: any) {
+      toast.error(error.message);
+      setLoading(false);
+    }
+  };
+
   const handlePurchaseLead = async (leadId: string, creditToUse: number, purchaseType: 'exclusive' | 'share' = 'exclusive', discountedPrice?: number, useTradeAccount: boolean = false, addConcierge: boolean = false, conciergeDates: string = '') => {
     if (!profile) return;
     try {
@@ -553,7 +577,13 @@ export default function MarketplacePage() {
   return (
     <ProtectedRoute allowedRoles={['client', 'admin', 'super_admin']}>
       <div className="space-y-6 origin-top-left scale-[0.80] w-[125%] mb-[-20%]">
-        {profile?.role === 'client' && clientPrefs && (
+        {profile?.role === 'client' && clientPrefs?.subscription_tier > 0 && (
+          <SubscriptionProgressBanner 
+            tier={clientPrefs.subscription_tier}
+            credits={clientPrefs.subscription_credits}
+          />
+        )}
+        {profile?.role === 'client' && clientPrefs && (!clientPrefs.subscription_tier || clientPrefs.subscription_tier === 0) && (
           <LoyaltyProgressBanner 
             paidLeadsCount={clientPrefs.paid_leads_count || 0}
             freeCreditsAvailable={clientPrefs.free_credits_available || 0}
@@ -649,7 +679,9 @@ export default function MarketplacePage() {
                   </div>
                   <div className="text-right shrink-0">
                     <span className="block text-[10px] uppercase tracking-wider font-semibold text-gray-500">Price</span>
-                    {clientPrefs?.free_credits_available > 0 && (lead.exclusive_price || lead.price || 0) < 400 ? (
+                    {clientPrefs?.subscription_tier > 0 && clientPrefs?.subscription_credits > 0 ? (
+                      <span className="text-base font-black text-purple-600 leading-none px-2 py-1 bg-purple-50 rounded border border-purple-200 uppercase text-[10px] shadow-sm">INCLUDED</span>
+                    ) : clientPrefs?.free_credits_available > 0 && (lead.exclusive_price || lead.price || 0) < 400 ? (
                       <span className="text-base font-black text-emerald-600 leading-none px-2 py-1 bg-emerald-50 rounded border border-emerald-200 uppercase text-[10px] shadow-sm animate-pulse">FREE</span>
                     ) : lead.csv_data?.promotion && lead.csv_data.promotion.price ? (
                       <div className="flex flex-col items-end">
@@ -750,7 +782,9 @@ export default function MarketplacePage() {
           onClose={() => setSelectedLead(null)}
           lead={selectedLead}
           freeCreditsAvailable={clientPrefs?.free_credits_available || 0}
+          subscriptionCredits={clientPrefs?.subscription_tier > 0 ? clientPrefs?.subscription_credits || 0 : 0}
           onClaimFreeLead={() => handleClaimFreeLead(selectedLead.id)}
+          onClaimSubscriptionLead={() => handleClaimSubscriptionLead(selectedLead.id)}
           onPurchase={() => {
             if (profile?.id) trackLeadEvent(selectedLead.id, profile.id, 'order_summary');
             setLeadToPurchase(selectedLead);

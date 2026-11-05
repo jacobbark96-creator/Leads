@@ -65,7 +65,9 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     is_partner_plus: false,
     allowed_child_accounts: user.allowed_child_accounts || false,
     whatsapp_enabled: user.whatsapp_enabled || false,
-    is_residential_admin: user.is_residential_admin || false
+    is_residential_admin: user.is_residential_admin || false,
+    subscription_tier: 0,
+    subscription_credits: 0
   });
 
   const [newDirectPassword, setNewDirectPassword] = useState('');
@@ -275,7 +277,9 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           service_areas: Array.isArray(data.service_areas) ? data.service_areas : [],
           services_offered: data.services_offered || '',
           internal_notes: data.internal_notes || '',
-          is_partner_plus: data.is_partner_plus || false
+          is_partner_plus: data.is_partner_plus || false,
+          subscription_tier: data.subscription_tier || 0,
+          subscription_credits: data.subscription_credits || 0
         }));
 
         setSelectedServiceCategoryIds(parseServicesOfferedToIds(data.services_offered || '', categoryOptions));
@@ -357,6 +361,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           assigned_to: selectedAdvisorId || null,
           internal_notes: formData.internal_notes,
           is_partner_plus: formData.is_partner_plus,
+          subscription_tier: formData.subscription_tier,
+          subscription_credits: formData.subscription_credits,
           is_profile_complete: true // Mark complete since admin is filling it out
         };
 
@@ -1120,6 +1126,44 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                           <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.is_partner_plus ? 'translate-x-5' : 'translate-x-0'}`} />
                         </button>
                       </div>
+                      <div className="flex items-center justify-between p-4 bg-emerald-50 rounded-xl border border-emerald-100 mb-4 mt-2">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-emerald-600 shadow-sm">
+                            <Gift className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <h4 className="text-sm font-bold text-gray-900">Subscription Plan</h4>
+                            <p className="text-xs text-gray-500">Monthly free lead allowance</p>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-3">
+                          <select
+                            value={formData.subscription_tier}
+                            onChange={(e) => {
+                              const tier = parseInt(e.target.value);
+                              setFormData({...formData, subscription_tier: tier, subscription_credits: tier > 0 ? tier : 0});
+                            }}
+                            className="border border-emerald-200 rounded-lg px-3 py-1.5 text-sm focus:ring-emerald-500 focus:border-emerald-500 bg-white text-emerald-800 font-bold"
+                          >
+                            <option value={0}>None</option>
+                            <option value={5}>5 Leads / mo</option>
+                            <option value={10}>10 Leads / mo</option>
+                          </select>
+                        </div>
+                      </div>
+                      {formData.subscription_tier > 0 && (
+                        <div className="mb-4">
+                          <label className="block text-sm font-medium text-gray-700 mb-1">Remaining Subscription Credits</label>
+                          <input 
+                            type="number" 
+                            min="0"
+                            max={formData.subscription_tier}
+                            value={formData.subscription_credits} 
+                            onChange={e => setFormData({...formData, subscription_credits: parseInt(e.target.value) || 0})} 
+                            className="w-full border border-gray-300 rounded-lg px-3 py-2 sm:text-sm focus:ring-emerald-500 focus:border-emerald-500" 
+                          />
+                        </div>
+                      )}
                       <label className="block text-sm font-medium text-gray-700 mb-1">Service Areas (Geofenced)</label>
                       <p className="text-xs text-gray-500 mb-3">Define the exact areas this client covers. They will only receive leads within these locations.</p>
                       <MultiServiceArea 

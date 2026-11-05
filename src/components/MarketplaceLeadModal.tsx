@@ -19,7 +19,9 @@ interface MarketplaceLeadModalProps {
   onPurchase: () => void;
   isResidential?: boolean;
   freeCreditsAvailable?: number;
+  subscriptionCredits?: number;
   onClaimFreeLead?: () => void;
+  onClaimSubscriptionLead?: () => void;
 }
 
 const MissingValue = () => <span className="text-gray-300 font-normal italic">-</span>;
@@ -66,7 +68,7 @@ const SavingsCarousel = ({ lead }: { lead: any }) => {
   );
 };
 
-export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOpen, onClose, lead, onPurchase, isResidential = false, freeCreditsAvailable = 0, onClaimFreeLead }) => {
+export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOpen, onClose, lead, onPurchase, isResidential = false, freeCreditsAvailable = 0, subscriptionCredits = 0, onClaimFreeLead, onClaimSubscriptionLead }) => {
   const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [hasBills, setHasBills] = useState<boolean>(false);
   const [showMagicLink, setShowMagicLink] = useState(false);
@@ -234,6 +236,17 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <span>Already requested by organisation.</span>
                   </div>
                 </div>
+              ) : subscriptionCredits > 0 ? (
+                <button
+                  onClick={onClaimSubscriptionLead}
+                  disabled={isLoadingRequest}
+                  className={`px-4 py-2 shadow-sm text-sm font-bold rounded-lg text-white flex items-center gap-2 transition-all active:scale-95 ${
+                    isLoadingRequest ? 'opacity-50 cursor-not-allowed bg-purple-400' : 'bg-purple-600 hover:bg-purple-500 hover:shadow-purple-200 hover:shadow-lg'
+                  }`}
+                >
+                  <Check className="w-4 h-4" />
+                  Claim with Subscription
+                </button>
               ) : freeCreditsAvailable > 0 && (lead.exclusive_price || lead.price || 0) < 400 ? (
                 <button
                   onClick={onClaimFreeLead}
@@ -320,7 +333,11 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                     <div className="absolute inset-0 bg-emerald-50 opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
                     <div className="absolute -inset-full animate-[spin_4s_linear_infinite] opacity-20 bg-[conic-gradient(from_90deg_at_50%_50%,#10b981_0%,transparent_50%,#10b981_100%)] blur-xl"></div>
                     <span className="text-[10px] font-bold text-gray-500 uppercase tracking-wider mb-2 relative z-10">Exclusive Price</span>
-                    {freeCreditsAvailable > 0 && (lead.exclusive_price || lead.price || 0) < 400 ? (
+                    {subscriptionCredits > 0 ? (
+                      <span className="text-4xl font-black text-purple-600 relative z-10 drop-shadow-sm">
+                        INCLUDED
+                      </span>
+                    ) : freeCreditsAvailable > 0 && (lead.exclusive_price || lead.price || 0) < 400 ? (
                       <span className="text-4xl font-black text-emerald-600 relative z-10 drop-shadow-sm animate-pulse">
                         FREE
                       </span>

@@ -62,6 +62,8 @@ export interface Client {
   is_partner_plus?: boolean;
   min_system_size_kw?: number | null;
   preferred_roof_types?: string[] | null;
+  subscription_tier?: number;
+  subscription_credits?: number;
   created_at: string;
 }
 

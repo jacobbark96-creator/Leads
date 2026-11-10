@@ -111,7 +111,9 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
     if (mounted && initialized && !loading && !profileCheckLoading) {
       if (!user || !profile) {
         router.replace('/login');
-      } else if (profile.role === 'client' && profile.is_approved === false) {
+      } else if (profile.is_blocked) {
+        router.replace('/account-blocked');
+      } else if (profile.role === 'client' && profile.is_blocked === false && profile.is_approved === false) {
         router.replace('/pending-approval');
       } else if (profile.role === 'client' && !isProfileComplete && pathname !== '/my-openlead') {
         router.replace('/my-openlead');

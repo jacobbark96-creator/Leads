@@ -36,6 +36,12 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
   const [avatarUploading, setAvatarUploading] = useState(false);
   const [isBuyNumberModalOpen, setIsBuyNumberModalOpen] = useState(false);
   const [divisions, setDivisions] = useState<Division[]>([]);
+  const [blockingStatus, setBlockingStatus] = useState(false);
+  const [blockData, setBlockData] = useState({
+    is_blocked: user.is_blocked || false,
+    block_reason: user.block_reason || '',
+    outstanding_amount: user.outstanding_amount || 0
+  });
   
   const [formData, setFormData] = useState({
     name: user.name || '',
@@ -520,6 +526,58 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
       toast.error('Failed to update password: ' + error.message);
     } finally {
       setUpdatingDirectPassword(false);
+    }
+  };
+
+  const handleToggleBlock = async () => {
+    try {
+      setBlockingStatus(true);
+      const newBlockedStatus = !blockData.is_blocked;
+
+      // Update Supabase
+      const { error } = await supabase
+        .from('users')
+        .update({
+          is_blocked: newBlockedStatus,
+          block_reason: newBlockedStatus ? blockData.block_reason : null,
+          outstanding_amount: newBlockedStatus ? blockData.outstanding_amount : 0
+        })
+        .eq('id', user.id);
+
+      if (error) throw error;
+
+      setBlockData(prev => ({ ...prev, is_blocked: newBlockedStatus }));
+      onUserUpdated();
+
+      if (newBlockedStatus) {
+        // Send email
+        const res = await fetch('/api/admin/send-block-email', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+          },
+          body: JSON.stringify({
+            userId: user.id,
+            email: user.email,
+            name: user.name,
+            reason: blockData.block_reason,
+            outstandingAmount: blockData.outstanding_amount
+          })
+        });
+        if (!res.ok) {
+          const data = await res.json();
+          throw new Error(data.error || 'Failed to send block email');
+        }
+        toast.success('User blocked and email sent successfully');
+      } else {
+        toast.success('User unblocked successfully');
+      }
+    } catch (err: any) {
+      console.error('Error toggling block status:', err);
+      toast.error(err.message || 'Failed to update account status');
+    } finally {
+      setBlockingStatus(false);
     }
   };
 
@@ -1229,8 +1287,63 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
             </form>
           </div>
 
-          {/* Right Col: Security */}
+          {/* Right Col: Account Status & Security */}
           <div>
+            <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+              <Shield className="w-4 h-4 text-gray-400" /> Account Status
+            </h3>
+
+            <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-sm font-semibold text-gray-900">Block Access</h4>
+                  <p className="text-xs text-gray-600">Prevent user from logging in</p>
+                </div>
+                <button
+                  type="button"
+                  onClick={blockData.is_blocked ? handleToggleBlock : undefined} // Only handle unblock directly, block requires form
+                  className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 ${blockData.is_blocked ? 'bg-red-600' : 'bg-gray-200'}`}
+                >
+                  <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${blockData.is_blocked ? 'translate-x-5' : 'translate-x-0'}`} />
+                </button>
+              </div>
+
+              {!blockData.is_blocked && (
+                <div className="space-y-3 mt-4 pt-4 border-t border-gray-200">
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Reason for blocking</label>
+                    <input
+                      type="text"
+                      placeholder="e.g. Unpaid Invoices"
+                      value={blockData.block_reason}
+                      onChange={(e) => setBlockData({...blockData, block_reason: e.target.value})}
+                      className="block w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-700 mb-1">Outstanding Amount (£)</label>
+                    <input
+                      type="number"
+                      min="0"
+                      step="0.01"
+                      placeholder="0.00"
+                      value={blockData.outstanding_amount}
+                      onChange={(e) => setBlockData({...blockData, outstanding_amount: parseFloat(e.target.value) || 0})}
+                      className="block w-full text-sm border-gray-300 rounded-md shadow-sm focus:ring-red-500 focus:border-red-500"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    disabled={blockingStatus || !blockData.block_reason}
+                    onClick={handleToggleBlock}
+                    className="w-full flex justify-center py-2 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-red-600 hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                  >
+                    {blockingStatus ? 'Processing...' : 'Block User & Send Email'}
+                  </button>
+                </div>
+              )}
+            </div>
+
             <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
               <Key className="w-4 h-4 text-gray-400" /> Security
             </h3>

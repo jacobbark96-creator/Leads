@@ -131,9 +131,28 @@ export async function POST(req: Request) {
         }
       } else if (session.mode === 'payment') {
         const type = session.metadata?.type;
+        const checkoutType = session.metadata?.checkoutType;
         const clientId = session.metadata?.clientId;
 
-        if (type === 'topup' && clientId) {
+        if (checkoutType === 'invoice') {
+          const invoiceUserId = session.metadata?.userId;
+          if (invoiceUserId) {
+            try {
+              await supabase
+                .from('users')
+                .update({ 
+                  is_blocked: false, 
+                  outstanding_amount: 0,
+                  block_reason: null
+                })
+                .eq('id', invoiceUserId);
+              console.log(`Unblocked user ${invoiceUserId} after invoice payment.`);
+            } catch (err) {
+              console.error('Failed to unblock user after invoice payment:', err);
+            }
+          }
+        }
+        else if (type === 'topup' && clientId) {
           const amount = parseFloat(session.metadata?.amount || '0');
           if (amount > 0) {
             // First get the current balance using an RPC or a read-then-update

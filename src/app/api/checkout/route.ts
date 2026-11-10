@@ -272,6 +272,41 @@ export async function POST(req: Request) {
       return NextResponse.json({ url: session.url });
     } 
     
+    else if (checkoutType === 'invoice') {
+      const { amount, userId, email } = body;
+      if (!amount || !userId) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+
+      const stripe = require('stripe')(stripeKey);
+
+      // Create a Checkout Session for the invoice payment
+      const session = await stripe.checkout.sessions.create({
+        payment_method_types: ['card'],
+        customer_email: email,
+        line_items: [
+          {
+            price_data: {
+              currency: 'gbp',
+              product_data: {
+                name: 'Outstanding Invoice Payment',
+                description: 'Payment to resolve account suspension.',
+              },
+              unit_amount: Math.round(amount * 100), // convert to pence
+            },
+            quantity: 1,
+          },
+        ],
+        mode: 'payment',
+        success_url: `${appUrl}/client-portal?payment_success=true`,
+        cancel_url: `${appUrl}/account-blocked`,
+        metadata: {
+          userId,
+          checkoutType: 'invoice',
+        },
+      });
+
+      return NextResponse.json({ sessionId: session.id, url: session.url });
+    }
+    
     else if (checkoutType === 'topup') {
       const { amount, clientId, userId, email, discountCode } = body;
       if (!amount || !clientId || !userId) return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });

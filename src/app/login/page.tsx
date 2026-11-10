@@ -50,7 +50,9 @@ export default function Login() {
   // Redirect if already logged in
   useEffect(() => {
     if (user && profile) {
-      if (profile.role === 'client') {
+      if (profile.is_blocked) {
+        router.replace('/account-blocked');
+      } else if (profile.role === 'client') {
         if (profile.is_approved === false) {
           router.replace('/pending-approval');
         } else {
@@ -144,7 +146,9 @@ export default function Login() {
             
           if (profileData) {
             useAuthStore.getState().setProfile(profileData);
-            if (profileData.role === 'client') {
+            if (profileData.is_blocked) {
+              router.replace('/account-blocked');
+            } else if (profileData.role === 'client') {
               if (profileData.is_approved === false) {
                 router.replace('/pending-approval');
               } else {

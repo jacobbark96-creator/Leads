@@ -605,3 +605,60 @@ export const sendConciergeRequestEmail = async ({
     return { success: false, error: err.message };
   }
 };
+
+/**
+ * Sends an email to a user when their account is blocked.
+ */
+export const sendAccountBlockedEmail = async (
+  email: string,
+  name: string,
+  reason: string,
+  outstandingAmount?: number
+) => {
+  try {
+    return await sendResendEmail({
+      from: `Openlead Billing <${defaultFromEmail}>`,
+      to: [email],
+      subject: `Action Required: Account Suspended`,
+      html: `
+        <div style="font-family: Arial, sans-serif; max-w: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eaeaea; border-radius: 10px;">
+          <h2 style="color: #ef4444; margin-top: 0;">Account Suspended 🛑</h2>
+          
+          <p style="color: #4b5563; line-height: 1.6;">
+            Hello ${name},
+          </p>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            Your account on Openlead has been temporarily suspended.
+          </p>
+
+          <div style="background-color: #fef2f2; border: 1px solid #fee2e2; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <p style="margin: 0; color: #991b1b; font-weight: bold;">Reason:</p>
+            <p style="margin: 10px 0 0; color: #b91c1c; line-height: 1.6;">${reason}</p>
+            ${outstandingAmount && outstandingAmount > 0 ? `
+              <p style="margin: 15px 0 0; color: #991b1b; font-weight: bold;">Outstanding Balance:</p>
+              <p style="margin: 5px 0 0; color: #b91c1c; font-size: 18px; font-weight: bold;">£${outstandingAmount.toFixed(2)}</p>
+            ` : ''}
+          </div>
+
+          <p style="color: #4b5563; line-height: 1.6;">
+            Please log in to your account to resolve this issue and restore access to the marketplace.
+          </p>
+
+          <div style="margin-top: 30px; text-align: center;">
+            <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://openlead.co.uk'}/login" style="background-color: #2563eb; color: white; padding: 12px 24px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">
+              Log in to Resolve
+            </a>
+          </div>
+
+          <p style="margin-top: 30px; color: #9ca3b8; font-size: 12px; text-align: center; border-top: 1px solid #eaeaea; padding-top: 20px;">
+            If you believe this is an error, please contact support.
+          </p>
+        </div>
+      `,
+    });
+  } catch (err: any) {
+    console.error('Failed to send account blocked email:', err);
+    return { success: false, error: err.message };
+  }
+};

@@ -28,6 +28,9 @@ export interface UserProfile {
   flex_terms_accepted_at?: string | null;
   allowed_child_accounts?: boolean;
   whatsapp_enabled?: boolean;
+  is_blocked?: boolean;
+  block_reason?: string | null;
+  outstanding_amount?: number;
   is_residential_admin?: boolean;
   parent_id?: string | null;
   requires_password_change?: boolean;

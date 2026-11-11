@@ -342,31 +342,21 @@ CRITICAL RULES:
             // We want to fetch ANY internal user that has a Twilio number, not just admins.
             // This catches roles like 'staff', 'sales', 'rep', etc.
             const { data: reps } = await supabase.from('users')
-              .select('id, name, role, twilio_number')
+              .select('id, name, role, twilio_number, is_blocked')
               .neq('role', 'client')
-              .not('twilio_number', 'is', null);
+              .not('twilio_number', 'is', null)
+              .not('is_blocked', 'eq', true);
             
-            // Hit Twilio API for active calls
-            const twilioSid = process.env.TWILIO_ACCOUNT_SID;
-            const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-            let allCallsToday: any[] = [];
+            // Get Twilio stats from our own database first! Twilio API pagination is notoriously slow and we already log calls
+            // in `lead_notes` whenever they happen.
+            const today = new Date();
+            today.setHours(0,0,0,0);
             
-            if (twilioSid && twilioToken) {
-              const authHeader = 'Basic ' + btoa(`${twilioSid}:${twilioToken}`);
-              const today = new Date();
-              today.setHours(0,0,0,0);
-              const formattedDate = today.toISOString().split('T')[0];
+            const { data: dbCalls } = await supabase.from('lead_notes')
+              .select('id, user_id, author_name, call_sid, content, created_at')
+              .not('call_sid', 'is', null)
+              .gte('created_at', today.toISOString());
               
-              // We fetch ALL calls for today to give accurate daily breakdowns, not just in-progress
-              const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?StartTime>=${formattedDate}&PageSize=100`, {
-                headers: { 'Authorization': authHeader }
-              });
-              if (res.ok) {
-                const data = await res.json();
-                allCallsToday = data.calls || [];
-              }
-            }
-
             const formatTime = (secs: number) => {
               if (secs < 60) return `${secs} seconds`;
               const mins = Math.floor(secs / 60);
@@ -375,21 +365,21 @@ CRITICAL RULES:
             };
 
             const repStats = (reps || []).map((rep: any) => {
-               const twilioNum = rep.twilio_number?.replace(/\s/g, '');
-               
-               const repCalls = allCallsToday.filter((c: any) => 
-                 c.from === twilioNum || c.to === twilioNum
-               );
+               const repCalls = (dbCalls || []).filter((c: any) => c.user_id === rep.id);
                
                const dials = repCalls.length;
                let totalDurationSeconds = 0;
                let longestCallSeconds = 0;
                
                repCalls.forEach((c: any) => {
-                 const d = parseInt(c.duration || '0', 10);
-                 if (!isNaN(d)) {
-                   totalDurationSeconds += d;
-                   if (d > longestCallSeconds) longestCallSeconds = d;
+                 // Our call notes look like "📞 Call by Jake: Busy (45 seconds)"
+                 const match = c.content?.match(/\((\d+)\s+seconds?\)/i);
+                 if (match) {
+                   const d = parseInt(match[1], 10);
+                   if (!isNaN(d)) {
+                     totalDurationSeconds += d;
+                     if (d > longestCallSeconds) longestCallSeconds = d;
+                   }
                  }
                });
                

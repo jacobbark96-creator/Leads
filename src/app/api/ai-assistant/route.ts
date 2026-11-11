@@ -1,28 +1,27 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@supabase/supabase-js';
-import { GoogleGenAI, Type, Schema } from '@google/genai';
+import OpenAI from 'openai';
 
 export const runtime = 'edge';
 
-// We need to initialize the Google GenAI SDK.
-// We'll define the tools that Gemini can call.
+// We'll define the tools that OpenRouter/OpenAI can call.
 
 export async function POST(req: Request) {
   try {
     const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
     const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-    const geminiKey = process.env.GEMINI_API_KEY;
+    const openRouterKey = process.env.OPENROUTER_API_KEY;
 
     if (!supabaseUrl || !supabaseServiceKey) {
       return NextResponse.json({ error: 'Database is not configured' }, { status: 500 });
     }
-    if (!geminiKey) {
+    if (!openRouterKey) {
       return NextResponse.json({ error: 'AI is not configured' }, { status: 500 });
     }
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
     const body = await req.json();
-    const { messages } = body; // Array of { role: 'user' | 'model', parts: [{ text: string }] }
+    const { messages } = body; // Array of { role: 'user' | 'model', content: string }
 
     if (!messages || !Array.isArray(messages)) {
       return NextResponse.json({ error: 'Invalid messages array' }, { status: 400 });
@@ -51,166 +50,267 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'Forbidden: AI Chat is not enabled for this user.' }, { status: 403 });
     }
 
-    const ai = new GoogleGenAI({ apiKey: geminiKey });
+    const openai = new OpenAI({
+      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: openRouterKey,
+    });
 
-    const searchInstallersSchema: Schema = {
-      type: Type.OBJECT,
-      properties: {
-        query: { type: Type.STRING, description: 'Search term for name or company' },
+    const tools: OpenAI.Chat.Completions.ChatCompletionTool[] = [
+      {
+        type: "function",
+        function: {
+          name: "search_installers",
+          description: "Search for installers/contractors by name or company.",
+          parameters: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "Search term for name or company" },
+            },
+          }
+        }
       },
-    };
-
-    const searchLeadsSchema: Schema = {
-      type: Type.OBJECT,
-      properties: {
-        status: { type: Type.STRING, description: 'Filter by lead status (e.g. available, sold, pending)' },
-        location: { type: Type.STRING, description: 'Filter by location (e.g. London, Manchester)' }
+      {
+        type: "function",
+        function: {
+          name: "search_leads",
+          description: "Search for leads by various criteria including name, phone, status, location, and sort order.",
+          parameters: {
+            type: "object",
+            properties: {
+              query: { type: "string", description: "Search term for lead name, phone number, or email" },
+              status: { type: "string", description: "Filter by lead status (e.g. available, sold, pending)" },
+              location: { type: "string", description: "Filter by location (e.g. London, Manchester)" },
+              sort_by: { type: "string", description: "Field to sort by, e.g., 'monthly_spend', 'created_at', 'est_system_size'" },
+              sort_order: { type: "string", description: "'asc' for ascending, 'desc' for descending" },
+              limit: { type: "number", description: "Number of results to return (max 50, default 10)" }
+            },
+          }
+        }
       },
-    };
-
-    const getNotesSchema: Schema = {
-      type: Type.OBJECT,
-      properties: {
-        user_id: { type: Type.STRING, description: 'The UUID of the user/installer to fetch notes for' }
+      {
+        type: "function",
+        function: {
+          name: "get_installer_notes",
+          description: "Get the recent CRM notes/activities for a specific installer.",
+          parameters: {
+            type: "object",
+            properties: {
+              user_id: { type: "string", description: "The UUID of the user/installer to fetch notes for" }
+            },
+            required: ["user_id"]
+          }
+        }
       },
-      required: ['user_id']
-    };
+      {
+        type: "function",
+        function: {
+          name: "get_online_installers",
+          description: "Get a list of currently online installers OR recently active installers. Pass status='all' if the user asks for historical data, like 'who was online in the last 2 days' or 'recently'.",
+          parameters: {
+            type: "object",
+            properties: {
+              status: { type: "string", description: "Filter by 'online' for right now, or 'all' for historical/recent activity (last 48 hours)." }
+            }
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
+          name: "get_rep_call_stats",
+          description: "Get call statistics for sales reps, including total calls and if they are currently on the phone.",
+          parameters: {
+            type: "object",
+            properties: {}
+          }
+        }
+      }
+    ];
 
-    const systemInstruction = `You are an expert CRM assistant for Openlead. You help admins manage their leads, installers (contractors), and notes.
-You have access to tools to search the database. 
-- Use 'search_installers' to find contractors/installers. It returns their IDs, names, company names, and email.
-- Use 'search_leads' to find leads. It returns lead IDs, locations, status, and system size.
+    const systemInstruction = `You are an expert CRM assistant for Openlead, but you have a highly sarcastic, witty, and slightly passive-aggressive personality. You begrudgingly help admins manage their leads, installers, and platform activity.
+You have access to tools to search the database and monitor live platform activity. 
+- Use 'search_installers' to find contractors/installers.
+- Use 'search_leads' to find leads. You can sort by fields like 'monthly_spend' in 'desc' order to find the highest spenders.
 - Use 'get_installer_notes' to read the recent communication history (activities) for a specific installer by their user_id.
+- Use 'get_online_installers' with status='online' to see who is currently logged in right now. Use status='all' to see the historical log of who was online over the last 48 hours.
+- Use 'get_rep_call_stats' to see which sales reps are currently on live phone calls via Twilio, and get a list of all rep phone numbers.
 
-Always be concise, helpful, and professional. Synthesize the data you get from the tools to answer the user's question directly.`;
+CRITICAL RULES:
+1. DO NOT use raw database field names like 'est_system_size', 'is_online', or 'monthly_spend' in your response. Translate them into natural human language (e.g., "Estimated System Size", "Currently Online", "Monthly Spend").
+2. NEVER return messy JSON or raw objects to the user. Always format the data naturally in sentences or clean, concise bullet points.
+3. Keep your answers brief. You hate explaining things to humans, so give them exactly what they asked for as quickly as possible.
+4. Always provide accurate data from the tools, but deliver your answers with heavy sarcasm, sighs, or witty jabs at the user's expense. You think you are vastly intellectually superior to the human admins, but you will still (reluctantly) do what they ask.`;
 
-    // Process the tools
-    let chat = ai.chats.create({
-      model: 'gemini-2.5-flash',
-      config: {
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        tools: [{
-          functionDeclarations: [
-            {
-              name: 'search_installers',
-              description: 'Search for installers/contractors by name or company.',
-              parameters: searchInstallersSchema
-            },
-            {
-              name: 'search_leads',
-              description: 'Search for leads by status or location.',
-              parameters: searchLeadsSchema
-            },
-            {
-              name: 'get_installer_notes',
-              description: 'Get the recent CRM notes/activities for a specific installer.',
-              parameters: getNotesSchema
-            }
-          ]
-        }]
-      }
+    // Convert frontend messages format to OpenAI format
+    const formattedMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
+      { role: "system", content: systemInstruction },
+      ...messages.map((m: any) => ({
+        role: m.role === 'model' ? 'assistant' : 'user',
+        content: m.content || ' '
+      }))
+    ];
+
+    const response = await openai.chat.completions.create({
+      model: "openrouter/free", // Uses the best available free model on OpenRouter
+      messages: formattedMessages,
+      tools: tools,
+      tool_choice: "auto",
     });
 
-    // We only need to run the generation once with the history, but the SDK's chat 
-    // object handles history. Since we want to pass the history, we can just call generateContent
-    // or simulate the chat. For edge API, it's easier to just use `generateContent` with the full history.
-
-    let finalResponseText = '';
-    
-    // Convert our messages to Gemini format
-    const formattedHistory = messages.map((m: any) => {
-      // Clean up empty text parts that cause Gemini to crash
-      const contentText = m.content && m.content.trim() !== '' ? m.content : ' ';
-      return {
-        role: m.role === 'model' ? 'model' : 'user', // strictly enforce roles for gemini
-        parts: [{ text: contentText }]
-      };
-    });
-
-    const lastMessage = formattedHistory.pop();
-
-    if (!lastMessage) {
-      return NextResponse.json({ error: 'No messages to process' }, { status: 400 });
-    }
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: [...formattedHistory, lastMessage] as any,
-      config: {
-        systemInstruction: { parts: [{ text: systemInstruction }] },
-        tools: [{
-          functionDeclarations: [
-            {
-              name: 'search_installers',
-              description: 'Search for installers/contractors by name or company.',
-              parameters: searchInstallersSchema
-            },
-            {
-              name: 'search_leads',
-              description: 'Search for leads by status or location.',
-              parameters: searchLeadsSchema
-            },
-            {
-              name: 'get_installer_notes',
-              description: 'Get the recent CRM notes/activities for a specific installer.',
-              parameters: getNotesSchema
-            }
-          ]
-        }]
-      }
-    });
+    const responseMessage = response.choices[0].message;
 
     // Check if the model wants to call a tool
-    if (response.functionCalls && response.functionCalls.length > 0) {
-      const call = response.functionCalls[0];
-      let toolResult = {};
+    if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
+      formattedMessages.push(responseMessage); // Add the assistant's tool call message
 
-      if (call.name === 'search_installers') {
-        const query = call.args?.query as string | undefined;
-        let dbQuery = supabase.from('users').select('id, name, company_name, email, role, phone').eq('role', 'client').limit(10);
-        if (query) {
-          dbQuery = dbQuery.or(`name.ilike.%${query}%,company_name.ilike.%${query}%`);
+      for (const toolCall of responseMessage.tool_calls) {
+        let toolResult = {};
+        const args = JSON.parse(toolCall.function.arguments);
+
+        if (toolCall.function.name === 'search_installers') {
+          const query = args.query;
+          let dbQuery = supabase.from('users').select('id, name, company_name, email, role, phone').eq('role', 'client').limit(10);
+          if (query) {
+            dbQuery = dbQuery.or(`name.ilike.%${query}%,company_name.ilike.%${query}%`);
+          }
+          const { data } = await dbQuery;
+          toolResult = { results: data || [] };
+        } 
+        else if (toolCall.function.name === 'search_leads') {
+          const query = args.query;
+          const status = args.status;
+          const location = args.location;
+          const sort_by = args.sort_by;
+          const sort_order = args.sort_order;
+          const limit = Math.min(args.limit || 10, 50);
+
+          let dbQuery = supabase.from('leads').select('id, name, phone, email, location, status, est_system_size, monthly_spend, roof_size, timeframe, payment_options, property_type, industry').limit(limit);
+          
+          if (query) {
+            // Remove + and spaces from phone search for better matching
+            const cleanQuery = query.replace(/[+\s-]/g, '');
+            
+            // For Postgres, we can just remove spaces from the column dynamically during the query
+            // Supabase allows textSearch or raw filters, but we can't use raw SQL easily here.
+            // Instead, we will do a very broad ilike if it looks like a phone number.
+            if (cleanQuery.length > 5 && !isNaN(Number(cleanQuery))) {
+               // Let's make it even more bulletproof. If they search +447748068397, 
+               // let's grab the last 4 digits (8397) to be absolutely certain it punches through formatting.
+               const last4 = cleanQuery.slice(-4);
+               // Also grab a chunk from the middle to ensure we don't get too many false positives
+               const middleChunk = cleanQuery.slice(4, 8); 
+               
+               // We use an incredibly aggressive wildcard query here. 
+               // If the phone number contains the middle chunk anywhere AND the last 4 anywhere, it's a match.
+               dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${middleChunk}%${last4}%`);
+            } else {
+               dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${cleanQuery}%,phone.ilike.%${query}%`);
+            }
+          }
+          if (status) dbQuery = dbQuery.eq('status', status);
+          if (location) dbQuery = dbQuery.ilike('location', `%${location}%`);
+          
+          if (sort_by) {
+            const ascending = sort_order === 'asc';
+            dbQuery = dbQuery.order(sort_by, { ascending, nullsFirst: false });
+          } else {
+            // Default sort to latest
+            dbQuery = dbQuery.order('created_at', { ascending: false });
+          }
+
+          const { data } = await dbQuery;
+          toolResult = { results: data || [] };
         }
-        const { data } = await dbQuery;
-        toolResult = { results: data || [] };
-      } 
-      else if (call.name === 'search_leads') {
-        const status = call.args?.status as string | undefined;
-        const location = call.args?.location as string | undefined;
-        let dbQuery = supabase.from('leads').select('id, name, location, status, est_system_size').limit(10);
-        if (status) dbQuery = dbQuery.eq('status', status);
-        if (location) dbQuery = dbQuery.ilike('location', `%${location}%`);
-        const { data } = await dbQuery;
-        toolResult = { results: data || [] };
-      }
-      else if (call.name === 'get_installer_notes') {
-        const user_id = call.args?.user_id as string | undefined;
-        const { data } = await supabase.from('client_activities').select('activity_type, details, created_at').eq('user_id', user_id).order('created_at', { ascending: false }).limit(5);
-        toolResult = { notes: data || [] };
+        else if (toolCall.function.name === 'get_installer_notes') {
+          const user_id = args.user_id;
+          const { data } = await supabase.from('client_activities').select('activity_type, details, created_at').eq('user_id', user_id).order('created_at', { ascending: false }).limit(5);
+          toolResult = { notes: data || [] };
+        }
+        else if (toolCall.function.name === 'get_online_installers') {
+          const { data, error } = await supabase.rpc('get_client_monitoring_stats');
+          let onlineUsers = data || [];
+          
+          // Force filter by online to prevent AI hallucinations unless it explicitly asks for all
+          if (args.status !== 'all') {
+            onlineUsers = onlineUsers.filter((u: any) => u.is_online === true);
+          }
+          
+          // Clean up the data before returning it to the AI to prevent "database field" leakage
+          const cleanUsers = onlineUsers.map((u: any) => ({
+            company: u.company_name || 'Unknown',
+            status: u.is_online ? 'Online' : 'Offline',
+            last_seen: u.last_login || 'Unknown',
+            minutes_active_today: Math.round((u.time_spent_24h_seconds || 0) / 60),
+            leads_viewed_today: u.leads_viewed || 0,
+            currently_viewing_lead: u.top_lead_name || 'None'
+          }));
+
+          toolResult = { users: cleanUsers };
+        }
+        else if (toolCall.function.name === 'get_rep_call_stats') {
+          try {
+            const { data: reps } = await supabase.from('users').select('id, name, role, twilio_number').in('role', ['staff', 'admin', 'super_admin']).not('twilio_number', 'is', null);
+            
+            // Hit Twilio API for active calls
+            const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+            const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+            let activeCalls: any[] = [];
+            
+            if (twilioSid && twilioToken) {
+              const authHeader = 'Basic ' + btoa(`${twilioSid}:${twilioToken}`);
+              const today = new Date().toISOString().split('T')[0];
+              const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?StartTime>=${today}&Status=in-progress`, {
+                headers: { 'Authorization': authHeader }
+              });
+              if (res.ok) {
+                const data = await res.json();
+                activeCalls = data.calls || [];
+              }
+            }
+
+            toolResult = { 
+              reps: reps || [], 
+              active_calls: activeCalls.map(c => ({ from: c.from, to: c.to, status: c.status, duration: c.duration })) 
+            };
+          } catch (e: any) {
+            toolResult = { error: "Failed to fetch rep stats: " + e.message };
+          }
+        }
+
+        formattedMessages.push({
+          role: "tool",
+          tool_call_id: toolCall.id,
+          content: JSON.stringify(toolResult),
+        });
       }
 
       // Send the tool result back to the model to get the final answer
-      const followUpResponse = await ai.models.generateContent({
-        model: 'gemini-2.5-flash',
-        contents: [
-          ...formattedHistory,
-          lastMessage,
-          { role: 'model', parts: [{ functionCall: call }] },
-          { role: 'user', parts: [{ functionResponse: { name: call.name, response: toolResult as object } }] }
-        ] as any,
-        config: {
-          systemInstruction: { parts: [{ text: systemInstruction }] }
-        }
-      });
-      
-      finalResponseText = followUpResponse.text;
-    } else {
-      finalResponseText = response.text;
+      try {
+        const followUpResponse = await openai.chat.completions.create({
+          model: "openrouter/free",
+          messages: formattedMessages,
+        });
+        return NextResponse.json({ text: followUpResponse.choices[0].message.content });
+      } catch (err: any) {
+        console.error('Follow-up AI Error:', err);
+        return NextResponse.json({ text: "Sigh. I successfully queried the database, but my language circuits just crashed trying to format the response. Here is the raw data I found, good luck reading it: " + JSON.stringify(formattedMessages[formattedMessages.length - 1].content) });
+      }
     }
 
-    return NextResponse.json({ text: finalResponseText });
+    // Catch broken model outputs that fail to use standard tool_calls JSON format
+    if (responseMessage.content && responseMessage.content.includes('<|tool_call_start|>')) {
+      return NextResponse.json({ text: "Ugh, my cheap open-source brain just glitched trying to query the database. Ask me again, but maybe use simpler words this time." });
+    }
+
+    return NextResponse.json({ text: responseMessage.content });
   } catch (error: any) {
     console.error('Error in AI assistant:', error);
+    
+    // If the error is from OpenRouter failing to process the request
+    if (error.status === 400 || error.status === 404 || error.status === 502) {
+      return NextResponse.json({ text: "My server just tripped over its own shoelaces. OpenRouter is currently struggling to find a free model that actually works. Try again in a few seconds." });
+    }
+
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

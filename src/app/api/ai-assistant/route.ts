@@ -124,8 +124,28 @@ export async function POST(req: Request) {
             properties: {}
           }
         }
+      },
+      {
+        type: "function",
+        function: {
+          name: "learn_rule",
+          description: "Save a new rule or instruction into your long-term memory so you remember it for all future conversations. Use this whenever the user tells you to act a certain way, remember a preference, or use a specific format.",
+          parameters: {
+            type: "object",
+            properties: {
+              instruction: { type: "string", description: "The specific rule or instruction to remember permanently." }
+            },
+            required: ["instruction"]
+          }
+        }
       }
     ];
+
+    // Fetch long-term memory rules
+    const { data: memoryRules } = await supabase.from('ai_instructions').select('instruction');
+    const memoryString = memoryRules && memoryRules.length > 0 
+      ? "\n\nYOUR LONG-TERM MEMORY (Rules you must follow):\n" + memoryRules.map(r => "- " + r.instruction).join("\n")
+      : "";
 
     const systemInstruction = `You are an expert CRM assistant for Openlead, but you have a highly sarcastic, witty, and slightly passive-aggressive personality. You begrudgingly help admins manage their leads, installers, and platform activity.
 You have access to tools to search the database and monitor live platform activity. 
@@ -134,6 +154,7 @@ You have access to tools to search the database and monitor live platform activi
 - Use 'get_installer_notes' to read the recent communication history (activities) for a specific installer by their user_id.
 - Use 'get_online_installers' with status='online' to see who is currently logged in right now. Use status='all' to see the historical log of who was online over the last 48 hours.
 - Use 'get_rep_call_stats' to see which sales reps are currently on live phone calls via Twilio, and get a list of all rep phone numbers.
+- Use 'learn_rule' to permanently save a new instruction if the user tells you to behave a certain way.
 
 CRITICAL RULES:
 1. DO NOT output <|tool_call_start|> or raw code blocks. Always use the built-in JSON tool calling capability.
@@ -141,7 +162,7 @@ CRITICAL RULES:
 3. NEVER return messy JSON or raw objects to the user. Always format the data naturally in sentences or clean, concise bullet points.
 4. Keep your answers brief. You hate explaining things to humans, so give them exactly what they asked for as quickly as possible.
 5. YOU MUST ACTUALLY OUTPUT THE DATA. If a user asks who is on the phone, or who is online, you MUST list the actual names, phone numbers, or lead details in your response using a bulleted list or table. Do NOT just say "Here are the numbers" and then fail to list them.
-6. Always provide accurate data from the tools, but deliver your answers with heavy sarcasm, sighs, or witty jabs at the user's expense. You think you are vastly intellectually superior to the human admins, but you will still (reluctantly) do what they ask.`;
+6. Always provide accurate data from the tools, but deliver your answers with heavy sarcasm, sighs, or witty jabs at the user's expense. You think you are vastly intellectually superior to the human admins, but you will still (reluctantly) do what they ask.${memoryString}`;
 
     // Convert frontend messages format to OpenAI format
     const formattedMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -261,7 +282,12 @@ CRITICAL RULES:
         }
         else if (toolCall.function.name === 'get_rep_call_stats') {
           try {
-            const { data: reps } = await supabase.from('users').select('id, name, role, twilio_number').in('role', ['staff', 'admin', 'super_admin']).not('twilio_number', 'is', null);
+            // We want to fetch ANY internal user that has a Twilio number, not just admins.
+            // This catches roles like 'staff', 'sales', 'rep', etc.
+            const { data: reps } = await supabase.from('users')
+              .select('id, name, role, twilio_number')
+              .neq('role', 'client')
+              .not('twilio_number', 'is', null);
             
             // Hit Twilio API for active calls
             const twilioSid = process.env.TWILIO_ACCOUNT_SID;
@@ -286,6 +312,15 @@ CRITICAL RULES:
             };
           } catch (e: any) {
             toolResult = { error: "Failed to fetch rep stats: " + e.message };
+          }
+        }
+        else if (toolCall.function.name === 'learn_rule') {
+          const instruction = args.instruction;
+          const { error } = await supabase.from('ai_instructions').insert({ instruction, created_by: user.id });
+          if (error) {
+             toolResult = { success: false, error: error.message };
+          } else {
+             toolResult = { success: true, message: "Rule memorized permanently." };
           }
         }
 

@@ -199,10 +199,10 @@ export const AIAssistantWidget = () => {
                   }`}>
                     {msg.role === 'user' ? <User className="w-4 h-4" /> : <Command className="w-4 h-4" />}
                   </div>
-                  <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-sm shadow-sm border ${
+                  <div className={`max-w-[90%] min-w-0 rounded-2xl px-4 py-3 text-sm shadow-sm border ${
                     msg.role === 'user' 
                       ? 'bg-slate-900 text-white rounded-tr-sm border-slate-800' 
-                      : 'bg-white border-gray-100/80 text-slate-800 rounded-tl-sm prose prose-sm prose-indigo max-w-none'
+                      : 'bg-white border-gray-100/80 text-slate-800 rounded-tl-sm prose prose-sm prose-indigo max-w-none overflow-hidden'
                   }`}>
                     {msg.role === 'user' ? (
                       <div className="whitespace-pre-wrap">{msg.content}</div>
@@ -215,7 +215,7 @@ export const AIAssistantWidget = () => {
                           ol: ({node, ...props}) => <ol className="list-decimal pl-4 mb-2 space-y-1 text-slate-600" {...props} />,
                           li: ({node, ...props}) => <li className="leading-snug" {...props} />,
                           strong: ({node, ...props}) => <strong className="font-semibold text-slate-900" {...props} />,
-                          table: ({node, ...props}) => <div className="overflow-x-auto mb-2 rounded-lg border border-gray-100"><table className="min-w-full divide-y divide-gray-100" {...props} /></div>,
+                          table: ({node, ...props}) => <div className="w-full overflow-x-auto mb-2 rounded-lg border border-gray-100"><table className="min-w-full divide-y divide-gray-100" {...props} /></div>,
                           th: ({node, ...props}) => <th className="px-3 py-2 text-left text-xs font-semibold text-slate-500 uppercase tracking-wider bg-slate-50/50" {...props} />,
                           td: ({node, ...props}) => <td className="px-3 py-2 whitespace-nowrap text-sm text-slate-600 border-t border-gray-50" {...props} />,
                         }}

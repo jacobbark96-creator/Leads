@@ -10,6 +10,7 @@ import { AdminNotifications } from './AdminNotifications';
 import { ClientNotifications } from './ClientNotifications';
 import { SmsNotifications } from './SmsNotifications';
 import { AskMaxChat } from './AskMaxChat';
+import { AIAssistantWidget } from './AIAssistantWidget';
 import { supabase } from '../lib/supabase';
 import { FlexModal } from './FlexModal';
 import { formatRole } from '../lib/utils';
@@ -147,7 +148,12 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
   if (!profile) return <>{children}</>;
 
   if (isFullScreenPage) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <AIAssistantWidget />
+      </>
+    );
   }
 
   if (isDetailsPage) {
@@ -156,6 +162,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         <main className="flex-1 w-full mx-auto p-4 sm:p-6 lg:p-8">
           {children}
         </main>
+        <AIAssistantWidget />
       </div>
     );
   }
@@ -851,7 +858,8 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         />
       )}
       <Footer />
-      <AskMaxChat />
+      <AIAssistantWidget />
+      {/* AskMaxChat was being duplicated, removing from here as they should be inside the main content area */}
     </div>
   );
 };

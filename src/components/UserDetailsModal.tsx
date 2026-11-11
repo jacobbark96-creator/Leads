@@ -1,9 +1,10 @@
 import React, { useState, useEffect } from 'react';
 import { supabase } from '../lib/supabase';
 import { UserProfile, Division } from '../types';
-import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin, Briefcase, CreditCard, Zap, Users, MessageCircle, Gift } from 'lucide-react';
+import { X, User, Mail, Shield, Key, Building, Upload, Trash2, MapPin, Briefcase, CreditCard, Zap, Users, MessageCircle, Gift, Bot } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { useLoadScript, Autocomplete } from '@react-google-maps/api';
+import { useAuthStore } from '../store/authStore';
 
 const libraries: "places"[] = ['places'];
 
@@ -21,6 +22,7 @@ interface UserDetailsModalProps {
 }
 
 export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onClose, user, onUserUpdated }) => {
+  const { profile, refreshProfile } = useAuthStore();
   const [loading, setLoading] = useState(false);
   const [loadingClient, setLoadingClient] = useState(false);
   const [resettingPassword, setResettingPassword] = useState(false);
@@ -526,6 +528,33 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
       toast.error('Failed to update password: ' + error.message);
     } finally {
       setUpdatingDirectPassword(false);
+    }
+  };
+
+  const [aiChatEnabled, setAiChatEnabled] = useState(user.ai_chat_enabled || false);
+
+  const handleToggleAiChat = async () => {
+    try {
+      const newStatus = !aiChatEnabled;
+      const { error } = await supabase
+        .from('users')
+        .update({ ai_chat_enabled: newStatus })
+        .eq('id', user.id);
+
+      if (error) throw error;
+      setAiChatEnabled(newStatus);
+      toast.success(newStatus ? 'AI Chat enabled for this user' : 'AI Chat disabled for this user');
+      
+      // If we are updating our own profile, immediately force a refresh of the auth store
+      // so the AI Widget mounts without needing a hard refresh.
+      if (profile?.id === user.id) {
+        await refreshProfile();
+      }
+      
+      onUserUpdated();
+    } catch (error) {
+      console.error('Error toggling AI Chat:', error);
+      toast.error('Failed to update AI Chat settings');
     }
   };
 
@@ -1343,6 +1372,29 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                 </div>
               )}
             </div>
+
+            {user.role === 'super_admin' && (
+              <>
+                <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
+                  <Bot className="w-4 h-4 text-gray-400" /> AI Settings
+                </h3>
+                <div className="bg-gray-50 p-4 rounded-lg border border-gray-200 mb-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h4 className="text-sm font-semibold text-gray-900">Enable AI Chatbot</h4>
+                      <p className="text-xs text-gray-600">Allow this super admin to use the AI assistant</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={handleToggleAiChat}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 ${aiChatEnabled ? 'bg-blue-600' : 'bg-gray-200'}`}
+                    >
+                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${aiChatEnabled ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
+                </div>
+              </>
+            )}
 
             <h3 className="text-sm font-bold text-gray-900 uppercase tracking-wider mb-4 flex items-center gap-2">
               <Key className="w-4 h-4 text-gray-400" /> Security

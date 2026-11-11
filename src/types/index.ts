@@ -31,6 +31,7 @@ export interface UserProfile {
   is_blocked?: boolean;
   block_reason?: string | null;
   outstanding_amount?: number;
+  ai_chat_enabled?: boolean;
   is_residential_admin?: boolean;
   parent_id?: string | null;
   requires_password_change?: boolean;

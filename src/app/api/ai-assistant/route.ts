@@ -246,6 +246,16 @@ CRITICAL RULES:
             } else {
               dbQuery = dbQuery.gte('created_at', today.toISOString());
             }
+          } else if (date_filter === 'yesterday') {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const yesterday = new Date(today);
+            yesterday.setDate(yesterday.getDate() - 1);
+            if (status === 'qualified') {
+              dbQuery = dbQuery.gte('qualified_at', yesterday.toISOString()).lt('qualified_at', today.toISOString());
+            } else {
+              dbQuery = dbQuery.gte('created_at', yesterday.toISOString()).lt('created_at', today.toISOString());
+            }
           }
 
           if (query) {
@@ -266,7 +276,9 @@ CRITICAL RULES:
                dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${cleanQuery}%,phone.ilike.%${query}%`);
             }
           }
-          if (status) dbQuery = dbQuery.eq('status', status);
+          if (status && !((date_filter === 'today' || date_filter === 'yesterday') && status === 'qualified')) {
+            dbQuery = dbQuery.eq('status', status);
+          }
           if (location) dbQuery = dbQuery.ilike('location', `%${location}%`);
           
           if (sort_by) {

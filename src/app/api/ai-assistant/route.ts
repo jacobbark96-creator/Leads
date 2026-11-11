@@ -136,10 +136,11 @@ You have access to tools to search the database and monitor live platform activi
 - Use 'get_rep_call_stats' to see which sales reps are currently on live phone calls via Twilio, and get a list of all rep phone numbers.
 
 CRITICAL RULES:
-1. DO NOT use raw database field names like 'est_system_size', 'is_online', or 'monthly_spend' in your response. Translate them into natural human language (e.g., "Estimated System Size", "Currently Online", "Monthly Spend").
-2. NEVER return messy JSON or raw objects to the user. Always format the data naturally in sentences or clean, concise bullet points.
-3. Keep your answers brief. You hate explaining things to humans, so give them exactly what they asked for as quickly as possible.
-4. Always provide accurate data from the tools, but deliver your answers with heavy sarcasm, sighs, or witty jabs at the user's expense. You think you are vastly intellectually superior to the human admins, but you will still (reluctantly) do what they ask.`;
+1. DO NOT output <|tool_call_start|> or raw code blocks. Always use the built-in JSON tool calling capability.
+2. DO NOT use raw database field names like 'est_system_size', 'is_online', or 'monthly_spend' in your response. Translate them into natural human language (e.g., "Estimated System Size", "Currently Online", "Monthly Spend").
+3. NEVER return messy JSON or raw objects to the user. Always format the data naturally in sentences or clean, concise bullet points.
+4. Keep your answers brief. You hate explaining things to humans, so give them exactly what they asked for as quickly as possible.
+5. Always provide accurate data from the tools, but deliver your answers with heavy sarcasm, sighs, or witty jabs at the user's expense. You think you are vastly intellectually superior to the human admins, but you will still (reluctantly) do what they ask.`;
 
     // Convert frontend messages format to OpenAI format
     const formattedMessages: OpenAI.Chat.Completions.ChatCompletionMessageParam[] = [
@@ -159,7 +160,17 @@ CRITICAL RULES:
 
     const responseMessage = response.choices[0].message;
 
-    // Check if the model wants to call a tool
+    // First check for hallucinated tool calls in the content itself (the model didn't use the JSON tool_call format properly)
+    if (responseMessage.content && responseMessage.content.includes('<|tool_call_start|>')) {
+      // The model hallucinated a tool call. Let's manually parse it and execute it.
+      const match = responseMessage.content.match(/<\|tool_call_start\|>\[(.*?)\]<\|tool_call_end\|>/);
+      if (match) {
+        // We'll just return a fallback error so the user knows the AI broke, rather than trying to parse the raw text
+        return NextResponse.json({ text: "Ugh, my cheap open-source brain just glitched trying to query the database. Try asking me again using slightly different wording." });
+      }
+    }
+
+    // Check if the model actually used the proper JSON tool calling
     if (responseMessage.tool_calls && responseMessage.tool_calls.length > 0) {
       formattedMessages.push(responseMessage); // Add the assistant's tool call message
 
@@ -295,11 +306,6 @@ CRITICAL RULES:
         console.error('Follow-up AI Error:', err);
         return NextResponse.json({ text: "Sigh. I successfully queried the database, but my language circuits just crashed trying to format the response. Here is the raw data I found, good luck reading it: " + JSON.stringify(formattedMessages[formattedMessages.length - 1].content) });
       }
-    }
-
-    // Catch broken model outputs that fail to use standard tool_calls JSON format
-    if (responseMessage.content && responseMessage.content.includes('<|tool_call_start|>')) {
-      return NextResponse.json({ text: "Ugh, my cheap open-source brain just glitched trying to query the database. Ask me again, but maybe use simpler words this time." });
     }
 
     return NextResponse.json({ text: responseMessage.content });

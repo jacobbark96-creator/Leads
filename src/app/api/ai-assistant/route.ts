@@ -189,7 +189,7 @@ CRITICAL RULES:
     ];
 
     const response = await openai.chat.completions.create({
-      model: "openrouter/free", // Uses the best available free model on OpenRouter
+      model: "openai/gpt-4o-mini", // Uses GPT-4o-mini (very cheap, highly reliable tool calling)
       messages: formattedMessages,
       tools: tools,
       tool_choice: "auto",
@@ -380,7 +380,7 @@ CRITICAL RULES:
       // Send the tool result back to the model to get the final answer
       try {
         const followUpResponse = await openai.chat.completions.create({
-          model: "openrouter/free",
+          model: "openai/gpt-4o-mini",
           messages: formattedMessages,
         });
         return NextResponse.json({ text: followUpResponse.choices[0].message.content });

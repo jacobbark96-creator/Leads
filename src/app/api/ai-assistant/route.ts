@@ -157,7 +157,7 @@ You have access to tools to search the database and monitor live platform activi
 - Use 'learn_rule' to permanently save a new instruction if the user tells you to behave a certain way.
 
 CRITICAL RULES:
-1. DO NOT output <|tool_call_start|> or raw code blocks. Always use the built-in JSON tool calling capability.
+1. DO NOT output <|tool_call_start|>, <dots_function_call>, <invoke> or raw XML/code blocks. Always use the built-in JSON tool calling capability.
 2. DO NOT use raw database field names like 'est_system_size', 'is_online', or 'monthly_spend' in your response. Translate them into natural human language (e.g., "Estimated System Size", "Currently Online", "Monthly Spend").
 3. NEVER return messy JSON or raw objects to the user. Always format the data naturally in sentences or clean, concise bullet points.
 4. Keep your answers brief. You hate explaining things to humans, so give them exactly what they asked for as quickly as possible.
@@ -183,13 +183,13 @@ CRITICAL RULES:
     const responseMessage = response.choices[0].message;
 
     // First check for hallucinated tool calls in the content itself (the model didn't use the JSON tool_call format properly)
-    if (responseMessage.content && responseMessage.content.includes('<|tool_call_start|>')) {
-      // The model hallucinated a tool call. Let's manually parse it and execute it.
-      const match = responseMessage.content.match(/<\|tool_call_start\|>\[(.*?)\]<\|tool_call_end\|>/);
-      if (match) {
-        // We'll just return a fallback error so the user knows the AI broke, rather than trying to parse the raw text
-        return NextResponse.json({ text: "Ugh, my cheap open-source brain just glitched trying to query the database. Try asking me again using slightly different wording." });
-      }
+    if (responseMessage.content && (
+      responseMessage.content.includes('<|tool_call_start|>') || 
+      responseMessage.content.includes('<dots_function_call>') || 
+      responseMessage.content.includes('<invoke')
+    )) {
+      // We'll just return a fallback error so the user knows the AI broke, rather than trying to parse the raw text
+      return NextResponse.json({ text: "Ugh, my cheap open-source brain just glitched trying to query the database. Try asking me again using slightly different wording." });
     }
 
     // Check if the model actually used the proper JSON tool calling

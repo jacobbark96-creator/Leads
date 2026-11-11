@@ -394,11 +394,18 @@ CRITICAL RULES:
   } catch (error: any) {
     console.error('Error in AI assistant:', error);
     
-    // If the error is from OpenRouter failing to process the request
-    if (error.status === 400 || error.status === 404 || error.status === 502) {
-      return NextResponse.json({ text: "My server just tripped over its own shoelaces. OpenRouter is currently struggling to find a free model that actually works. Try again in a few seconds." });
+    // If the error is from OpenRouter failing to process the request or rate limiting
+    if (error.status === 400 || error.status === 404 || error.status === 502 || error.status === 429 || error.status === 402) {
+      let msg = "My server just tripped over its own shoelaces. OpenRouter is currently struggling to find a free model that actually works. Try again in a few seconds.";
+      
+      if (error.status === 429 || error.status === 402) {
+         msg = "Ugh, looks like we've hit the rate limit for the free AI models. Tell your boss to add some credits, I'm not working for free anymore.";
+      }
+      
+      return NextResponse.json({ text: msg });
     }
 
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Return a 200 with text instead of a 500 error, so the frontend chat widget doesn't completely break
+    return NextResponse.json({ text: `My digital brain just threw a tantrum. Internal Server Error: ${error.message || 'Unknown'}` });
   }
 }

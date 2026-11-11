@@ -236,7 +236,7 @@ CRITICAL RULES:
           const sort_order = args.sort_order;
           const limit = Math.min(args.limit || 10, 50);
 
-          let dbQuery = supabase.from('leads').select('id, name, phone, email, location, status, est_system_size, monthly_spend, roof_size, timeframe, payment_options, property_type, industry').limit(limit);
+          let dbQuery = supabase.from('leads').select('id, name, phone, email, location, status, created_at, qualified_at, est_system_size, monthly_spend, roof_size, timeframe, payment_options, property_type, industry').limit(limit);
           
           if (date_filter === 'today') {
             const today = new Date();
@@ -255,6 +255,25 @@ CRITICAL RULES:
               dbQuery = dbQuery.gte('qualified_at', yesterday.toISOString()).lt('qualified_at', today.toISOString());
             } else {
               dbQuery = dbQuery.gte('created_at', yesterday.toISOString()).lt('created_at', today.toISOString());
+            }
+          } else if (date_filter === 'this_week') {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const startOfWeek = new Date(today);
+            startOfWeek.setDate(today.getDate() - today.getDay());
+            if (status === 'qualified') {
+              dbQuery = dbQuery.gte('qualified_at', startOfWeek.toISOString());
+            } else {
+              dbQuery = dbQuery.gte('created_at', startOfWeek.toISOString());
+            }
+          } else if (date_filter === 'this_month') {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+            if (status === 'qualified') {
+              dbQuery = dbQuery.gte('qualified_at', startOfMonth.toISOString());
+            } else {
+              dbQuery = dbQuery.gte('created_at', startOfMonth.toISOString());
             }
           }
 
@@ -276,7 +295,7 @@ CRITICAL RULES:
                dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${cleanQuery}%,phone.ilike.%${query}%`);
             }
           }
-          if (status && !((date_filter === 'today' || date_filter === 'yesterday') && status === 'qualified')) {
+          if (status && !((date_filter === 'today' || date_filter === 'yesterday' || date_filter === 'this_week' || date_filter === 'this_month') && status === 'qualified')) {
             dbQuery = dbQuery.eq('status', status);
           }
           if (location) dbQuery = dbQuery.ilike('location', `%${location}%`);

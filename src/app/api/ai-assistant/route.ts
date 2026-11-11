@@ -347,15 +347,29 @@ CRITICAL RULES:
               .not('twilio_number', 'is', null)
               .not('is_blocked', 'eq', true);
             
-            // Get Twilio stats from our own database first! Twilio API pagination is notoriously slow and we already log calls
-            // in `lead_notes` whenever they happen.
+            // Get Twilio/Telnyx stats from our own database first! 
+            // We search for "📞 Call by" in lead_notes.
             const today = new Date();
             today.setHours(0,0,0,0);
             
-            const { data: dbCalls } = await supabase.from('lead_notes')
-              .select('id, user_id, author_name, call_sid, content, created_at')
-              .not('call_sid', 'is', null)
-              .gte('created_at', today.toISOString());
+            let allDbCalls: any[] = [];
+            let page = 0;
+            let hasMore = true;
+            
+            while (hasMore) {
+              const { data: dbCalls } = await supabase.from('lead_notes')
+                .select('user_id, content')
+                .gte('created_at', today.toISOString())
+                .ilike('content', '%📞 Call by%')
+                .range(page * 1000, (page + 1) * 1000 - 1);
+                
+              if (dbCalls && dbCalls.length > 0) {
+                allDbCalls = allDbCalls.concat(dbCalls);
+                page++;
+              } else {
+                hasMore = false;
+              }
+            }
               
             const formatTime = (secs: number) => {
               if (secs < 60) return `${secs} seconds`;
@@ -365,7 +379,7 @@ CRITICAL RULES:
             };
 
             const repStats = (reps || []).map((rep: any) => {
-               const repCalls = (dbCalls || []).filter((c: any) => c.user_id === rep.id);
+               const repCalls = allDbCalls.filter((c: any) => c.user_id === rep.id);
                
                const dials = repCalls.length;
                let totalDurationSeconds = 0;

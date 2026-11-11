@@ -78,8 +78,9 @@ export async function POST(req: Request) {
             type: "object",
             properties: {
               query: { type: "string", description: "Search term for lead name, phone number, or email" },
-              status: { type: "string", description: "Filter by lead status (e.g. available, sold, pending)" },
+              status: { type: "string", description: "Filter by lead status (e.g. available, sold, pending, qualified)" },
               location: { type: "string", description: "Filter by location (e.g. London, Manchester)" },
+              date_filter: { type: "string", description: "Filter by a specific time period (e.g. 'today', 'yesterday', 'this_week')" },
               sort_by: { type: "string", description: "Field to sort by, e.g., 'monthly_spend', 'created_at', 'est_system_size'" },
               sort_order: { type: "string", description: "'asc' for ascending, 'desc' for descending" },
               limit: { type: "number", description: "Number of results to return (max 50, default 10)" }
@@ -132,7 +133,7 @@ export async function POST(req: Request) {
         type: "function",
         function: {
           name: "get_rep_call_stats",
-          description: "Get call statistics for sales reps, including total calls and if they are currently on the phone.",
+          description: "Get call statistics for sales reps, including total calls made today, durations, and breakdowns.",
           parameters: {
             type: "object",
             properties: {}
@@ -167,7 +168,7 @@ You have access to tools to search the database and monitor live platform activi
 - Use 'search_leads' to find leads. You can sort by fields like 'monthly_spend' in 'desc' order to find the highest spenders.
 - Use 'get_installer_notes' to read the recent communication history (activities) for a specific installer by their user_id.
 - Use 'get_online_installers' with status='online' to see who is currently logged in right now. Use status='all' to see the historical log of who was online over the last 48 hours.
-- Use 'get_rep_call_stats' to see which sales reps are currently on live phone calls via Twilio, and get a list of all rep phone numbers.
+- Use 'get_rep_call_stats' to see which sales reps are currently on live phone calls via Twilio, get a list of all rep phone numbers, and see their call breakdowns for the day. When asked how the reps are doing, you MUST provide a breakdown for each person showing: Dials done, Total call time, Average call time, and Longest call. Then, add a sarcastic or witty sentence providing insight into their day based on the stats (e.g., "Jake's longest call was only 1 minute, so he's clearly struggling to keep anyone on the phone.").
 - Use 'get_staff_activity' to check what a staff member or sales rep (like Benn, Jake, or Nick) has been doing today (calls made, notes added). DO NOT use search_leads for staff members.
 - Use 'learn_rule' to permanently save a new instruction if the user tells you to behave a certain way.
 
@@ -230,12 +231,23 @@ CRITICAL RULES:
           const query = args.query;
           const status = args.status;
           const location = args.location;
+          const date_filter = args.date_filter;
           const sort_by = args.sort_by;
           const sort_order = args.sort_order;
           const limit = Math.min(args.limit || 10, 50);
 
           let dbQuery = supabase.from('leads').select('id, name, phone, email, location, status, est_system_size, monthly_spend, roof_size, timeframe, payment_options, property_type, industry').limit(limit);
           
+          if (date_filter === 'today') {
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            if (status === 'qualified') {
+              dbQuery = dbQuery.gte('qualified_at', today.toISOString());
+            } else {
+              dbQuery = dbQuery.gte('created_at', today.toISOString());
+            }
+          }
+
           if (query) {
             // Remove + and spaces from phone search for better matching
             const cleanQuery = query.replace(/[+\s-]/g, '');
@@ -244,15 +256,12 @@ CRITICAL RULES:
             // Supabase allows textSearch or raw filters, but we can't use raw SQL easily here.
             // Instead, we will do a very broad ilike if it looks like a phone number.
             if (cleanQuery.length > 5 && !isNaN(Number(cleanQuery))) {
-               // Let's make it even more bulletproof. If they search +447748068397, 
-               // let's grab the last 4 digits (8397) to be absolutely certain it punches through formatting.
-               const last4 = cleanQuery.slice(-4);
-               // Also grab a chunk from the middle to ensure we don't get too many false positives
-               const middleChunk = cleanQuery.slice(4, 8); 
+               // A foolproof phone number match using regular expressions is difficult without custom RPC.
+               // However, by breaking the phone number down into chunks of digits, we can build a strong wildcard match.
+               const digits = cleanQuery.split('');
+               const wildcardQuery = '%' + digits.join('%') + '%';
                
-               // We use an incredibly aggressive wildcard query here. 
-               // If the phone number contains the middle chunk anywhere AND the last 4 anywhere, it's a match.
-               dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${middleChunk}%${last4}%`);
+               dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.${wildcardQuery}`);
             } else {
                dbQuery = dbQuery.or(`name.ilike.%${query}%,email.ilike.%${query}%,phone.ilike.%${cleanQuery}%,phone.ilike.%${query}%`);
             }
@@ -309,23 +318,63 @@ CRITICAL RULES:
             // Hit Twilio API for active calls
             const twilioSid = process.env.TWILIO_ACCOUNT_SID;
             const twilioToken = process.env.TWILIO_AUTH_TOKEN;
-            let activeCalls: any[] = [];
+            let allCallsToday: any[] = [];
             
             if (twilioSid && twilioToken) {
               const authHeader = 'Basic ' + btoa(`${twilioSid}:${twilioToken}`);
-              const today = new Date().toISOString().split('T')[0];
-              const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?StartTime>=${today}&Status=in-progress`, {
+              const today = new Date();
+              today.setHours(0,0,0,0);
+              const formattedDate = today.toISOString().split('T')[0];
+              
+              // We fetch ALL calls for today to give accurate daily breakdowns, not just in-progress
+              const res = await fetch(`https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?StartTime>=${formattedDate}&PageSize=100`, {
                 headers: { 'Authorization': authHeader }
               });
               if (res.ok) {
                 const data = await res.json();
-                activeCalls = data.calls || [];
+                allCallsToday = data.calls || [];
               }
             }
 
+            const formatTime = (secs: number) => {
+              if (secs < 60) return `${secs} seconds`;
+              const mins = Math.floor(secs / 60);
+              const remainingSecs = secs % 60;
+              return `${mins} minute${mins !== 1 ? 's' : ''} ${remainingSecs} second${remainingSecs !== 1 ? 's' : ''}`;
+            };
+
+            const repStats = (reps || []).map((rep: any) => {
+               const twilioNum = rep.twilio_number?.replace(/\s/g, '');
+               
+               const repCalls = allCallsToday.filter((c: any) => 
+                 c.from === twilioNum || c.to === twilioNum
+               );
+               
+               const dials = repCalls.length;
+               let totalDurationSeconds = 0;
+               let longestCallSeconds = 0;
+               
+               repCalls.forEach((c: any) => {
+                 const d = parseInt(c.duration || '0', 10);
+                 if (!isNaN(d)) {
+                   totalDurationSeconds += d;
+                   if (d > longestCallSeconds) longestCallSeconds = d;
+                 }
+               });
+               
+               const avgDurationSeconds = dials > 0 ? Math.round(totalDurationSeconds / dials) : 0;
+               
+               return {
+                 name: rep.name,
+                 dials_today: dials,
+                 total_call_time: formatTime(totalDurationSeconds),
+                 average_call_time: formatTime(avgDurationSeconds),
+                 longest_call: formatTime(longestCallSeconds)
+               };
+            });
+
             toolResult = { 
-              reps: reps || [], 
-              active_calls: activeCalls.map(c => ({ from: c.from, to: c.to, status: c.status, duration: c.duration })) 
+              reps_breakdown: repStats
             };
           } catch (e: any) {
             toolResult = { error: "Failed to fetch rep stats: " + e.message };

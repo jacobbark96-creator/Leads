@@ -117,6 +117,20 @@ export async function POST(req: Request) {
       {
         type: "function",
         function: {
+          name: "get_staff_activity",
+          description: "Check what a specific staff member, sales rep, or admin has been doing today (e.g., calls made, notes added, leads worked).",
+          parameters: {
+            type: "object",
+            properties: {
+              staff_name: { type: "string", description: "The name of the staff member (e.g., 'Benn', 'Jake', 'Nick')." }
+            },
+            required: ["staff_name"]
+          }
+        }
+      },
+      {
+        type: "function",
+        function: {
           name: "get_rep_call_stats",
           description: "Get call statistics for sales reps, including total calls and if they are currently on the phone.",
           parameters: {
@@ -154,10 +168,11 @@ You have access to tools to search the database and monitor live platform activi
 - Use 'get_installer_notes' to read the recent communication history (activities) for a specific installer by their user_id.
 - Use 'get_online_installers' with status='online' to see who is currently logged in right now. Use status='all' to see the historical log of who was online over the last 48 hours.
 - Use 'get_rep_call_stats' to see which sales reps are currently on live phone calls via Twilio, and get a list of all rep phone numbers.
+- Use 'get_staff_activity' to check what a staff member or sales rep (like Benn, Jake, or Nick) has been doing today (calls made, notes added). DO NOT use search_leads for staff members.
 - Use 'learn_rule' to permanently save a new instruction if the user tells you to behave a certain way.
 
 CRITICAL RULES:
-1. DO NOT output <|tool_call_start|>, <dots_function_call>, <invoke> or raw XML/code blocks. Always use the built-in JSON tool calling capability.
+1. DO NOT output <|tool_call_start|>, <dots_function_call>, <invoke>, <tool_call>, <function=> or raw XML/code blocks. Always use the built-in JSON tool calling capability.
 2. DO NOT use raw database field names like 'est_system_size', 'is_online', or 'monthly_spend' in your response. Translate them into natural human language (e.g., "Estimated System Size", "Currently Online", "Monthly Spend").
 3. NEVER return messy JSON or raw objects to the user. Always format the data naturally in sentences or clean, concise bullet points.
 4. Keep your answers brief. You hate explaining things to humans, so give them exactly what they asked for as quickly as possible.
@@ -186,7 +201,9 @@ CRITICAL RULES:
     if (responseMessage.content && (
       responseMessage.content.includes('<|tool_call_start|>') || 
       responseMessage.content.includes('<dots_function_call>') || 
-      responseMessage.content.includes('<invoke')
+      responseMessage.content.includes('<invoke') ||
+      responseMessage.content.includes('<tool_call') ||
+      responseMessage.content.includes('<function=')
     )) {
       // We'll just return a fallback error so the user knows the AI broke, rather than trying to parse the raw text
       return NextResponse.json({ text: "Ugh, my cheap open-source brain just glitched trying to query the database. Try asking me again using slightly different wording." });
@@ -312,6 +329,35 @@ CRITICAL RULES:
             };
           } catch (e: any) {
             toolResult = { error: "Failed to fetch rep stats: " + e.message };
+          }
+        }
+        else if (toolCall.function.name === 'get_staff_activity') {
+          const staff_name = args.staff_name;
+          const { data: users } = await supabase.from('users').select('id, name, role').neq('role', 'client').ilike('name', `%${staff_name}%`);
+          
+          if (!users || users.length === 0) {
+            toolResult = { error: `Could not find any staff member or rep matching the name '${staff_name}'.` };
+          } else {
+            const staffId = users[0].id;
+            const staffName = users[0].name;
+            
+            // Get today's start date
+            const today = new Date();
+            today.setHours(0,0,0,0);
+            
+            // Fetch recent notes/activities added by this staff member today
+            const { data: notes } = await supabase.from('lead_notes')
+              .select('content, created_at, lead_id')
+              .eq('user_id', staffId)
+              .gte('created_at', today.toISOString())
+              .order('created_at', { ascending: false })
+              .limit(10);
+              
+            toolResult = {
+              staff_member: staffName,
+              activities_today: notes || [],
+              message: notes && notes.length > 0 ? `Found ${notes.length} recent activities for ${staffName} today.` : `${staffName} has not logged any lead notes or calls today.`
+            };
           }
         }
         else if (toolCall.function.name === 'learn_rule') {

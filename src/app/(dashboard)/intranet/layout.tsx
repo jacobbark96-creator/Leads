@@ -39,6 +39,13 @@ export default function IntranetLayout({ children }: { children: React.ReactNode
     if (tab.id === 'intranet/example-calls') {
       return true;
     }
+    // Pricing is NOT visible to reps, unless explicitly allowed by permission, OR if they are admins
+    if (tab.id === 'intranet/pricing') {
+      if (profile?.role?.includes('Rep') || profile?.role?.includes('Sales') || profile?.role === 'rep') {
+        return profile?.permissions?.includes('intranet/pricing');
+      }
+      return true;
+    }
     return !['rep', 'growth_manager'].includes(profile?.role || '') || profile?.permissions?.includes(tab.id);
   });
 

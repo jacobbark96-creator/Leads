@@ -224,7 +224,7 @@ export const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowe
           }
         }
         if (path.startsWith('/intranet/leaderboard') && (perms.includes('intranet/leaderboard') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
-        if (path.startsWith('/intranet/pricing') && (perms.includes('intranet/pricing') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
+        if (path.startsWith('/intranet/pricing') && (perms.includes('intranet/pricing') || profile.role === 'admin' || profile.role === 'super_admin')) hasAccess = true;
         if (path.startsWith('/intranet/commission') && (perms.includes('intranet/commission') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
         if (path.startsWith('/intranet/grants') && (perms.includes('intranet/grants') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;
         if (path.startsWith('/intranet/tracker') && (perms.includes('intranet/tracker') || profile.role.includes('Sales') || profile.role === 'Residential Rep')) hasAccess = true;

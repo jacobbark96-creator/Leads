@@ -5,7 +5,7 @@ export const runtime = 'edge';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: Promise<{ path: string[] }> }
+  { params }: { params: Promise<{ path?: string[] }> }
 ) {
   try {
     const resolvedParams = await params;
@@ -45,7 +45,7 @@ export async function GET(
       return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
     }
 
-    const tablePath = resolvedParams.path.join('/');
+    const tablePath = resolvedParams.path ? resolvedParams.path.join('/') : '';
     const searchParams = request.nextUrl.searchParams.toString();
     
     const targetUrl = `${supabaseUrl}/rest/v1/${tablePath}${searchParams ? `?${searchParams}` : ''}`;

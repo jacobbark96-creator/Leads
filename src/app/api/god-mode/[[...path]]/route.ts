@@ -46,7 +46,11 @@ export async function GET(
     }
 
     const tablePath = resolvedParams.path ? resolvedParams.path.join('/') : '';
-    const searchParams = request.nextUrl.searchParams.toString();
+    
+    // Clean up Next.js's internal query parameters that get injected from dynamic routes
+    const url = request.nextUrl.clone();
+    url.searchParams.delete('path'); // Remove the catch-all dynamic parameter
+    const searchParams = url.searchParams.toString();
     
     const targetUrl = `${supabaseUrl}/rest/v1/${tablePath}${searchParams ? `?${searchParams}` : ''}`;
 

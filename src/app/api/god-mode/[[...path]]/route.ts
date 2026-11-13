@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-export const runtime = 'nodejs';
+export const runtime = 'edge';
 
 export async function GET(
   request: NextRequest,
@@ -71,7 +71,7 @@ export async function GET(
       }
     }
     
-    const targetUrl = `${supabaseUrl}/rest/v1/${tablePath}${searchParams ? \`?\${searchParams}\` : ''}`;
+    const targetUrl = `${supabaseUrl}/rest/v1/${tablePath}${searchParams ? `?${searchParams}` : ''}`;
 
     // Proxy the request to Supabase as a GET (read-only)
     const response = await fetch(targetUrl, {

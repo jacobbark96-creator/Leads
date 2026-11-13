@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabaseAdmin';
 
-export const runtime = 'edge';
+export const runtime = 'nodejs';
 
 export async function GET(
   request: NextRequest,
@@ -52,7 +52,26 @@ export async function GET(
     url.searchParams.delete('path'); // Remove the catch-all dynamic parameter
     const searchParams = url.searchParams.toString();
     
-    const targetUrl = `${supabaseUrl}/rest/v1/${tablePath}${searchParams ? `?${searchParams}` : ''}`;
+    // Custom intercept for Twilio/Call data 
+    // This allows the AI bot to fetch data that lives in Twilio (not just Supabase) using the CRM's internal logic.
+    if (tablePath === 'twilio-stats' || tablePath === 'calls') {
+      try {
+        const protocol = request.headers.get('x-forwarded-proto') || 'https';
+        const host = request.headers.get('host') || process.env.NEXT_PUBLIC_SITE_URL?.replace(/^https?:\/\//, '') || 'localhost:3000';
+        const baseUrl = `${protocol}://${host}`;
+        
+        const twilioRes = await fetch(`${baseUrl}/api/twilio/monitoring?${searchParams}`);
+        if (!twilioRes.ok) {
+           return NextResponse.json({ error: `Failed to fetch from internal Twilio endpoint` }, { status: twilioRes.status });
+        }
+        const twilioData = await twilioRes.json();
+        return NextResponse.json(twilioData, { status: twilioRes.status });
+      } catch (e: any) {
+        return NextResponse.json({ error: 'Failed to proxy Twilio request', details: e.message }, { status: 500 });
+      }
+    }
+    
+    const targetUrl = `${supabaseUrl}/rest/v1/${tablePath}${searchParams ? \`?\${searchParams}\` : ''}`;
 
     // Proxy the request to Supabase as a GET (read-only)
     const response = await fetch(targetUrl, {

@@ -13,11 +13,11 @@ export default function PartnerPlusKanban() {
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
 
   const columns = [
+    { id: 'needs_designs', label: 'Needs Designs', color: 'indigo' },
     { id: 'sold', label: 'Sold', color: 'blue' },
     { id: 'waiting_on_survey', label: 'Waiting on Survey', color: 'amber' },
     { id: 'waiting_on_install', label: 'Waiting on Install', color: 'purple' },
-    { id: 'installed', label: 'Installed', color: 'emerald' },
-    { id: 'paid', label: 'Paid', color: 'green' }
+    { id: 'installed', label: 'Installed', color: 'emerald' }
   ];
 
   useEffect(() => {
@@ -36,7 +36,7 @@ export default function PartnerPlusKanban() {
         .from('leads')
         .select('*')
         .eq('assigned_to', profile?.id)
-        .in('partner_plus_status', ['sold', 'waiting_on_survey', 'waiting_on_install', 'installed', 'paid']);
+        .in('partner_plus_status', ['needs_designs', 'sold', 'waiting_on_survey', 'waiting_on_install', 'installed']);
 
       if (error) throw error;
       setLeads(data || []);
@@ -48,7 +48,7 @@ export default function PartnerPlusKanban() {
   };
 
   const handleDragStart = (e: React.DragEvent, lead: any) => {
-    const moveableStatuses = ['waiting_on_survey', 'waiting_on_install'];
+    const moveableStatuses = ['needs_designs', 'sold', 'waiting_on_survey', 'waiting_on_install'];
     if (!moveableStatuses.includes(lead.partner_plus_status)) {
       e.preventDefault();
       return;
@@ -71,6 +71,8 @@ export default function PartnerPlusKanban() {
 
     // Define valid transitions
     const validTransitions: Record<string, string[]> = {
+      'needs_designs': ['sold'],
+      'sold': ['waiting_on_survey'],
       'waiting_on_survey': ['waiting_on_install'],
       'waiting_on_install': ['installed']
     };
@@ -134,7 +136,7 @@ export default function PartnerPlusKanban() {
 
             <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 custom-scrollbar">
               {leads.filter(l => l.partner_plus_status === col.id).map(lead => {
-                const isMoveable = ['waiting_on_survey', 'waiting_on_install'].includes(lead.partner_plus_status);
+                const isMoveable = ['needs_designs', 'sold', 'waiting_on_survey', 'waiting_on_install'].includes(lead.partner_plus_status);
                 return (
                   <div
                     key={lead.id}

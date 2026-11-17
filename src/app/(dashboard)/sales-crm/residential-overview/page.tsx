@@ -17,6 +17,7 @@ export default function ResidentialOverview() {
   const [leads, setLeads] = useState<any[]>([]);
   const [installers, setInstallers] = useState<any[]>([]);
   const [regions, setRegions] = useState<any[]>([]);
+  const [clients, setClients] = useState<any[]>([]);
   
   // Filters
   const [selectedRegion, setSelectedRegion] = useState('all');
@@ -29,6 +30,7 @@ export default function ResidentialOverview() {
   
   const [newRegionName, setNewRegionName] = useState('');
   const [newInstallerName, setNewInstallerName] = useState('');
+  const [newInstallerClientId, setNewInstallerClientId] = useState('');
   const [postcodePrefixes, setPostcodePrefixes] = useState('');
   
   const [logoFile, setLogoFile] = useState<File | null>(null);
@@ -59,12 +61,14 @@ export default function ResidentialOverview() {
         setPostcodePrefixes(r.postcode_prefixes?.join(', ') || '');
         const i = installers.find(inst => inst.id === r.installer_id);
         setNewInstallerName(i?.name || '');
+        setNewInstallerClientId(i?.client_id || '');
         setLogoPreview(i?.logo_url || null);
         setLogoFile(null);
       }
     } else if (modalMode === 'add') {
       setNewRegionName('');
       setNewInstallerName('');
+      setNewInstallerClientId('');
       setPostcodePrefixes('');
       setEditRegionId('');
       setLogoPreview(null);
@@ -75,14 +79,15 @@ export default function ResidentialOverview() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      const [{ data: leadsData }, { data: installersData }, { data: regionsData }] = await Promise.all([
+      const [{ data: leadsData }, { data: installersData }, { data: regionsData }, { data: clientsData }] = await Promise.all([
         supabase.from('leads')
           .select('*, installers(name), regions(name), users!assigned_to(name)')
           .in('status', ['new', 'potential', ...COLUMNS.map(c => c.id)])
           .or(`division_id.eq.${activeDivisionId},building_type.eq.Residential`)
           .neq('is_marketed', true), // Ensure we don't pull pure marketplace/commercial leads by mistake
         supabase.from('installers').select('*'),
-        supabase.from('regions').select('*')
+        supabase.from('regions').select('*'),
+        supabase.from('users').select('id, name, email').eq('role', 'client')
       ]);
 
       let filteredLeads = leadsData || [];
@@ -104,7 +109,8 @@ export default function ResidentialOverview() {
       setLeads(filteredLeads);
       setInstallers(installersData || []);
       setRegions(regionsData || []);
-    } catch (error) {
+      setClients(clientsData || []);
+    } catch (error: any) {
       console.error(error);
     } finally {
       setLoading(false);
@@ -119,19 +125,37 @@ export default function ResidentialOverview() {
     e.preventDefault();
     const leadId = e.dataTransfer.getData('leadId');
     if (!leadId) return;
+    
+    const lead = leads.find(l => l.id === leadId);
+    if (!lead) return;
+
+    // Determine extra updates (Partner+ assignment logic)
+    let assignedTo = lead.assigned_to;
+    let partnerPlusStatus = lead.partner_plus_status;
+    let updates: any = { status: status === 'fresh' ? 'new' : status };
+
+    if (status === 'designing' && lead.region_id) {
+      const region = regions.find(r => r.id === lead.region_id);
+      if (region && region.installer_id) {
+        const installer = installers.find(i => i.id === region.installer_id);
+        if (installer && installer.client_id) {
+          assignedTo = installer.client_id;
+          partnerPlusStatus = 'needs_designs';
+          updates.assigned_to = assignedTo;
+          updates.partner_plus_status = partnerPlusStatus;
+        }
+      }
+    }
 
     // Optimistic
-    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, status } : l));
+    setLeads(prev => prev.map(l => l.id === leadId ? { ...l, ...updates } : l));
 
-    // If dragged to 'fresh', update as 'fresh' so it stays consistent, 
-    // or keep 'new' if we want it to remain unassigned for reps?
-    // Usually 'fresh' on overview = 'new' on reps side if it's unassigned.
-    const newStatus = status === 'fresh' ? 'new' : status;
-
-    const { error } = await supabase.from('leads').update({ status: newStatus }).eq('id', leadId);
+    const { error } = await supabase.from('leads').update(updates).eq('id', leadId);
     if (error) {
       toast.error('Failed to move lead');
       fetchData(); // revert
+    } else if (updates.assigned_to) {
+      toast.success('Lead assigned to Partner+ Kanban!');
     }
   };
 
@@ -177,7 +201,7 @@ export default function ResidentialOverview() {
         // 1. Create installer
         const { data: installerData, error: instError } = await supabase
           .from('installers')
-          .insert([{ name: newInstallerName, logo_url: finalLogoUrl }])
+          .insert([{ name: newInstallerName, logo_url: finalLogoUrl, client_id: newInstallerClientId || null }])
           .select()
           .single();
           
@@ -209,7 +233,7 @@ export default function ResidentialOverview() {
         // 1. Update installer
         const { error: instError } = await supabase
           .from('installers')
-          .update({ name: newInstallerName, logo_url: finalLogoUrl })
+          .update({ name: newInstallerName, logo_url: finalLogoUrl, client_id: newInstallerClientId || null })
           .eq('id', region.installer_id);
           
         if (instError) throw instError;
@@ -497,9 +521,22 @@ export default function ResidentialOverview() {
                     type="text"
                     value={newInstallerName}
                     onChange={e => setNewInstallerName(e.target.value)}
-                    placeholder="e.g. John Doe Solar"
-                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                    placeholder="e.g. EcoSolar Ltd"
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 mb-3"
                   />
+                  
+                  <label className="block text-sm font-medium text-gray-700 mb-1">Link to Client (Partner+)</label>
+                  <select
+                    value={newInstallerClientId}
+                    onChange={(e) => setNewInstallerClientId(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="">-- No Client Linked --</option>
+                    {clients.map(c => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.email})</option>
+                    ))}
+                  </select>
+                  <p className="text-xs text-gray-500 mt-1">Linking a client allows leads to sync to their Partner+ Kanban.</p>
                 </div>
 
                 <div>

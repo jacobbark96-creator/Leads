@@ -15,7 +15,13 @@ export const DivisionSelector = () => {
       const { data } = await supabase.from('divisions').select('*').order('name');
       if (data) {
         if (profile?.has_residential_access === false) {
-          setDivisions(data.filter(d => d.name.toLowerCase() !== 'open energy residential'));
+          const filtered = data.filter(d => d.name.toLowerCase() !== 'open energy residential');
+          setDivisions(filtered);
+          
+          // Force switch if they are currently on 'all' but shouldn't be
+          if (activeDivisionId === 'all' && filtered.length > 0) {
+            setActiveDivisionId(filtered[0].id);
+          }
         } else {
           setDivisions(data);
         }
@@ -25,7 +31,7 @@ export const DivisionSelector = () => {
     if (profile?.role === 'super_admin') {
       fetchDivisions();
     }
-  }, [profile]);
+  }, [profile, activeDivisionId, setActiveDivisionId]);
 
   if (profile?.role !== 'super_admin') return null;
 
@@ -45,12 +51,14 @@ export const DivisionSelector = () => {
       </button>
       {isOpen && (
         <div className="absolute top-full right-0 mt-1 w-56 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
-          <button
-            onClick={() => { setActiveDivisionId('all'); setIsOpen(false); }}
-            className={`w-full text-left px-4 py-2 text-sm font-medium ${activeDivisionId === 'all' ? 'text-blue-700 bg-blue-50' : 'text-gray-600 hover:bg-gray-50'}`}
-          >
-            All Divisions
-          </button>
+          {profile?.has_residential_access !== false && (
+            <button
+              onClick={() => { setActiveDivisionId('all'); setIsOpen(false); }}
+              className={`w-full text-left px-4 py-2 text-sm font-medium ${activeDivisionId === 'all' ? 'text-blue-700 bg-blue-50' : 'text-gray-600 hover:bg-gray-50'}`}
+            >
+              All Divisions
+            </button>
+          )}
           {divisions.map(division => (
             <button
               key={division.id}

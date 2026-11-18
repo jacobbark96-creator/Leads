@@ -2620,7 +2620,8 @@ function LeadDetailsV2Content() {
             if (taskCreatorStillExists) {
               // If autodialer is on, skip this lead and go to next
               if (isAutoDialEnabled) {
-                toast.error('Skipping lead due to active future task by another user');
+                const taskCreator = staffUsers.find(u => u.id === futureTask.user_id)?.name || 'another user';
+                toast.error(`Skipping lead: ${taskCreator} has an active future task`);
                 
                 // If in a pack/smartview we should technically disposition or skip. 
                 // Using a generic 'Skipped' disposition if in a pack
@@ -4563,7 +4564,7 @@ function LeadDetailsV2Content() {
             </div>
             <h3 className="text-lg font-bold text-gray-900 mb-2">Cannot Call Lead</h3>
             <p className="text-sm text-gray-500 mb-6">
-              cannot call, {lead?.name || lead?.company || 'this lead'} has an active tasks on {new Date(blockedTask.reminder_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+              Cannot call {lead?.name || lead?.company || 'this lead'}, {staffUsers.find(u => u.id === blockedTask.user_id)?.name || 'another user'} has an active task on {new Date(blockedTask.reminder_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
             </p>
             <button 
               onClick={() => setIsCallBlockedModalOpen(false)} 

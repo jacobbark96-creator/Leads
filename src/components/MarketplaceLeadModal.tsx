@@ -247,17 +247,6 @@ export const MarketplaceLeadModal: React.FC<MarketplaceLeadModalProps> = ({ isOp
                   <Check className="w-4 h-4" />
                   Claim with Subscription
                 </button>
-              ) : freeCreditsAvailable > 0 && (lead.exclusive_price || lead.price || 0) < 400 ? (
-                <button
-                  onClick={onClaimFreeLead}
-                  disabled={isLoadingRequest}
-                  className={`px-4 py-2 shadow-sm text-sm font-bold rounded-lg text-white flex items-center gap-2 transition-all active:scale-95 ${
-                    isLoadingRequest ? 'opacity-50 cursor-not-allowed bg-emerald-400' : 'bg-emerald-600 hover:bg-emerald-500 hover:shadow-emerald-200 hover:shadow-lg'
-                  }`}
-                >
-                  <Check className="w-4 h-4" />
-                  Claim Free Lead
-                </button>
               ) : (
                 <button
                   onClick={onPurchase}

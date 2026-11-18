@@ -13,7 +13,6 @@ import { trackLeadEvent } from '../../../utils/tracking';
 import { trackClientActivity } from '@/lib/activityTracker';
 import { SubscriptionProgressBanner } from '../../../components/SubscriptionProgressBanner';
 import { RecentlySoldCarousel } from '../../../components/RecentlySoldCarousel';
-import { LoyaltyProgressBanner, LoyaltyClaimModal } from '../../../components/LoyaltyGamification';
 
 const PromotionBanner = ({ promotion }: { promotion: any }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
@@ -583,12 +582,6 @@ export default function MarketplacePage() {
             credits={clientPrefs.subscription_credits}
           />
         )}
-        {profile?.role === 'client' && clientPrefs && (!clientPrefs.subscription_tier || clientPrefs.subscription_tier === 0) && (
-          <LoyaltyProgressBanner 
-            paidLeadsCount={clientPrefs.paid_leads_count || 0}
-            freeCreditsAvailable={clientPrefs.free_credits_available || 0}
-          />
-        )}
         <div className="flex flex-col sm:flex-row sm:items-center justify-end gap-4">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-gray-700">Sort by:</span>
@@ -802,11 +795,6 @@ export default function MarketplacePage() {
           onProceedToPay={(creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge, conciergeDates) => handlePurchaseLead(leadToPurchase.id, creditToUse, purchaseType, discountedPrice, useTradeAccount, addConcierge, conciergeDates)}
         />
       )}
-      
-      <LoyaltyClaimModal 
-        isOpen={showWelcomeModal}
-        onClose={() => setShowWelcomeModal(false)}
-      />
     </ProtectedRoute>
   );
 }

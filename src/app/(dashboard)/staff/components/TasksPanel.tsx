@@ -106,6 +106,7 @@ export const TasksPanel = () => {
           title: `${task.content} - ${task.leads?.company || task.leads?.name || 'Unknown Lead'}`,
           priority: isToday(new Date(task.reminder_at)) ? 'Medium' : 'High',
           id: task.id,
+          user_id: task.user_id,
           isCompleted: task.is_completed,
           link: `/sales-crm/lead-v2?id=${task.lead_id}&tab=pipeline`
         }));
@@ -218,11 +219,16 @@ export const TasksPanel = () => {
         </div>
       ) : (
         <div className="flex-1 space-y-1 overflow-y-auto custom-scrollbar pr-1">
-          {allTasks.map((task, i) => (
+          {allTasks.map((task, i) => {
+            const canComplete = task.isGoogle || task.user_id === profile?.id;
+            return (
             <div key={task.id || i} className="flex items-center p-1.5 rounded-lg bg-white/[0.01] hover:bg-white/[0.03] border border-white/[0.01] transition-all group">
               <button 
-                onClick={(e) => handleTaskToggle(e, task)}
+                onClick={(e) => canComplete && handleTaskToggle(e, task)}
+                disabled={!canComplete}
+                title={canComplete ? "Toggle task" : "Only the creator can complete this task"}
                 className={`w-3.5 h-3.5 rounded-full border flex items-center justify-center mr-2 transition-colors shrink-0 ${
+                  !canComplete ? 'opacity-50 cursor-not-allowed border-white/5 bg-white/5' :
                   task.isCompleted 
                     ? 'bg-blue-500 border-blue-500 text-white' 
                     : 'border-white/10 hover:border-blue-400/50 text-transparent'
@@ -257,7 +263,8 @@ export const TasksPanel = () => {
                 </span>
               )}
             </div>
-          ))}
+            );
+          })}
         </div>
       )}
 

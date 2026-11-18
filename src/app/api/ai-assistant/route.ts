@@ -371,6 +371,36 @@ CRITICAL RULES:
               }
             }
               
+            // We fetch ALL calls for today to get actual durations.
+            let twilioCalls: any[] = [];
+            const twilioSid = process.env.TWILIO_ACCOUNT_SID;
+            const twilioToken = process.env.TWILIO_AUTH_TOKEN;
+            
+            if (twilioSid && twilioToken) {
+              const authHeader = 'Basic ' + btoa(`${twilioSid}:${twilioToken}`);
+              const todayStr = today.toISOString().split('T')[0];
+              
+              let url = `https://api.twilio.com/2010-04-01/Accounts/${twilioSid}/Calls.json?StartTime>=${todayStr}&PageSize=1000`;
+              let safetyCounter = 0;
+              while (url && safetyCounter < 10) {
+                const res = await fetch(url, { headers: { 'Authorization': authHeader } });
+                if (res.ok) {
+                  const data = await res.json();
+                  twilioCalls = twilioCalls.concat(data.calls || []);
+                  url = data.next_page_uri ? `https://api.twilio.com${data.next_page_uri}` : null;
+                } else {
+                  break;
+                }
+                safetyCounter++;
+              }
+            }
+
+            // Also get qualified activities today
+            const { data: qualifiedActs } = await supabase.from('activities')
+              .select('user_id, leads(name)')
+              .eq('activity_type', 'qualified')
+              .gte('created_at', today.toISOString());
+              
             const formatTime = (secs: number) => {
               if (secs < 60) return `${secs} seconds`;
               const mins = Math.floor(secs / 60);
@@ -379,23 +409,43 @@ CRITICAL RULES:
             };
 
             const repStats = (reps || []).map((rep: any) => {
-               const repCalls = allDbCalls.filter((c: any) => c.user_id === rep.id);
+               // 1. Get dials from CRM notes for 100% accuracy
+               const repCallsDb = allDbCalls.filter((c: any) => c.user_id === rep.id);
+               const dials = repCallsDb.length;
                
-               const dials = repCalls.length;
+               // 2. Get durations from Twilio API since CRM notes often log 0 seconds
                let totalDurationSeconds = 0;
                let longestCallSeconds = 0;
                
-               repCalls.forEach((c: any) => {
-                 // Our call notes look like "📞 Call by Jake: Busy (45 seconds)"
-                 const match = c.content?.match(/\((\d+)\s+seconds?\)/i);
-                 if (match) {
-                   const d = parseInt(match[1], 10);
+               if (twilioCalls.length > 0 && rep.twilio_number) {
+                 const tNum = rep.twilio_number.replace(/\s/g, '');
+                 const repTwilioCalls = twilioCalls.filter((c: any) => c.from === tNum || c.to === tNum);
+                 
+                 repTwilioCalls.forEach((c: any) => {
+                   const d = parseInt(c.duration || '0', 10);
                    if (!isNaN(d)) {
                      totalDurationSeconds += d;
                      if (d > longestCallSeconds) longestCallSeconds = d;
                    }
-                 }
-               });
+                 });
+               } else {
+                 // Fallback to parsing DB notes if no twilio number
+                 repCallsDb.forEach((c: any) => {
+                   const match = c.content?.match(/\((\d+)\s+seconds?\)/i);
+                   if (match) {
+                     const d = parseInt(match[1], 10);
+                     if (!isNaN(d)) {
+                       totalDurationSeconds += d;
+                       if (d > longestCallSeconds) longestCallSeconds = d;
+                     }
+                   }
+                 });
+               }
+               
+               // 3. Qualified Leads
+               const myQualified = (qualifiedActs || []).filter((q: any) => q.user_id === rep.id);
+               const qualifiedCount = myQualified.length;
+               const qualifiedNames = myQualified.map((q: any) => q.leads?.name || 'Unknown Lead');
                
                const avgDurationSeconds = dials > 0 ? Math.round(totalDurationSeconds / dials) : 0;
                
@@ -404,7 +454,9 @@ CRITICAL RULES:
                  dials_today: dials,
                  total_call_time: formatTime(totalDurationSeconds),
                  average_call_time: formatTime(avgDurationSeconds),
-                 longest_call: formatTime(longestCallSeconds)
+                 longest_call: formatTime(longestCallSeconds),
+                 qualified_leads_count: qualifiedCount,
+                 qualified_leads_names: qualifiedNames.length > 0 ? qualifiedNames.join(', ') : 'None'
                };
             });
 

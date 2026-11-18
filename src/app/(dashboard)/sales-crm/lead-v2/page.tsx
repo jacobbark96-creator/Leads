@@ -2590,7 +2590,7 @@ function LeadDetailsV2Content() {
     }
   };
 
-  const onCallClick = (phoneNumber: string) => {
+  const onCallClick = async (phoneNumber: string) => {
     if (!phoneNumber || phoneNumber === 'No Phone') {
       toast.error('No valid phone number available to dial');
       return;
@@ -2598,19 +2598,48 @@ function LeadDetailsV2Content() {
     
     // Check if qualified lead has a future task
     if (lead?.status === 'qualified') {
-      const activeTasks = tasks.filter(t => !t.is_completed);
-      const now = new Date();
-      
-      const futureTask = activeTasks.find(t => {
-        if (!t.reminder_at) return false;
-        const dueDate = new Date(t.reminder_at);
-        return dueDate > now;
-      });
+      try {
+        // Fetch fresh tasks from DB to avoid race conditions with Autodialer or real-time changes by other users
+        const { data: freshTasks, error } = await supabase
+          .from('lead_reminders')
+          .select('*')
+          .eq('lead_id', lead.id)
+          .eq('is_completed', false);
+          
+        if (!error && freshTasks) {
+          const now = new Date();
+          const futureTask = freshTasks.find(t => {
+            if (!t.reminder_at) return false;
+            const dueDate = new Date(t.reminder_at);
+            return dueDate > now;
+          });
 
-      if (futureTask) {
-        setBlockedTask(futureTask);
-        setIsCallBlockedModalOpen(true);
-        return;
+          if (futureTask) {
+            // If the user who created the task is no longer a system user, we shouldn't block the call
+            const taskCreatorStillExists = staffUsers.some(u => u.id === futureTask.user_id);
+            if (taskCreatorStillExists) {
+              // If autodialer is on, skip this lead and go to next
+              if (isAutoDialEnabled) {
+                toast.error('Skipping lead due to active future task by another user');
+                
+                // If in a pack/smartview we should technically disposition or skip. 
+                // Using a generic 'Skipped' disposition if in a pack
+                if (packId || smartViewId) {
+                  handlePackDispositionRef.current('Skipped');
+                } else {
+                  goToNextLeadRef.current();
+                }
+                return;
+              }
+
+              setBlockedTask(futureTask);
+              setIsCallBlockedModalOpen(true);
+              return;
+            }
+          }
+        }
+      } catch (err) {
+        console.error('Failed to check fresh tasks', err);
       }
     }
     
@@ -4317,11 +4346,15 @@ function LeadDetailsV2Content() {
                 {tasks && tasks.length > 0 ? (
                   tasks.map(task => (
                     <div key={task.id} className="flex items-start gap-2">
-                      <input 
-                        type="checkbox" 
-                        className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
-                        onChange={() => handleCompleteTask(task.id)}
-                      />
+                      {task.user_id === profile?.id ? (
+                        <input 
+                          type="checkbox" 
+                          className="mt-0.5 rounded border-gray-300 text-blue-600 focus:ring-blue-500 cursor-pointer" 
+                          onChange={() => handleCompleteTask(task.id)}
+                        />
+                      ) : (
+                        <div className="mt-0.5 w-3.5 h-3.5 rounded border border-gray-300 bg-gray-100 flex-shrink-0" title="Only the creator can complete this task"></div>
+                      )}
                       <div className="flex flex-col">
                         <span className="text-xs font-medium text-gray-900">{task.content}</span>
                         <span className={`text-[10px] font-medium ${new Date(task.reminder_at) < new Date() ? 'text-red-500' : 'text-gray-500'}`}>

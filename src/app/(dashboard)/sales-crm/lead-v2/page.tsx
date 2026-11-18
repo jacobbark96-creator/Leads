@@ -668,6 +668,8 @@ function LeadDetailsV2Content() {
   const [pendingEditAction, setPendingEditAction] = useState<(() => void) | null>(null);
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
   const [emailModalType, setEmailModalType] = useState<'request_bills' | 'chase_bills' | 'custom' | undefined>(undefined);
+  const [isCallBlockedModalOpen, setIsCallBlockedModalOpen] = useState(false);
+  const [blockedTask, setBlockedTask] = useState<any>(null);
   const [selectedNote, setSelectedNote] = useState<LeadNote | null>(null);
 
   const { isLoaded } = useLoadScript({
@@ -2594,6 +2596,24 @@ function LeadDetailsV2Content() {
       return;
     }
     
+    // Check if qualified lead has a future task
+    if (lead?.status === 'qualified') {
+      const activeTasks = tasks.filter(t => !t.is_completed);
+      const now = new Date();
+      
+      const futureTask = activeTasks.find(t => {
+        if (!t.reminder_at) return false;
+        const dueDate = new Date(t.reminder_at);
+        return dueDate > now;
+      });
+
+      if (futureTask) {
+        setBlockedTask(futureTask);
+        setIsCallBlockedModalOpen(true);
+        return;
+      }
+    }
+    
     if (profile?.twilio_number) {
       makeCall(phoneNumber, lead?.id || '', lead?.name || lead?.company || 'Unknown');
     } else {
@@ -4479,6 +4499,28 @@ function LeadDetailsV2Content() {
         form={editForm}
         setForm={setEditForm}
       />
+
+      {isCallBlockedModalOpen && blockedTask && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm overflow-hidden p-6 text-center">
+            <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-red-100 mb-4">
+              <svg className="h-6 w-6 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+            <h3 className="text-lg font-bold text-gray-900 mb-2">Cannot Call Lead</h3>
+            <p className="text-sm text-gray-500 mb-6">
+              cannot call, {lead?.name || lead?.company || 'this lead'} has an active tasks on {new Date(blockedTask.reminder_at).toLocaleString([], { dateStyle: 'medium', timeStyle: 'short' })}
+            </p>
+            <button 
+              onClick={() => setIsCallBlockedModalOpen(false)} 
+              className="w-full px-4 py-2 border border-transparent rounded-lg shadow-sm text-sm font-medium text-white bg-blue-600 hover:bg-blue-700"
+            >
+              Understood
+            </button>
+          </div>
+        </div>
+      )}
 
       {isReferModalOpen && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/50 p-4">

@@ -184,6 +184,10 @@ function LeadProcessingContent() {
         // Show all
       }
 
+      if (profile?.has_residential_access === false) {
+        query = query.neq('building_type', 'Residential');
+      }
+
       if (['super_admin', 'admin'].includes(profile?.role || '')) {
         if (assignedUserFilter === 'me') {
           query = query.eq('assigned_to', profile?.id);

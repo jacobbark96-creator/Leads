@@ -14,7 +14,11 @@ export const DivisionSelector = () => {
     const fetchDivisions = async () => {
       const { data } = await supabase.from('divisions').select('*').order('name');
       if (data) {
-        setDivisions(data);
+        if (profile?.has_residential_access === false) {
+          setDivisions(data.filter(d => d.name.toLowerCase() !== 'open energy residential'));
+        } else {
+          setDivisions(data);
+        }
       }
     };
 

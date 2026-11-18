@@ -33,6 +33,7 @@ export interface UserProfile {
   outstanding_amount?: number;
   ai_chat_enabled?: boolean;
   is_residential_admin?: boolean;
+  has_residential_access?: boolean;
   parent_id?: string | null;
   requires_password_change?: boolean;
   sales_target?: number | null;

@@ -36,6 +36,13 @@ export default function ResidentialOverview() {
   const [logoFile, setLogoFile] = useState<File | null>(null);
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
 
+  // Security check
+  useEffect(() => {
+    if (profile && profile.has_residential_access === false) {
+      router.push('/sales-crm');
+    }
+  }, [profile, router]);
+
   const COLUMNS = [
     { id: 'fresh', title: 'Fresh' },
     { id: 'qualified', title: 'Qualified' },

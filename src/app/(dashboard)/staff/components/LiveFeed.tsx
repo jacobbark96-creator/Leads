@@ -3,9 +3,11 @@ import { GlassCard } from '@/components/dashboard/GlassCard';
 import { Activity, ChevronRight } from 'lucide-react';
 import { supabase } from '../../../../lib/supabase';
 import { formatDistanceToNow } from 'date-fns';
+import { useAuthStore } from '@/store/authStore';
 
 export const LiveFeed = () => {
   const [events, setEvents] = useState<any[]>([]);
+  const { profile } = useAuthStore();
 
   useEffect(() => {
     const fetchActivities = async () => {
@@ -15,10 +17,10 @@ export const LiveFeed = () => {
         .select(`
           *,
           lead_id,
-          leads:lead_id(name, company, location, status, lead_purchases(status))
+          leads:lead_id(name, company, location, status, building_type, lead_purchases(status))
         `)
         .order('created_at', { ascending: false })
-        .limit(20);
+        .limit(40);
 
       if (!error && data && data.length > 0) {
         // Deduplicate by lead_id to ensure a lead only appears once in the feed
@@ -26,6 +28,10 @@ export const LiveFeed = () => {
         const seenLeads = new Set();
         
         for (const act of data) {
+          if (profile?.has_residential_access === false && act.leads?.building_type === 'Residential') {
+            continue;
+          }
+          
           if (act.lead_id) {
             if (seenLeads.has(act.lead_id)) continue;
             seenLeads.add(act.lead_id);
@@ -70,11 +76,17 @@ export const LiveFeed = () => {
         }));
       } else {
         // 2. Fallback: Fetch latest updated leads if activities table is empty
-        const { data: latestLeads } = await supabase
+        let query = supabase
           .from('leads')
-          .select('id, name, company, location, status, updated_at')
+          .select('id, name, company, location, status, updated_at, building_type')
           .order('updated_at', { ascending: false })
-          .limit(10);
+          .limit(20);
+          
+        if (profile?.has_residential_access === false) {
+          query = query.neq('building_type', 'Residential');
+        }
+        
+        const { data: latestLeads } = await query;
         
         if (latestLeads) {
           setEvents(latestLeads.map(l => ({

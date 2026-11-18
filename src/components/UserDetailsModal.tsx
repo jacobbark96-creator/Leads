@@ -74,6 +74,7 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
     allowed_child_accounts: user.allowed_child_accounts || false,
     whatsapp_enabled: user.whatsapp_enabled || false,
     is_residential_admin: user.is_residential_admin || false,
+    has_residential_access: user.has_residential_access ?? false,
     subscription_tier: 0,
     subscription_credits: 0
   });
@@ -348,7 +349,8 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
           trade_limit_setting: formData.trade_limit_setting,
           allowed_child_accounts: formData.allowed_child_accounts,
           whatsapp_enabled: formData.whatsapp_enabled,
-          is_residential_admin: formData.is_residential_admin
+          is_residential_admin: formData.is_residential_admin,
+          has_residential_access: formData.has_residential_access
         })
         .eq('id', user.id);
 
@@ -759,6 +761,20 @@ export const UserDetailsModal: React.FC<UserDetailsModalProps> = ({ isOpen, onCl
                       </button>
                     </div>
                   )}
+
+                  <div className="mt-4 flex items-center justify-between p-3 bg-indigo-50 rounded-lg border border-indigo-100">
+                    <div>
+                      <h4 className="text-sm font-bold text-gray-900">Residential Access</h4>
+                      <p className="text-xs text-gray-500">Allow user to see Residential leads and CRM</p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setFormData({...formData, has_residential_access: !formData.has_residential_access})}
+                      className={`relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${formData.has_residential_access ? 'bg-indigo-600' : 'bg-gray-200'}`}
+                    >
+                      <span className={`inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out ${formData.has_residential_access ? 'translate-x-5' : 'translate-x-0'}`} />
+                    </button>
+                  </div>
                 </div>
 
                 {formData.role === 'client' && (

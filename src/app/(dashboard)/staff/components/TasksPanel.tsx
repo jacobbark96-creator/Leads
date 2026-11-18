@@ -95,10 +95,7 @@ export const TasksPanel = () => {
     if (!err && allReminders) {
       const processed = allReminders
         .filter(task => {
-          return task.user_id === profile.id || 
-                 task.leads?.assigned_to === profile.id || 
-                 profile.role === 'super_admin' || 
-                 profile.role === 'admin';
+          return task.user_id === profile.id;
         })
         .map(task => ({
           time: format(new Date(task.reminder_at), 'HH:mm'),

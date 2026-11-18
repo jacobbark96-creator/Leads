@@ -30,7 +30,7 @@ export function AdminNotifications() {
         event: '*', 
         schema: 'public', 
         table: 'lead_reminders', 
-        ...(isAdmin ? {} : { filter: `user_id=eq.${profile.id}` })
+        filter: `user_id=eq.${profile.id}`
       }, () => fetchData())
       .subscribe();
 
@@ -80,17 +80,13 @@ export function AdminNotifications() {
       }
 
       // 2. Fetch due reminders
-      const isAdmin = ['admin', 'super_admin'].includes(profile.role);
-      let query = supabase
+      const query = supabase
         .from('lead_reminders')
         .select('*, leads(name, company)')
         .eq('is_completed', false)
+        .eq('user_id', profile.id)
         .lte('reminder_at', new Date().toISOString())
         .order('reminder_at', { ascending: true });
-      
-      if (!isAdmin) {
-        query = query.eq('user_id', profile.id);
-      }
       
       const { data: rems } = await query;
       

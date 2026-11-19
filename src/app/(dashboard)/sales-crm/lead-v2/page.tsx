@@ -1301,6 +1301,17 @@ function LeadDetailsV2Content() {
         updatePayload.qualified_at = new Date().toISOString();
       }
       
+      if (newStatus === 'designing' && lead.region_id) {
+        const { data: region } = await supabase.from('regions').select('installer_id').eq('id', lead.region_id).single();
+        if (region && region.installer_id) {
+          const { data: installer } = await supabase.from('installers').select('client_id').eq('id', region.installer_id).single();
+          if (installer && installer.client_id) {
+            updatePayload.assigned_to = installer.client_id;
+            updatePayload.partner_plus_status = 'needs_designs';
+          }
+        }
+      }
+      
       const { error } = await supabase
         .from('leads')
         .update(updatePayload)
@@ -1313,8 +1324,8 @@ function LeadDetailsV2Content() {
         await supabase.from('smart_view_items').delete().eq('lead_id', lead.id);
       }
 
-      setLead({ ...lead, status: newStatus });
-      toast.success('Status updated');
+      setLead({ ...lead, ...updatePayload });
+      toast.success(updatePayload.assigned_to ? 'Status updated and assigned to Partner+ Kanban!' : 'Status updated');
     } catch (error: any) {
       toast.error('Failed to update status: ' + error.message);
     }

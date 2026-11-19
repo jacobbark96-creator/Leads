@@ -466,9 +466,28 @@ export default function ResidentialOverview() {
                           onChange={async (e) => {
                             e.stopPropagation();
                             const newStatus = e.target.value;
-                            setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: newStatus } : l));
-                            const { error } = await supabase.from('leads').update({ status: newStatus }).eq('id', lead.id);
-                            if (error) toast.error('Failed to update status');
+                            
+                            let updates: any = { status: newStatus === 'fresh' ? 'new' : newStatus };
+                            
+                            if (newStatus === 'designing' && lead.region_id) {
+                              const region = regions.find(r => r.id === lead.region_id);
+                              if (region && region.installer_id) {
+                                const installer = installers.find(i => i.id === region.installer_id);
+                                if (installer && installer.client_id) {
+                                  updates.assigned_to = installer.client_id;
+                                  updates.partner_plus_status = 'needs_designs';
+                                }
+                              }
+                            }
+                            
+                            setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, ...updates } : l));
+                            const { error } = await supabase.from('leads').update(updates).eq('id', lead.id);
+                            if (error) {
+                              toast.error('Failed to update status');
+                              fetchData();
+                            } else if (updates.assigned_to) {
+                              toast.success('Lead assigned to Partner+ Kanban!');
+                            }
                           }}
                           className="w-full text-[10px] bg-gray-50 border border-gray-200 rounded px-1.5 py-1 text-gray-700 font-medium focus:ring-1 focus:ring-blue-500"
                         >

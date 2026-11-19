@@ -2752,18 +2752,18 @@ function LeadDetailsV2Content() {
       )}
 
       {/* MAIN CONTENT WRAPPER */}
-      <main className="flex-1 flex justify-center h-full md:overflow-y-auto">
+      <main className="flex-1 flex justify-center h-full overflow-y-auto md:overflow-y-auto">
         {/* INNER CONTAINER (Max width expanded) */}
-        <div className="w-full max-w-[2400px] flex flex-col px-4 md:px-6 py-4 gap-4 h-full">
+        <div className="w-full max-w-[2400px] flex flex-col px-0 md:px-6 py-0 md:py-4 gap-4 h-full">
           
           {/* TOP NAVIGATION BAR */}
-          <div className="flex flex-col md:flex-row justify-between items-start md:items-center shrink-0 px-2 py-1 gap-4">
-            <div className="flex items-center text-sm font-medium text-gray-500">
-              <Link href="/sales-crm" className="hover:text-gray-900 transition-colors">Sales CRM</Link>
-              <span className="mx-2">/</span>
-              <Link href={`/sales-crm?tab=${tab}`} className="hover:text-gray-900 transition-colors capitalize">{tab} Leads</Link>
-              <span className="mx-2">/</span>
-              <span className="text-gray-900 truncate max-w-[150px] md:max-w-none">{lead.company || lead.name}</span>
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center shrink-0 px-4 md:px-2 py-3 md:py-1 gap-4 bg-white md:bg-transparent border-b md:border-none border-gray-200">
+            <div className="flex items-center text-sm font-medium text-gray-500 w-full overflow-x-auto whitespace-nowrap hide-scrollbar">
+              <Link href="/sales-crm" className="hover:text-gray-900 transition-colors shrink-0">Sales CRM</Link>
+              <span className="mx-2 shrink-0">/</span>
+              <Link href={`/sales-crm?tab=${tab}`} className="hover:text-gray-900 transition-colors capitalize shrink-0">{tab} Leads</Link>
+              <span className="mx-2 shrink-0">/</span>
+              <span className="text-gray-900 truncate max-w-[150px] md:max-w-none shrink-0">{lead.company || lead.name}</span>
               {lead.is_marketed && profile?.role === 'super_admin' && (
                 <div className="flex items-center gap-2 ml-4">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Division:</span>
@@ -2854,7 +2854,7 @@ function LeadDetailsV2Content() {
                   </button>
                 )}
               </div>
-              <div className="flex items-center gap-2 w-full md:w-auto">
+              <div className="flex flex-wrap md:flex-nowrap items-center gap-2 w-full md:w-auto">
                 {profile?.role === 'super_admin' && lead.status === 'qualified' && !lead.is_marketed && (
                   <div className="flex items-center gap-2 w-full md:w-auto">
                     <button 
@@ -2931,9 +2931,9 @@ function LeadDetailsV2Content() {
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row flex-1 gap-4 min-h-0">
+          <div className="flex flex-col md:flex-row flex-1 gap-4 min-h-0 md:overflow-hidden pb-10">
             {/* LEFT CONTENT SIDEBAR (300px) */}
-            <aside className="w-full md:w-[300px] flex-shrink-0 flex flex-col gap-4 h-auto md:h-full">
+            <aside className="w-full md:w-[300px] flex-shrink-0 flex flex-col gap-4 h-auto md:h-full md:overflow-y-auto hide-scrollbar">
             
             {/* 1. COMPANY HEADER CARD */}
             <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex flex-col items-center text-center relative shrink-0">
@@ -3192,7 +3192,7 @@ function LeadDetailsV2Content() {
 
 
             {/* 4. FILES & DOCUMENTS CARD */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex flex-col h-1/2 min-h-[200px]">
+            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex flex-col h-auto md:h-1/2 min-h-[200px]">
               <div className="flex items-center justify-between mb-4 shrink-0">
                 <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">Files & Documents</h3>
                 <label className="text-blue-600 hover:text-blue-700 bg-blue-50 p-1 rounded-md transition-colors cursor-pointer relative">
@@ -3245,7 +3245,7 @@ function LeadDetailsV2Content() {
             </div>
 
             {/* 5. CALLS CARD */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex flex-col h-1/2 min-h-[200px]">
+            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 flex flex-col h-auto md:h-1/2 min-h-[200px]">
               <div className="flex items-center justify-between mb-4 shrink-0">
                 <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider">Calls</h3>
                 <label className="text-blue-600 hover:text-blue-700 bg-blue-50 p-1 rounded-md transition-colors cursor-pointer relative">
@@ -3292,7 +3292,7 @@ function LeadDetailsV2Content() {
             {/* TOP CONTACT & ADDITIONAL CONTACTS ROW */}
             <div className="flex flex-col md:flex-row gap-4 shrink-0 overflow-visible relative">
               {/* PRIMARY CONTACT HEADER CARD */}
-              <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between w-full md:w-[60%] overflow-visible relative gap-4">
+              <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 md:p-5 flex flex-col md:flex-row items-start md:items-center justify-between w-full md:w-[60%] lg:w-[70%] overflow-visible relative gap-4">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-blue-50 border border-blue-100 flex items-center justify-center text-blue-600 font-bold text-lg flex-shrink-0 relative overflow-hidden">
                     <img src={`https://ui-avatars.com/api/?name=${encodeURIComponent(lead.name || 'Unknown')}&background=0D8ABC&color=fff`} alt="Contact Avatar" className="w-full h-full object-cover" />
@@ -3355,7 +3355,7 @@ function LeadDetailsV2Content() {
             </div>
 
             {/* ADDITIONAL CONTACTS HEADER CARD */}
-            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 w-full md:w-[40%] flex flex-col overflow-visible relative">
+            <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-4 w-full md:w-[40%] lg:w-[30%] flex flex-col overflow-visible relative">
                <div className="flex items-center justify-between mb-3 shrink-0">
                 <h3 className="text-xs font-semibold text-gray-900 uppercase tracking-wider flex items-center gap-2">
                   <Users className="w-3.5 h-3.5 text-gray-500" />
@@ -3445,7 +3445,7 @@ function LeadDetailsV2Content() {
           </div>
 
             {/* TOP 3 CARDS */}
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 shrink-0 mb-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 shrink-0 mb-4">
               <div className="bg-white rounded-xl border border-[#e5e7eb] shadow-[0_1px_2px_rgba(0,0,0,0.04)] p-5">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider">Lead Overview</h3>

@@ -5,12 +5,14 @@ import { supabase } from '@/lib/supabase';
 import { useAuthStore } from '@/store/authStore';
 import { Loader2, Briefcase, Phone, MapPin, Calendar, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { PurchasedLeadModal } from '@/components/PurchasedLeadModal';
 
 export default function PartnerPlusKanban() {
   const { profile } = useAuthStore();
   const [leads, setLeads] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [draggingLeadId, setDraggingLeadId] = useState<string | null>(null);
+  const [selectedLead, setSelectedLead] = useState<any | null>(null);
 
   const columns = [
     { id: 'needs_designs', label: 'Needs Designs', color: 'indigo' },
@@ -142,10 +144,11 @@ export default function PartnerPlusKanban() {
                     key={lead.id}
                     draggable={isMoveable}
                     onDragStart={(e) => handleDragStart(e, lead)}
+                    onClick={() => setSelectedLead(lead)}
                     className={`bg-white rounded-xl p-2.5 border shadow-sm transition-all ${
                       isMoveable 
                         ? 'cursor-grab active:cursor-grabbing hover:border-blue-300 hover:shadow-md' 
-                        : 'cursor-default opacity-90'
+                        : 'cursor-pointer hover:border-blue-300 hover:shadow-md'
                     } ${draggingLeadId === lead.id ? 'opacity-50 scale-95' : 'border-slate-200'}`}
                   >
                   <div className="flex justify-between items-start mb-1.5">
@@ -171,7 +174,9 @@ export default function PartnerPlusKanban() {
                   <div className="mt-2 pt-2 border-t border-slate-100 sm:hidden">
                     <select
                       value={lead.partner_plus_status}
+                      onClick={(e) => e.stopPropagation()}
                       onChange={async (e) => {
+                        e.stopPropagation();
                         const newStatus = e.target.value;
                         setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, partner_plus_status: newStatus } : l));
                         const res = await fetch('/api/partner-plus/leads', {
@@ -202,6 +207,14 @@ export default function PartnerPlusKanban() {
           </div>
         ))}
       </div>
+
+      {selectedLead && (
+        <PurchasedLeadModal
+          isOpen={true}
+          onClose={() => setSelectedLead(null)}
+          lead={selectedLead}
+        />
+      )}
     </div>
   );
 }

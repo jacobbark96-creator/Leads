@@ -14,6 +14,7 @@ import { AIAssistantWidget } from './AIAssistantWidget';
 import { supabase } from '../lib/supabase';
 import { FlexModal } from './FlexModal';
 import { formatRole } from '../lib/utils';
+import { MobileBottomNav } from './MobileBottomNav';
 import toast from 'react-hot-toast';
 
 export const MainLayout = ({ children }: { children: React.ReactNode }) => {
@@ -410,12 +411,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           <Link href={getHomePath()} className="flex items-center">
             <img src="/openlead-logo.png" alt="Openlead" className="h-6 object-contain" />
           </Link>
-          <button
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-gray-500 hover:bg-gray-50 rounded-lg"
-          >
-            {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
+          {/* Hamburger menu removed from top bar, now using bottom tab bar */}
         </div>
 
         {/* Main Content Area */}
@@ -503,10 +499,16 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
             </div>
           </header>
 
-          <main className={`flex-1 w-full mx-auto relative ${pathname === '/sales-crm/residential-overview' ? 'p-0 overflow-hidden' : 'p-4 sm:p-6 lg:p-8 lg:pt-4 overflow-x-hidden'}`}>
+          <main className={`flex-1 w-full mx-auto relative pb-20 lg:pb-0 ${pathname === '/sales-crm/residential-overview' ? 'px-0 pt-0 overflow-hidden' : 'p-4 sm:p-6 lg:p-8 lg:pt-4 overflow-x-hidden'}`}>
             {children}
           </main>
         </div>
+
+        <MobileBottomNav 
+          navItems={navItems} 
+          onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+          isMenuOpen={mobileMenuOpen} 
+        />
 
         <AnimatePresence>
           {mobileMenuOpen && (
@@ -705,17 +707,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
               </div>
 
               <div className="flex items-center sm:hidden">
-                <button
-                  onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                  className="inline-flex items-center justify-center p-2 rounded-xl text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-all active:scale-95"
-                >
-                  <span className="sr-only">Open main menu</span>
-                  {mobileMenuOpen ? (
-                    <X className="block h-6 w-6" aria-hidden="true" />
-                  ) : (
-                    <Menu className="block h-6 w-6" aria-hidden="true" />
-                  )}
-                </button>
+                {/* Hamburger menu hidden, using bottom tab bar instead */}
               </div>
             </div>
 
@@ -840,9 +832,15 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         </div>
       </nav>
 
-      <main className={`flex-1 w-full mx-auto relative ${pathname === '/sales-crm/residential-overview' ? 'px-0 pt-0 pb-0 overflow-hidden' : (pathname?.startsWith('/staff') ? 'px-0 pt-0 pb-0' : 'max-w-7xl px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28 pb-12')}`}>
+      <main className={`flex-1 w-full mx-auto relative pb-20 sm:pb-12 ${pathname === '/sales-crm/residential-overview' ? 'px-0 pt-0 sm:pb-0 overflow-hidden' : (pathname?.startsWith('/staff') ? 'px-0 pt-0 sm:pb-0' : 'max-w-7xl px-4 sm:px-6 lg:px-8 pt-24 sm:pt-28')}`}>
         {children}
       </main>
+
+      <MobileBottomNav 
+        navItems={navItems} 
+        onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+        isMenuOpen={mobileMenuOpen} 
+      />
 
       {showFlexModal && profile && (
         <FlexModal

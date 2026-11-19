@@ -60,7 +60,7 @@ export const StaffSidebar = ({ profile }: { profile: any }) => {
   const getInitials = (name: string) => name ? name.charAt(0).toUpperCase() : 'U';
 
   return (
-    <div className={`relative flex-shrink-0 z-50 flex flex-col bg-[#0a0f1c]/95 backdrop-blur-xl border-r border-white/5 transition-all duration-300 ${collapsed ? 'w-20' : 'w-56'}`}>
+    <div className={`hidden md:flex relative flex-shrink-0 z-50 flex flex-col bg-[#0a0f1c]/95 backdrop-blur-xl border-r border-white/5 transition-all duration-300 ${collapsed ? 'w-20' : 'w-56'}`}>
       {/* Logo */}
       <div className="h-14 flex items-center justify-between px-6 border-b border-white/5">
         {!collapsed && (

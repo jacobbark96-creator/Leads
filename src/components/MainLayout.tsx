@@ -138,6 +138,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
 
   const isFullScreenPage = pathname?.startsWith('/sales-crm') || pathname?.startsWith('/staff') || pathname?.startsWith('/contractor-crm') || pathname?.startsWith('/admin-crm') || pathname?.startsWith('/intranet');
   const isDetailsPage = pathname === '/contractor-crm/contractor-v2';
+  const hasNestedBottomNav = pathname?.startsWith('/sales-crm') || pathname?.startsWith('/admin-crm') || pathname?.startsWith('/contractor-crm');
 
   const getHomePath = () => {
     if (!profile) return '/';
@@ -148,10 +149,63 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
 
   if (!profile) return <>{children}</>;
 
+  const navItems = getNavItems();
+
+  const renderMobileMenu = () => (
+    <AnimatePresence>
+      {mobileMenuOpen && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -10 }}
+          className="lg:hidden fixed inset-x-0 top-0 bottom-0 z-[70] bg-white overflow-y-auto pb-24"
+        >
+          <div className="h-16 flex items-center justify-between px-5 border-b border-gray-100 sticky top-0 bg-white z-10">
+            <Link href={getHomePath()} className="flex items-center gap-2">
+              <img src="/openlead-logo.png" alt="Openlead" className="h-6 object-contain" />
+            </Link>
+            <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-gray-400 hover:text-gray-600">
+              <X className="w-6 h-6" />
+            </button>
+          </div>
+          <div className="p-4 space-y-1">
+            {navItems.filter((item: any) => !item.hidden).map((item: any) => {
+              const Icon = item.icon;
+              const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
+              return (
+                <Link
+                  key={item.name}
+                  href={item.path || '#'}
+                  onClick={() => setMobileMenuOpen(false)}
+                  className={`${
+                    isActive ? 'bg-[#E8F2FF] text-[#0066FF] font-bold' : 'text-gray-500 font-medium'
+                  } flex items-center gap-3 px-4 py-3 rounded-xl text-base`}
+                >
+                  <Icon className={`w-5 h-5 ${isActive ? 'text-[#0066FF]' : 'text-gray-400'}`} />
+                  {item.name}
+                </Link>
+              );
+            })}
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   if (isFullScreenPage) {
     return (
       <>
         {children}
+        {!hasNestedBottomNav && (
+          <>
+            <MobileBottomNav 
+              navItems={navItems} 
+              onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+              isMenuOpen={mobileMenuOpen} 
+            />
+            {renderMobileMenu()}
+          </>
+        )}
         <AIAssistantWidget />
       </>
     );
@@ -163,14 +217,17 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
         <main className="flex-1 w-full mx-auto p-4 sm:p-6 lg:p-8">
           {children}
         </main>
+        <MobileBottomNav 
+          navItems={navItems} 
+          onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+          isMenuOpen={mobileMenuOpen} 
+        />
+        {renderMobileMenu()}
         <AIAssistantWidget />
       </div>
     );
   }
-
-  const isClient = profile.role === 'client';
-
-  const getNavItems = () => {
+  function getNavItems() {
     switch (profile.role) {
       case 'client':
         const clientItems = [
@@ -289,7 +346,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
     }
   };
 
-  const navItems = getNavItems();
+  const isClient = profile.role === 'client';
 
   if (isClient) {
     return (
@@ -510,36 +567,7 @@ export const MainLayout = ({ children }: { children: React.ReactNode }) => {
           isMenuOpen={mobileMenuOpen} 
         />
 
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ opacity: 0, y: -10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              className="lg:hidden fixed inset-x-0 top-16 bottom-0 z-40 bg-white overflow-y-auto"
-            >
-              <div className="p-4 space-y-1">
-                {navItems.filter((item: any) => !item.hidden).map((item: any) => {
-                  const Icon = item.icon;
-                  const isActive = pathname === item.path || pathname?.startsWith(item.path + '/');
-                  return (
-                    <Link
-                      key={item.name}
-                      href={item.path || '#'}
-                      onClick={() => setMobileMenuOpen(false)}
-                      className={`${
-                        isActive ? 'bg-[#E8F2FF] text-[#0066FF] font-bold' : 'text-gray-500 font-medium'
-                      } flex items-center gap-3 px-4 py-3 rounded-xl text-base`}
-                    >
-                      <Icon className={`w-5 h-5 ${isActive ? 'text-[#0066FF]' : 'text-gray-400'}`} />
-                      {item.name}
-                    </Link>
-                  );
-                })}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        {renderMobileMenu()}
 
         <AskMaxChat />
 

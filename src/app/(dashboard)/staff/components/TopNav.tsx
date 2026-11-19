@@ -122,13 +122,6 @@ export const TopNav = ({ profile }: { profile: any }) => {
         className="fixed top-4 left-4 right-4 md:left-6 md:right-6 z-50 flex items-center justify-between px-4 md:px-6 py-2.5 md:py-3 bg-[#0a0a14]/60 backdrop-blur-xl border border-white/10 rounded-full shadow-[0_8px_32px_0_rgba(0,0,0,0.3)]"
       >
         <div className="flex items-center gap-4 xl:gap-8">
-          <button 
-            onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
-            className="p-2 md:hidden text-gray-400 hover:text-white transition-colors"
-          >
-            {isMobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-          </button>
-
           <Link href={getHomePath()} className="flex items-center">
             {profile?.divisions?.logo_url ? (
               <img src={profile.divisions.logo_url} alt="Division Logo" className="h-6 md:h-8 w-auto object-contain" />

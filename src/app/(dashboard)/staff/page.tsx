@@ -308,7 +308,7 @@ export default function StaffPortal() {
         <main className="flex-1 px-6 pb-4 max-w-[1600px] w-full mx-auto flex flex-col min-h-0 overflow-hidden">
           {/* Top KPI Cards (Only for Admins/Super Admins, but hide for new 'admin' role) */}
           {isAdmin && !isAdminAccount && (
-            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-2 shrink-0 h-[50px]">
+            <div className="grid grid-cols-2 sm:grid-cols-5 gap-2 mb-2 shrink-0">
               <KpiCard 
                 title="New Leads" 
                 value={stats.newLeads.toString()} 

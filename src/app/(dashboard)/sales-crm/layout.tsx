@@ -12,6 +12,7 @@ import { useDivisionStore } from '@/store/divisionStore';
 import { supabase } from '@/lib/supabase';
 import { motion, AnimatePresence } from 'framer-motion';
 import { formatRole } from '@/lib/utils';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
 
 import toast from 'react-hot-toast';
 
@@ -382,13 +383,6 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
           {/* TOP NAVBAR */}
           <header className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 flex items-center justify-between px-4 sm:px-5 shrink-0 shadow-sm">
             <div className="flex items-center gap-2 md:gap-4">
-              <button 
-                onClick={() => setMobileMenuOpen(true)}
-                className="md:hidden p-1.5 text-gray-500 hover:bg-gray-100 rounded-lg transition-colors"
-              >
-                <Menu className="w-5 h-5" />
-              </button>
-              
               {/* CRM Selector */}
               <div className="relative">
                 <button 
@@ -431,12 +425,18 @@ export default function SalesLayout({ children }: { children: React.ReactNode })
           </header>
 
           {/* PAGE CONTENT */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
             <div className="max-w-7xl mx-auto">
               {children}
             </div>
           </main>
         </div>
+
+        <MobileBottomNav 
+          navItems={sidebarItems} 
+          onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+          isMenuOpen={mobileMenuOpen} 
+        />
       </div>
     </ProtectedRoute>
   );

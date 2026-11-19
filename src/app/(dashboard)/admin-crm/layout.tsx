@@ -9,6 +9,8 @@ import { AdminNotifications } from '@/components/AdminNotifications';
 import { SmsNotifications } from '@/components/SmsNotifications';
 import { DivisionSelector } from '@/components/DivisionSelector';
 import { formatRole } from '@/lib/utils';
+import { MobileBottomNav } from '@/components/MobileBottomNav';
+import { motion, AnimatePresence } from 'framer-motion';
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -126,10 +128,6 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           {/* TOP NAVBAR */}
           <header className="h-12 bg-white/80 backdrop-blur-md border-b border-gray-200 sticky top-0 z-40 flex items-center justify-between px-4 sm:px-5 shrink-0 shadow-sm">
             <div className="flex items-center gap-4">
-              <button className="md:hidden p-2 text-gray-500 hover:bg-gray-100 rounded-lg">
-                <Menu className="w-5 h-5" />
-              </button>
-              
               {/* CRM Selector */}
               <div className="relative">
                 <button 
@@ -170,12 +168,78 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
           </header>
 
           {/* PAGE CONTENT */}
-          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-24 md:pb-8">
             <div className="max-w-7xl mx-auto">
               {children}
             </div>
           </main>
         </div>
+
+        <MobileBottomNav 
+          navItems={sidebarItems} 
+          onMenuClick={() => setMobileMenuOpen(!mobileMenuOpen)} 
+          isMenuOpen={mobileMenuOpen} 
+        />
+
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <>
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                onClick={() => setMobileMenuOpen(false)}
+                className="fixed inset-0 bg-gray-900/50 backdrop-blur-sm z-30 md:hidden"
+              />
+              <motion.aside
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 200 }}
+                className="fixed inset-y-0 left-0 w-64 bg-white shadow-2xl z-40 md:hidden flex flex-col"
+              >
+                <div className="h-14 flex items-center justify-between px-5 border-b border-gray-100">
+                  <Link href={getHomePath()} className="flex items-center gap-2">
+                    {profile?.divisions?.logo_url ? (
+                      <img src={profile.divisions.logo_url} alt="Division Logo" className="h-6 w-auto object-contain" />
+                    ) : (
+                      <img src="/openlead-logo.png" alt="Openlead" className="h-5 object-contain" />
+                    )}
+                  </Link>
+                  <button onClick={() => setMobileMenuOpen(false)} className="p-2 text-gray-400 hover:text-gray-600">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                
+                <div className="flex-1 overflow-y-auto py-4">
+                  <div className="px-5 mb-2">
+                    <h2 className="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Admin CRM</h2>
+                  </div>
+                  <nav className="px-3 space-y-1">
+                    {sidebarItems.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = item.exact ? pathname === item.path : pathname?.startsWith(item.path);
+                      return (
+                        <Link
+                          key={item.name}
+                          href={item.path}
+                          className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-semibold transition-all ${
+                            isActive 
+                              ? 'bg-blue-600 text-white shadow-md shadow-blue-200' 
+                              : 'text-gray-600 hover:bg-gray-50'
+                          }`}
+                        >
+                          <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-gray-400'}`} />
+                          {item.name}
+                        </Link>
+                      );
+                    })}
+                  </nav>
+                </div>
+              </motion.aside>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </ProtectedRoute>
   );

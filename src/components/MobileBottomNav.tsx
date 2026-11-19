@@ -18,7 +18,7 @@ export const MobileBottomNav: React.FC<MobileBottomNavProps> = ({ navItems, onMe
   const topItems = navItems.slice(0, 4);
 
   return (
-    <div className="sm:hidden fixed bottom-0 inset-x-0 z-50 bg-white/90 backdrop-blur-xl border-t border-gray-200 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+    <div className="md:hidden fixed bottom-0 inset-x-0 z-[60] bg-white/90 backdrop-blur-xl border-t border-gray-200 pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
       <div className="flex items-center justify-around h-16 px-2">
         {topItems.map((item) => {
           const Icon = item.icon || Home;

@@ -6,6 +6,8 @@ import { useAuthStore } from '@/store/authStore';
 import { Loader2, Briefcase, Phone, MapPin, Calendar, CheckCircle } from 'lucide-react';
 import toast from 'react-hot-toast';
 
+import { getPartnerPlusLeads, updatePartnerPlusLeadStatus } from './actions';
+
 export default function PartnerPlusKanban() {
   const { profile } = useAuthStore();
   const [leads, setLeads] = useState<any[]>([]);
@@ -30,15 +32,10 @@ export default function PartnerPlusKanban() {
   }, [profile?.id]);
 
   const fetchLeads = async () => {
+    if (!profile?.id) return;
     try {
       setLoading(true);
-      const { data, error } = await supabase
-        .from('leads')
-        .select('*')
-        .eq('assigned_to', profile?.id)
-        .in('partner_plus_status', ['needs_designs', 'sold', 'waiting_on_survey', 'waiting_on_install', 'installed']);
-
-      if (error) throw error;
+      const data = await getPartnerPlusLeads(profile.id);
       setLeads(data || []);
     } catch (err: any) {
       toast.error('Failed to load Partner+ leads: ' + err.message);
@@ -92,12 +89,9 @@ export default function PartnerPlusKanban() {
       // Optimistic update
       setLeads(prev => prev.map(l => l.id === leadId ? { ...l, partner_plus_status: columnId } : l));
       
-      const { error } = await supabase
-        .from('leads')
-        .update({ partner_plus_status: columnId })
-        .eq('id', leadId);
+      const { success, error } = await updatePartnerPlusLeadStatus(leadId, columnId, profile!.id);
 
-      if (error) throw error;
+      if (!success) throw new Error(error);
       toast.success(`Lead moved to ${columnId.replace(/_/g, ' ')}!`);
     } catch (err: any) {
       // Revert optimistic update
@@ -174,8 +168,8 @@ export default function PartnerPlusKanban() {
                       onChange={async (e) => {
                         const newStatus = e.target.value;
                         setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, partner_plus_status: newStatus } : l));
-                        const { error } = await supabase.from('leads').update({ partner_plus_status: newStatus }).eq('id', lead.id);
-                        if (error) toast.error('Failed to update status');
+                        const { success, error } = await updatePartnerPlusLeadStatus(lead.id, newStatus, profile!.id);
+                        if (!success) toast.error('Failed to update status: ' + error);
                       }}
                       className="w-full text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-slate-700 font-medium focus:ring-1 focus:ring-blue-500"
                     >

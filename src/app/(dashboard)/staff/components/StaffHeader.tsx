@@ -20,17 +20,22 @@ export const StaffHeader = ({ profile }: { profile: any }) => {
   }, []);
 
   return (
-    <div className="h-14 px-6 flex items-center justify-between w-full relative z-20 shrink-0">
+      <div className="h-14 px-4 md:px-6 flex items-center justify-between w-full relative z-20 shrink-0">
       <GlobalSearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
       
-      <div className="flex flex-col">
-        <h1 className="text-lg font-extrabold text-white tracking-tight flex items-center gap-2">
-          Good morning, {profile?.name?.split(' ')[0]} <span className="inline-block animate-wave origin-bottom-right">☀️</span>
+      <div className="flex flex-col truncate pr-2">
+        <h1 className="text-base md:text-lg font-extrabold text-white tracking-tight flex items-center gap-2 truncate">
+          Good morning, {profile?.name?.split(' ')[0]} <span className="inline-block animate-wave origin-bottom-right shrink-0">☀️</span>
         </h1>
-        <p className="text-[10px] text-gray-400 font-medium">Here's what's happening at Openlead today.</p>
+        <p className="text-[10px] text-gray-400 font-medium hidden md:block">Here's what's happening at Openlead today.</p>
       </div>
 
-      <div className="flex items-center gap-6">
+      <div className="flex items-center gap-4 md:gap-6">
+        {/* Global Search Button for Mobile */}
+        <button onClick={() => setIsSearchOpen(true)} className="md:hidden text-gray-400 hover:text-white p-2">
+          <Search className="w-5 h-5" />
+        </button>
+
         {/* Global Search */}
         <div className="relative hidden md:block w-64 lg:w-80" onClick={() => setIsSearchOpen(true)}>
           <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

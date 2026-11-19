@@ -358,15 +358,15 @@ export default function StaffPortal() {
           )}
 
           {/* Main Dashboard Grid */}
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-2 flex-1 min-h-0 overflow-hidden mb-1">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 md:gap-2 flex-1 min-h-0 overflow-y-auto md:overflow-hidden mb-1 pb-16 md:pb-0">
             
             {/* LEFT COLUMN: Tasks & Live Feed */}
-            <div className="lg:col-span-4 flex flex-col gap-2 min-h-0">
-              <div className={isAdminAccount ? "flex-1 min-h-0 overflow-hidden" : "flex-[0.35] min-h-0 overflow-hidden"}>
+            <div className="lg:col-span-4 flex flex-col gap-4 md:gap-2 min-h-[600px] md:min-h-0">
+              <div className={isAdminAccount ? "flex-1 min-h-0 md:overflow-hidden" : "flex-[0.35] min-h-0 md:overflow-hidden"}>
                 <TasksPanel />
               </div>
               {!isAdminAccount && (
-                <div className="flex-[0.65] min-h-0 overflow-hidden">
+                <div className="flex-[0.65] min-h-[400px] md:min-h-0 md:overflow-hidden">
                   {isRep ? <RepPerformanceCard monitoringData={monitoringData} /> : <LiveFeed />}
                 </div>
               )}
@@ -374,26 +374,26 @@ export default function StaffPortal() {
 
             {/* CENTER COLUMN */}
             {isAdminAccount ? (
-              <div className="lg:col-span-4 flex flex-col min-h-0 overflow-hidden">
+              <div className="lg:col-span-4 flex flex-col min-h-[500px] md:min-h-0 md:overflow-hidden">
                 <GmailPanel />
               </div>
             ) : (
-              <div className="lg:col-span-4 flex flex-col gap-2 min-h-0">
+              <div className="lg:col-span-4 flex flex-col gap-4 md:gap-2 min-h-[600px] md:min-h-0">
                 {!isRep ? (
                   <>
-                    <div className="flex-[0.5] min-h-0 overflow-hidden">
+                    <div className="flex-[0.5] min-h-[300px] md:min-h-0 md:overflow-hidden">
                       <CallMonitoringPanel monitoringData={monitoringData} />
                     </div>
-                    <div className="flex-[0.5] min-h-0 overflow-hidden">
+                    <div className="flex-[0.5] min-h-[400px] md:min-h-0 md:overflow-hidden">
                       {profile?.role === 'super_admin' ? <GmailPanel /> : <LeadSourcesPanel />}
                     </div>
                   </>
                 ) : (
                   <>
-                    <div className="flex-[0.5] min-h-0 overflow-hidden">
+                    <div className="flex-[0.5] min-h-[250px] md:min-h-0 md:overflow-hidden">
                       <QuoteOfTheDayPanel />
                     </div>
-                    <div className="flex-[0.5] min-h-0 overflow-hidden">
+                    <div className="flex-[0.5] min-h-[350px] md:min-h-0 md:overflow-hidden">
                       <RepMonitoringCard monitoringData={monitoringData} />
                     </div>
                   </>
@@ -402,12 +402,12 @@ export default function StaffPortal() {
             )}
 
             {/* RIGHT COLUMN: Unified Messages */}
-            <div className="lg:col-span-4 flex flex-col min-h-0 overflow-hidden gap-2">
-              <div className={isAdmin ? "flex-[0.75] min-h-0 overflow-hidden" : "flex-1 min-h-0 overflow-hidden"}>
+            <div className="lg:col-span-4 flex flex-col min-h-[600px] md:min-h-0 md:overflow-hidden gap-4 md:gap-2">
+              <div className={isAdmin ? "flex-[0.75] min-h-[400px] md:min-h-0 md:overflow-hidden" : "flex-1 min-h-[500px] md:min-h-0 md:overflow-hidden"}>
                 <UnifiedMessagesPanel />
               </div>
               {isAdmin && (
-                <div className="flex-[0.25] min-h-0 overflow-hidden">
+                <div className="flex-[0.25] min-h-[200px] md:min-h-0 md:overflow-hidden">
                   <QuoteOfTheDayPanel />
                 </div>
               )}

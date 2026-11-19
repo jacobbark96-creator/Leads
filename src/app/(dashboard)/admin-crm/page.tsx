@@ -647,7 +647,7 @@ export default function UserManagement() {
 
       <div className="bg-white shadow rounded-lg border border-gray-200 overflow-hidden">
         <div className="overflow-x-auto">
-          <table className="min-w-full divide-y divide-gray-200">
+          <table className="min-w-full divide-y divide-gray-200 hidden md:table">
             <thead className="bg-gray-50/80">
               <tr>
                 <th className="w-12 py-2.5 px-4 text-center"></th>
@@ -794,6 +794,76 @@ export default function UserManagement() {
               ))}
             </tbody>
           </table>
+
+          {/* MOBILE CARDS FOR USERS */}
+          <div className="md:hidden divide-y divide-gray-100">
+            {filteredUsers.map((user) => (
+              <div key={user.id} className="p-4 bg-white hover:bg-gray-50/80 transition-colors">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2.5">
+                    <div className="w-8 h-8 rounded-lg bg-gradient-to-tr from-blue-600 to-cyan-500 flex items-center justify-center text-white font-bold text-xs shrink-0 border border-blue-200">
+                      {user.name?.charAt(0).toUpperCase() || 'U'}
+                    </div>
+                    <div className="flex flex-col min-w-0">
+                      <span className="text-sm font-bold text-gray-900 truncate">
+                        {user.name}
+                      </span>
+                      <span className="text-xs text-gray-500 truncate">{user.email}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <button
+                      onClick={() => handleImpersonate(user.id, user.email)}
+                      disabled={impersonatingId === user.id}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors disabled:opacity-50"
+                    >
+                      <Eye className="w-4 h-4" />
+                    </button>
+                    <button
+                      onClick={() => setSelectedUser(user)}
+                      className="p-1.5 rounded-md text-gray-400 hover:text-blue-600 hover:bg-blue-50 transition-colors"
+                    >
+                      <Edit className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+                
+                <div className="flex items-center justify-between mt-3 pt-3 border-t border-gray-100">
+                  <select
+                    disabled={user.id === profile?.id}
+                    value={user.role}
+                    onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                    className="text-[10px] font-bold rounded-full px-2 py-1 border shadow-sm cursor-pointer focus:ring-2 focus:ring-blue-500 bg-gray-50 text-gray-700 border-gray-200"
+                  >
+                    <option value="client">Contractor</option>
+                    <option value="rep">Representative</option>
+                    <option value="Residential Rep">Residential Rep</option>
+                    <option value="Residential Sales">Resi Sales</option>
+                    <option value="Commercial Sales">Comm Sales</option>
+                    <option value="growth_manager">Growth Mgr</option>
+                    <option value="admin">Admin</option>
+                    <option value="super_admin">Super Admin</option>
+                  </select>
+
+                  {roleFilter === 'client' && (
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-bold text-gray-900">£{user.balance || 0}</span>
+                      <button
+                        onClick={() => {
+                          setAddingBalanceId(user.id);
+                          setBalanceAmount('');
+                        }}
+                        className="p-1 rounded bg-green-50 text-green-600 border border-green-200"
+                      >
+                        <PoundSterling className="w-3 h-3" />
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
+
         </div>
       </div>
 

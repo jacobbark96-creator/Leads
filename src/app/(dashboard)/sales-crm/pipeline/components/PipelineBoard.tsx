@@ -108,15 +108,15 @@ export default function PipelineBoard({ leads, role, isOpenEnergyResidential }: 
   };
 
   return (
-    <div className="flex w-full overflow-hidden h-[calc(100vh-180px)]">
-      <div className="flex gap-2 pb-4 items-start w-[130%] origin-top-left scale-[0.76]">
+    <div className="flex w-full h-[calc(100vh-180px)] overflow-x-auto md:overflow-hidden hide-scrollbar snap-x snap-mandatory">
+      <div className="flex gap-4 md:gap-2 pb-4 items-start w-max md:w-[130%] md:origin-top-left md:scale-[0.76] h-full px-4 md:px-0">
         {columns.map(col => {
           const columnLeads = getLeadsByStatus(col.id);
           const columnValue = columnLeads.reduce((acc, l) => acc + (l.commission_value || 0), 0);
           const Icon = col.icon;
 
           return (
-            <div key={col.id} className={`flex-1 min-w-[200px] rounded-xl border flex flex-col ${getColumnColorClass(col.color)} bg-opacity-40 max-h-[calc(100vh-140px)]`}>
+            <div key={col.id} className={`w-[85vw] md:w-auto md:flex-1 shrink-0 snap-center rounded-xl border flex flex-col ${getColumnColorClass(col.color)} bg-opacity-40 max-h-[calc(100vh-140px)]`}>
             {/* Column Header */}
             <div className={`p-2.5 border-b flex items-center justify-between rounded-t-xl ${getHeaderColorClass(col.color)}`}>
               <div className="flex items-center gap-2">

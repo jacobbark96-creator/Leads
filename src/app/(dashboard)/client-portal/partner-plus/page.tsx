@@ -116,11 +116,11 @@ export default function PartnerPlusKanban() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-100px)] w-full">
-      <div className="flex-1 min-h-0 flex gap-2 pb-2 custom-scrollbar px-1 overflow-x-hidden">
+      <div className="flex-1 min-h-0 flex gap-4 md:gap-2 pb-4 md:pb-2 overflow-x-auto md:overflow-x-hidden snap-x snap-mandatory hide-scrollbar px-4 md:px-1">
         {columns.map(col => (
           <div 
             key={col.id}
-            className="flex-1 min-w-0 flex flex-col bg-slate-100/50 rounded-xl border border-slate-200/60 p-1.5"
+            className="w-[85vw] md:w-auto md:flex-1 shrink-0 snap-center flex flex-col bg-slate-100/50 rounded-xl border border-slate-200/60 p-2 md:p-1.5 h-full"
             onDragOver={(e) => handleDragOver(e, col.id)}
             onDrop={(e) => handleDrop(e, col.id)}
           >
@@ -165,6 +165,24 @@ export default function PartnerPlusKanban() {
                         £{lead.monthly_spend}/mo spend
                       </div>
                     )}
+                  </div>
+                  
+                  {/* Mobile Dropdown for changing status since drag/drop is hard on touch */}
+                  <div className="mt-2 pt-2 border-t border-slate-100 sm:hidden">
+                    <select
+                      value={lead.partner_plus_status}
+                      onChange={async (e) => {
+                        const newStatus = e.target.value;
+                        setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, partner_plus_status: newStatus } : l));
+                        const { error } = await supabase.from('leads').update({ partner_plus_status: newStatus }).eq('id', lead.id);
+                        if (error) toast.error('Failed to update status');
+                      }}
+                      className="w-full text-[10px] bg-slate-50 border border-slate-200 rounded px-1.5 py-1 text-slate-700 font-medium focus:ring-1 focus:ring-blue-500"
+                    >
+                      {columns.map(c => (
+                        <option key={c.id} value={c.id}>{c.label}</option>
+                      ))}
+                    </select>
                   </div>
                   </div>
                 );

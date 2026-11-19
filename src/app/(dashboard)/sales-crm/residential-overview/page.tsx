@@ -407,8 +407,8 @@ export default function ResidentialOverview() {
       </div>
 
       {/* Kanban Board */}
-      <div className="flex-1 overflow-x-auto overflow-y-hidden p-4 no-scrollbar snap-x snap-mandatory">
-        <div className="flex gap-3 h-full min-w-max pb-4">
+      <div className="flex-1 overflow-x-auto overflow-y-hidden p-2 sm:p-4 hide-scrollbar snap-x snap-mandatory">
+        <div className="flex gap-3 h-full pb-4">
           {COLUMNS.map(col => {
             const colLeads = leads.filter(l => col.id === 'fresh' ? (l.status === 'fresh' || l.status === 'new' || l.status === 'potential') : l.status === col.id);
             return (
@@ -416,7 +416,7 @@ export default function ResidentialOverview() {
                 key={col.id}
                 onDragOver={(e) => e.preventDefault()}
                 onDrop={(e) => handleDrop(e, col.id)}
-                className="w-72 sm:w-36 flex flex-col h-full bg-gray-50/50 rounded-lg border border-gray-200 shrink-0 snap-center sm:snap-align-none"
+                className="w-[85vw] sm:w-[320px] lg:w-72 flex flex-col h-full bg-gray-50/50 rounded-lg border border-gray-200 shrink-0 snap-center sm:snap-align-none"
               >
                 <div className="p-2 border-b border-gray-200 flex items-center justify-between shrink-0 bg-gray-50/80 rounded-t-lg">
                   <h3 className="font-bold text-gray-700 text-[11px] uppercase tracking-wider">{col.title}</h3>
@@ -457,6 +457,26 @@ export default function ResidentialOverview() {
                           </div>
                         </div>
                       )}
+
+                      {/* Mobile Dropdown for changing status since drag/drop is hard on touch */}
+                      <div className="mt-2 pt-2 border-t border-gray-100 sm:hidden">
+                        <select
+                          value={col.id}
+                          onClick={(e) => e.stopPropagation()}
+                          onChange={async (e) => {
+                            e.stopPropagation();
+                            const newStatus = e.target.value;
+                            setLeads(prev => prev.map(l => l.id === lead.id ? { ...l, status: newStatus } : l));
+                            const { error } = await supabase.from('leads').update({ status: newStatus }).eq('id', lead.id);
+                            if (error) toast.error('Failed to update status');
+                          }}
+                          className="w-full text-[10px] bg-gray-50 border border-gray-200 rounded px-1.5 py-1 text-gray-700 font-medium focus:ring-1 focus:ring-blue-500"
+                        >
+                          {COLUMNS.map(c => (
+                            <option key={c.id} value={c.id}>{c.title}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
                   ))}
                 </div>

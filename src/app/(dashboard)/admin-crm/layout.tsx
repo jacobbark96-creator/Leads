@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import Link from 'next/link';
-import { Users, Tags, Ticket, TrendingUp, Activity, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Store, Briefcase, Home, Sparkles, Mail } from 'lucide-react';
+import { Users, Tags, Ticket, TrendingUp, Activity, Menu, X, LayoutDashboard, Database, HelpCircle, LogOut, Settings, BarChart2, Bell, MessageSquare, ChevronDown, Store, Briefcase, Home, Sparkles, Mail, Phone } from 'lucide-react';
 import { ProtectedRoute } from '@/components/ProtectedRoute';
 import { useAuthStore } from '@/store/authStore';
 import { AdminNotifications } from '@/components/AdminNotifications';
@@ -34,6 +34,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     { name: 'Lead Packs', path: '/admin-crm/lead-packs', icon: Database, id: 'admin-crm/lead-packs' },
     { name: 'Discount Codes', path: '/admin-crm/discounts', icon: Ticket, id: 'admin-crm/discounts' },
     { name: 'Emails', path: '/admin-crm/emails', icon: Mail, id: 'admin-crm/emails' },
+    { name: 'Numbers', path: '/admin-crm/numbers', icon: Phone, id: 'admin-crm/numbers', roles: ['super_admin', 'admin'] },
     { name: 'Sales Tracker', path: '/admin-crm/tracker', icon: TrendingUp, id: 'admin-crm/tracker', roles: ['super_admin'] },
     { name: 'Monitoring', path: '/admin-crm/monitoring', icon: Activity, id: 'admin-crm/monitoring', roles: ['super_admin'] },
     { name: 'Referrals', path: '/admin-crm/referrals', icon: Users, id: 'admin-crm/referrals' },

@@ -1087,7 +1087,7 @@ function LeadDetailsV2Content() {
     try {
       const { error } = await supabase
         .from('lead_reminders')
-        .update({ is_completed: true, completed_at: new Date().toISOString() })
+        .update({ is_completed: true })
         .eq('id', taskId);
       
       if (error) throw error;
